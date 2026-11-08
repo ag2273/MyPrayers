@@ -1,0 +1,17 @@
+# Secrets — never commit (public repo)
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+credentials.json
+
+# Tooling
+node_modules/
+.DS_Store
+.scratch/
