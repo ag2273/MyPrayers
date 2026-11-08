@@ -1,6 +1,6 @@
 # MyPrayers
 
-A mobile app and home-screen widget for prayer-times tracking and notifications.
+A mobile app and home-screen widget for prayer-times tracking and notifications. The app ships as **«مواقيت» / Mawaqeet**; "MyPrayers" is only the repository's name.
 
 ## Public repository: no secrets
 
