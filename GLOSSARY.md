@@ -16,8 +16,12 @@ _Avoid_: Adhan time, schedule
 The full set of five Prayer Times for one day at one location.
 _Avoid_: Timetable, schedule
 
+**Prayer Day**:
+The day a set of Prayer Times belongs to, at the location and time zone the user was in that day. A Prayer marked after midnight still belongs to the Prayer Day its Prayer Time came from.
+_Avoid_: Date, calendar day
+
 **Prayer Log**:
-The user's record, per day and per Prayer, of whether they prayed it.
+The user's record, per Prayer Day and per Prayer, of whether they prayed it. Each entry is either prayed or not marked.
 _Avoid_: Tracker, history, journal
 
 **Sunrise**:
