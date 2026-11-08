@@ -17,7 +17,7 @@ The full set of five Prayer Times for one day at one location.
 _Avoid_: Timetable, schedule
 
 **Prayer Day**:
-The day a set of Prayer Times belongs to, at the location and time zone the user was in that day. A Prayer marked after midnight still belongs to the Prayer Day its Prayer Time came from.
+The span from one Fajr to the next, to which a set of Prayer Times belongs, at the location and time zone the user was in that day. Isha marked after midnight but before Fajr still belongs to the previous Prayer Day.
 _Avoid_: Date, calendar day
 
 **Prayer Log**:
