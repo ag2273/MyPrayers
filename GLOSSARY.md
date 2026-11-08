@@ -41,8 +41,16 @@ An optional alert a chosen number of minutes before a Prayer Time.
 _Avoid_: Pre-alert, warning
 
 **Adhan Alert**:
-The alert raised when a Prayer Time arrives, optionally playing the full adhan sound.
+The alert raised when a Prayer Time arrives, playing either the Short Adhan (default) or the Full Adhan.
 _Avoid_: Alarm, prayer notification
+
+**Short Adhan**:
+The opening «الله أكبر، الله أكبر» of an adhan recording, used as the default Adhan Alert sound.
+_Avoid_: Beep, chime, takbir clip
+
+**Full Adhan**:
+A complete adhan recording, which the user can choose to play for an Adhan Alert. Fajr has its own Full Adhan including «الصلاة خير من النوم».
+_Avoid_: Long adhan, adhan audio
 
 **Widget Variant**:
 One of the distinct home-screen widget designs the app offers, each with its own layout and content.
