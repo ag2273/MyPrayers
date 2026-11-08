@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Mawaqeet"
-include(":core")
+include(":core", ":app")

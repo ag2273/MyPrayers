@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppCompat theme so Compose can live in an AppCompatActivity (per-app language backport). -->
+    <style name="Theme.Mawaqeet" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!-- Avoids a white flash before Compose draws in dark mode. -->
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>
