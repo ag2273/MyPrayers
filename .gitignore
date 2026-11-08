@@ -15,3 +15,6 @@ credentials.json
 node_modules/
 .DS_Store
 .scratch/
+
+# Development-only audio placeholders: rights not cleared, never commit or ship
+dev-assets/
