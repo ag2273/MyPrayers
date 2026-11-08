@@ -52,6 +52,10 @@ _Avoid_: Beep, chime, takbir clip
 A complete adhan recording, which the user can choose to play for an Adhan Alert. Fajr has its own Full Adhan including «الصلاة خير من النوم».
 _Avoid_: Long adhan, adhan audio
 
+**Custom Adhan**:
+An audio file the user picks from their own phone to play as a Short Adhan or Full Adhan instead of a bundled recording.
+_Avoid_: Imported sound, user ringtone
+
 **Widget Variant**:
 One of the distinct home-screen widget designs the app offers, each with its own layout and content.
 _Avoid_: Widget size, widget type, skin
