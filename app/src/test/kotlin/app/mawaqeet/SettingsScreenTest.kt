@@ -170,4 +170,17 @@ class SettingsScreenTest {
             runBlocking { store.widgetAppearance.first() }.colors == app.mawaqeet.widget.WidgetColors.APP
         }
     }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `About shows the version and credits each library, dataset and font with its licence`() {
+        openSettings("الإعدادات")
+
+        compose.onNodeWithText("الإصدار ${BuildConfig.VERSION_NAME}").performScrollTo().assertIsDisplayed()
+        for (name in listOf("adhan-kotlin (Batoul Apps)", "GeoNames", "Natural Earth", "Noto Naskh Arabic (Google)")) {
+            compose.onNodeWithContentDescription(name, substring = true).performScrollTo().assertIsDisplayed()
+        }
+        compose.onNodeWithContentDescription("GeoNames: أسماء المدن وإحداثياتها ومناطقها الزمنية، الترخيص: CC BY 4.0. يفتح الموقع")
+            .performScrollTo().assertIsDisplayed()
+    }
 }

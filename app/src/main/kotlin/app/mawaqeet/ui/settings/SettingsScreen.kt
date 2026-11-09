@@ -42,6 +42,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
+import app.mawaqeet.about.AboutContent
 import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
@@ -142,7 +143,7 @@ fun SettingsScreen(
             LanguageDisplayGroup(settings, digitStyle, today, actions)
             WidgetsGroup(widgetAppearance, actions)
             AdvancedGroup(settings, actions)
-            SettingsGroup(R.string.settings_group_about) { ComingSoon() }
+            SettingsGroup(R.string.settings_group_about) { AboutContent() }
         }
     }
 }
@@ -160,15 +161,6 @@ fun SettingsGroup(@StringRes title: Int, content: @Composable ColumnScope.() -> 
         content()
         HorizontalDivider()
     }
-}
-
-@Composable
-private fun ComingSoon() {
-    Text(
-        stringResource(R.string.settings_coming_soon),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 /** Prayer Log (#25): Delete Prayer Log, behind an in-app confirmation. */
