@@ -70,27 +70,46 @@ class AdhanPlayerService : Service() {
         focus = focusRequest
         audio.requestAudioFocus(focusRequest)
 
+        prepare(sound, AdhanSounds.uri(this, sound))
+    }
+
+    /**
+     * Prepares and starts [source]. A Custom Adhan that can't be opened or decoded (deleted, permission lost, not
+     * audio) falls back to its bundled recording once; Settings → Alerts shows a notice for the unreadable file.
+     */
+    private fun prepare(sound: AlertSound, source: android.net.Uri) {
+        val fallback = AdhanSounds.bundled(this, sound)
+        val canFallBack = source != fallback
         val mp = MediaPlayer()
         player = mp
         mp.setAudioAttributes(ATTRIBUTES)
         try {
-            mp.setDataSource(this, AdhanSounds.uri(this, sound))
+            mp.setDataSource(this, source)
         } catch (e: Exception) {
-            // An unreadable Custom Adhan falls back to the bundled one (#28 shows the notice in Settings).
+            if (!canFallBack) throw e
             Log.w(TAG, "Adhan source unreadable, using the bundled one", e)
-            mp.reset()
-            mp.setAudioAttributes(ATTRIBUTES)
-            mp.setDataSource(this, AdhanSounds.bundled(this, sound))
+            mp.release()
+            prepare(sound, fallback)
+            return
         }
         mp.setVolume(0f, 0f)
+        var started = false
         mp.setOnPreparedListener {
+            started = true
             it.start()
             fadeIn(it, System.currentTimeMillis())
         }
         mp.setOnCompletionListener { finish() }
-        mp.setOnErrorListener { _, what, extra ->
+        mp.setOnErrorListener { failed, what, extra ->
             Log.w(TAG, "Adhan playback error $what/$extra")
-            finish()
+            if (canFallBack && player === failed && !started) {
+                // A Custom Adhan the player can't decode: play the bundled recording instead of nothing.
+                handler.removeCallbacksAndMessages(null)
+                failed.release()
+                prepare(sound, fallback)
+            } else {
+                finish()
+            }
             true
         }
         mp.prepareAsync()

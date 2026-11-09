@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.AsrConvention
@@ -169,6 +170,21 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[VIBRATION] = on }
     }
 
+    /**
+     * Chooses [reference] (a content URI the app holds a persistable read permission to) as the Custom Adhan for
+     * [recording] only, or clears it with null. Returns the references no recording uses any more, whose
+     * permissions the caller should release.
+     */
+    suspend fun setCustomAdhan(recording: AdhanRecording, reference: String?): Set<String> {
+        var unused = emptySet<String>()
+        store.edit {
+            val before = it.alertSettings().customAdhans
+            if (reference == null) it.remove(customAdhanKey(recording)) else it[customAdhanKey(recording)] = reference
+            unused = before.values.toSet() - it.alertSettings().customAdhans.values.toSet()
+        }
+        return unused
+    }
+
     private fun Preferences.alertSettings(): AlertSettings {
         val default = AlertSettings()
         val defaultPrayer = PrayerAlertSettings()
@@ -186,8 +202,14 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             alarmClockMode = this[ALARM_CLOCK_MODE] ?: default.alarmClockMode,
             playOnSilent = this[PLAY_ON_SILENT] ?: default.playOnSilent,
             vibration = this[VIBRATION] ?: default.vibration,
+            customAdhans = AdhanRecording.entries
+                .mapNotNull { recording -> this[customAdhanKey(recording)]?.takeIf { it.isNotEmpty() }?.let { recording to it } }
+                .toMap(),
         )
     }
+
+    /** Keys `custom_adhan_short|full|fajr_full`: the Custom Adhan's content URI. */
+    private fun customAdhanKey(recording: AdhanRecording) = stringPreferencesKey("custom_adhan_${recording.name.lowercase()}")
 
     /** Keys `alert_<prayer>_adhan|sound|reminder|reminder_minutes`, e.g. `alert_fajr_sound`. */
     private class PrayerAlertKeys(prayer: Prayer) {

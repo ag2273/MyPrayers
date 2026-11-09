@@ -2,6 +2,7 @@ package app.mawaqeet.alerts
 
 import android.content.Context
 import androidx.core.util.AtomicFile
+import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.AlertSound
@@ -78,20 +79,23 @@ internal class AlertPlanStore(context: Context) {
 
     companion object {
         const val FILE_NAME = "alert_plan.txt"
-        private const val VERSION = "alert-plan-v2"
+        private const val VERSION = "alert-plan-v3"
     }
 }
 
 private const val CUSTOM_PREFIX = "CUSTOM:"
 
-/** Text form of an [AlertSound], shared by the stored plan and the alarm intents' extras. */
+/**
+ * Text form of an [AlertSound], shared by the stored plan and the alarm intents' extras. A Custom Adhan is
+ * `CUSTOM:<AdhanRecording name>:<reference>`, e.g. `CUSTOM:FULL:content://…`.
+ */
 internal fun encodeAlertSound(sound: AlertSound): String = when (sound) {
     AlertSound.ShortAdhan -> "SHORT_ADHAN"
     AlertSound.FullAdhan -> "FULL_ADHAN"
     AlertSound.FajrFullAdhan -> "FAJR_FULL_ADHAN"
     AlertSound.Silent -> "SILENT"
     AlertSound.ReminderTone -> "REMINDER_TONE"
-    is AlertSound.CustomAdhan -> CUSTOM_PREFIX + sound.reference
+    is AlertSound.CustomAdhan -> CUSTOM_PREFIX + sound.replaces.name + ":" + sound.reference
 }
 
 internal fun decodeAlertSound(s: String): AlertSound = when {
@@ -100,6 +104,11 @@ internal fun decodeAlertSound(s: String): AlertSound = when {
     s == "FAJR_FULL_ADHAN" -> AlertSound.FajrFullAdhan
     s == "SILENT" -> AlertSound.Silent
     s == "REMINDER_TONE" -> AlertSound.ReminderTone
-    s.startsWith(CUSTOM_PREFIX) -> AlertSound.CustomAdhan(s.removePrefix(CUSTOM_PREFIX))
+    s.startsWith(CUSTOM_PREFIX) -> {
+        val rest = s.removePrefix(CUSTOM_PREFIX)
+        val recording = AdhanRecording.valueOf(rest.substringBefore(':')) // IllegalArgumentException if unknown.
+        require(':' in rest)
+        AlertSound.CustomAdhan(rest.substringAfter(':'), recording)
+    }
     else -> throw IllegalArgumentException(s)
 }

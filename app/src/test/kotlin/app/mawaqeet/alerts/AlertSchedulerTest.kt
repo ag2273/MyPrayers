@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.AlertSound
@@ -98,6 +99,15 @@ class AlertSchedulerTest {
         AlertScheduler(context).rearmStoredPlan(now = Instant.parse("2026-11-08T13:00:00Z"))
 
         assertEquals(listOf(maghrib.instant, isha.instant, midnight), triggerTimes())
+    }
+
+    @Test
+    fun `a Custom Adhan keeps its file and the recording it replaces through the stored plan and the alarm intent`() {
+        val custom = isha.copy(sound = AlertSound.CustomAdhan("content://docs/document/audio%3A42", AdhanRecording.FULL))
+        AlertScheduler(context).apply(AlertPlan(listOf(custom), midnight))
+
+        assertEquals(custom.sound, AlertPlanStore(context).read()!!.alerts.single().sound)
+        assertEquals(custom.sound, decodeAlertSound(encodeAlertSound(custom.sound)))
     }
 
     @Test

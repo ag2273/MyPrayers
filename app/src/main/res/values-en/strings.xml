@@ -137,6 +137,18 @@
     <string name="alerts_play_on_silent">Play adhan even on silent</string>
     <string name="alerts_play_on_silent_description">Not for reminders, nor during calls</string>
     <string name="alerts_vibration">Vibration</string>
+    <string name="alerts_custom_adhan">Custom Adhan</string>
+    <string name="alerts_custom_adhan_description">Pick an audio file from your phone to play instead of the bundled recording</string>
+    <string name="alerts_custom_full">Full Adhan (not Fajr)</string>
+    <string name="alerts_custom_fajr_full">Full Adhan for Fajr</string>
+    <string name="alerts_custom_full_not_fajr">Doesn\'t change Fajr, which has its own option because it includes «الصلاة خير من النوم»</string>
+    <string name="alerts_custom_bundled">Bundled recording</string>
+    <string name="alerts_custom_chosen">Your chosen file</string>
+    <string name="alerts_custom_unreadable">The chosen file can\'t be read, so the bundled recording plays instead. Choose the file again or clear it.</string>
+    <string name="alerts_custom_choose">Choose audio file</string>
+    <string name="alerts_custom_preview">Preview</string>
+    <string name="alerts_custom_preview_stop">Stop preview</string>
+    <string name="alerts_custom_clear">Use the bundled recording</string>
 
     <!-- Widgets (#27). -->
     <string name="widget_next_prayer">Next Prayer</string>

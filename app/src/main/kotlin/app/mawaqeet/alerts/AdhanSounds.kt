@@ -18,7 +18,9 @@ object AdhanSounds {
      * Uses the name-based `android.resource://<package>/raw/<name>` form: resource ids can change on upgrade.
      */
     fun bundled(context: Context, sound: AlertSound): Uri {
-        val name = when (sound) {
+        // A Custom Adhan's bundled sound is the recording it replaces ([AlertSound.CustomAdhan.fallback]).
+        val bundledSound = if (sound is AlertSound.CustomAdhan) sound.fallback else sound
+        val name = when (bundledSound) {
             AlertSound.ShortAdhan, AlertSound.FullAdhan, AlertSound.FajrFullAdhan, is AlertSound.CustomAdhan,
             AlertSound.Silent, AlertSound.ReminderTone,
             -> "adhan_placeholder"

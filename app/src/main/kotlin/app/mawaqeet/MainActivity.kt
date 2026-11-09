@@ -1,6 +1,7 @@
 package app.mawaqeet
 
 import android.Manifest
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.compose.material3.AlertDialog
@@ -29,6 +30,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.lifecycleScope
 import app.mawaqeet.alerts.AlertPermissions
 import app.mawaqeet.alerts.AlertRescheduler
+import app.mawaqeet.alerts.CustomAdhanFiles
+import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityDirectory
@@ -212,6 +215,15 @@ class MainActivity : AppCompatActivity() {
 
                             override fun setVibration(on: Boolean) {
                                 scope.launch { settingsStore.setVibration(on) }
+                            }
+
+                            override fun setCustomAdhan(recording: AdhanRecording, uri: Uri?) {
+                                // Keep read access before storing, so the alert can open the file after a reboot.
+                                if (uri != null) CustomAdhanFiles.keep(this@MainActivity, uri)
+                                scope.launch {
+                                    val unused = settingsStore.setCustomAdhan(recording, uri?.toString())
+                                    CustomAdhanFiles.release(this@MainActivity, unused)
+                                }
                             }
                         }
                     }

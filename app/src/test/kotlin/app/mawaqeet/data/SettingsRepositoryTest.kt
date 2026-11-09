@@ -169,4 +169,36 @@ class SettingsRepositoryTest {
 
         assertEquals(15, dhuhr.reminderMinutes)
     }
+
+    @Test
+    fun `a Custom Adhan per recording survives an app restart, and a Custom Full Adhan leaves Fajr's unchanged`() {
+        withRepository { repo, _ ->
+            repo.setCustomAdhan(app.mawaqeet.core.AdhanRecording.FULL, "content://docs/full")
+            repo.setCustomAdhan(app.mawaqeet.core.AdhanRecording.SHORT, "content://docs/short")
+        }
+
+        val alerts = withRepository { repo, _ -> repo.settings.first() }.alerts
+
+        assertEquals(
+            mapOf(
+                app.mawaqeet.core.AdhanRecording.FULL to "content://docs/full",
+                app.mawaqeet.core.AdhanRecording.SHORT to "content://docs/short",
+            ),
+            alerts.customAdhans,
+        )
+        assertEquals(null, alerts.customAdhan(app.mawaqeet.core.AdhanRecording.FAJR_FULL))
+    }
+
+    @Test
+    fun `replacing or clearing a Custom Adhan reports the files no recording uses any more`() {
+        withRepository { repo, _ ->
+            assertEquals(emptySet<String>(), repo.setCustomAdhan(app.mawaqeet.core.AdhanRecording.FULL, "content://docs/a"))
+            assertEquals(emptySet<String>(), repo.setCustomAdhan(app.mawaqeet.core.AdhanRecording.FAJR_FULL, "content://docs/a"))
+            // Still used by Fajr's Full Adhan, so its permission stays.
+            assertEquals(emptySet<String>(), repo.setCustomAdhan(app.mawaqeet.core.AdhanRecording.FULL, "content://docs/b"))
+            assertEquals(setOf("content://docs/a"), repo.setCustomAdhan(app.mawaqeet.core.AdhanRecording.FAJR_FULL, null))
+            assertEquals(setOf("content://docs/b"), repo.setCustomAdhan(app.mawaqeet.core.AdhanRecording.FULL, null))
+            assertEquals(emptyMap<app.mawaqeet.core.AdhanRecording, String>(), repo.settings.first().alerts.customAdhans)
+        }
+    }
 }

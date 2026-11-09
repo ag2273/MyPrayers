@@ -67,8 +67,8 @@ class PrayerCore(
 
     /**
      * Every Adhan Alert due after now (exclusive, so an alarm firing now is not planned again) and within the
-     * next [AlertPlan.WINDOW]. Sunrise never alerts. Until per-Prayer alert settings exist (#23), every Prayer
-     * has a Short Adhan Adhan Alert delivered as an exact alarm.
+     * next [AlertPlan.WINDOW]. Sunrise never alerts. Each Prayer follows its [PrayerAlertSettings]; its sound is
+     * the chosen recording's Custom Adhan when one is set ([AlertSettings.customAdhans]).
      */
     fun alertPlan(): AlertPlan {
         val now = clock.instant()

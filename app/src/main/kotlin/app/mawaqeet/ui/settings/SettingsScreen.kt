@@ -1,5 +1,6 @@
 package app.mawaqeet.ui.settings
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
@@ -35,6 +36,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
+import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.DigitStyle
@@ -67,6 +69,12 @@ interface SettingsActions {
     fun setAlarmClockMode(on: Boolean)
     fun setPlayOnSilent(on: Boolean)
     fun setVibration(on: Boolean)
+
+    /**
+     * Custom Adhan (#28): [uri] is the file the user picked with the system file picker for [recording] only, or null
+     * to go back to the bundled recording.
+     */
+    fun setCustomAdhan(recording: AdhanRecording, uri: Uri?)
 }
 
 /**

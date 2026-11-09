@@ -149,6 +149,18 @@
     <string name="alerts_play_on_silent">تشغيل الأذان حتى في الوضع الصامت</string>
     <string name="alerts_play_on_silent_description">لا يشمل التذكير، ولا الأذان أثناء المكالمات</string>
     <string name="alerts_vibration">الاهتزاز</string>
+    <string name="alerts_custom_adhan">أذان من اختيارك</string>
+    <string name="alerts_custom_adhan_description">اختر ملفًا صوتيًا من هاتفك ليُشغَّل بدل التسجيل المرفق</string>
+    <string name="alerts_custom_full">الأذان كاملًا (لغير الفجر)</string>
+    <string name="alerts_custom_fajr_full">الأذان الكامل للفجر</string>
+    <string name="alerts_custom_full_not_fajr">لا يغيّر أذان الفجر، فله خيار مستقل لأن فيه «الصلاة خير من النوم»</string>
+    <string name="alerts_custom_bundled">التسجيل المرفق بالتطبيق</string>
+    <string name="alerts_custom_chosen">ملف من اختيارك</string>
+    <string name="alerts_custom_unreadable">تعذّرت قراءة الملف المختار، فسيُشغَّل التسجيل المرفق بدلًا منه. اختر الملف من جديد أو احذفه.</string>
+    <string name="alerts_custom_choose">اختيار ملف صوتي</string>
+    <string name="alerts_custom_preview">استماع</string>
+    <string name="alerts_custom_preview_stop">إيقاف الاستماع</string>
+    <string name="alerts_custom_clear">العودة إلى التسجيل المرفق</string>
 
     <!-- Widgets (#27). -->
     <string name="widget_next_prayer">الصلاة القادمة</string>

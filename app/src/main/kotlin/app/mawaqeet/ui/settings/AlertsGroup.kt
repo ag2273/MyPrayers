@@ -1,5 +1,8 @@
 package app.mawaqeet.ui.settings
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,26 +19,42 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.mawaqeet.R
+import app.mawaqeet.alerts.AdhanPreview
+import app.mawaqeet.alerts.AdhanSounds
+import app.mawaqeet.alerts.CustomAdhanFiles
+import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AlertSettings
+import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.ui.LocalDisplayFormatter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Lead times offered for a Prayer Reminder; the core rejects anything below [PrayerAlertSettings.MIN_REMINDER_MINUTES]. */
 private val REMINDER_MINUTES = listOf(10, 15, 20, 30, 45, 60)
 
-/** Settings → Alerts: one row per Prayer (opens its own dialog), then alarm-clock mode, play on silent, vibration. */
+/**
+ * Settings → Alerts: one row per Prayer (opens its own dialog), the Custom Adhan rows, then alarm-clock mode, play
+ * on silent, vibration.
+ */
 @Composable
 internal fun AlertsGroup(alerts: AlertSettings, actions: SettingsActions) {
     var editing by rememberSaveable { mutableStateOf<Prayer?>(null) }
@@ -47,6 +66,7 @@ internal fun AlertsGroup(alerts: AlertSettings, actions: SettingsActions) {
                 onClick = { editing = prayer },
             )
         }
+        CustomAdhanRows(alerts, actions)
         SwitchRow(
             title = stringResource(R.string.alerts_alarm_clock),
             description = stringResource(R.string.alerts_alarm_clock_description),
@@ -124,6 +144,141 @@ private fun PrayerAlertDialog(
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } },
     )
 }
+
+/**
+ * Custom Adhan (#28): one row per [AdhanRecording], each chosen, previewed and cleared on its own. The Full Adhan's
+ * never changes Fajr, which keeps its own adhan with «الصلاة خير من النوم» unless a Custom Adhan is chosen for Fajr.
+ */
+@Composable
+private fun CustomAdhanRows(alerts: AlertSettings, actions: SettingsActions) {
+    val context = LocalContext.current
+    var editing by rememberSaveable { mutableStateOf<AdhanRecording?>(null) }
+    // Each chosen file's name, or null once it can't be read; checked again on every resume (it may be deleted meanwhile).
+    var names by remember { mutableStateOf<Map<AdhanRecording, String?>>(emptyMap()) }
+    var resumes by remember { mutableIntStateOf(0) }
+    LifecycleResumeEffect(Unit) {
+        resumes++
+        onPauseOrDispose { }
+    }
+    LaunchedEffect(alerts.customAdhans, resumes) {
+        names = withContext(Dispatchers.IO) {
+            alerts.customAdhans.mapValues { (_, reference) -> CustomAdhanFiles.readableName(context, reference) }
+        }
+    }
+    fun state(recording: AdhanRecording): CustomAdhanState {
+        val reference = alerts.customAdhan(recording)
+        val checked = reference != null && recording in names
+        return CustomAdhanState(reference, names[recording], unreadable = checked && names[recording] == null)
+    }
+
+    Text(stringResource(R.string.alerts_custom_adhan), style = MaterialTheme.typography.titleSmall)
+    Text(
+        stringResource(R.string.alerts_custom_adhan_description),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    AdhanRecording.entries.forEach { recording ->
+        val current = state(recording)
+        SettingRow(
+            title = stringResource(recording.labelRes),
+            summary = current.summary(),
+            onClick = { editing = recording },
+        )
+        if (current.unreadable) UnreadableNotice()
+    }
+    editing?.let { recording ->
+        CustomAdhanDialog(recording, state(recording), actions, onDismiss = { editing = null })
+    }
+}
+
+/** A recording's Custom Adhan as Settings shows it: [name] is null until checked, or when [unreadable]. */
+private data class CustomAdhanState(val reference: String?, val name: String?, val unreadable: Boolean)
+
+@Composable
+private fun CustomAdhanState.summary(): String = when {
+    reference == null -> stringResource(R.string.alerts_custom_bundled)
+    name != null -> name
+    unreadable -> stringResource(R.string.alerts_custom_bundled)
+    else -> stringResource(R.string.alerts_custom_chosen)
+}
+
+@Composable
+private fun UnreadableNotice() {
+    Text(
+        stringResource(R.string.alerts_custom_unreadable),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.error,
+    )
+}
+
+@Composable
+private fun CustomAdhanDialog(recording: AdhanRecording, current: CustomAdhanState, actions: SettingsActions, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val preview = remember { AdhanPreview(context) }
+    var playing by remember { mutableStateOf(false) }
+    DisposableEffect(preview) { onDispose { preview.stop() } }
+    fun stopPreview() {
+        preview.stop()
+        playing = false
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            stopPreview()
+            actions.setCustomAdhan(recording, uri)
+        }
+    }
+    // What the Adhan Alert would play now: the chosen file, or the bundled recording when none is chosen or it's unreadable.
+    val previewUri = current.reference?.takeIf { !current.unreadable }?.let(Uri::parse)
+        ?: AdhanSounds.bundled(context, AlertSound.bundled(recording))
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(recording.labelRes)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                if (recording == AdhanRecording.FULL) Text(
+                    stringResource(R.string.alerts_custom_full_not_fajr),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(current.summary(), style = MaterialTheme.typography.bodyLarge)
+                if (current.unreadable) UnreadableNotice()
+                TextButton(onClick = { picker.launch(CustomAdhanFiles.MIME_TYPES) }) {
+                    Text(stringResource(R.string.alerts_custom_choose))
+                }
+                TextButton(
+                    onClick = {
+                        if (playing) {
+                            stopPreview()
+                        } else {
+                            playing = true
+                            preview.play(previewUri) { playing = false }
+                        }
+                    },
+                ) {
+                    Text(stringResource(if (playing) R.string.alerts_custom_preview_stop else R.string.alerts_custom_preview))
+                }
+                if (current.reference != null) TextButton(
+                    onClick = {
+                        stopPreview()
+                        actions.setCustomAdhan(recording, null)
+                    },
+                ) {
+                    Text(stringResource(R.string.alerts_custom_clear))
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } },
+    )
+}
+
+@get:StringRes
+private val AdhanRecording.labelRes: Int
+    get() = when (this) {
+        AdhanRecording.SHORT -> R.string.alerts_sound_short
+        AdhanRecording.FULL -> R.string.alerts_custom_full
+        AdhanRecording.FAJR_FULL -> R.string.alerts_custom_fajr_full
+    }
 
 /** An on/off setting: its name, an optional one-line description and a switch. */
 @Composable

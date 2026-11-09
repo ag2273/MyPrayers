@@ -61,7 +61,7 @@ A complete adhan recording, which the user can choose to play for an Adhan Alert
 _Avoid_: Long adhan, adhan audio
 
 **Custom Adhan**:
-An audio file the user picks from their own phone to play as a Short Adhan or Full Adhan instead of a bundled recording.
+An audio file the user picks from their own phone to play as the Short Adhan, the Full Adhan or Fajr's Full Adhan instead of the bundled recording. Each is chosen separately: a Custom Adhan for the Full Adhan never changes Fajr, which keeps its own adhan with «الصلاة خير من النوم» unless the user picks a Custom Adhan for Fajr's Full Adhan.
 _Avoid_: Imported sound, user ringtone
 
 **Widget Variant**:
