@@ -91,6 +91,10 @@ class AutomaticTravelTest {
         compose.waitForCity("Alexandria")
 
         assertEquals(LocationSource.AUTOMATIC, saved(compose.activity.application)?.source)
+        // The note follows the stored change, so it can show a frame later.
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithText("تم تحديث الموقع إلى الإسكندرية").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithText("تم تحديث الموقع إلى الإسكندرية").assertIsDisplayed()
     }
 }
