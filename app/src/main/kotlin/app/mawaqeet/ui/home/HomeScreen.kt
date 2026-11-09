@@ -79,6 +79,10 @@ fun HomeScreen(
     /** A short hint under the location (e.g. the time zone changed), tapping it calls [onLocationHint]. */
     locationHint: String? = null,
     onLocationHint: () -> Unit = {},
+    /** Shows the dismissible Fix alerts tip (#29) until the user taps Done. */
+    showFixAlertsTip: Boolean = false,
+    onOpenFixAlerts: () -> Unit = {},
+    onFixAlertsDone: () -> Unit = {},
 ) {
     // Re-query the core every second: the countdown ticks and the display day switches at local midnight.
     var now by remember { mutableStateOf(clock.instant()) }
@@ -96,7 +100,12 @@ fun HomeScreen(
         value = withContext(Dispatchers.IO) { core.currentPrayerDay() }
     }
     val scope = rememberCoroutineScope()
-    HomeContent(day, now, prayerDay, locationName, onOpenSettings, onOpenLog, locationHint, onLocationHint) { prayer ->
+    val tip: (@Composable () -> Unit)? = if (showFixAlertsTip) {
+        { FixAlertsTip(onOpenFixAlerts, onFixAlertsDone) }
+    } else {
+        null
+    }
+    HomeContent(day, now, prayerDay, locationName, onOpenSettings, onOpenLog, locationHint, onLocationHint, tip) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
             scope.launch(Dispatchers.IO) {
@@ -120,6 +129,7 @@ private fun HomeContent(
     onOpenLog: () -> Unit,
     locationHint: String?,
     onLocationHint: () -> Unit,
+    tip: (@Composable () -> Unit)?,
     onToggle: (Prayer) -> Unit,
 ) {
     Scaffold { padding ->
@@ -145,6 +155,7 @@ private fun HomeContent(
             if (locationHint != null) {
                 TextButton(onClick = onLocationHint) { Text(locationHint) }
             }
+            tip?.invoke()
             day.highLatitude?.let { HighLatitudeNote(it) }
             NextPrayerCard(day.next, now)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -165,6 +176,27 @@ private fun HomeContent(
                     }
                 }
             }
+        }
+    }
+}
+
+/** On alarm-killing phones: a short tip pointing to Fix alerts, until the user taps Done. */
+@Composable
+private fun FixAlertsTip(onOpen: () -> Unit, onDone: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Text(
+            stringResource(R.string.fix_alerts_tip),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
+        Row {
+            TextButton(onClick = onOpen) { Text(stringResource(R.string.fix_alerts)) }
+            TextButton(onClick = onDone) { Text(stringResource(R.string.done)) }
         }
     }
 }

@@ -155,6 +155,52 @@
     <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
     <string name="widget_next_prayer_compact_description">The next Prayer on two lines</string>
     <string name="widget_countdown_format">in %s</string>
+
+    <!-- Onboarding (#29). -->
+    <string name="onboarding_welcome">Prayer Times for where you are, an Adhan Alert right on time, and a private Prayer Log that never leaves your phone.</string>
+    <string name="onboarding_start">Start</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_allow">Allow</string>
+    <string name="onboarding_granted">✓ Permission granted</string>
+    <string name="onboarding_permission_needed">Setup can\'t finish without this permission: alerts can\'t reach you without it.</string>
+    <string name="onboarding_allow_location">Use my approximate location</string>
+    <string name="onboarding_finding_location">Finding your location…</string>
+    <string name="onboarding_search_city">Search for my city instead</string>
+    <string name="onboarding_method_title">Calculation Method</string>
+    <string name="onboarding_method_change">You can choose another now or later in Settings.</string>
+    <string name="onboarding_notifications_title">Adhan Alert notifications</string>
+    <string name="onboarding_exact_alarms_title">Alerts right on time</string>
+    <string name="onboarding_battery_title">Don\'t let your phone stop alerts</string>
+
+    <!-- Fix alerts (#29). -->
+    <string name="fix_alerts">Fix alerts</string>
+    <string name="fix_alerts_summary">If alerts come late or not at all</string>
+    <string name="fix_alerts_tip">Your phone may delay Adhan Alerts to save battery. A few steps stop that.</string>
+    <string name="fix_alerts_intro">Battery saving on %1$s phones can delay or stop Adhan Alerts. Change these settings yourself:</string>
+    <string name="fix_open_app_settings">Open app settings</string>
+    <string name="fix_open_battery_settings">Open battery optimisation settings</string>
+    <string name="brand_samsung">Samsung</string>
+    <string name="brand_xiaomi">Xiaomi, Redmi and POCO</string>
+    <string name="brand_huawei">Huawei and Honor</string>
+    <string name="brand_oppo">Oppo, Realme and OnePlus</string>
+    <string name="brand_vivo">vivo</string>
+    <string name="brand_other">some</string>
+    <string name="fix_samsung_1">In app settings: Battery → Unrestricted.</string>
+    <string name="fix_samsung_2">In Settings → Battery and device care → Battery → Background usage limits: remove Mawaqeet from Sleeping and Deep sleeping apps.</string>
+    <string name="fix_samsung_3">Add Mawaqeet to Never sleeping apps.</string>
+    <string name="fix_xiaomi_1">In app settings: turn on Autostart.</string>
+    <string name="fix_xiaomi_2">In app settings: Battery saver → No restrictions.</string>
+    <string name="fix_xiaomi_3">In recent apps, long-press Mawaqeet and lock it.</string>
+    <string name="fix_huawei_1">In Settings → Battery → App launch: set Mawaqeet to Manage manually and turn on all three options.</string>
+    <string name="fix_huawei_2">In app settings: Battery → allow background activity.</string>
+    <string name="fix_oppo_1">In app settings: Battery usage → allow background activity.</string>
+    <string name="fix_oppo_2">In app settings: turn on Auto launch.</string>
+    <string name="fix_oppo_3">In battery optimisation settings: set Mawaqeet to Don\'t optimise.</string>
+    <string name="fix_vivo_1">In Settings → Battery → Background power consumption: allow Mawaqeet.</string>
+    <string name="fix_vivo_2">In app settings: turn on Autostart.</string>
+    <string name="fix_general_1">In app settings: Battery → Unrestricted or Not optimised.</string>
+    <string name="fix_general_2">In battery optimisation settings: set Mawaqeet to Don\'t optimise.</string>
     <!-- Adhan Alert notification action (#26). -->
     <string name="mark_as_prayed">Mark as prayed</string>
 

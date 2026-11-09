@@ -45,7 +45,11 @@ import app.mawaqeet.data.LocationCheckResult
 import app.mawaqeet.location.DeviceLocation
 import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.fixalerts.FixAlerts
+import app.mawaqeet.ui.fixalerts.FixAlertsScreen
 import app.mawaqeet.ui.location.LocationScreen
+import app.mawaqeet.ui.onboarding.OnboardingActions
+import app.mawaqeet.ui.onboarding.OnboardingScreen
 import app.mawaqeet.ui.log.PrayerLogScreen
 import app.mawaqeet.ui.location.locationName
 import app.mawaqeet.ui.permissions.GrantScreen
@@ -85,13 +89,17 @@ class MainActivity : AppCompatActivity() {
                 val storedDigits by settingsStore.digitStyle.collectAsState(initial = null)
                 // Wrapped in a list so "not read yet" (null) differs from "no location set" (empty): no default-name flash.
                 val storedLocation by remember { settingsStore.savedLocation.map { listOfNotNull(it) } }.collectAsState(initial = null)
+                val onboarded by settingsStore.onboardingDone.collectAsState(initial = null)
+                val fixAlertsDone by settingsStore.fixAlertsDone.collectAsState(initial = true)
                 val current = settings ?: return@MawaqeetTheme
+                val onboardingDone = onboarded ?: return@MawaqeetTheme
                 val digits = storedDigits ?: return@MawaqeetTheme
                 val savedLocation = (storedLocation ?: return@MawaqeetTheme).firstOrNull()
                 // A new core whenever the settings change: Home re-queries it, so times and next Prayer follow.
                 val core = remember(current) { PrayerCore(current, clock, prayerLog) }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var showLocation by rememberSaveable { mutableStateOf(false) }
+                var showFixAlerts by rememberSaveable { mutableStateOf(false) }
                 var showLog by rememberSaveable { mutableStateOf(false) }
                 val scope = rememberCoroutineScope()
                 // Re-checked on every resume, so a permission revoked in system settings brings the Grant screen back.
@@ -144,20 +152,75 @@ class MainActivity : AppCompatActivity() {
                 LaunchedEffect(permissions.allGranted) {
                     if (permissions.allGranted) launch(Dispatchers.IO) { AlertRescheduler.reschedule(app) }
                 }
+                val grantNotifications = {
+                    // The system dialog once; after a refusal it may not show again, so the settings page.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !askedNotifications) {
+                        askedNotifications = true
+                        requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        startActivity(AlertPermissions.notificationSettingsIntent(this@MainActivity))
+                    }
+                }
+                if (!onboardingDone) {
+                    // A fresh install opens in Arabic (ADR 0002), whatever the system language; the first screen switches.
+                    LaunchedEffect(Unit) {
+                        if (AppCompatDelegate.getApplicationLocales().isEmpty) {
+                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ar"))
+                        }
+                    }
+                }
                 ProvideDisplayFormatter(digits) {
-                if (!permissions.allGranted) {
-                    GrantScreen(
-                        permissions,
-                        onGrantNotifications = {
-                            // The system dialog once; after a refusal it may not show again, so the settings page.
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !askedNotifications) {
-                                askedNotifications = true
-                                requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
-                                startActivity(AlertPermissions.notificationSettingsIntent(this@MainActivity))
+                if (!onboardingDone) {
+                    OnboardingScreen(
+                        settings = current,
+                        savedLocation = savedLocation,
+                        loadCities = { app.cities },
+                        permissions = permissions,
+                        brand = FixAlerts.deviceBrand,
+                        actions = object : OnboardingActions {
+                            override fun setLanguage(languageTag: String) =
+                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageTag))
+
+                            override fun chooseLocation(saved: SavedLocation) {
+                                scope.launch { app.locationUpdater.change(saved) }
+                            }
+
+                            override fun setCalculationMethod(method: CalculationMethod) {
+                                scope.launch { settingsStore.setCalculationMethod(method) }
+                            }
+
+                            override fun setAsrConvention(convention: AsrConvention) {
+                                scope.launch { settingsStore.setAsrConvention(convention) }
+                            }
+
+                            override fun grantNotifications() = grantNotifications()
+
+                            override fun grantExactAlarms() =
+                                startActivity(AlertPermissions.exactAlarmSettingsIntent(this@MainActivity))
+
+                            override suspend fun readDevicePosition() = DeviceLocation.current(this@MainActivity)
+
+                            override fun finish(batteryDone: Boolean) {
+                                scope.launch {
+                                    if (batteryDone) settingsStore.setFixAlertsDone(true)
+                                    settingsStore.setOnboardingDone(true)
+                                }
                             }
                         },
+                    )
+                } else if (!permissions.allGranted) {
+                    GrantScreen(
+                        permissions,
+                        onGrantNotifications = grantNotifications,
                         onGrantExactAlarms = { startActivity(AlertPermissions.exactAlarmSettingsIntent(this@MainActivity)) },
+                    )
+                } else if (showFixAlerts) {
+                    FixAlertsScreen(
+                        onDone = {
+                            showFixAlerts = false
+                            scope.launch { settingsStore.setFixAlertsDone(true) }
+                        },
+                        onBack = { showFixAlerts = false },
                     )
                 } else if (showSettings && showLocation) {
                     // The city list is read once per process, off the main thread, only when this screen opens.
@@ -209,6 +272,10 @@ class MainActivity : AppCompatActivity() {
 
                             override fun openLocation() {
                                 showLocation = true
+                            }
+
+                            override fun openFixAlerts() {
+                                showFixAlerts = true
                             }
 
                             override fun updatePrayerAlert(prayer: app.mawaqeet.core.Prayer, change: (app.mawaqeet.core.PrayerAlertSettings) -> app.mawaqeet.core.PrayerAlertSettings) {
@@ -268,6 +335,9 @@ class MainActivity : AppCompatActivity() {
                             else -> null
                         },
                         onLocationHint = { showSettings = true; showLocation = true },
+                        showFixAlertsTip = !fixAlertsDone && FixAlerts.deviceBrand != null,
+                        onOpenFixAlerts = { showFixAlerts = true },
+                        onFixAlertsDone = { scope.launch { settingsStore.setFixAlertsDone(true) } },
                     )
                 }
                 }

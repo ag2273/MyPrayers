@@ -84,6 +84,8 @@ interface SettingsActions {
      */
     fun setCustomAdhan(recording: AdhanRecording, uri: Uri?)
 
+    /** Opens the Fix alerts screen (#29): battery instructions for this phone's brand. */
+    fun openFixAlerts()
     /** Settings → Prayer Log (#25): permanently deletes every Prayer Log entry. Called only after confirmation. */
     fun deletePrayerLog()
 }
@@ -475,7 +477,7 @@ internal val CalculationMethod.label: Int
     }
 
 @get:StringRes
-private val CalculationMethod.description: Int
+internal val CalculationMethod.description: Int
     get() = when (this) {
         CalculationMethod.UMM_AL_QURA -> R.string.method_umm_al_qura_description
         CalculationMethod.EGYPTIAN -> R.string.method_egyptian_description
@@ -514,7 +516,7 @@ internal val AsrConvention.label: Int
     }
 
 @get:StringRes
-private val AsrConvention.description: Int
+internal val AsrConvention.description: Int
     get() = when (this) {
         AsrConvention.STANDARD -> R.string.asr_standard_description
         AsrConvention.HANAFI -> R.string.asr_hanafi_description
