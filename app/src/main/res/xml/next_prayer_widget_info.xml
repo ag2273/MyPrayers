@@ -3,6 +3,7 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_next_prayer_description"
     android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewLayout="@layout/widget_preview_next_prayer"
     android:minWidth="110dp"
     android:minHeight="110dp"
     android:minResizeWidth="110dp"

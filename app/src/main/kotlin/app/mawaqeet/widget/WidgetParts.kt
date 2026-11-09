@@ -4,6 +4,7 @@ import android.text.TextPaint
 import android.text.StaticLayout
 import android.graphics.Typeface
 import android.content.Context
+import android.content.res.Resources
 import android.os.Build
 import android.text.TextUtils
 import android.util.TypedValue
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
@@ -34,6 +36,8 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
+import androidx.glance.layout.RowScope
+import androidx.glance.layout.absolutePadding
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
@@ -42,15 +46,68 @@ import androidx.glance.unit.ColorProvider
 import app.mawaqeet.MainActivity
 import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.R
+import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.DisplayFormatter
 import app.mawaqeet.core.PrayerCore
+import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.ui.appLocale
 import app.mawaqeet.ui.localizedContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.time.Clock
 
 /** What a widget needs to put the display day into words: the formatter, strings and direction of the app language. */
 internal class WidgetText(val formatter: DisplayFormatter, val strings: Context, val rtl: Boolean)
+
+/**
+ * The app language's reading direction, laid out in the launcher's. Glance's views (and the launcher) follow the
+ * phone's language, not the app's: with the phone in English and the app in Arabic, `Alignment.Start` and a Row's
+ * first child land on the left. So widgets place things through this: [start] is the app language's start, and
+ * [inReadingOrder] puts a Row's children so the first one reads first.
+ */
+internal class WidgetDirection(val rtl: Boolean, hostRtl: Boolean = phoneRtl()) {
+    private val flipped = rtl != hostRtl
+
+    val start: Alignment.Horizontal get() = if (flipped) Alignment.End else Alignment.Start
+
+    fun <T> inReadingOrder(items: List<T>): List<T> = if (flipped) items.asReversed() else items
+
+    /** Padding on the app language's start side, whatever the launcher's direction. */
+    fun paddingStart(padding: Dp): GlanceModifier =
+        if (rtl) GlanceModifier.absolutePadding(right = padding) else GlanceModifier.absolutePadding(left = padding)
+
+    /** For a platform view inside a widget: lays it out in the app language's direction whatever the launcher's. */
+    fun applyTo(views: RemoteViews, viewId: Int) =
+        views.setInt(viewId, "setLayoutDirection", if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR)
+
+    companion object {
+        /** The direction the launcher lays widgets out in: the phone's language. */
+        fun phoneRtl(): Boolean = Resources.getSystem().configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+    }
+}
+
+/** The app language's direction, for every widget part; set by [provideFromCore]. */
+internal val LocalWidgetDirection = staticCompositionLocalOf { WidgetDirection(rtl = false) }
+
+/** One child of a [ReadingRow]. */
+internal typealias RowCell = @Composable RowScope.() -> Unit
+
+/** Spells out a [RowCell] where Kotlin can't infer a lambda's type. */
+internal fun cell(content: RowCell): RowCell = content
+
+/** A Row whose [children] read in the app language's order: the first is on the right in Arabic. */
+@Composable
+internal fun ReadingRow(
+    modifier: GlanceModifier = GlanceModifier,
+    verticalAlignment: Alignment.Vertical = Alignment.Top,
+    children: List<RowCell>,
+) {
+    val direction = LocalWidgetDirection.current
+    Row(modifier = modifier, verticalAlignment = verticalAlignment) {
+        direction.inReadingOrder(children).forEach { it() }
+    }
+}
 
 /** The appearance every widget part draws with (Settings → Widgets, #32). */
 internal val LocalWidgetStyle = staticCompositionLocalOf { WidgetStyle.of(WidgetAppearance()) }
@@ -59,6 +116,9 @@ internal val LocalWidgetStyle = staticCompositionLocalOf { WidgetStyle.of(Widget
  * The shared body of a widget's `provideGlance`: reads settings, digits, the app language (the stored copy too, for a
  * fresh process on Android 8–12) and the widget appearance, builds the view from a fresh [PrayerCore] with [build],
  * and rebuilds it on every change of those and on [Widgets.refreshAll] (alarms and Prayer Log changes).
+ *
+ * [build] runs on [Dispatchers.IO], never in composition: on a phone Glance composes on the main thread, where the
+ * Prayer Log (Room) refuses to be read, and the widget then shows only "Can't show content".
  */
 internal suspend fun <T> GlanceAppWidget.provideFromCore(
     context: Context,
@@ -71,27 +131,38 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
     val initialDigits = store.digitStyle.first()
     val initialLanguage = store.appLanguage.first()
     val initialAppearance = store.widgetAppearance.first()
+    suspend fun view(settings: PrayerSettings, digits: DigitStyle, language: String): Pair<T, Boolean> =
+        withContext(Dispatchers.IO) {
+            val locale = appLocale(context, language)
+            val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
+            val core = PrayerCore(settings, Clock.systemUTC(), app.prayerLog)
+            build(core, WidgetText(DisplayFormatter(locale, digits), localizedContext(context, locale), rtl)) to rtl
+        }
+    val initialView = view(initialSettings, initialDigits, initialLanguage)
     provideContent {
         val settings by store.settings.collectAsState(initialSettings)
         val digits by store.digitStyle.collectAsState(initialDigits)
         val language by store.appLanguage.collectAsState(initialLanguage)
         val appearance by store.widgetAppearance.collectAsState(initialAppearance)
         val refreshedAt = currentState(Widgets.REFRESHED_AT)
-        val (view, rtl) = remember(settings, digits, language, refreshedAt) {
-            val locale = appLocale(context, language)
-            val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
-            val core = PrayerCore(settings, Clock.systemUTC(), app.prayerLog)
-            build(core, WidgetText(DisplayFormatter(locale, digits), localizedContext(context, locale), rtl)) to rtl
+        val current by produceState(initialView, settings, digits, language, refreshedAt) {
+            // The first composition already has its view; rebuild only after something changed.
+            if (settings != initialSettings || digits != initialDigits || language != initialLanguage || refreshedAt != null) {
+                value = view(settings, digits, language)
+            }
         }
-        CompositionLocalProvider(LocalWidgetStyle provides remember(appearance) { WidgetStyle.of(appearance) }) {
-            layout(view, rtl)
+        CompositionLocalProvider(
+            LocalWidgetStyle provides remember(appearance) { WidgetStyle.of(appearance) },
+            LocalWidgetDirection provides remember(current.second) { WidgetDirection(current.second) },
+        ) {
+            layout(current.first, current.second)
         }
     }
 }
 
 /**
- * A widget's frame: the root in the app language's direction (the launcher lays widgets out in its own), the
- * background in the style's colour and opacity, and a tap that opens the app on today's Prayer Times, or on the
+ * A widget's frame: content aligned to the app language's start ([WidgetDirection]), the background in the style's
+ * colour and opacity, and a tap that opens the app on today's Prayer Times, or on the
  * Prayer Log when [opens] says so. It is the widget's only tap target: no widget changes the Prayer Log.
  */
 @Composable
@@ -115,7 +186,7 @@ internal fun WidgetFrame(
                 .padding(horizontal = horizontal, vertical = vertical)
                 .clickable(actionStartActivity(MainActivity.openIntent(context, opens))),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalAlignment = Alignment.Start,
+            horizontalAlignment = LocalWidgetDirection.current.start,
         ) {
             content()
         }
@@ -180,6 +251,7 @@ internal fun WidgetLine(
         setTextViewText(R.id.widget_text, text)
         setTextViewTextSize(R.id.widget_text, TypedValue.COMPLEX_UNIT_SP, sp)
         setColor(context, R.id.widget_text, "setTextColor", "setTextColor", style.colorOf(tone))
+        LocalWidgetDirection.current.applyTo(this, R.id.widget_text)
     }
     // setGravity isn't remotable before Android 12, so a centred line wraps its text inside a centring box.
     // An AndroidRemoteViews fills its parent unless told otherwise; a line wraps its text unless [modifier] says more.
@@ -207,10 +279,15 @@ private fun RemoteViews.setColor(context: Context, id: Int, listMethod: String, 
  */
 @Composable
 internal fun DateLine(date: WidgetDate, sp: Float = 12f, boldGregorian: Boolean = false) {
-    Row(GlanceModifier.fillMaxWidth().wrapContentHeight(), verticalAlignment = Alignment.CenterVertically) {
-        WidgetLine(date.gregorian, sp, Tone.TEXT, bold = boldGregorian)
-        WidgetLine(date.hijri, sp, Tone.MUTED, modifier = GlanceModifier.defaultWeight().padding(start = 8.dp))
-    }
+    val direction = LocalWidgetDirection.current
+    ReadingRow(
+        GlanceModifier.fillMaxWidth().wrapContentHeight(),
+        Alignment.CenterVertically,
+        listOf(
+            { WidgetLine(date.gregorian, sp, Tone.TEXT, bold = boldGregorian) },
+            { WidgetLine(date.hijri, sp, Tone.MUTED, modifier = GlanceModifier.defaultWeight().then(direction.paddingStart(8.dp))) },
+        ),
+    )
 }
 
 /**

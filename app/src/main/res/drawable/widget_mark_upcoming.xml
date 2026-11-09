@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Prayer Log widget mark: not yet due (dashed ring). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <!-- A transparent fill, never none: with no fill, a tinted shape fills its inside with the tint colour. -->
+    <solid android:color="@android:color/transparent" />
     <size android:width="22dp" android:height="22dp" />
     <stroke
         android:width="2dp"

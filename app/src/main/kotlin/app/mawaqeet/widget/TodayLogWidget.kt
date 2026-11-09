@@ -72,20 +72,24 @@ private fun ColumnScope.LogRow(row: TodayLogView.Row, step: Float) {
     val style = LocalWidgetStyle.current
     val base = GlanceModifier.fillMaxWidth().defaultWeight().padding(horizontal = 8.dp)
     val tone = if (row.state == LogState.NOT_YET_DUE && !row.isNext) Tone.MUTED else Tone.TEXT
-    Row(
+    val direction = LocalWidgetDirection.current
+    ReadingRow(
         modifier = if (row.isNext) {
             base.background(ImageProvider(R.drawable.widget_row_next), colorFilter = tint(style.accentSoft))
         } else {
             base
         },
         verticalAlignment = Alignment.CenterVertically,
-    ) {
-        WidgetLine(row.name, 14f * step, tone, bold = row.isNext, modifier = GlanceModifier.defaultWeight())
-        WidgetLine(row.time, 13f * step, tone)
-        Box(GlanceModifier.padding(start = 10.dp), contentAlignment = Alignment.Center) {
-            Mark(row.state, row.stateLabel, (20 * step).dp)
-        }
-    }
+        children = listOf(
+            { WidgetLine(row.name, 14f * step, tone, bold = row.isNext, modifier = GlanceModifier.defaultWeight()) },
+            { WidgetLine(row.time, 13f * step, tone) },
+            {
+                Box(direction.paddingStart(10.dp), contentAlignment = Alignment.Center) {
+                    Mark(row.state, row.stateLabel, (20 * step).dp)
+                }
+            },
+        ),
+    )
 }
 
 /** The Prayer Log mark: a filled circle with a check (prayed), a solid ring (due), or a dashed ring (not yet due). */

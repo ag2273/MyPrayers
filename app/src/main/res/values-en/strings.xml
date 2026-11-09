@@ -168,6 +168,7 @@
     <!-- Widgets (#27). -->
     <string name="widget_next_prayer">Next Prayer</string>
     <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
+    <string name="widget_next_prayer_compact">Next Prayer (compact)</string>
     <string name="widget_next_prayer_compact_description">The next Prayer on two lines</string>
     <string name="widget_countdown_format">in %s</string>
     <string name="widget_today_times">Today\'s Prayer Times</string>
@@ -280,4 +281,24 @@
     <string name="high_latitude_twilight_description">A part of the night set by the method\'s angle divided by %1$s</string>
     <string name="high_latitude_note">Today\'s Fajr and Isha use the high-latitude rule “%1$s”.</string>
     <string name="high_latitude_polar_note">The sun doesn\'t rise or set here today, so times come from the nearest latitude where they can be calculated, with the rule “%1$s”.</string>
+    <!-- Sample content for the widget picker's previews (widget_preview_*.xml). -->
+    <string name="widget_preview_date">Monday 9 November</string>
+    <string name="widget_preview_hijri">28 Jumada al-Ula 1448 AH</string>
+    <string name="widget_preview_countdown">in 1:12:34</string>
+    <string name="widget_preview_next_line">Next: Asr 14:44</string>
+    <string name="widget_preview_total">26/32</string>
+    <string name="widget_preview_fajr_time">04:45</string>
+    <string name="widget_preview_sunrise_time">06:14</string>
+    <string name="widget_preview_dhuhr_time">11:39</string>
+    <string name="widget_preview_asr_time">14:44</string>
+    <string name="widget_preview_maghrib_time">17:05</string>
+    <string name="widget_preview_isha_time">18:24</string>
+    <string name="widget_preview_sunrise_line">Sunrise 06:14</string>
+    <string name="widget_preview_day1">T</string>
+    <string name="widget_preview_day2">W</string>
+    <string name="widget_preview_day3">T</string>
+    <string name="widget_preview_day4">F</string>
+    <string name="widget_preview_day5">S</string>
+    <string name="widget_preview_day6">S</string>
+    <string name="widget_preview_day7">M</string>
 </resources>

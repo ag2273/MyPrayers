@@ -18,6 +18,8 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.padding
+import androidx.glance.layout.wrapContentHeight
+import androidx.glance.layout.wrapContentWidth
 import androidx.glance.layout.Row
 import app.mawaqeet.R
 import java.time.Clock
@@ -84,10 +86,14 @@ private fun NextPrayerLayout(view: NextPrayerView, rtl: Boolean, compact: Boolea
             // Two lines in as little as 40dp: both shrink together until they fit, measured as the launcher draws them.
             val fontScale = LocalContext.current.resources.configuration.fontScale
             val scale = NextPrayerMetrics.compactScale(view.name, view.countdownFormat.format(view.time), height, fontScale)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                WidgetLine(view.name, NextPrayerMetrics.COMPACT_NAME_SP * scale, Tone.ACCENT, bold = true, modifier = GlanceModifier.defaultWeight())
-                WidgetLine(view.time, NextPrayerMetrics.COMPACT_TIME_SP * scale, Tone.MUTED, modifier = GlanceModifier.padding(start = 8.dp))
-            }
+            val direction = LocalWidgetDirection.current
+            ReadingRow(
+                verticalAlignment = Alignment.CenterVertically,
+                children = listOf(
+                    { WidgetLine(view.name, NextPrayerMetrics.COMPACT_NAME_SP * scale, Tone.ACCENT, bold = true, modifier = GlanceModifier.defaultWeight()) },
+                    { WidgetLine(view.time, NextPrayerMetrics.COMPACT_TIME_SP * scale, Tone.MUTED, modifier = direction.paddingStart(8.dp)) },
+                ),
+            )
             Countdown(view, NextPrayerMetrics.COMPACT_COUNTDOWN_SP * scale)
         } else {
             WidgetLine(view.label, 12f * step, Tone.MUTED)
@@ -137,8 +143,10 @@ private fun Countdown(view: NextPrayerView, sp: Float, modifier: GlanceModifier 
         } else {
             setTextColor(R.id.countdown, context.getColor(style.text))
         }
+        LocalWidgetDirection.current.applyTo(this, R.id.countdown)
     }
-    AndroidRemoteViews(chronometer, modifier)
+    // Wrapped, so the frame's Column puts it at the app language's start (an AndroidRemoteViews otherwise fills it).
+    AndroidRemoteViews(chronometer, GlanceModifier.wrapContentWidth().wrapContentHeight().then(modifier))
 }
 
 /** The 2×2 entry in the widget picker. */
