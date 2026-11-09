@@ -27,6 +27,14 @@ How the code is laid out and tested. Vocabulary follows `GLOSSARY.md`; decisions
 - Android: `app.mawaqeet.data.RoomPrayerLogRepository` over `PrayerLogDatabase` (Room, file `prayer_log.db`, schemas exported to `app/schemas/` and committed). Prayer Days are stored as ISO dates (`2026-11-08`), Prayers as enum names; only prayed entries have rows. A schema change needs a Room migration.
 - There is one repository per process, `MawaqeetApplication.prayerLog`. Its `changes: StateFlow<Int>` moves after every write: screens re-query the core when it changes, and widgets must refresh on it too.
 
+## Settings
+
+- **Storage:** `app.mawaqeet.data.SettingsRepository` over one Preferences DataStore (file `datastore/settings.preferences_pb`, created once per process in `MawaqeetApplication`; DataStore allows only one instance per file). `settings: Flow<PrayerSettings>` emits the core's settings; add a key and a setter per new setting. Enums are stored by `name`, so enum entries may be reordered or added but never renamed; a missing or unknown name reads as `PrayerSettings.Default`'s value. App-only preferences (not core input) may live in the same store, exposed as their own flow.
+- **Core input:** `MainActivity` collects `settings` and builds a new `PrayerCore` for each value (`remember(settings)`), so every screen follows a change immediately. Nothing is shown until the first value is read, so default times never flash.
+- **Settings screen:** `ui/settings/SettingsScreen.kt` lists the six groups in the spec's order (Prayer Times, Alerts, Prayer Log, Language & display, Widgets, About), each a `SettingsGroup(titleRes) { ... }`. A ticket that adds settings replaces its group's `ComingSoon()` with its own private `XxxGroup` composable, adds callbacks to `SettingsActions` (implemented in `MainActivity` with the repository), and reuses `SettingRow` (opens a chooser) and `ChoiceRow` (radio option with a one-line description).
+- **Calculation Methods:** `CalculationMethod` order is the order Settings lists them; their Arabic and English names and one-line descriptions are `method_<name>` / `method_<name>_description` strings.
+- **Spot-checks:** `core/src/test/.../CalculationSpotCheckTest.kt` compares the core with official published timetables within ±1 minute. Each table cites its source; add new ones only from a real published source.
+
 ## Tests
 
 - Nearly all tests are plain JVM tests in `core/src/test`, through the core's public interface only, with a fixed `Clock` (`Clock.fixed(...)`). No tests of internal classes or adhan-kotlin.
