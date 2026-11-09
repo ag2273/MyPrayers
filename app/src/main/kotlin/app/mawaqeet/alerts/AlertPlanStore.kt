@@ -46,7 +46,7 @@ internal class AlertPlanStore(context: Context) {
         for (a in plan.alerts) {
             appendLine(
                 listOf(
-                    a.instant.toEpochMilli(), a.prayer.name, a.kind.name, a.sound.encode(),
+                    a.instant.toEpochMilli(), a.prayer.name, a.kind.name, encodeAlertSound(a.sound),
                     a.deliveryMode.name, a.prayerDay, a.isJumuah,
                 ).joinToString("\t"),
             )
@@ -64,7 +64,7 @@ internal class AlertPlanStore(context: Context) {
                 instant = Instant.ofEpochMilli(f[0].toLong()),
                 prayer = Prayer.valueOf(f[1]),
                 kind = AlertKind.valueOf(f[2]),
-                sound = decodeSound(f[3]),
+                sound = decodeAlertSound(f[3]),
                 deliveryMode = DeliveryMode.valueOf(f[4]),
                 prayerDay = LocalDate.parse(f[5]),
                 isJumuah = f[6].toBooleanStrict(),
@@ -73,26 +73,28 @@ internal class AlertPlanStore(context: Context) {
         return AlertPlan(alerts, midnight)
     }
 
-    private fun AlertSound.encode(): String = when (this) {
-        AlertSound.ShortAdhan -> "SHORT_ADHAN"
-        AlertSound.FullAdhan -> "FULL_ADHAN"
-        AlertSound.FajrFullAdhan -> "FAJR_FULL_ADHAN"
-        AlertSound.Silent -> "SILENT"
-        is AlertSound.CustomAdhan -> CUSTOM_PREFIX + reference
-    }
-
-    private fun decodeSound(s: String): AlertSound = when {
-        s == "SHORT_ADHAN" -> AlertSound.ShortAdhan
-        s == "FULL_ADHAN" -> AlertSound.FullAdhan
-        s == "FAJR_FULL_ADHAN" -> AlertSound.FajrFullAdhan
-        s == "SILENT" -> AlertSound.Silent
-        s.startsWith(CUSTOM_PREFIX) -> AlertSound.CustomAdhan(s.removePrefix(CUSTOM_PREFIX))
-        else -> throw IllegalArgumentException(s)
-    }
-
     companion object {
         const val FILE_NAME = "alert_plan.txt"
         private const val VERSION = "alert-plan-v1"
-        private const val CUSTOM_PREFIX = "CUSTOM:"
     }
+}
+
+private const val CUSTOM_PREFIX = "CUSTOM:"
+
+/** Text form of an [AlertSound], shared by the stored plan and the alarm intents' extras. */
+internal fun encodeAlertSound(sound: AlertSound): String = when (sound) {
+    AlertSound.ShortAdhan -> "SHORT_ADHAN"
+    AlertSound.FullAdhan -> "FULL_ADHAN"
+    AlertSound.FajrFullAdhan -> "FAJR_FULL_ADHAN"
+    AlertSound.Silent -> "SILENT"
+    is AlertSound.CustomAdhan -> CUSTOM_PREFIX + sound.reference
+}
+
+internal fun decodeAlertSound(s: String): AlertSound = when {
+    s == "SHORT_ADHAN" -> AlertSound.ShortAdhan
+    s == "FULL_ADHAN" -> AlertSound.FullAdhan
+    s == "FAJR_FULL_ADHAN" -> AlertSound.FajrFullAdhan
+    s == "SILENT" -> AlertSound.Silent
+    s.startsWith(CUSTOM_PREFIX) -> AlertSound.CustomAdhan(s.removePrefix(CUSTOM_PREFIX))
+    else -> throw IllegalArgumentException(s)
 }

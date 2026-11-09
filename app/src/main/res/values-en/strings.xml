@@ -63,6 +63,10 @@
     <string name="adhan_alert_title">It\'s time for %1$s</string>
     <string name="adhan_channel_name">Adhan Alerts</string>
     <string name="adhan_channel_description">An alert when each Prayer Time arrives</string>
+    <!-- Adhan playback (#22). -->
+    <string name="adhan_stop">Stop</string>
+    <string name="adhan_sound_channel_name">Adhan as notification sound</string>
+    <string name="adhan_sound_channel_description">An alert when each Prayer Time arrives, with the adhan as its sound</string>
 
     <string name="grant_title">Alerts need your permission</string>
     <string name="grant_intro">Without these permissions Mawaqeet can\'t alert you when a Prayer Time arrives.</string>

@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Adhan playback (#22): the player is a mediaPlayback foreground service; the app vibrates itself.
+         The channel-sound fallback build (src/channelSoundFallback) removes the service and its permissions. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- Automatic location (#24): approximate only, read only while the app is open. Never FINE or BACKGROUND. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -30,6 +36,13 @@
             android:name=".alerts.AlertReceiver"
             android:directBootAware="true"
             android:exported="false" />
+
+        <!-- The adhan player (#22). Direct-boot aware like AlertReceiver, which starts it. -->
+        <service
+            android:name=".alerts.AdhanPlayerService"
+            android:directBootAware="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <!-- System events after which alarms must be rescheduled (all allowed as manifest receivers). -->
         <receiver

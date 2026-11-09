@@ -74,7 +74,9 @@ class AlertScheduler(context: Context) {
             .setAction(AlertReceiver.ACTION_ALERT)
             .putExtra(AlertReceiver.EXTRA_PRAYER, alert.prayer.name)
             .putExtra(AlertReceiver.EXTRA_JUMUAH, alert.isJumuah)
-            .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, alert.requestCode),
+            .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, alert.requestCode)
+            .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(alert.sound))
+            .putExtra(AlertReceiver.EXTRA_AT, alert.instant.toEpochMilli()),
         flag or PendingIntent.FLAG_IMMUTABLE,
     )
 
