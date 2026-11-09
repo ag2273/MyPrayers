@@ -1,0 +1,67 @@
+package app.mawaqeet.core
+
+import java.time.LocalDate
+import java.time.ZonedDateTime
+
+/**
+ * Where Prayer Log entries live. The Android app implements it with a local database; tests use an in-memory one.
+ *
+ * Entries are keyed by (Prayer Day, Prayer), where a Prayer Day is identified by the local calendar date of its
+ * Fajr at the place the user was that day. Never by a clock time, so recalculation never removes marks.
+ * Implementations store what they are told; every rule (markability, edit window) lives in [PrayerCore].
+ */
+interface PrayerLogRepository {
+    /** The Prayers marked as prayed on [prayerDay]. */
+    fun prayedOn(prayerDay: LocalDate): Set<Prayer>
+
+    fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean)
+
+    /** The Prayer Day the app was first used on, or null before it is recorded. */
+    fun firstUseDate(): LocalDate?
+
+    /** Records [prayerDay] as the first-use date unless one is already recorded. */
+    fun recordFirstUseIfAbsent(prayerDay: LocalDate)
+}
+
+/** A Prayer's Prayer Log state on one Prayer Day. */
+enum class LogState {
+    PRAYED,
+
+    /** Its Prayer Time has arrived but it is not marked. */
+    NOT_MARKED,
+
+    /** Its Prayer Time has not arrived yet, so it cannot be marked. */
+    NOT_YET_DUE,
+}
+
+/** The outcome of a mark or unmark command. */
+enum class LogCommandResult {
+    DONE,
+
+    /** Rejected: the Prayer's time has not arrived yet. */
+    NOT_YET_DUE,
+
+    /** Rejected: the Prayer Day is outside the edit window (today plus the 6 previous Prayer Days). */
+    OUTSIDE_EDIT_WINDOW,
+}
+
+/**
+ * The span from one Fajr to the next, with its Prayer Times and each Prayer's Prayer Log state as of now.
+ *
+ * [date] is its identity: the local calendar date of its Fajr at the location. It does not depend on the
+ * Calculation Method or any other setting.
+ */
+data class PrayerDay(
+    val date: LocalDate,
+    /** The five Prayer Times, in day order. */
+    val prayerTimes: List<PrayerTime>,
+    val sunrise: ZonedDateTime,
+    val states: Map<Prayer, LogState>,
+    /** Whether [date] is within the edit window (today plus the 6 previous Prayer Days). */
+    val isEditable: Boolean,
+) {
+    fun stateOf(prayer: Prayer): LogState = states.getValue(prayer)
+
+    /** Whether tapping [prayer] would mark or unmark it: its time has arrived and the day is editable. */
+    fun isMarkable(prayer: Prayer): Boolean = isEditable && stateOf(prayer) != LogState.NOT_YET_DUE
+}

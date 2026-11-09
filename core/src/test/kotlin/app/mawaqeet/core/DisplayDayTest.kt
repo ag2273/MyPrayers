@@ -16,7 +16,7 @@ private fun makkahClockAt(dateTime: String): Clock =
     Clock.fixed(LocalDateTime.parse(dateTime).atZone(RIYADH).toInstant(), ZoneOffset.UTC)
 
 private fun displayDayAt(dateTime: String): DisplayDay =
-    PrayerCore(PrayerSettings.Default, makkahClockAt(dateTime)).displayDay()
+    PrayerCore(PrayerSettings.Default, makkahClockAt(dateTime), InMemoryPrayerLog()).displayDay()
 
 class DisplayDayTest {
 
@@ -72,7 +72,7 @@ class DisplayDayTest {
         // 21:30 UTC on 8 November is 00:30 on 9 November in Makkah.
         val utcClock = Clock.fixed(java.time.Instant.parse("2026-11-08T21:30:00Z"), ZoneOffset.UTC)
 
-        val day = PrayerCore(PrayerSettings.Default, utcClock).displayDay()
+        val day = PrayerCore(PrayerSettings.Default, utcClock, InMemoryPrayerLog()).displayDay()
 
         assertEquals(LocalDate.of(2026, 11, 9), day.date)
     }
@@ -81,7 +81,7 @@ class DisplayDayTest {
     fun `at the exact Prayer Time that Prayer has arrived and the next one is after it`() {
         val asr = displayDayAt("2026-11-08T10:00").timeOf(Prayer.ASR)
 
-        val day = PrayerCore(PrayerSettings.Default, Clock.fixed(asr.toInstant(), ZoneOffset.UTC)).displayDay()
+        val day = PrayerCore(PrayerSettings.Default, Clock.fixed(asr.toInstant(), ZoneOffset.UTC), InMemoryPrayerLog()).displayDay()
 
         assertEquals(Prayer.MAGHRIB, day.next.prayer)
     }
