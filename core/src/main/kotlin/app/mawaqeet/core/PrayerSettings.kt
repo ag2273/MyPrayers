@@ -9,6 +9,25 @@ data class Location(
     val zone: ZoneId,
 )
 
+/** How the stored location was set. Stored by name. A [MANUAL] location never changes by itself (no travel check). */
+enum class LocationSource {
+    /** From the device's approximate location (#24). */
+    AUTOMATIC,
+
+    /** Picked from the city list or typed as coordinates. */
+    MANUAL,
+}
+
+/**
+ * The location the user set, as stored: [location] feeds [PrayerSettings.location]; [cityId] is the bundled city
+ * it was picked from or, for typed coordinates, the nearest one (whose zone it uses), see [CityDirectory].
+ */
+data class SavedLocation(
+    val location: Location,
+    val source: LocationSource,
+    val cityId: Long?,
+)
+
 /**
  * The named convention of sun angles and rules used to derive Prayer Times, in the order Settings lists them.
  * Stored by name, so entries may be reordered or added but never renamed.

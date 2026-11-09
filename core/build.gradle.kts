@@ -17,4 +17,6 @@ dependencies {
 
 tasks.test {
     useJUnit()
+    // CityDirectoryTest reads the bundled city list the app ships.
+    inputs.file(rootProject.file("app/src/main/assets/cities.tsv"))
 }
