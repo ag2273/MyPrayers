@@ -20,7 +20,10 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36])
 class SettingsScreenTest {
-    @get:Rule
+    @get:Rule(order = 0)
+    val permissions = AlertPermissionsRule()
+
+    @get:Rule(order = 1)
     val compose = createAndroidComposeRule<MainActivity>()
 
     private fun openSettings(label: String) {

@@ -1,9 +1,14 @@
 package app.mawaqeet
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,11 +16,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.lifecycleScope
+import app.mawaqeet.alerts.AlertPermissions
+import app.mawaqeet.alerts.AlertRescheduler
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.permissions.GrantScreen
 import app.mawaqeet.ui.settings.SettingsActions
 import app.mawaqeet.ui.settings.SettingsScreen
 import app.mawaqeet.ui.theme.MawaqeetTheme
@@ -45,7 +54,34 @@ class MainActivity : AppCompatActivity() {
                 val core = remember(current) { PrayerCore(current, clock, prayerLog) }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 val scope = rememberCoroutineScope()
-                if (showSettings) {
+                // Re-checked on every resume, so a permission revoked in system settings brings the Grant screen back.
+                var permissions by remember { mutableStateOf(AlertPermissions.of(this)) }
+                LifecycleResumeEffect(Unit) {
+                    permissions = AlertPermissions.of(this@MainActivity)
+                    onPauseOrDispose { }
+                }
+                var askedNotifications by rememberSaveable { mutableStateOf(false) }
+                val requestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+                    permissions = AlertPermissions.of(this@MainActivity)
+                }
+                LaunchedEffect(permissions.allGranted) {
+                    if (permissions.allGranted) launch(Dispatchers.IO) { AlertRescheduler.reschedule(app) }
+                }
+                if (!permissions.allGranted) {
+                    GrantScreen(
+                        permissions,
+                        onGrantNotifications = {
+                            // The system dialog once; after a refusal it may not show again, so the settings page.
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !askedNotifications) {
+                                askedNotifications = true
+                                requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                startActivity(AlertPermissions.notificationSettingsIntent(this@MainActivity))
+                            }
+                        },
+                        onGrantExactAlarms = { startActivity(AlertPermissions.exactAlarmSettingsIntent(this@MainActivity)) },
+                    )
+                } else if (showSettings) {
                     val actions = remember(settingsStore) {
                         object : SettingsActions {
                             override fun setCalculationMethod(method: CalculationMethod) {

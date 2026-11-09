@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Adhan Alerts (#18). SCHEDULE_EXACT_ALARM, never USE_EXACT_ALARM (Play policy: alarm/calendar apps only). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:name=".MawaqeetApplication"
         android:allowBackup="true"
@@ -16,6 +21,27 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- The scheduler's own alarms. Direct-boot aware so alerts fire before the first unlock. -->
+        <receiver
+            android:name=".alerts.AlertReceiver"
+            android:directBootAware="true"
+            android:exported="false" />
+
+        <!-- System events after which alarms must be rescheduled (all allowed as manifest receivers). -->
+        <receiver
+            android:name=".alerts.RescheduleReceiver"
+            android:directBootAware="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Per-app language backport storage for API 26-32 (AppCompat). -->
         <service

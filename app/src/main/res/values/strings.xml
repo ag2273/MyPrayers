@@ -61,4 +61,18 @@
     <string name="method_moon_sighting_committee_description">أمريكا الشمالية والمملكة المتحدة، بقواعد موسمية للفجر والعشاء</string>
     <string name="method_north_america">الجمعية الإسلامية لأمريكا الشمالية</string>
     <string name="method_north_america_description">أمريكا الشمالية، بزوايا منخفضة لا يُنصح بها عادةً</string>
+
+    <!-- Adhan Alerts (#18). %1$s is the Prayer name (الجمعة on Friday's Dhuhr). -->
+    <string name="adhan_alert_title">حان الآن وقت صلاة %1$s</string>
+    <string name="adhan_channel_name">تنبيهات الأذان</string>
+    <string name="adhan_channel_description">تنبيه عند حلول وقت كل صلاة</string>
+
+    <!-- Permission gate (#18): shown until both alert permissions are granted. -->
+    <string name="grant_title">التنبيهات تحتاج إلى إذنك</string>
+    <string name="grant_intro">لن يستطيع مواقيت تنبيهك عند حلول وقت الصلاة دون هذه الأذونات.</string>
+    <string name="grant_notifications_title">الإشعارات</string>
+    <string name="grant_notifications_body">لعرض تنبيه الأذان عند حلول وقت كل صلاة.</string>
+    <string name="grant_exact_alarms_title">المنبّهات الدقيقة</string>
+    <string name="grant_exact_alarms_body">ليصل التنبيه في وقته تمامًا، حتى بعد ساعات من عدم استخدام الهاتف.</string>
+    <string name="grant_button">منح الإذن</string>
 </resources>
