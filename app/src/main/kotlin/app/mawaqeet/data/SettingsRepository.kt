@@ -22,6 +22,8 @@ import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.SavedLocation
+import app.mawaqeet.widget.WidgetAppearance
+import app.mawaqeet.widget.WidgetColors
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -180,6 +182,24 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
      */
     val appLanguage: Flow<String> = store.data.map { it[APP_LANGUAGE] ?: "" }.distinctUntilChanged()
 
+    /** Settings → Widgets (#32): one appearance for every Widget Variant. Unknown or off-step values read as the default. */
+    val widgetAppearance: Flow<WidgetAppearance> = store.data.map { prefs ->
+        WidgetAppearance(
+            transparency = prefs[WIDGET_TRANSPARENCY]
+                ?.takeIf { it in WidgetAppearance.TRANSPARENCY_RANGE && it % WidgetAppearance.TRANSPARENCY_STEP == 0 } ?: 0,
+            colors = prefs[WIDGET_COLORS]?.let { name -> WidgetColors.entries.firstOrNull { it.name == name } } ?: WidgetColors.WALLPAPER,
+        )
+    }.distinctUntilChanged()
+
+    suspend fun setWidgetTransparency(percent: Int) {
+        WidgetAppearance(transparency = percent) // validates
+        store.edit { it[WIDGET_TRANSPARENCY] = percent }
+    }
+
+    suspend fun setWidgetColors(colors: WidgetColors) {
+        store.edit { it[WIDGET_COLORS] = colors.name }
+    }
+
     suspend fun setAppLanguage(languageTags: String) {
         store.edit { it[APP_LANGUAGE] = languageTags }
     }
@@ -280,6 +300,8 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val HIGH_LATITUDE_RULE = stringPreferencesKey("high_latitude_rule")
         private val DIGITS = stringPreferencesKey("digit_style")
         private val APP_LANGUAGE = stringPreferencesKey("app_language")
+        private val WIDGET_TRANSPARENCY = intPreferencesKey("widget_transparency")
+        private val WIDGET_COLORS = stringPreferencesKey("widget_colors")
         private val ALARM_CLOCK_MODE = booleanPreferencesKey("alarm_clock_mode")
         private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")
         private val VIBRATION = booleanPreferencesKey("vibration")

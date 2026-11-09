@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widgets following the wallpaper (#32, Android 12+), dark. -->
+    <color name="widget_dyn_background">@android:color/system_neutral1_900</color>
+    <color name="widget_dyn_text">@android:color/system_neutral1_50</color>
+    <color name="widget_dyn_muted">@android:color/system_neutral2_200</color>
+    <color name="widget_dyn_accent">@android:color/system_accent1_200</color>
+    <color name="widget_dyn_on_accent">@android:color/system_accent1_900</color>
+    <color name="widget_dyn_accent_soft">@android:color/system_accent2_800</color>
+    <color name="widget_dyn_over_accent">@android:color/system_accent1_200</color>
+</resources>

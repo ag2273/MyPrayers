@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget root in the app language's direction; Glance content is placed inside (AndroidRemoteViews container). -->
+<!--
+  Widget root in the app language's direction. widget_bg is the background, tinted and made transparent from Settings ->
+  Widgets (#32); Glance content goes inside widget_root (AndroidRemoteViews container).
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_root"
+    android:id="@+id/widget_frame"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layoutDirection="rtl" />
+    android:layoutDirection="rtl">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_background" />
+
+    <FrameLayout
+        android:id="@+id/widget_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</FrameLayout>

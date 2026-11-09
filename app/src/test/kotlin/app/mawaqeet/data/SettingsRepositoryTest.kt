@@ -231,4 +231,26 @@ class SettingsRepositoryTest {
             assertEquals(emptyMap<app.mawaqeet.core.AdhanRecording, String>(), repo.settings.first().alerts.customAdhans)
         }
     }
+
+    @Test
+    fun `the widget appearance survives an app restart, and a broken stored value reads as the default`() {
+        assertEquals(app.mawaqeet.widget.WidgetAppearance(), withRepository { repo, _ -> repo.widgetAppearance.first() })
+
+        withRepository { repo, _ ->
+            repo.setWidgetTransparency(70)
+            repo.setWidgetColors(app.mawaqeet.widget.WidgetColors.APP)
+        }
+        assertEquals(
+            app.mawaqeet.widget.WidgetAppearance(70, app.mawaqeet.widget.WidgetColors.APP),
+            withRepository { repo, _ -> repo.widgetAppearance.first() },
+        )
+
+        withRepository { _, store ->
+            store.edit {
+                it[intPreferencesKey("widget_transparency")] = 35
+                it[stringPreferencesKey("widget_colors")] = "NEON"
+            }
+        }
+        assertEquals(app.mawaqeet.widget.WidgetAppearance(), withRepository { repo, _ -> repo.widgetAppearance.first() })
+    }
 }

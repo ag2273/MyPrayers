@@ -39,13 +39,16 @@ internal fun widgetTexts(view: View): List<TextView> = when (view) {
     else -> emptyList()
 }.filter { it.visibility == View.VISIBLE && it.text.isNotEmpty() }
 
-/** No text is wider or taller than its view, or ellipsized, except the views in [allowEllipsis]. */
-internal fun assertNothingClipped(root: View, allowEllipsis: Set<Int> = emptySet()) {
+/** The Hijri date, the one line that may shorten by design. */
+internal val isHijriDate: (String) -> Boolean = { "هـ" in it || it.endsWith(" AH") }
+
+/** No text is wider or taller than its view, or ellipsized, except the texts [allowEllipsis] accepts. */
+internal fun assertNothingClipped(root: View, allowEllipsis: (String) -> Boolean = { false }) {
     for (text in widgetTexts(root)) {
         val layout = text.layout ?: continue
         val needed = (0 until layout.lineCount).maxOf { layout.getLineWidth(it) }
         val has = (text.width - text.totalPaddingLeft - text.totalPaddingRight).toFloat()
-        if (text.id in allowEllipsis) continue
+        if (allowEllipsis(text.text.toString())) continue
         assertTrue("«${text.text}» needs ${needed}px, has ${has}px", needed <= has + 0.5f)
         assertEquals("«${text.text}» is ellipsized", 0, layout.getEllipsisCount(0))
         assertTrue("«${text.text}» is cut vertically: ${text.height}px for ${layout.height}px", text.height >= layout.height)

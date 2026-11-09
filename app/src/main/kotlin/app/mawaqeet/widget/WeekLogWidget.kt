@@ -3,13 +3,13 @@ package app.mawaqeet.widget
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.ColumnScope
@@ -22,10 +22,6 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
-import androidx.glance.text.TextAlign
-import androidx.glance.text.TextStyle
 import app.mawaqeet.MainActivity
 import app.mawaqeet.R
 
@@ -35,6 +31,8 @@ import app.mawaqeet.R
  * opens the Prayer Log screen. A thin layer over [WeekLogContent].
  */
 class WeekLogWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
         build = { core, text -> WeekLogView.of(WeekLogContent.of(core.week(), text.formatter), text) },
@@ -75,59 +73,56 @@ private val LABEL_WIDTH = 52.dp
 
 @Composable
 private fun WeekLogLayout(view: WeekLogView, rtl: Boolean) {
+    val step = textStep(MIN_WIDTH_DP, MIN_HEIGHT_DP)
     WidgetFrame(rtl, horizontal = 12.dp, vertical = 10.dp, opens = MainActivity.Opens.PRAYER_LOG) {
         Row(GlanceModifier.fillMaxWidth().padding(bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                view.title,
-                style = TextStyle(color = WIDGET_TEXT, fontSize = 13.sp, fontWeight = FontWeight.Bold),
-                maxLines = 1,
-                modifier = GlanceModifier.defaultWeight(),
-            )
-            Text(view.total, style = TextStyle(color = WIDGET_MUTED, fontSize = 13.sp), maxLines = 1)
+            WidgetLine(view.title, 13f * step, Tone.TEXT, bold = true, modifier = GlanceModifier.defaultWeight())
+            WidgetLine(view.total, 13f * step, Tone.MUTED)
         }
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(GlanceModifier.width(LABEL_WIDTH)) {}
+            Box(GlanceModifier.width(LABEL_WIDTH * step)) {}
             view.weekdays.forEachIndexed { index, letter ->
                 val today = index == view.weekdays.lastIndex
-                Text(
+                WidgetLine(
                     letter,
-                    style = TextStyle(
-                        color = if (today) WIDGET_ACCENT else WIDGET_MUTED,
-                        fontSize = 11.sp,
-                        fontWeight = if (today) FontWeight.Bold else FontWeight.Normal,
-                        textAlign = TextAlign.Center,
-                    ),
-                    maxLines = 1,
+                    11f * step,
+                    if (today) Tone.ACCENT else Tone.MUTED,
+                    bold = today,
+                    center = true,
                     modifier = GlanceModifier.defaultWeight(),
                 )
             }
         }
-        view.rows.forEachIndexed { index, row -> DotRow(row, view.rowDescriptions[index]) }
+        view.rows.forEachIndexed { index, row -> DotRow(row, view.rowDescriptions[index], step) }
     }
 }
 
+private const val MIN_WIDTH_DP = 250f
+private const val MIN_HEIGHT_DP = 180f
+
 @Composable
-private fun ColumnScope.DotRow(row: WeekLogView.Row, description: String) {
+private fun ColumnScope.DotRow(row: WeekLogView.Row, description: String, step: Float) {
     // TalkBack reads one line per Prayer instead of 7 unlabelled dots.
     Row(
         GlanceModifier.fillMaxWidth().defaultWeight().semantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            row.name,
-            style = TextStyle(color = WIDGET_MUTED, fontSize = 11.sp),
-            maxLines = 1,
-            modifier = GlanceModifier.width(LABEL_WIDTH),
-        )
-        row.cells.forEach { Dot(it) }
+        WidgetLine(row.name, 11f * step, Tone.MUTED, modifier = GlanceModifier.width(LABEL_WIDTH * step))
+        row.cells.forEach { Dot(it, (14 * step).dp) }
     }
 }
 
 @Composable
-private fun RowScope.Dot(cell: WeekLogContent.Cell) {
+private fun RowScope.Dot(cell: WeekLogContent.Cell, size: androidx.compose.ui.unit.Dp) {
+    val style = LocalWidgetStyle.current
     Box(GlanceModifier.defaultWeight().fillMaxHeight(), contentAlignment = Alignment.Center) {
         val res = dotRes(cell)
-        if (res != null) Image(ImageProvider(res), contentDescription = null, modifier = GlanceModifier.size(14.dp))
+        val color = when (cell) {
+            WeekLogContent.Cell.PRAYED -> style.accent
+            WeekLogContent.Cell.NOT_MARKED -> style.muted
+            else -> style.faint
+        }
+        if (res != null) Image(ImageProvider(res), contentDescription = null, modifier = GlanceModifier.size(size), colorFilter = tint(color))
     }
 }
 

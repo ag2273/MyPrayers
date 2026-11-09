@@ -5,7 +5,6 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.ImageProvider
@@ -20,16 +19,10 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.RowScope
-import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
-import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
-import androidx.glance.text.TextAlign
-import androidx.glance.text.TextStyle
 import app.mawaqeet.R
 
 /**
@@ -52,6 +45,7 @@ class TodayTimesWidget : GlanceAppWidget() {
  */
 internal object TodayTimesMetrics {
     const val MIN_WIDTH_DP = 250
+    const val MIN_HEIGHT_DP = 110
     val horizontalPadding = 8.dp
     val cellGap = 2.dp
     val cellPadding = 1.dp
@@ -101,14 +95,17 @@ private data class TodayTimesView(val date: WidgetDate, val columns: List<Cell>,
 
 @Composable
 private fun TodayTimesLayout(view: TodayTimesView, rtl: Boolean) {
-    val room = TodayTimesMetrics.cellTextWidthDp(LocalSize.current.width.value)
+    val style = LocalWidgetStyle.current
+    // On Android 8–11 one layout at the default size: the smallest width, whatever the launcher gives.
+    val width = if (style.responsive) LocalSize.current.width.value else TodayTimesMetrics.MIN_WIDTH_DP.toFloat()
+    val step = textStep(TodayTimesMetrics.MIN_WIDTH_DP.toFloat(), TodayTimesMetrics.MIN_HEIGHT_DP.toFloat())
+    val room = TodayTimesMetrics.cellTextWidthDp(width)
     val fontScale = LocalContext.current.resources.configuration.fontScale
-    val nameSp = TodayTimesMetrics.fitSp(view.allNames, room, TodayTimesMetrics.NAME_SP, bold = false, fontScale)
-    val timeSp = TodayTimesMetrics.fitSp(view.columns.map { it.time }, room, TodayTimesMetrics.TIME_SP, bold = true, fontScale)
+    val nameSp = TodayTimesMetrics.fitSp(view.allNames, room, TodayTimesMetrics.NAME_SP * step, bold = false, fontScale)
+    val timeSp = TodayTimesMetrics.fitSp(view.columns.map { it.time }, room, TodayTimesMetrics.TIME_SP * step, bold = true, fontScale)
     WidgetFrame(rtl, horizontal = TodayTimesMetrics.horizontalPadding, vertical = 10.dp) {
-        DateLine(view.date)
-        Spacer(GlanceModifier.height(6.dp))
-        Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+        DateLine(view.date, sp = 12f * step)
+        Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight().padding(top = 6.dp)) {
             // No spacers between cells: Glance keeps at most 10 children in a Row, so the gap is each cell's margin.
             view.columns.forEach { cell -> TimeCell(cell, nameSp, timeSp) }
         }
@@ -118,29 +115,25 @@ private fun TodayTimesLayout(view: TodayTimesView, rtl: Boolean) {
 /** One column; the outer box makes the gap to its neighbours, the inner column carries the highlight. */
 @Composable
 private fun RowScope.TimeCell(cell: TodayTimesView.Cell, nameSp: Float, timeSp: Float) {
-    val color = when {
-        cell.isNext -> WIDGET_ON_ACCENT
-        cell.isSunrise -> WIDGET_MUTED
-        else -> WIDGET_TEXT
+    val style = LocalWidgetStyle.current
+    val tone = when {
+        cell.isNext -> Tone.ON_ACCENT
+        cell.isSunrise -> Tone.MUTED
+        else -> Tone.TEXT
     }
     val inner = GlanceModifier.fillMaxSize().padding(horizontal = TodayTimesMetrics.cellPadding)
     Box(GlanceModifier.defaultWeight().fillMaxHeight().padding(horizontal = TodayTimesMetrics.cellGap / 2)) {
         Column(
-            modifier = if (cell.isNext) inner.background(ImageProvider(R.drawable.widget_cell_next)) else inner,
+            modifier = if (cell.isNext) {
+                inner.background(ImageProvider(R.drawable.widget_cell_next), colorFilter = tint(style.accent))
+            } else {
+                inner
+            },
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(cell.name, style = TextStyle(color = color, fontSize = nameSp.sp, textAlign = TextAlign.Center), maxLines = 1)
-            Text(
-                cell.time,
-                style = TextStyle(
-                    color = color,
-                    fontSize = timeSp.sp,
-                    fontWeight = if (cell.isSunrise) FontWeight.Normal else FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                ),
-                maxLines = 1,
-            )
+            WidgetLine(cell.name, nameSp, tone, center = true)
+            WidgetLine(cell.time, timeSp, tone, bold = !cell.isSunrise, center = true)
         }
     }
 }

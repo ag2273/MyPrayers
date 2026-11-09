@@ -165,6 +165,14 @@
     <string name="widget_week_log">Week Prayer Log</string>
     <string name="widget_week_log_description">The last seven days\' Prayers as you marked them, with the total</string>
     <string name="widget_state_prayed">Prayed</string>
+    <string name="widget_transparency">Background transparency</string>
+    <string name="widget_transparency_hint">From 60% up, text turns light with a soft shadow so it reads over your wallpaper.</string>
+    <string name="widget_transparency_value">%1$s%%</string>
+    <string name="widget_colors">Colours</string>
+    <string name="widget_colors_wallpaper">Wallpaper colours</string>
+    <string name="widget_colors_wallpaper_description">Follow your wallpaper\'s colours (Android 12 and later).</string>
+    <string name="widget_colors_app">App colours</string>
+    <string name="widget_colors_app_description">Mawaqeet\'s own colours.</string>
     <string name="widget_state_not_marked">Not marked</string>
     <string name="widget_state_not_yet_due">Not yet due</string>
 

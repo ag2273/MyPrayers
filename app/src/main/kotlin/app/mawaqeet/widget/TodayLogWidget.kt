@@ -2,14 +2,15 @@ package app.mawaqeet.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
@@ -18,9 +19,6 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
 import app.mawaqeet.R
 import app.mawaqeet.core.LogState
 
@@ -30,6 +28,8 @@ import app.mawaqeet.core.LogState
  * today's Prayer Times; nothing on it marks a Prayer. A thin layer over [TodayLogContent].
  */
 class TodayLogWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
         build = { core, text ->
@@ -56,43 +56,51 @@ private data class TodayLogView(val date: WidgetDate, val rows: List<Row>, val s
 
 @Composable
 private fun TodayLogLayout(view: TodayLogView, rtl: Boolean) {
+    val step = textStep(MIN_WIDTH_DP, MIN_HEIGHT_DP)
     WidgetFrame(rtl, horizontal = 12.dp, vertical = 10.dp) {
-        DateLine(view.date)
-        view.rows.forEach { LogRow(it) }
-        Text(
-            view.sunrise,
-            style = TextStyle(color = WIDGET_MUTED, fontSize = 11.sp),
-            maxLines = 1,
-            modifier = GlanceModifier.padding(horizontal = 8.dp),
-        )
+        DateLine(view.date, sp = 12f * step)
+        view.rows.forEach { LogRow(it, step) }
+        WidgetLine(view.sunrise, 11f * step, Tone.MUTED, modifier = GlanceModifier.padding(horizontal = 8.dp))
     }
 }
 
+private const val MIN_WIDTH_DP = 250f
+private const val MIN_HEIGHT_DP = 180f
+
 @Composable
-private fun ColumnScope.LogRow(row: TodayLogView.Row) {
+private fun ColumnScope.LogRow(row: TodayLogView.Row, step: Float) {
+    val style = LocalWidgetStyle.current
     val base = GlanceModifier.fillMaxWidth().defaultWeight().padding(horizontal = 8.dp)
-    val color = if (row.state == LogState.NOT_YET_DUE && !row.isNext) WIDGET_MUTED else WIDGET_TEXT
+    val tone = if (row.state == LogState.NOT_YET_DUE && !row.isNext) Tone.MUTED else Tone.TEXT
     Row(
-        modifier = if (row.isNext) base.background(ImageProvider(R.drawable.widget_row_next)) else base,
+        modifier = if (row.isNext) {
+            base.background(ImageProvider(R.drawable.widget_row_next), colorFilter = tint(style.accentSoft))
+        } else {
+            base
+        },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            row.name,
-            style = TextStyle(color = color, fontSize = 14.sp, fontWeight = if (row.isNext) FontWeight.Bold else FontWeight.Normal),
-            maxLines = 1,
-            modifier = GlanceModifier.defaultWeight(),
-        )
-        Text(row.time, style = TextStyle(color = color, fontSize = 13.sp), maxLines = 1)
+        WidgetLine(row.name, 14f * step, tone, bold = row.isNext, modifier = GlanceModifier.defaultWeight())
+        WidgetLine(row.time, 13f * step, tone)
         Box(GlanceModifier.padding(start = 10.dp), contentAlignment = Alignment.Center) {
-            Image(ImageProvider(markRes(row.state)), contentDescription = row.stateLabel, modifier = GlanceModifier.size(20.dp))
+            Mark(row.state, row.stateLabel, (20 * step).dp)
         }
     }
 }
 
-private fun markRes(state: LogState) = when (state) {
-    LogState.PRAYED -> R.drawable.widget_mark_prayed
-    LogState.NOT_MARKED -> R.drawable.widget_mark_due
-    LogState.NOT_YET_DUE -> R.drawable.widget_mark_upcoming
+/** The Prayer Log mark: a filled circle with a check (prayed), a solid ring (due), or a dashed ring (not yet due). */
+@Composable
+private fun Mark(state: LogState, label: String, size: Dp) {
+    val style = LocalWidgetStyle.current
+    val modifier = GlanceModifier.size(size)
+    when (state) {
+        LogState.PRAYED -> Box(contentAlignment = Alignment.Center) {
+            Image(ImageProvider(R.drawable.widget_mark_prayed), label, modifier, colorFilter = tint(style.accent))
+            Image(ImageProvider(R.drawable.widget_mark_check), null, modifier, colorFilter = tint(style.onAccent))
+        }
+        LogState.NOT_MARKED -> Image(ImageProvider(R.drawable.widget_mark_due), label, modifier, colorFilter = tint(style.accent))
+        LogState.NOT_YET_DUE -> Image(ImageProvider(R.drawable.widget_mark_upcoming), label, modifier, colorFilter = tint(style.muted))
+    }
 }
 
 internal fun stateLabelRes(state: LogState) = when (state) {

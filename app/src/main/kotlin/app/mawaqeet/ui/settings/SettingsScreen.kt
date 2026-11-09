@@ -1,6 +1,7 @@
 package app.mawaqeet.ui.settings
 
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
@@ -21,11 +22,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,6 +39,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
 import app.mawaqeet.core.AdhanRecording
@@ -47,11 +52,14 @@ import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.ui.LocalDisplayFormatter
+import app.mawaqeet.widget.WidgetAppearance
+import app.mawaqeet.widget.WidgetColors
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.text.BidiFormatter
 import androidx.core.text.TextDirectionHeuristicsCompat
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 /** What the Settings screen can change. Later tickets add their own callbacks here. */
 interface SettingsActions {
@@ -61,6 +69,12 @@ interface SettingsActions {
     /** Switches the whole app to [languageTag] (`ar` or `en`) through the per-app language API. */
     fun setLanguage(languageTag: String)
     fun setDigitStyle(style: DigitStyle)
+
+    /** Settings → Widgets (#32): every widget's background transparency, 0–100 in steps of 10. */
+    fun setWidgetTransparency(percent: Int)
+
+    /** Settings → Widgets (#32, Android 12+): wallpaper or app colours. */
+    fun setWidgetColors(colors: WidgetColors)
     fun setHijriOffsetDays(days: Int)
 
     /** Settings → Prayer Times (#20): moves [prayer]'s adjustment by [step] minutes, within [PrayerSettings.ADJUSTMENT_RANGE]. */
@@ -102,6 +116,7 @@ fun SettingsScreen(
     today: LocalDate,
     actions: SettingsActions,
     onBack: () -> Unit,
+    widgetAppearance: WidgetAppearance = WidgetAppearance(),
 ) {
     BackHandler(onBack = onBack)
     Scaffold { padding ->
@@ -125,7 +140,7 @@ fun SettingsScreen(
             AlertsGroup(settings.alerts, actions)
             PrayerLogGroup(actions)
             LanguageDisplayGroup(settings, digitStyle, today, actions)
-            SettingsGroup(R.string.settings_group_widgets) { ComingSoon() }
+            WidgetsGroup(widgetAppearance, actions)
             AdvancedGroup(settings, actions)
             SettingsGroup(R.string.settings_group_about) { ComingSoon() }
         }
@@ -347,6 +362,53 @@ private val HighLatitudeRule.description: Int
         HighLatitudeRule.SEVENTH_OF_THE_NIGHT -> R.string.high_latitude_seventh_description
         HighLatitudeRule.TWILIGHT_ANGLE -> R.string.high_latitude_twilight_description
     }
+
+@Composable
+private fun WidgetsGroup(appearance: WidgetAppearance, actions: SettingsActions) {
+    val format = LocalDisplayFormatter.current
+    val resources = LocalResources.current
+    SettingsGroup(R.string.settings_group_widgets) {
+        Text(stringResource(R.string.widget_transparency), style = MaterialTheme.typography.titleSmall)
+        Text(
+            stringResource(R.string.widget_transparency_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        // Follows the finger while dragging, stored once released.
+        var percent by remember(appearance.transparency) { mutableFloatStateOf(appearance.transparency.toFloat()) }
+        val label = resources.getString(R.string.widget_transparency_value, format.number(percent.roundToInt()))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Slider(
+                value = percent,
+                onValueChange = { percent = it },
+                onValueChangeFinished = { actions.setWidgetTransparency(percent.roundToInt()) },
+                valueRange = 0f..100f,
+                steps = (WidgetAppearance.TRANSPARENCY_RANGE.last / WidgetAppearance.TRANSPARENCY_STEP) - 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { stateDescription = label },
+            )
+            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 12.dp))
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Text(stringResource(R.string.widget_colors), style = MaterialTheme.typography.titleSmall)
+            Column(Modifier.selectableGroup()) {
+                ChoiceRow(
+                    title = stringResource(R.string.widget_colors_wallpaper),
+                    description = stringResource(R.string.widget_colors_wallpaper_description),
+                    selected = appearance.colors == WidgetColors.WALLPAPER,
+                    onSelect = { actions.setWidgetColors(WidgetColors.WALLPAPER) },
+                )
+                ChoiceRow(
+                    title = stringResource(R.string.widget_colors_app),
+                    description = stringResource(R.string.widget_colors_app_description),
+                    selected = appearance.colors == WidgetColors.APP,
+                    onSelect = { actions.setWidgetColors(WidgetColors.APP) },
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun LanguageDisplayGroup(settings: PrayerSettings, digitStyle: DigitStyle, today: LocalDate, actions: SettingsActions) {

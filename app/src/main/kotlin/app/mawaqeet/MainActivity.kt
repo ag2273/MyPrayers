@@ -57,6 +57,8 @@ import app.mawaqeet.ui.location.locationName
 import app.mawaqeet.ui.permissions.GrantScreen
 import app.mawaqeet.ui.settings.SettingsActions
 import app.mawaqeet.ui.settings.SettingsScreen
+import app.mawaqeet.widget.WidgetAppearance
+import app.mawaqeet.widget.WidgetColors
 import app.mawaqeet.ui.theme.MawaqeetTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -102,6 +104,7 @@ class MainActivity : AppCompatActivity() {
                 // Null until the stored settings are read, so the default method's times never flash.
                 val settings by settingsStore.settings.collectAsState(initial = null)
                 val storedDigits by settingsStore.digitStyle.collectAsState(initial = null)
+                val widgetAppearance by settingsStore.widgetAppearance.collectAsState(initial = WidgetAppearance())
                 // Wrapped in a list so "not read yet" (null) differs from "no location set" (empty): no default-name flash.
                 val storedLocation by remember { settingsStore.savedLocation.map { listOfNotNull(it) } }.collectAsState(initial = null)
                 val onboarded by settingsStore.onboardingDone.collectAsState(initial = null)
@@ -278,6 +281,14 @@ class MainActivity : AppCompatActivity() {
                                 AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageTag))
                             }
 
+                            override fun setWidgetTransparency(percent: Int) {
+                                scope.launch { settingsStore.setWidgetTransparency(percent) }
+                            }
+
+                            override fun setWidgetColors(colors: WidgetColors) {
+                                scope.launch { settingsStore.setWidgetColors(colors) }
+                            }
+
                             override fun setDigitStyle(style: DigitStyle) {
                                 scope.launch { settingsStore.setDigitStyle(style) }
                             }
@@ -341,6 +352,7 @@ class MainActivity : AppCompatActivity() {
                         digits,
                         core.displayDay().date,
                         actions,
+                        widgetAppearance = widgetAppearance,
                         onBack = { showSettings = false },
                     )
                 } else if (showLog) {
