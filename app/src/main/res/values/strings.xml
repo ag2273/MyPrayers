@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">مواقيت</string>
+    <string name="default_location_name">مكة المكرمة</string>
+    <string name="next_prayer">الصلاة القادمة</string>
+    <!-- %1$s is the remaining time as H:MM:SS. -->
+    <string name="countdown">بعد %1$s</string>
+
+    <string name="prayer_fajr">الفجر</string>
+    <string name="sunrise">الشروق</string>
+    <string name="prayer_dhuhr">الظهر</string>
+    <string name="prayer_jumuah">الجمعة</string>
+    <string name="prayer_asr">العصر</string>
+    <string name="prayer_maghrib">المغرب</string>
+    <string name="prayer_isha">العشاء</string>
+
+    <!-- Prayer Log state of a Prayer row, read by TalkBack. -->
+    <string name="log_prayed">تمّت الصلاة، اضغط لإلغاء التسجيل</string>
+    <string name="log_not_marked">لم تُسجَّل، اضغط لتسجيلها</string>
+    <string name="log_not_yet_due">لم يحن وقتها بعد، لا يمكن تسجيلها</string>
+    <string name="log_read_only">لا يمكن تعديل هذا اليوم</string>
+
+    <!-- Settings (#16). Groups in the order the spec lists them; later tickets fill the empty ones. -->
+    <string name="settings">الإعدادات</string>
+    <string name="back">رجوع</string>
+    <string name="settings_group_prayer_times">مواقيت الصلاة</string>
+    <string name="settings_group_alerts">التنبيهات</string>
+    <string name="settings_group_prayer_log">سجل الصلاة</string>
+    <string name="settings_group_language_display">اللغة والعرض</string>
+    <string name="settings_group_widgets">أدوات الشاشة الرئيسية</string>
+    <string name="settings_group_about">حول التطبيق</string>
+    <string name="settings_coming_soon">ستُضاف هذه الإعدادات لاحقًا</string>
+
+    <string name="calculation_method">طريقة الحساب</string>
+    <string name="asr_convention">وقت العصر</string>
+    <string name="asr_standard">الجمهور</string>
+    <string name="asr_standard_description">الشافعي والمالكي والحنبلي: حين يصير ظل الشيء مثله</string>
+    <string name="asr_hanafi">الحنفي</string>
+    <string name="asr_hanafi_description">حين يصير ظل الشيء مثليه، فيتأخر العصر</string>
+    <string name="cancel">إلغاء</string>
+
+    <string name="method_umm_al_qura">أم القرى</string>
+    <string name="method_umm_al_qura_description">التقويم الرسمي في المملكة العربية السعودية</string>
+    <string name="method_egyptian">الهيئة المصرية العامة للمساحة</string>
+    <string name="method_egyptian_description">مصر وأجزاء من أفريقيا والشام</string>
+    <string name="method_muslim_world_league">رابطة العالم الإسلامي</string>
+    <string name="method_muslim_world_league_description">أوروبا والشرق الأقصى وأجزاء من الأمريكيتين</string>
+    <string name="method_karachi">جامعة العلوم الإسلامية بكراتشي</string>
+    <string name="method_karachi_description">باكستان والهند وبنغلاديش وأفغانستان</string>
+    <string name="method_kuwait">وزارة الأوقاف الكويتية</string>
+    <string name="method_kuwait_description">الكويت</string>
+    <string name="method_qatar">وزارة الأوقاف القطرية</string>
+    <string name="method_qatar_description">قطر</string>
+    <string name="method_dubai">دبي</string>
+    <string name="method_dubai_description">الإمارات العربية المتحدة</string>
+    <string name="method_turkey">رئاسة الشؤون الدينية التركية</string>
+    <string name="method_turkey_description">تركيا، بتقريب لتقويم ديانت</string>
+    <string name="method_singapore">سنغافورة</string>
+    <string name="method_singapore_description">سنغافورة وماليزيا وإندونيسيا</string>
+    <string name="method_moon_sighting_committee">لجنة رؤية الهلال</string>
+    <string name="method_moon_sighting_committee_description">أمريكا الشمالية والمملكة المتحدة، بقواعد موسمية للفجر والعشاء</string>
+    <string name="method_north_america">الجمعية الإسلامية لأمريكا الشمالية</string>
+    <string name="method_north_america_description">أمريكا الشمالية، بزوايا منخفضة لا يُنصح بها عادةً</string>
+
+    <!-- Adhan Alerts (#18). %1$s is the Prayer name (الجمعة on Friday's Dhuhr). -->
+    <string name="adhan_alert_title">حان الآن وقت صلاة %1$s</string>
+    <string name="adhan_channel_name">تنبيهات الأذان</string>
+    <string name="adhan_channel_description">تنبيه عند حلول وقت كل صلاة</string>
+    <!-- Adhan playback (#22). -->
+    <string name="adhan_stop">إيقاف</string>
+    <string name="adhan_sound_channel_name">الأذان بصوت الإشعار</string>
+    <string name="adhan_sound_channel_description">تنبيه عند حلول وقت كل صلاة، مع صوت الأذان</string>
+
+    <!-- Permission gate (#18): shown until both alert permissions are granted. -->
+    <string name="grant_title">التنبيهات تحتاج إلى إذنك</string>
+    <string name="grant_intro">لن يستطيع مواقيت تنبيهك عند حلول وقت الصلاة دون هذه الأذونات.</string>
+    <string name="grant_notifications_title">الإشعارات</string>
+    <string name="grant_notifications_body">لعرض تنبيه الأذان عند حلول وقت كل صلاة.</string>
+    <string name="grant_exact_alarms_title">المنبّهات الدقيقة</string>
+    <string name="grant_exact_alarms_body">ليصل التنبيه في وقته تمامًا، حتى بعد ساعات من عدم استخدام الهاتف.</string>
+    <string name="grant_button">منح الإذن</string>
+    <!-- Language & display (#17). Language names are written in their own language in both locales. -->
+    <string name="language">اللغة</string>
+    <string name="language_arabic" translatable="false">العربية</string>
+    <string name="language_arabic_description">من اليمين إلى اليسار</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_english_description">من اليسار إلى اليمين</string>
+    <string name="digits">الأرقام</string>
+    <string name="digits_automatic">تلقائي</string>
+    <string name="digits_automatic_description">حسب لغة الهاتف وإعداداته</string>
+    <string name="digits_arabic_indic">أرقام عربية مشرقية</string>
+    <string name="digits_arabic_indic_description" translatable="false">٠١٢٣٤٥٦٧٨٩</string>
+    <string name="digits_western">أرقام غربية</string>
+    <string name="digits_western_description" translatable="false">0123456789</string>
+    <string name="hijri_offset">تعديل التاريخ الهجري</string>
+    <string name="hijri_offset_summary">%2$s (%1$s)</string>
+    <string name="hijri_offset_none">بلا تعديل: %1$s</string>
+    <string name="hijri_offset_hint">لمطابقة رؤية الهلال في بلدك</string>
+
+    <!-- Location (#21): city search, coordinates and the country suggestion. -->
+    <string name="location">الموقع</string>
+    <string name="location_search_label">ابحث عن مدينتك</string>
+    <string name="location_search_hint">بالعربية أو الإنجليزية، دون اتصال</string>
+    <string name="location_loading">جارٍ تحميل قائمة المدن…</string>
+    <string name="location_no_results">لا توجد مدينة بهذا الاسم. جرّب اسمًا آخر أو أدخل الإحداثيات.</string>
+    <string name="location_coordinates">إدخال الإحداثيات يدويًا</string>
+    <string name="location_latitude">خط العرض (−90 إلى 90)</string>
+    <string name="location_longitude">خط الطول (−180 إلى 180)</string>
+    <string name="location_use_coordinates">استخدام هذه الإحداثيات</string>
+    <string name="location_invalid_coordinates">أدخل خط عرض بين −90 و90 وخط طول بين −180 و180</string>
+    <!-- %1$s is the nearest bundled city, %2$s its IANA time zone id. -->
+    <string name="location_zone_note">تُحسب المواقيت بالتوقيت المحلي لأقرب مدينة في القائمة: %1$s (%2$s)</string>
+    <!-- Home label for typed coordinates; %1$s is the nearest bundled city. -->
+    <string name="location_near_city">قرب %1$s</string>
+    <!-- %1$s Calculation Method, %2$s Asr Convention, %3$s country name. -->
+    <string name="suggestion_reason">نقترح %1$s ووقت العصر %2$s لأنك في %3$s</string>
+    <string name="suggestion_already_used">إعداداتك الحالية هي المقترحة لموقعك.</string>
+    <string name="suggestion_accept">اعتماد الاقتراح</string>
+    <string name="suggestion_change">اختيار غيره</string>
+    <string name="done">تم</string>
+    <string name="location_credit">بيانات المدن من GeoNames (CC BY 4.0) والأسماء العربية من Natural Earth</string>
+    <string name="location_use_device">استخدام موقعي الحالي</string>
+    <string name="location_permission_title">استخدام موقعك التقريبي</string>
+    <string name="location_permission_explanation">يُستخدم موقعك فقط لحساب مواقيت الصلاة، ولا يغادر هاتفك أبدًا. نطلب الموقع التقريبي فقط، ولا نقرؤه إلا والتطبيق مفتوح.</string>
+    <string name="location_permission_continue">متابعة</string>
+    <string name="not_now">ليس الآن</string>
+    <string name="location_device_unavailable">تعذّر تحديد موقعك. ابحث عن مدينتك بدلًا من ذلك.</string>
+    <string name="location_updated">تم تحديث الموقع إلى %1$s</string>
+    <string name="location_move_title">هل انتقلت؟</string>
+    <string name="location_move_question">يبدو أنك الآن قرب %1$s. هل تريد تحديث الموقع واستخدام موقعك تلقائيًا من الآن؟</string>
+    <string name="location_move_update">تحديث</string>
+    <string name="location_move_keep">إبقاء الموقع الحالي</string>
+    <string name="location_maybe_stale">تغيّرت المنطقة الزمنية. اضغط للتحقق من موقعك.</string>
+    <string name="prayer_reminder_title">اقترب وقت صلاة %1$s</string>
+    <string name="reminder_channel_name">التذكير بالصلاة</string>
+    <string name="reminder_channel_description">تذكير قبل وقت الصلاة بدقائق</string>
+    <string name="alerts_adhan_alert">تنبيه الأذان</string>
+    <string name="alerts_sound">صوت التنبيه</string>
+    <string name="alerts_sound_short">أذان قصير</string>
+    <string name="alerts_sound_full">الأذان كاملًا</string>
+    <string name="alerts_sound_full_fajr">أذان الفجر كاملًا، مع «الصلاة خير من النوم»</string>
+    <string name="alerts_sound_silent">صامت (إشعار فقط)</string>
+    <string name="alerts_reminder">التذكير قبل الصلاة</string>
+    <string name="alerts_reminder_minutes">قبل %1$s دقيقة</string>
+    <string name="alerts_adhan_off">بلا تنبيه أذان</string>
+    <string name="alerts_summary_with_reminder">%1$s، والتذكير %2$s</string>
+    <string name="alerts_alarm_clock">وضع المنبه</string>
+    <string name="alerts_alarm_clock_description">يظهر موعد الصلاة القادمة على شاشة القفل كالمنبه</string>
+    <string name="alerts_play_on_silent">تشغيل الأذان حتى في الوضع الصامت</string>
+    <string name="alerts_play_on_silent_description">لا يشمل التذكير، ولا الأذان أثناء المكالمات</string>
+    <string name="alerts_vibration">الاهتزاز</string>
+    <string name="alerts_custom_adhan">أذان من اختيارك</string>
+    <string name="alerts_custom_adhan_description">اختر ملفًا صوتيًا من هاتفك ليُشغَّل بدل التسجيل المرفق</string>
+    <string name="alerts_custom_full">الأذان كاملًا (لغير الفجر)</string>
+    <string name="alerts_custom_fajr_full">الأذان الكامل للفجر</string>
+    <string name="alerts_custom_full_not_fajr">لا يغيّر أذان الفجر، فله خيار مستقل لأن فيه «الصلاة خير من النوم»</string>
+    <string name="alerts_custom_bundled">التسجيل المرفق بالتطبيق</string>
+    <string name="alerts_custom_chosen">ملف من اختيارك</string>
+    <string name="alerts_custom_unreadable">تعذّرت قراءة الملف المختار، فسيُشغَّل التسجيل المرفق بدلًا منه. اختر الملف من جديد أو احذفه.</string>
+    <string name="alerts_custom_choose">اختيار ملف صوتي</string>
+    <string name="alerts_custom_preview">استماع</string>
+    <string name="alerts_custom_preview_stop">إيقاف الاستماع</string>
+    <string name="alerts_custom_clear">العودة إلى التسجيل المرفق</string>
+
+    <!-- Widgets (#27). -->
+    <string name="widget_next_prayer">الصلاة القادمة</string>
+    <string name="widget_next_prayer_description">اسم الصلاة القادمة ووقتها، مع العد التنازلي</string>
+    <string name="widget_next_prayer_compact_description">الصلاة القادمة في سطرين</string>
+    <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
+    <string name="widget_countdown_format">بعد %s</string>
+</resources>

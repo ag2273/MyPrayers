@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mawaqeet</string>
+    <string name="default_location_name">Makkah</string>
+    <string name="next_prayer">Next Prayer</string>
+    <string name="countdown">in %1$s</string>
+
+    <string name="prayer_fajr">Fajr</string>
+    <string name="sunrise">Sunrise</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_jumuah">Jumu\'ah</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+
+    <string name="log_prayed">Prayed, tap to unmark</string>
+    <string name="log_not_marked">Not marked, tap to mark as prayed</string>
+    <string name="log_not_yet_due">Its time hasn\'t arrived yet, so it can\'t be marked</string>
+    <string name="log_read_only">This day can no longer be edited</string>
+
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
+    <string name="settings_group_prayer_times">Prayer Times</string>
+    <string name="settings_group_alerts">Alerts</string>
+    <string name="settings_group_prayer_log">Prayer Log</string>
+    <string name="settings_group_language_display">Language &amp; display</string>
+    <string name="settings_group_widgets">Widgets</string>
+    <string name="settings_group_about">About</string>
+    <string name="settings_coming_soon">These settings are coming later</string>
+
+    <string name="calculation_method">Calculation Method</string>
+    <string name="asr_convention">Asr Convention</string>
+    <string name="asr_standard">Standard</string>
+    <string name="asr_standard_description">Shafi\'i, Maliki, Hanbali: when a shadow equals its object</string>
+    <string name="asr_hanafi">Hanafi</string>
+    <string name="asr_hanafi_description">When a shadow is twice its object, so Asr is later</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="method_umm_al_qura">Umm al-Qura</string>
+    <string name="method_umm_al_qura_description">The official calendar of Saudi Arabia</string>
+    <string name="method_egyptian">Egyptian General Authority of Survey</string>
+    <string name="method_egyptian_description">Egypt and parts of Africa and the Levant</string>
+    <string name="method_muslim_world_league">Muslim World League</string>
+    <string name="method_muslim_world_league_description">Europe, the Far East and parts of the Americas</string>
+    <string name="method_karachi">University of Islamic Sciences, Karachi</string>
+    <string name="method_karachi_description">Pakistan, India, Bangladesh and Afghanistan</string>
+    <string name="method_kuwait">Kuwait Ministry of Awqaf</string>
+    <string name="method_kuwait_description">Kuwait</string>
+    <string name="method_qatar">Qatar Ministry of Awqaf</string>
+    <string name="method_qatar_description">Qatar</string>
+    <string name="method_dubai">Dubai</string>
+    <string name="method_dubai_description">United Arab Emirates</string>
+    <string name="method_turkey">Diyanet (Türkiye)</string>
+    <string name="method_turkey_description">Türkiye, an approximation of the Diyanet timetable</string>
+    <string name="method_singapore">Singapore</string>
+    <string name="method_singapore_description">Singapore, Malaysia and Indonesia</string>
+    <string name="method_moon_sighting_committee">Moonsighting Committee</string>
+    <string name="method_moon_sighting_committee_description">North America and the UK, with seasonal Fajr and Isha rules</string>
+    <string name="method_north_america">Islamic Society of North America (ISNA)</string>
+    <string name="method_north_america_description">North America, with shallow angles not usually recommended</string>
+
+    <!-- Adhan Alerts (#18). %1$s is the Prayer name (Jumu'ah on Friday's Dhuhr). -->
+    <string name="adhan_alert_title">It\'s time for %1$s</string>
+    <string name="adhan_channel_name">Adhan Alerts</string>
+    <string name="adhan_channel_description">An alert when each Prayer Time arrives</string>
+    <!-- Adhan playback (#22). -->
+    <string name="adhan_stop">Stop</string>
+    <string name="adhan_sound_channel_name">Adhan as notification sound</string>
+    <string name="adhan_sound_channel_description">An alert when each Prayer Time arrives, with the adhan as its sound</string>
+
+    <string name="grant_title">Alerts need your permission</string>
+    <string name="grant_intro">Without these permissions Mawaqeet can\'t alert you when a Prayer Time arrives.</string>
+    <string name="grant_notifications_title">Notifications</string>
+    <string name="grant_notifications_body">To show the Adhan Alert when each Prayer Time arrives.</string>
+    <string name="grant_exact_alarms_title">Exact alarms</string>
+    <string name="grant_exact_alarms_body">So the alert arrives exactly on time, even after hours of not using the phone.</string>
+    <string name="grant_button">Grant</string>
+    <!-- Language & display (#17). -->
+    <string name="language">Language</string>
+    <string name="language_arabic_description">Right to left</string>
+    <string name="language_english_description">Left to right</string>
+    <string name="digits">Digits</string>
+    <string name="digits_automatic">Automatic</string>
+    <string name="digits_automatic_description">Follow the phone\'s language and settings</string>
+    <string name="digits_arabic_indic">Arabic-Indic digits</string>
+    <string name="digits_western">Western digits</string>
+    <string name="hijri_offset">Hijri date adjustment</string>
+    <string name="hijri_offset_summary">%2$s (%1$s)</string>
+    <string name="hijri_offset_none">No adjustment: %1$s</string>
+    <string name="hijri_offset_hint">To match the moon sighting in your country</string>
+
+    <string name="location">Location</string>
+    <string name="location_search_label">Search for your city</string>
+    <string name="location_search_hint">In Arabic or English, offline</string>
+    <string name="location_loading">Loading the city list…</string>
+    <string name="location_no_results">No city with that name. Try another name or enter coordinates.</string>
+    <string name="location_coordinates">Enter coordinates manually</string>
+    <string name="location_latitude">Latitude (−90 to 90)</string>
+    <string name="location_longitude">Longitude (−180 to 180)</string>
+    <string name="location_use_coordinates">Use these coordinates</string>
+    <string name="location_invalid_coordinates">Enter a latitude between −90 and 90 and a longitude between −180 and 180</string>
+    <string name="location_zone_note">Times use the local time of the nearest listed city: %1$s (%2$s)</string>
+    <string name="location_near_city">Near %1$s</string>
+    <string name="suggestion_reason">We suggest %1$s with %2$s Asr because you are in %3$s</string>
+    <string name="suggestion_already_used">Your current settings are the ones suggested for your location.</string>
+    <string name="suggestion_accept">Use suggestion</string>
+    <string name="suggestion_change">Choose another</string>
+    <string name="done">Done</string>
+    <string name="location_credit">City data from GeoNames (CC BY 4.0), Arabic names from Natural Earth</string>
+    <string name="location_use_device">Use my current location</string>
+    <string name="location_permission_title">Use your approximate location</string>
+    <string name="location_permission_explanation">Your location is only used to calculate Prayer Times and never leaves your phone. We ask for approximate location only, and read it only while the app is open.</string>
+    <string name="location_permission_continue">Continue</string>
+    <string name="not_now">Not now</string>
+    <string name="location_device_unavailable">Couldn\'t find your location. Search for your city instead.</string>
+    <string name="location_updated">Location updated to %1$s</string>
+    <string name="location_move_title">Have you moved?</string>
+    <string name="location_move_question">You seem to be near %1$s now. Update the location and use your location automatically from now on?</string>
+    <string name="location_move_update">Update</string>
+    <string name="location_move_keep">Keep current location</string>
+    <string name="location_maybe_stale">Your time zone changed. Tap to check your location.</string>
+    <string name="prayer_reminder_title">%1$s is near</string>
+    <string name="reminder_channel_name">Prayer Reminders</string>
+    <string name="reminder_channel_description">A reminder a few minutes before a Prayer Time</string>
+    <string name="alerts_adhan_alert">Adhan Alert</string>
+    <string name="alerts_sound">Sound</string>
+    <string name="alerts_sound_short">Short Adhan</string>
+    <string name="alerts_sound_full">Full Adhan</string>
+    <string name="alerts_sound_full_fajr">Fajr\'s Full Adhan, with «الصلاة خير من النوم»</string>
+    <string name="alerts_sound_silent">Silent (notification only)</string>
+    <string name="alerts_reminder">Prayer Reminder</string>
+    <string name="alerts_reminder_minutes">%1$s minutes before</string>
+    <string name="alerts_adhan_off">No Adhan Alert</string>
+    <string name="alerts_summary_with_reminder">%1$s, reminder %2$s</string>
+    <string name="alerts_alarm_clock">Alarm-clock mode</string>
+    <string name="alerts_alarm_clock_description">Shows the next Prayer on the lock screen like an alarm</string>
+    <string name="alerts_play_on_silent">Play adhan even on silent</string>
+    <string name="alerts_play_on_silent_description">Not for reminders, nor during calls</string>
+    <string name="alerts_vibration">Vibration</string>
+    <string name="alerts_custom_adhan">Custom Adhan</string>
+    <string name="alerts_custom_adhan_description">Pick an audio file from your phone to play instead of the bundled recording</string>
+    <string name="alerts_custom_full">Full Adhan (not Fajr)</string>
+    <string name="alerts_custom_fajr_full">Full Adhan for Fajr</string>
+    <string name="alerts_custom_full_not_fajr">Doesn\'t change Fajr, which has its own option because it includes «الصلاة خير من النوم»</string>
+    <string name="alerts_custom_bundled">Bundled recording</string>
+    <string name="alerts_custom_chosen">Your chosen file</string>
+    <string name="alerts_custom_unreadable">The chosen file can\'t be read, so the bundled recording plays instead. Choose the file again or clear it.</string>
+    <string name="alerts_custom_choose">Choose audio file</string>
+    <string name="alerts_custom_preview">Preview</string>
+    <string name="alerts_custom_preview_stop">Stop preview</string>
+    <string name="alerts_custom_clear">Use the bundled recording</string>
+
+    <!-- Widgets (#27). -->
+    <string name="widget_next_prayer">Next Prayer</string>
+    <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
+    <string name="widget_next_prayer_compact_description">The next Prayer on two lines</string>
+    <string name="widget_countdown_format">in %s</string>
+</resources>

@@ -1,0 +1,56 @@
+package app.mawaqeet.widget
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import androidx.core.os.UserManagerCompat
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.updateAppWidgetState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+
+/**
+ * The one entry point that re-renders every home-screen widget. Called from the display alarms
+ * (`AlertReceiver`: each Prayer Time and local midnight), from `RescheduleReceiver` (boot, time, zone, locale) and
+ * on every settings, digit or language change (`MawaqeetApplication`). Widgets never poll.
+ */
+object Widgets {
+    /** Every Widget Variant's [GlanceAppWidget] class; each new variant adds itself here. */
+    private val all: List<() -> GlanceAppWidget> = listOf(::NextPrayerWidget)
+
+    /**
+     * Bumped on every refresh, in each widget's Glance state. A widget reads it with `currentState(REFRESHED_AT)` and
+     * recomputes its content when it changes, since a running Glance session recomposes instead of calling
+     * `provideGlance` again.
+     */
+    val REFRESHED_AT = longPreferencesKey("refreshed_at")
+
+    /** Re-renders every placed widget. Does nothing before the first unlock (settings are unreadable then). */
+    suspend fun refreshAll(context: Context) {
+        if (!UserManagerCompat.isUserUnlocked(context)) return
+        val manager = GlanceAppWidgetManager(context)
+        val stamp = System.currentTimeMillis()
+        for (create in all) {
+            val widget = create()
+            for (id in manager.getGlanceIds(widget.javaClass)) {
+                updateAppWidgetState(context, id) { it[REFRESHED_AT] = stamp }
+                widget.update(context, id)
+            }
+        }
+    }
+
+    /** For receivers that don't reschedule: refreshes off the main thread, keeping the broadcast alive until done. */
+    fun refreshAllAsync(receiver: BroadcastReceiver, context: Context) {
+        val pending = receiver.goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try {
+                refreshAll(context)
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+}

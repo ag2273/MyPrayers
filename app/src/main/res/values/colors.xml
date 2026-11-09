@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand palette, light. Keep in sync with ui/theme/Color.kt. -->
+    <color name="window_background">#F2F6F4</color>
+    <!-- Widgets (default look; #32 adds appearance settings). DayMist, Ink, Ink 72%, NightTeal. -->
+    <color name="widget_background">#F2F6F4</color>
+    <color name="widget_text">#142421</color>
+    <color name="widget_text_muted">#525F5C</color>
+    <color name="widget_accent">#1F6F66</color>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Overlay for the Play fallback build (#22): -Pmawaqeet.adhanChannelSoundFallback=true.
+  If Play rejects the mediaPlayback foreground-service declaration, the adhan plays as the notification
+  channel's sound instead (AdhanNotification.CHANNEL_ADHAN_SOUND), so the service and its permissions go.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" tools:node="remove" />
+
+    <application>
+        <service android:name="app.mawaqeet.alerts.AdhanPlayerService" tools:node="remove" />
+    </application>
+</manifest>

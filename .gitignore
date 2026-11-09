@@ -18,3 +18,12 @@ node_modules/
 
 # Development-only audio placeholders: rights not cleared, never commit or ship
 dev-assets/
+
+# Android / Gradle build outputs and local machine config
+.gradle/
+build/
+local.properties
+.kotlin/
+.idea/
+*.iml
+captures/
