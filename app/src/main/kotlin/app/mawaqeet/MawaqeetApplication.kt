@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.core.os.UserManagerCompat
 import androidx.datastore.preferences.preferencesDataStore
 import app.mawaqeet.alerts.AlertRescheduler
+import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.data.PrayerLogDatabase
 import app.mawaqeet.data.RoomPrayerLogRepository
 import app.mawaqeet.data.SettingsRepository
@@ -24,6 +25,12 @@ class MawaqeetApplication : Application() {
     /** The one settings store in the process; observe [SettingsRepository.settings] and rebuild the core on change. */
     val settings: SettingsRepository by lazy { SettingsRepository(settingsDataStore) }
 
+    /**
+     * The bundled offline city list (asset `cities.tsv`, ~34k cities). Reading it takes a moment: first touch it
+     * off the main thread (e.g. `withContext(Dispatchers.IO) { app.cities }`). One per process.
+     */
+    val cities: CityDirectory by lazy { assets.open(CITIES_ASSET).use(CityDirectory::read) }
+
     /** Lives as long as the process; for work that must outlast any screen. */
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -37,3 +44,6 @@ class MawaqeetApplication : Application() {
         }
     }
 }
+
+/** The city list asset written by tools/cities/generate_cities.py. */
+const val CITIES_ASSET = "cities.tsv"

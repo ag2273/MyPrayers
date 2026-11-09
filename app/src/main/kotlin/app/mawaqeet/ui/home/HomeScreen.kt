@@ -66,7 +66,13 @@ import java.time.ZonedDateTime
  * or unmarks it in the Prayer Log of the current Prayer Day.
  */
 @Composable
-fun HomeScreen(core: PrayerCore, clock: Clock, logChanges: StateFlow<Int>, onOpenSettings: () -> Unit) {
+fun HomeScreen(
+    core: PrayerCore,
+    clock: Clock,
+    logChanges: StateFlow<Int>,
+    locationName: String,
+    onOpenSettings: () -> Unit,
+) {
     // Re-query the core every second: the countdown ticks and the display day switches at local midnight.
     var now by remember { mutableStateOf(clock.instant()) }
     LaunchedEffect(core, clock) {
@@ -83,7 +89,7 @@ fun HomeScreen(core: PrayerCore, clock: Clock, logChanges: StateFlow<Int>, onOpe
         value = withContext(Dispatchers.IO) { core.currentPrayerDay() }
     }
     val scope = rememberCoroutineScope()
-    HomeContent(day, now, prayerDay, onOpenSettings) { prayer ->
+    HomeContent(day, now, prayerDay, locationName, onOpenSettings) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
             scope.launch(Dispatchers.IO) {
@@ -102,6 +108,7 @@ private fun HomeContent(
     day: DisplayDay,
     now: Instant,
     prayerDay: PrayerDay?,
+    locationName: String,
     onOpenSettings: () -> Unit,
     onToggle: (Prayer) -> Unit,
 ) {
@@ -117,7 +124,7 @@ private fun HomeContent(
             DateLine(day)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = stringResource(R.string.default_location_name),
+                    text = locationName,
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -9,7 +9,11 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
+import app.mawaqeet.core.CityRef
 import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.Location
+import app.mawaqeet.core.LocationSource
+import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.core.PrayerSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +28,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.io.File
+import java.time.ZoneId
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36])
@@ -46,6 +51,35 @@ class SettingsRepositoryTest {
 
     @Test
     fun `before any choice the settings are the defaults`() {
+        assertEquals(PrayerSettings.Default, withRepository { repo, _ -> repo.settings.first() })
+    }
+
+    @Test
+    fun `a manual location survives an app restart and becomes the Prayer Times location`() {
+        // Cairo's city centre (GeoNames 360630).
+        val cairo = SavedLocation(Location(30.0626, 31.2497, ZoneId.of("Africa/Cairo")), LocationSource.MANUAL,
+            CityRef(360630L, "Cairo", "القاهرة", "EG", isNear = false))
+        withRepository { repo, _ ->
+            assertEquals(null, repo.savedLocation.first())
+            repo.setLocation(cairo)
+        }
+
+        withRepository { repo, _ ->
+            assertEquals(cairo, repo.savedLocation.first())
+            assertEquals(cairo.location, repo.settings.first().location)
+        }
+    }
+
+    @Test
+    fun `typed coordinates are stored with the nearest city, and a later location without one drops it`() {
+        val point = SavedLocation(Location(30.01, 31.21, ZoneId.of("Africa/Cairo")), LocationSource.MANUAL,
+            CityRef(360630L, "Cairo", "القاهرة", "EG", isNear = true))
+        withRepository { repo, _ -> repo.setLocation(point) }
+        assertEquals(point, withRepository { repo, _ -> repo.savedLocation.first() })
+        val bare = point.copy(city = null)
+        withRepository { repo, _ -> repo.setLocation(bare) }
+        assertEquals(bare, withRepository { repo, _ -> repo.savedLocation.first() })
+        withRepository { repo, _ -> repo.clearLocation() }
         assertEquals(PrayerSettings.Default, withRepository { repo, _ -> repo.settings.first() })
     }
 

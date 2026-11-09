@@ -56,6 +56,9 @@ interface SettingsActions {
     fun setLanguage(languageTag: String)
     fun setDigitStyle(style: DigitStyle)
     fun setHijriOffsetDays(days: Int)
+
+    /** Opens the Location screen (city search or coordinates, #21). */
+    fun openLocation()
 }
 
 /**
@@ -65,6 +68,7 @@ interface SettingsActions {
 @Composable
 fun SettingsScreen(
     settings: PrayerSettings,
+    locationName: String,
     digitStyle: DigitStyle,
     today: LocalDate,
     actions: SettingsActions,
@@ -88,7 +92,7 @@ fun SettingsScreen(
                     modifier = Modifier.semantics { heading() },
                 )
             }
-            PrayerTimesGroup(settings, actions)
+            PrayerTimesGroup(settings, locationName, actions)
             SettingsGroup(R.string.settings_group_alerts) { ComingSoon() }
             SettingsGroup(R.string.settings_group_prayer_log) { ComingSoon() }
             LanguageDisplayGroup(settings, digitStyle, today, actions)
@@ -123,9 +127,14 @@ private fun ComingSoon() {
 }
 
 @Composable
-private fun PrayerTimesGroup(settings: PrayerSettings, actions: SettingsActions) {
+private fun PrayerTimesGroup(settings: PrayerSettings, locationName: String, actions: SettingsActions) {
     var choosingMethod by rememberSaveable { mutableStateOf(false) }
     SettingsGroup(R.string.settings_group_prayer_times) {
+        SettingRow(
+            title = stringResource(R.string.location),
+            summary = locationName,
+            onClick = actions::openLocation,
+        )
         SettingRow(
             title = stringResource(R.string.calculation_method),
             summary = stringResource(settings.method.label),
@@ -283,7 +292,7 @@ fun ChoiceRow(title: String, description: String, selected: Boolean, onSelect: (
 }
 
 @get:StringRes
-private val CalculationMethod.label: Int
+internal val CalculationMethod.label: Int
     get() = when (this) {
         CalculationMethod.UMM_AL_QURA -> R.string.method_umm_al_qura
         CalculationMethod.EGYPTIAN -> R.string.method_egyptian
@@ -331,7 +340,7 @@ private val DigitStyle.description: Int
     }
 
 @get:StringRes
-private val AsrConvention.label: Int
+internal val AsrConvention.label: Int
     get() = when (this) {
         AsrConvention.STANDARD -> R.string.asr_standard
         AsrConvention.HANAFI -> R.string.asr_hanafi

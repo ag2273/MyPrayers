@@ -84,4 +84,23 @@
     <string name="hijri_offset_summary">%2$s (%1$s)</string>
     <string name="hijri_offset_none">No adjustment: %1$s</string>
     <string name="hijri_offset_hint">To match the moon sighting in your country</string>
+
+    <string name="location">Location</string>
+    <string name="location_search_label">Search for your city</string>
+    <string name="location_search_hint">In Arabic or English, offline</string>
+    <string name="location_loading">Loading the city list…</string>
+    <string name="location_no_results">No city with that name. Try another name or enter coordinates.</string>
+    <string name="location_coordinates">Enter coordinates manually</string>
+    <string name="location_latitude">Latitude (−90 to 90)</string>
+    <string name="location_longitude">Longitude (−180 to 180)</string>
+    <string name="location_use_coordinates">Use these coordinates</string>
+    <string name="location_invalid_coordinates">Enter a latitude between −90 and 90 and a longitude between −180 and 180</string>
+    <string name="location_zone_note">Times use the local time of the nearest listed city: %1$s (%2$s)</string>
+    <string name="location_near_city">Near %1$s</string>
+    <string name="suggestion_reason">We suggest %1$s with %2$s Asr because you are in %3$s</string>
+    <string name="suggestion_already_used">Your current settings are the ones suggested for your location.</string>
+    <string name="suggestion_accept">Use suggestion</string>
+    <string name="suggestion_change">Choose another</string>
+    <string name="done">Done</string>
+    <string name="location_credit">City data from GeoNames (CC BY 4.0), Arabic names from Natural Earth</string>
 </resources>

@@ -36,6 +36,14 @@ _Avoid_: Calculation authority, organisation, algorithm
 Which shadow-length rule sets the Asr Prayer Time: Standard (Shafi'i, Maliki, Hanbali) or Hanafi.
 _Avoid_: Madhab, juristic method, school
 
+**Manual Location**:
+A location the user set by picking a city or typing coordinates. It never changes by itself; the opposite is an Automatic Location, taken from the device's approximate position.
+_Avoid_: Fixed location, custom location
+
+**Country Defaults**:
+The Calculation Method and Asr Convention suggested for the country the user's location is in, offered with the reason and always overridable (ADR 0003).
+_Avoid_: Auto method, region preset
+
 **Prayer Reminder**:
 An optional alert a chosen number of minutes before a Prayer Time.
 _Avoid_: Pre-alert, warning
