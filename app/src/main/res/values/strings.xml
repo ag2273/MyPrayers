@@ -66,6 +66,10 @@
     <string name="adhan_alert_title">حان الآن وقت صلاة %1$s</string>
     <string name="adhan_channel_name">تنبيهات الأذان</string>
     <string name="adhan_channel_description">تنبيه عند حلول وقت كل صلاة</string>
+    <!-- Adhan playback (#22). -->
+    <string name="adhan_stop">إيقاف</string>
+    <string name="adhan_sound_channel_name">الأذان بصوت الإشعار</string>
+    <string name="adhan_sound_channel_description">تنبيه عند حلول وقت كل صلاة، مع صوت الأذان</string>
 
     <!-- Permission gate (#18): shown until both alert permissions are granted. -->
     <string name="grant_title">التنبيهات تحتاج إلى إذنك</string>
