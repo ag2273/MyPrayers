@@ -119,4 +119,22 @@
     <string name="location_move_update">Update</string>
     <string name="location_move_keep">Keep current location</string>
     <string name="location_maybe_stale">Your time zone changed. Tap to check your location.</string>
+    <string name="prayer_reminder_title">%1$s is near</string>
+    <string name="reminder_channel_name">Prayer Reminders</string>
+    <string name="reminder_channel_description">A reminder a few minutes before a Prayer Time</string>
+    <string name="alerts_adhan_alert">Adhan Alert</string>
+    <string name="alerts_sound">Sound</string>
+    <string name="alerts_sound_short">Short Adhan</string>
+    <string name="alerts_sound_full">Full Adhan</string>
+    <string name="alerts_sound_full_fajr">Fajr\'s Full Adhan, with «الصلاة خير من النوم»</string>
+    <string name="alerts_sound_silent">Silent (notification only)</string>
+    <string name="alerts_reminder">Prayer Reminder</string>
+    <string name="alerts_reminder_minutes">%1$s minutes before</string>
+    <string name="alerts_adhan_off">No Adhan Alert</string>
+    <string name="alerts_summary_with_reminder">%1$s, reminder %2$s</string>
+    <string name="alerts_alarm_clock">Alarm-clock mode</string>
+    <string name="alerts_alarm_clock_description">Shows the next Prayer on the lock screen like an alarm</string>
+    <string name="alerts_play_on_silent">Play adhan even on silent</string>
+    <string name="alerts_play_on_silent_description">Not for reminders, nor during calls</string>
+    <string name="alerts_vibration">Vibration</string>
 </resources>

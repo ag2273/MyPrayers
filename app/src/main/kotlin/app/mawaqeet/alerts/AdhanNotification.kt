@@ -12,11 +12,21 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import app.mawaqeet.R
+import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 
-/** The Adhan Alert notification, shared by [AlertReceiver] (no sound) and [AdhanPlayerService] (while playing). */
-data class AdhanNotification(val prayer: Prayer, val isJumuah: Boolean, val id: Int) {
+/**
+ * The alert notification, shared by [AlertReceiver] (no sound) and [AdhanPlayerService] (while playing). A
+ * [AlertKind.PRAYER_REMINDER] says the Prayer is near and counts down to [prayerTime] (epoch millis).
+ */
+data class AdhanNotification(
+    val prayer: Prayer,
+    val isJumuah: Boolean,
+    val id: Int,
+    val kind: AlertKind = AlertKind.ADHAN_ALERT,
+    val prayerTime: Long = 0,
+) {
 
     /**
      * The notification's builder on [channel]. Callers add their own actions: the player adds Stop while it plays;
@@ -25,13 +35,25 @@ data class AdhanNotification(val prayer: Prayer, val isJumuah: Boolean, val id: 
     fun builder(context: Context, channel: String = CHANNEL_ADHAN): NotificationCompat.Builder {
         ensureChannels(context)
         val name = context.getString(if (isJumuah) R.string.prayer_jumuah else prayer.nameRes)
-        return NotificationCompat.Builder(context, channel)
+        val builder = NotificationCompat.Builder(context, channel)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // Placeholder until the app icon (#33).
-            .setContentTitle(context.getString(R.string.adhan_alert_title, name))
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(AlertScheduler.openAppIntent(context))
             .setAutoCancel(true)
+        return if (kind == AlertKind.PRAYER_REMINDER) {
+            builder
+                .setContentTitle(context.getString(R.string.prayer_reminder_title, name))
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setWhen(prayerTime)
+                .setShowWhen(true)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
+                .setTimeoutAfter((prayerTime - System.currentTimeMillis()).coerceAtLeast(60_000))
+        } else {
+            builder
+                .setContentTitle(context.getString(R.string.adhan_alert_title, name))
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+        }
     }
 
     /** Posts (or replaces) the notification if notifications are allowed. */
@@ -54,6 +76,12 @@ data class AdhanNotification(val prayer: Prayer, val isJumuah: Boolean, val id: 
          */
         const val CHANNEL_ADHAN_SOUND = "adhan_alerts_sound_v1"
 
+        /**
+         * Prayer Reminders: the system's default short notification sound (respects silent and vibrate mode by
+         * itself); vibration is done by the app ([AlertOutput]) so the vibration setting applies.
+         */
+        const val CHANNEL_REMINDERS = "prayer_reminders"
+
         fun canPost(context: Context): Boolean =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -64,6 +92,19 @@ data class AdhanNotification(val prayer: Prayer, val isJumuah: Boolean, val id: 
                 NotificationChannel(CHANNEL_ADHAN, context.getString(R.string.adhan_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
                     description = context.getString(R.string.adhan_channel_description)
                     setSound(null, null)
+                    enableVibration(false)
+                },
+            )
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_REMINDERS, context.getString(R.string.reminder_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = context.getString(R.string.reminder_channel_description)
+                    setSound(
+                        android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build(),
+                    )
                     enableVibration(false)
                 },
             )

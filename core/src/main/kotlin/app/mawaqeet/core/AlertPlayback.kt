@@ -22,17 +22,28 @@ data class AlertPlayback(val play: AlertSound?, val vibrate: Boolean) {
 
         /**
          * @param late how long after its planned instant the alert is being delivered.
+         * @param playOnSilent [AlertSettings.playOnSilent] (from [PlannedAlert.playOnSilent]): an adhan also plays
+         *   when the ringer is silent or vibrate. It never applies to a Prayer Reminder's [AlertSound.ReminderTone].
+         * @param vibration [AlertSettings.vibration] (from [PlannedAlert.vibration]); silent mode never vibrates.
          */
-        fun decide(sound: AlertSound, device: DeviceAudio, late: Duration): AlertPlayback {
-            val vibrate = device.ringer != RingerMode.SILENT
+        fun decide(
+            sound: AlertSound,
+            device: DeviceAudio,
+            late: Duration,
+            playOnSilent: Boolean = false,
+            vibration: Boolean = true,
+        ): AlertPlayback {
+            val vibrate = vibration && device.ringer != RingerMode.SILENT
+            val ringerAllows = device.ringer == RingerMode.NORMAL || (playOnSilent && sound != AlertSound.ReminderTone)
             val audible = sound != AlertSound.Silent &&
-                device.ringer == RingerMode.NORMAL &&
+                ringerAllows &&
                 late <= MAX_LATENESS &&
                 !(device.inCall && sound.isFullLength)
             return AlertPlayback(play = sound.takeIf { audible }, vibrate = vibrate)
         }
 
-        /** Everything but the Short Adhan; a Custom Adhan counts as full length, since its length is unknown. */
-        private val AlertSound.isFullLength: Boolean get() = this != AlertSound.ShortAdhan
+        /** Everything but the short sounds; a Custom Adhan counts as full length, since its length is unknown. */
+        private val AlertSound.isFullLength: Boolean
+            get() = this != AlertSound.ShortAdhan && this != AlertSound.ReminderTone
     }
 }

@@ -113,4 +113,78 @@ class AlertPlanTest {
         // Midnight is local: 2026-10-25T00:00 BST.
         assertEquals(Instant.parse("2026-10-24T23:00:00Z"), plan.nextLocalMidnight)
     }
+
+    private fun withAlerts(alerts: AlertSettings) = PrayerSettings.Default.copy(alerts = alerts)
+
+    @Test
+    fun `per-Prayer sounds, a turned-off Adhan Alert and Prayer Reminders all show in the 48-hour plan`() {
+        val alerts = AlertSettings()
+            .with(Prayer.FAJR, PrayerAlertSettings(sound = AdhanSoundChoice.FULL))
+            .with(Prayer.DHUHR, PrayerAlertSettings(sound = AdhanSoundChoice.FULL, reminder = true))
+            .with(Prayer.ASR, PrayerAlertSettings(sound = AdhanSoundChoice.SILENT))
+            .with(Prayer.MAGHRIB, PrayerAlertSettings(adhanAlert = false, reminder = true, reminderMinutes = 10))
+        // Makkah 2026-11-08 11:00: Dhuhr 12:04, Asr 15:17, Maghrib 17:41, Isha 19:11; Fajr 05:09 next day.
+        val plan = planAt(makkah("2026-11-08", "11:00"), withAlerts(alerts))
+
+        val today = plan.alerts.filter { it.prayerDay == LocalDate.parse("2026-11-08") }.map {
+            Triple(it.instant.atZone(riyadh).truncatedTo(ChronoUnit.MINUTES).toLocalTime().toString(), it.prayer, it.kind)
+        }
+        assertEquals(
+            listOf(
+                Triple("11:49", Prayer.DHUHR, AlertKind.PRAYER_REMINDER), // 15 minutes, the default lead time.
+                Triple("12:04", Prayer.DHUHR, AlertKind.ADHAN_ALERT),
+                Triple("15:17", Prayer.ASR, AlertKind.ADHAN_ALERT),
+                Triple("17:31", Prayer.MAGHRIB, AlertKind.PRAYER_REMINDER), // Its Adhan Alert is off.
+                Triple("19:11", Prayer.ISHA, AlertKind.ADHAN_ALERT),
+            ),
+            today,
+        )
+        assertEquals(
+            listOf(Prayer.FAJR to AlertKind.ADHAN_ALERT, Prayer.DHUHR to AlertKind.PRAYER_REMINDER, Prayer.DHUHR to AlertKind.ADHAN_ALERT),
+            plan.alerts.drop(5).take(3).map { it.prayer to it.kind },
+        )
+        // 8 Nov: 5 alerts from 11:49; 9 Nov: Fajr + those 5; 10 Nov: Fajr (the window ends at 11:00).
+        assertEquals(12, plan.alerts.size)
+        val adhans = plan.alerts.filter { it.kind == AlertKind.ADHAN_ALERT }.associate { it.prayer to it.sound }
+        assertEquals(AlertSound.FajrFullAdhan, adhans[Prayer.FAJR])
+        assertEquals(AlertSound.FullAdhan, adhans[Prayer.DHUHR])
+        assertEquals(AlertSound.Silent, adhans[Prayer.ASR])
+        assertEquals(AlertSound.ShortAdhan, adhans[Prayer.ISHA])
+        assertTrue(Prayer.MAGHRIB !in adhans)
+        val reminders = plan.alerts.filter { it.kind == AlertKind.PRAYER_REMINDER }
+        assertTrue(reminders.all { it.sound == AlertSound.ReminderTone }, "reminders use the short channel sound only")
+        assertTrue(reminders.all { it.deliveryMode == DeliveryMode.EXACT })
+        val dhuhrReminder = reminders.first()
+        assertEquals(plan.alerts[1].instant, dhuhrReminder.prayerTime)
+        assertEquals(LocalDate.parse("2026-11-08"), dhuhrReminder.prayerDay)
+    }
+
+    @Test
+    fun `a reminder already past is left out while its Prayer's Adhan Alert is still planned`() {
+        val alerts = AlertSettings().with(Prayer.DHUHR, PrayerAlertSettings(reminder = true))
+        // 11:55 is after Dhuhr's reminder (11:49) but before Dhuhr (12:04).
+        val plan = planAt(makkah("2026-11-08", "11:55"), withAlerts(alerts))
+
+        assertEquals(Prayer.DHUHR, plan.alerts.first().prayer)
+        assertEquals(AlertKind.ADHAN_ALERT, plan.alerts.first().kind)
+    }
+
+    @Test
+    fun `alarm-clock mode delivers Adhan Alerts as alarm clocks`() {
+        val alerts = AlertSettings(alarmClockMode = true).with(Prayer.DHUHR, PrayerAlertSettings(reminder = true))
+        val plan = planAt(makkah("2026-11-08", "11:00"), withAlerts(alerts))
+
+        assertTrue(plan.alerts.filter { it.kind == AlertKind.ADHAN_ALERT }.all { it.deliveryMode == DeliveryMode.ALARM_CLOCK })
+        // The lock screen shows the next Prayer, not a reminder before it.
+        assertTrue(plan.alerts.filter { it.kind == AlertKind.PRAYER_REMINDER }.all { it.deliveryMode == DeliveryMode.EXACT })
+    }
+
+    @Test
+    fun `play-on-silent and vibration travel with every planned alert, for the receiver before the first unlock`() {
+        val plan = planAt(makkah("2026-11-08", "11:00"), withAlerts(AlertSettings(playOnSilent = true, vibration = false)))
+        assertTrue(plan.alerts.all { it.playOnSilent && !it.vibration })
+
+        val defaults = planAt(makkah("2026-11-08", "11:00"))
+        assertTrue(defaults.alerts.all { !it.playOnSilent && it.vibration })
+    }
 }

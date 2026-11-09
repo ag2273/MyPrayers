@@ -17,6 +17,9 @@ sealed interface AlertSound {
 
     /** Notification only. */
     data object Silent : AlertSound
+
+    /** A Prayer Reminder's short notification sound (the reminder channel's own); never an adhan. */
+    data object ReminderTone : AlertSound
 }
 
 /** How an alert's alarm is set: an exact alarm (the default) or an alarm clock shown on the lock screen. */
@@ -33,6 +36,14 @@ data class PlannedAlert(
     val prayerDay: LocalDate,
     /** Dhuhr on a Friday, announced as Jumu'ah. */
     val isJumuah: Boolean,
+    /** The Prayer Time itself: [instant] for an Adhan Alert, later for a Prayer Reminder. */
+    val prayerTime: Instant = instant,
+    /**
+     * [AlertSettings.playOnSilent] and [AlertSettings.vibration], carried with each alert because the receiver
+     * may fire before the first unlock, when settings can't be read. Pass them to [AlertPlayback.decide].
+     */
+    val playOnSilent: Boolean = false,
+    val vibration: Boolean = true,
 )
 
 /**

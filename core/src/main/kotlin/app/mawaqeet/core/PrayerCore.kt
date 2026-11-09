@@ -78,20 +78,45 @@ class PrayerCore(
         // Yesterday too: a Prayer Day is a calendar date's Fajr onwards, and the window spans at most 3 dates.
         val alerts = (-1L..2L).flatMap { offset ->
             val date = today.plusDays(offset)
-            calculateDay(settings, date).prayerTimes.map { time ->
-                PlannedAlert(
-                    instant = time.time.toInstant(),
-                    prayer = time.prayer,
-                    kind = AlertKind.ADHAN_ALERT,
-                    sound = AlertSound.ShortAdhan,
-                    deliveryMode = DeliveryMode.EXACT,
-                    prayerDay = date,
-                    isJumuah = time.isJumuah,
-                )
-            }
+            calculateDay(settings, date).prayerTimes.flatMap { time -> plannedAlerts(time, date, settings.alerts) }
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
         val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
         return AlertPlan(alerts, midnight)
+    }
+
+    private fun plannedAlerts(time: PrayerTime, prayerDay: LocalDate, alerts: AlertSettings): List<PlannedAlert> {
+        val prayer = alerts.of(time.prayer)
+        val at = time.time.toInstant()
+        fun alert(kind: AlertKind, instant: Instant, sound: AlertSound, mode: DeliveryMode) = PlannedAlert(
+            instant = instant,
+            prayer = time.prayer,
+            kind = kind,
+            sound = sound,
+            deliveryMode = mode,
+            prayerDay = prayerDay,
+            isJumuah = time.isJumuah,
+            prayerTime = at,
+            playOnSilent = alerts.playOnSilent,
+            vibration = alerts.vibration,
+        )
+        val reminder = if (prayer.reminder) {
+            // Always an exact alarm: in alarm-clock mode the lock screen shows the Prayer, not the reminder before it.
+            val lead = java.time.Duration.ofMinutes(prayer.reminderMinutes.toLong())
+            alert(AlertKind.PRAYER_REMINDER, at.minus(lead), AlertSound.ReminderTone, DeliveryMode.EXACT)
+        } else {
+            null
+        }
+        val adhan = if (prayer.adhanAlert) {
+            val sound = when (prayer.sound) {
+                AdhanSoundChoice.SHORT -> AlertSound.ShortAdhan
+                AdhanSoundChoice.FULL -> if (time.prayer == Prayer.FAJR) AlertSound.FajrFullAdhan else AlertSound.FullAdhan
+                AdhanSoundChoice.SILENT -> AlertSound.Silent
+            }
+            alert(AlertKind.ADHAN_ALERT, at, sound, if (alerts.alarmClockMode) DeliveryMode.ALARM_CLOCK else DeliveryMode.EXACT)
+        } else {
+            null
+        }
+        return listOfNotNull(reminder, adhan)
     }
 
     /** Records the current Prayer Day as the first-use date, once; later calls change nothing. */

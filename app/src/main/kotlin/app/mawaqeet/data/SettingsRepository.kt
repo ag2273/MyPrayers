@@ -8,12 +8,16 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import app.mawaqeet.core.AdhanSoundChoice
+import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityRef
 import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.Location
 import app.mawaqeet.core.LocationSource
+import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.SavedLocation
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +42,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                 asrConvention = prefs[ASR].toEnum(default.asrConvention),
                 hijriOffsetDays = prefs[HIJRI_OFFSET]?.takeIf { it in PrayerSettings.HIJRI_OFFSET_RANGE }
                     ?: default.hijriOffsetDays,
+                alerts = prefs.alertSettings(),
             )
         }
         .distinctUntilChanged()
@@ -123,6 +128,65 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[DIGITS] = style.name }
     }
 
+    /** Settings → Alerts. Every change reaches the alarms through [settings] (the app reschedules on each value). */
+    suspend fun setPrayerAlert(prayer: Prayer, alert: PrayerAlertSettings) = updatePrayerAlert(prayer) { alert }
+
+    /**
+     * Changes one Prayer's alert settings from their stored value, atomically, so quick successive changes
+     * (sound, then reminder) never overwrite each other with a stale copy.
+     */
+    suspend fun updatePrayerAlert(prayer: Prayer, change: (PrayerAlertSettings) -> PrayerAlertSettings) {
+        val keys = PrayerAlertKeys(prayer)
+        store.edit {
+            val alert = change(it.alertSettings().of(prayer))
+            it[keys.adhanAlert] = alert.adhanAlert
+            it[keys.sound] = alert.sound.name
+            it[keys.reminder] = alert.reminder
+            it[keys.reminderMinutes] = alert.reminderMinutes
+        }
+    }
+
+    suspend fun setAlarmClockMode(on: Boolean) {
+        store.edit { it[ALARM_CLOCK_MODE] = on }
+    }
+
+    suspend fun setPlayOnSilent(on: Boolean) {
+        store.edit { it[PLAY_ON_SILENT] = on }
+    }
+
+    suspend fun setVibration(on: Boolean) {
+        store.edit { it[VIBRATION] = on }
+    }
+
+    private fun Preferences.alertSettings(): AlertSettings {
+        val default = AlertSettings()
+        val defaultPrayer = PrayerAlertSettings()
+        return AlertSettings(
+            prayers = Prayer.entries.associateWith { prayer ->
+                val keys = PrayerAlertKeys(prayer)
+                PrayerAlertSettings(
+                    adhanAlert = this[keys.adhanAlert] ?: defaultPrayer.adhanAlert,
+                    sound = this[keys.sound].toEnum(defaultPrayer.sound),
+                    reminder = this[keys.reminder] ?: defaultPrayer.reminder,
+                    reminderMinutes = this[keys.reminderMinutes]?.takeIf { it >= PrayerAlertSettings.MIN_REMINDER_MINUTES }
+                        ?: defaultPrayer.reminderMinutes,
+                )
+            },
+            alarmClockMode = this[ALARM_CLOCK_MODE] ?: default.alarmClockMode,
+            playOnSilent = this[PLAY_ON_SILENT] ?: default.playOnSilent,
+            vibration = this[VIBRATION] ?: default.vibration,
+        )
+    }
+
+    /** Keys `alert_<prayer>_adhan|sound|reminder|reminder_minutes`, e.g. `alert_fajr_sound`. */
+    private class PrayerAlertKeys(prayer: Prayer) {
+        private val prefix = "alert_${prayer.name.lowercase()}_"
+        val adhanAlert = booleanPreferencesKey(prefix + "adhan")
+        val sound = stringPreferencesKey(prefix + "sound")
+        val reminder = booleanPreferencesKey(prefix + "reminder")
+        val reminderMinutes = intPreferencesKey(prefix + "reminder_minutes")
+    }
+
     private inline fun <reified E : Enum<E>> String?.toEnum(default: E): E =
         enumValues<E>().firstOrNull { it.name == this } ?: default
 
@@ -134,6 +198,9 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val ASR = stringPreferencesKey("asr_convention")
         private val HIJRI_OFFSET = intPreferencesKey("hijri_offset_days")
         private val DIGITS = stringPreferencesKey("digit_style")
+        private val ALARM_CLOCK_MODE = booleanPreferencesKey("alarm_clock_mode")
+        private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")
+        private val VIBRATION = booleanPreferencesKey("vibration")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val LATITUDE = doublePreferencesKey("location_latitude")
         private val LONGITUDE = doublePreferencesKey("location_longitude")

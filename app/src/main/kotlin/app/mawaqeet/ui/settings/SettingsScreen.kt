@@ -39,6 +39,8 @@ import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.HijriDate
+import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.ui.LocalDisplayFormatter
 import androidx.compose.ui.platform.LocalConfiguration
@@ -59,6 +61,12 @@ interface SettingsActions {
 
     /** Opens the Location screen (city search or coordinates, #21). */
     fun openLocation()
+
+    /** Settings → Alerts (#23); each change reschedules the alarms through the settings flow. */
+    fun updatePrayerAlert(prayer: Prayer, change: (PrayerAlertSettings) -> PrayerAlertSettings)
+    fun setAlarmClockMode(on: Boolean)
+    fun setPlayOnSilent(on: Boolean)
+    fun setVibration(on: Boolean)
 }
 
 /**
@@ -93,7 +101,7 @@ fun SettingsScreen(
                 )
             }
             PrayerTimesGroup(settings, locationName, actions)
-            SettingsGroup(R.string.settings_group_alerts) { ComingSoon() }
+            AlertsGroup(settings.alerts, actions)
             SettingsGroup(R.string.settings_group_prayer_log) { ComingSoon() }
             LanguageDisplayGroup(settings, digitStyle, today, actions)
             SettingsGroup(R.string.settings_group_widgets) { ComingSoon() }

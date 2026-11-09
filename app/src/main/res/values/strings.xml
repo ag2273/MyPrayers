@@ -131,4 +131,22 @@
     <string name="location_move_update">تحديث</string>
     <string name="location_move_keep">إبقاء الموقع الحالي</string>
     <string name="location_maybe_stale">تغيّرت المنطقة الزمنية. اضغط للتحقق من موقعك.</string>
+    <string name="prayer_reminder_title">اقترب وقت صلاة %1$s</string>
+    <string name="reminder_channel_name">التذكير بالصلاة</string>
+    <string name="reminder_channel_description">تذكير قبل وقت الصلاة بدقائق</string>
+    <string name="alerts_adhan_alert">تنبيه الأذان</string>
+    <string name="alerts_sound">صوت التنبيه</string>
+    <string name="alerts_sound_short">أذان قصير</string>
+    <string name="alerts_sound_full">الأذان كاملًا</string>
+    <string name="alerts_sound_full_fajr">أذان الفجر كاملًا، مع «الصلاة خير من النوم»</string>
+    <string name="alerts_sound_silent">صامت (إشعار فقط)</string>
+    <string name="alerts_reminder">التذكير قبل الصلاة</string>
+    <string name="alerts_reminder_minutes">قبل %1$s دقيقة</string>
+    <string name="alerts_adhan_off">بلا تنبيه أذان</string>
+    <string name="alerts_summary_with_reminder">%1$s، والتذكير %2$s</string>
+    <string name="alerts_alarm_clock">وضع المنبه</string>
+    <string name="alerts_alarm_clock_description">يظهر موعد الصلاة القادمة على شاشة القفل كالمنبه</string>
+    <string name="alerts_play_on_silent">تشغيل الأذان حتى في الوضع الصامت</string>
+    <string name="alerts_play_on_silent_description">لا يشمل التذكير، ولا الأذان أثناء المكالمات</string>
+    <string name="alerts_vibration">الاهتزاز</string>
 </resources>

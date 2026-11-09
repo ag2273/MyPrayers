@@ -191,6 +191,22 @@ class MainActivity : AppCompatActivity() {
                             override fun openLocation() {
                                 showLocation = true
                             }
+
+                            override fun updatePrayerAlert(prayer: app.mawaqeet.core.Prayer, change: (app.mawaqeet.core.PrayerAlertSettings) -> app.mawaqeet.core.PrayerAlertSettings) {
+                                scope.launch { settingsStore.updatePrayerAlert(prayer, change) }
+                            }
+
+                            override fun setAlarmClockMode(on: Boolean) {
+                                scope.launch { settingsStore.setAlarmClockMode(on) }
+                            }
+
+                            override fun setPlayOnSilent(on: Boolean) {
+                                scope.launch { settingsStore.setPlayOnSilent(on) }
+                            }
+
+                            override fun setVibration(on: Boolean) {
+                                scope.launch { settingsStore.setVibration(on) }
+                            }
                         }
                     }
                     SettingsScreen(

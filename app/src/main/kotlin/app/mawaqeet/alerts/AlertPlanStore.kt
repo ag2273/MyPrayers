@@ -47,7 +47,7 @@ internal class AlertPlanStore(context: Context) {
             appendLine(
                 listOf(
                     a.instant.toEpochMilli(), a.prayer.name, a.kind.name, encodeAlertSound(a.sound),
-                    a.deliveryMode.name, a.prayerDay, a.isJumuah,
+                    a.deliveryMode.name, a.prayerDay, a.isJumuah, a.prayerTime.toEpochMilli(), a.playOnSilent, a.vibration,
                 ).joinToString("\t"),
             )
         }
@@ -59,7 +59,7 @@ internal class AlertPlanStore(context: Context) {
         val midnight = Instant.ofEpochMilli(lines[1].toLong())
         val alerts = lines.drop(2).map { line ->
             val f = line.split('\t')
-            require(f.size == 7)
+            require(f.size == 10)
             PlannedAlert(
                 instant = Instant.ofEpochMilli(f[0].toLong()),
                 prayer = Prayer.valueOf(f[1]),
@@ -68,6 +68,9 @@ internal class AlertPlanStore(context: Context) {
                 deliveryMode = DeliveryMode.valueOf(f[4]),
                 prayerDay = LocalDate.parse(f[5]),
                 isJumuah = f[6].toBooleanStrict(),
+                prayerTime = Instant.ofEpochMilli(f[7].toLong()),
+                playOnSilent = f[8].toBooleanStrict(),
+                vibration = f[9].toBooleanStrict(),
             )
         }
         return AlertPlan(alerts, midnight)
@@ -75,7 +78,7 @@ internal class AlertPlanStore(context: Context) {
 
     companion object {
         const val FILE_NAME = "alert_plan.txt"
-        private const val VERSION = "alert-plan-v1"
+        private const val VERSION = "alert-plan-v2"
     }
 }
 
@@ -87,6 +90,7 @@ internal fun encodeAlertSound(sound: AlertSound): String = when (sound) {
     AlertSound.FullAdhan -> "FULL_ADHAN"
     AlertSound.FajrFullAdhan -> "FAJR_FULL_ADHAN"
     AlertSound.Silent -> "SILENT"
+    AlertSound.ReminderTone -> "REMINDER_TONE"
     is AlertSound.CustomAdhan -> CUSTOM_PREFIX + sound.reference
 }
 
@@ -95,6 +99,7 @@ internal fun decodeAlertSound(s: String): AlertSound = when {
     s == "FULL_ADHAN" -> AlertSound.FullAdhan
     s == "FAJR_FULL_ADHAN" -> AlertSound.FajrFullAdhan
     s == "SILENT" -> AlertSound.Silent
+    s == "REMINDER_TONE" -> AlertSound.ReminderTone
     s.startsWith(CUSTOM_PREFIX) -> AlertSound.CustomAdhan(s.removePrefix(CUSTOM_PREFIX))
     else -> throw IllegalArgumentException(s)
 }
