@@ -107,4 +107,20 @@ class PrayerLogWidgetsRenderTest {
         }
         assertTrue(widgetTexts(renderWidget(context, WeekLogWidget(), 250, 180)).any { it.text.toString() == "Week Prayer Log" })
     }
+
+    private fun descriptions(view: View): List<String> =
+        listOfNotNull(view.contentDescription?.toString()) +
+            ((view as? android.view.ViewGroup)?.let { g -> (0 until g.childCount).flatMap { descriptions(g.getChildAt(it)) } } ?: emptyList())
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `TalkBack reads each Week Prayer Log row as one line, and each Today mark by its state`() {
+        val week = descriptions(renderWidget(context, WeekLogWidget(), 250, 180))
+        for (names in listOf(listOf("Fajr"), listOf("Dhuhr", "Jumu'ah"), listOf("Asr"), listOf("Maghrib"), listOf("Isha"))) {
+            assertTrue("no row for $names in $week", week.any { row -> names.any { row.startsWith("$it:") } })
+        }
+        val marks = images(renderWidget(context, TodayLogWidget(), 250, 180)).mapNotNull { it.contentDescription?.toString() }
+        assertEquals(marks.toString(), 5, marks.size)
+        assertTrue(marks.toString(), marks.all { it in setOf("Prayed", "Not marked", "Not yet due") })
+    }
 }

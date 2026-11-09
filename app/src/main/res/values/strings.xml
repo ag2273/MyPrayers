@@ -29,7 +29,22 @@
     <string name="settings_group_language_display">اللغة والعرض</string>
     <string name="settings_group_widgets">أدوات الشاشة الرئيسية</string>
     <string name="settings_group_about">حول التطبيق</string>
-    <string name="settings_coming_soon">ستُضاف هذه الإعدادات لاحقًا</string>
+    <string name="about_version">الإصدار %1$s</string>
+    <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك.</string>
+    <string name="about_libraries">المكتبات</string>
+    <string name="about_datasets">البيانات</string>
+    <string name="about_fonts">الخطوط</string>
+    <string name="about_recordings">تسجيلات الأذان</string>
+    <string name="about_recordings_none">لا يضم التطبيق تسجيلات أذان بعد. يمكنك اختيار أذان من ملفاتك في إعدادات التنبيهات.</string>
+    <string name="about_credit_description">%1$s، الترخيص: %2$s. يفتح الموقع</string>
+    <string name="about_licence">الترخيص: %1$s</string>
+    <string name="about_use_adhan">حساب مواقيت الصلاة</string>
+    <string name="about_use_datetime">التواريخ والأوقات</string>
+    <string name="about_use_androidx">الواجهة والتخزين وأدوات الشاشة الرئيسية</string>
+    <string name="about_use_geonames">أسماء المدن وإحداثياتها ومناطقها الزمنية</string>
+    <string name="about_use_natural_earth">الأسماء العربية للمدن</string>
+    <string name="about_use_kufi">العناوين العربية</string>
+    <string name="about_use_naskh">النصوص العربية</string>
 
     <string name="calculation_method">طريقة الحساب</string>
     <string name="asr_convention">وقت العصر</string>

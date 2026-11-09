@@ -84,6 +84,13 @@ How the code is laid out and tested. Vocabulary follows `GLOSSARY.md`; decisions
 - **No clipped text:** sizes that must fit live in a `<Variant>Metrics` object. `WidgetTextFitTest` measures the widest names and times with the real system font (`@GraphicsMode(NATIVE)`), and the `*RenderTest`s render each widget (also at 70% transparency and on Android 11, `WidgetAppearanceRenderTest`) with `GlanceAppWidget.compose` at its smallest size and checks every `TextView` fits. Arabic lines are taller than Latin ones (fallback line spacing), which matters at 4×1 and 2×1: measure with `lineHeightDp`.
 - **Countdown:** a count-down `Chronometer` through `AndroidRemoteViews` (`setChronometer(id, elapsedRealtime() + untilNext, "بعد %s", true)` + `setChronometerCountDown`). The launcher formats its digits in the device language, so they may not follow the digit setting.
 
+## Accessibility
+
+- **Checked by tests (#33):** `AccessibilityTest` renders Home, the Prayer Log and Settings at 200% font in a tall window, in Arabic and English, and fails on any cut-off or ellipsized text and any tap target under 48×48dp (`assertAccessible` in `Accessibility.kt`; call it from new screens' tests). `TalkBackTest` checks each Prayer is one item with its name, time and Prayer Log state. `ContrastTest` keeps text colour roles at 4.5:1 in both themes, app and widgets.
+- **Rules:** decorative glyphs (the ✓ in a mark) get `clearAndSetSemantics {}`, since the row's state already says it. A row that toggles uses `Role.Checkbox` with a `stateDescription`. Colours on the Next Prayer card use `tertiary`, not the brand amber, which reads at 2.7:1 there.
+- **Icon:** `mipmap-anydpi-v26/ic_launcher*.xml`, an adaptive icon with background, foreground and monochrome (themed) layers. `LauncherIconTest` keeps every mark inside the 66dp safe zone.
+- **About:** `about/Credits.kt` lists every library, dataset, font and recording with its licence. `CreditsTest` fails when a shipped dependency or bundled font isn't credited, so add the credit with the dependency.
+
 ## Tests
 
 - Nearly all tests are plain JVM tests in `core/src/test`, through the core's public interface only, with a fixed `Clock` (`Clock.fixed(...)`). No tests of internal classes or adhan-kotlin.

@@ -12,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.toggleableState
@@ -247,7 +248,8 @@ private fun NextPrayerCard(next: PrayerTime, now: Instant) {
         Text(
             text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.secondary,
+            // Not the brand amber: on the card's teal it reads at 2.7:1 (light) and 1.1:1 (dark).
+            color = MaterialTheme.colorScheme.tertiary,
         )
     }
 }
@@ -314,7 +316,8 @@ private fun LogMark(state: LogState) {
             Modifier.size(28.dp).background(colors.primary, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text("✓", color = colors.onPrimary, style = MaterialTheme.typography.titleMedium)
+            // The row's state already says "Prayed"; TalkBack shouldn't also read "check mark".
+            Text("✓", color = colors.onPrimary, style = MaterialTheme.typography.titleMedium, modifier = Modifier.clearAndSetSemantics {})
         }
         LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.primary, CircleShape))
         LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.dp, colors.outlineVariant, CircleShape))
