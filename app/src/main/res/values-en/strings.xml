@@ -155,4 +155,29 @@
     <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
     <string name="widget_next_prayer_compact_description">The next Prayer on two lines</string>
     <string name="widget_countdown_format">in %s</string>
+
+    <!-- Prayer Time adjustments (#20). -->
+    <string name="adjustments">Prayer Time adjustments</string>
+    <string name="adjustments_none">No adjustments</string>
+    <string name="adjustments_hint">Move any Prayer up to %1$s minutes earlier or later to match your mosque.</string>
+    <string name="adjustment_summary">%1$s %2$s min</string>
+    <string name="list_separator">, </string>
+    <string name="adjustment_minutes">%1$s min</string>
+    <string name="adjustment_earlier">%1$s one minute earlier</string>
+    <string name="adjustment_later">%1$s one minute later</string>
+
+    <!-- Settings → Advanced (#20). -->
+    <string name="settings_group_advanced">Advanced</string>
+    <string name="high_latitude_rule">High-latitude rule</string>
+    <string name="high_latitude_rule_hint">For when the sun doesn\'t go low enough to calculate Fajr and Isha, as in northern European summers.</string>
+    <string name="high_latitude_automatic">Automatic</string>
+    <string name="high_latitude_automatic_description">Seventh of the night above about %1$s° latitude, middle of the night below</string>
+    <string name="high_latitude_middle">Middle of the night</string>
+    <string name="high_latitude_middle_description">Isha no later, and Fajr no earlier, than the middle of the night</string>
+    <string name="high_latitude_seventh">Seventh of the night</string>
+    <string name="high_latitude_seventh_description">Isha after the first seventh of the night, Fajr in its last seventh</string>
+    <string name="high_latitude_twilight">Twilight angle</string>
+    <string name="high_latitude_twilight_description">A part of the night set by the method\'s angle divided by %1$s</string>
+    <string name="high_latitude_note">Today\'s Fajr and Isha use the high-latitude rule “%1$s”.</string>
+    <string name="high_latitude_polar_note">The sun doesn\'t rise or set here today, so times come from the nearest latitude where they can be calculated, with the rule “%1$s”.</string>
 </resources>

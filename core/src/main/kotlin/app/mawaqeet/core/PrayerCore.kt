@@ -15,7 +15,10 @@ class PrayerCore(
     private val clock: Clock,
     private val log: PrayerLogRepository,
 ) {
-    /** The calendar date to display now, at the location, with its Prayer Times and Sunrise. */
+    /**
+     * The calendar date to display now, at the location, with its Prayer Times (after the user's adjustments) and
+     * Sunrise, and whether a high-latitude rule was applied to them.
+     */
     fun displayDay(): DisplayDay {
         val now = clock.instant()
         val date = LocalDate.ofInstant(now, settings.location.zone)
@@ -25,6 +28,7 @@ class PrayerCore(
         return DisplayDay(
             date = date, prayerTimes = day.prayerTimes, sunrise = day.sunrise, next = next,
             hijriDate = HijriDate.of(date, settings.hijriOffsetDays),
+            highLatitude = day.highLatitude,
         )
     }
 
