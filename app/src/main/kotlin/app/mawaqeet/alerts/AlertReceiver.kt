@@ -8,6 +8,7 @@ import app.mawaqeet.core.AlertPlayback
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 import java.time.Duration
+import java.time.LocalDate
 
 /**
  * Receives the scheduler's alarms (direct-boot aware, so it also fires before the first unlock):
@@ -33,6 +34,7 @@ class AlertReceiver : BroadcastReceiver() {
                         intent.getIntExtra(EXTRA_REQUEST_CODE, 1),
                         kind,
                         intent.getLongExtra(EXTRA_PRAYER_TIME, at),
+                        prayerDay(intent),
                     )
                     val sound = intent.getStringExtra(EXTRA_SOUND)?.let(::decodeAlertSound) ?: AlertSound.ShortAdhan
                     val late = Duration.ofMillis((now - at).coerceAtLeast(0))
@@ -56,6 +58,10 @@ class AlertReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        /** The alert's Prayer Day from [EXTRA_PRAYER_DAY], or null if missing or unreadable (no "Mark as prayed"). */
+        internal fun prayerDay(intent: Intent): LocalDate? =
+            intent.getStringExtra(EXTRA_PRAYER_DAY)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
         const val ACTION_ALERT = "app.mawaqeet.action.ADHAN_ALERT"
         const val ACTION_MIDNIGHT = "app.mawaqeet.action.LOCAL_MIDNIGHT"
         const val EXTRA_PRAYER = "prayer"
@@ -76,6 +82,9 @@ class AlertReceiver : BroadcastReceiver() {
 
         /** [app.mawaqeet.core.PlannedAlert.playOnSilent] / [app.mawaqeet.core.PlannedAlert.vibration]. */
         const val EXTRA_PLAY_ON_SILENT = "play_on_silent"
+
+        /** The alert's Prayer Day ([app.mawaqeet.core.PlannedAlert.prayerDay], ISO date), for "Mark as prayed". */
+        const val EXTRA_PRAYER_DAY = "prayer_day"
         const val EXTRA_VIBRATION = "vibration"
     }
 }

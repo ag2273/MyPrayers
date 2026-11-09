@@ -15,10 +15,14 @@ import app.mawaqeet.R
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
+import java.time.LocalDate
 
 /**
  * The alert notification, shared by [AlertReceiver] (no sound) and [AdhanPlayerService] (while playing). A
  * [AlertKind.PRAYER_REMINDER] says the Prayer is near and counts down to [prayerTime] (epoch millis).
+ *
+ * An Adhan Alert with its [prayerDay] carries "Mark as prayed" (#26), which marks [prayer] on that Prayer Day through
+ * [MarkPrayedReceiver], so Isha after midnight lands on the previous Prayer Day like a tap on Home.
  */
 data class AdhanNotification(
     val prayer: Prayer,
@@ -26,11 +30,12 @@ data class AdhanNotification(
     val id: Int,
     val kind: AlertKind = AlertKind.ADHAN_ALERT,
     val prayerTime: Long = 0,
+    val prayerDay: LocalDate? = null,
 ) {
 
     /**
-     * The notification's builder on [channel]. Callers add their own actions: the player adds Stop while it plays;
-     * "Mark as prayed" (#26) belongs here so every variant has it.
+     * The notification's builder on [channel], with "Mark as prayed" on an Adhan Alert. Callers add their own
+     * actions: the player adds Stop while it plays.
      */
     fun builder(context: Context, channel: String = CHANNEL_ADHAN): NotificationCompat.Builder {
         ensureChannels(context)
@@ -53,6 +58,16 @@ data class AdhanNotification(
                 .setContentTitle(context.getString(R.string.adhan_alert_title, name))
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .apply {
+                    val day = prayerDay ?: return@apply
+                    addAction(
+                        NotificationCompat.Action(
+                            0,
+                            context.getString(R.string.mark_as_prayed),
+                            MarkPrayedReceiver.intent(context, prayer, day, id),
+                        ),
+                    )
+                }
         }
     }
 

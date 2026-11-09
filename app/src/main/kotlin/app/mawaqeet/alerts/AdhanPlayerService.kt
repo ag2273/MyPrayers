@@ -46,10 +46,16 @@ class AdhanPlayerService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        val next = AdhanNotification(prayer, intent.getBooleanExtra(AlertReceiver.EXTRA_JUMUAH, false), intent.getIntExtra(AlertReceiver.EXTRA_REQUEST_CODE, 1))
+        val next = AdhanNotification(
+            prayer,
+            intent.getBooleanExtra(AlertReceiver.EXTRA_JUMUAH, false),
+            intent.getIntExtra(AlertReceiver.EXTRA_REQUEST_CODE, 1),
+            prayerDay = AlertReceiver.prayerDay(intent),
+        )
         stopPlayback() // A new alert replaces one still playing.
         notification?.let { if (it.id != next.id) it.post(this) }
         notification = next
+        playingId = next.id
         ServiceCompat.startForeground(this, next.id, playingNotification(next), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         play(sound)
         return START_NOT_STICKY // Never replay after the process is killed or the phone restarts.
@@ -137,11 +143,13 @@ class AdhanPlayerService : Service() {
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         notification?.post(this)
         notification = null
+        playingId = null
         stopSelf()
     }
 
     override fun onDestroy() {
         stopPlayback()
+        playingId = null
         super.onDestroy()
     }
 
@@ -151,6 +159,11 @@ class AdhanPlayerService : Service() {
         const val ACTION_STOP = "app.mawaqeet.action.STOP_ADHAN"
         const val FADE_IN_MS = 3_000L
         private const val FADE_STEP_MS = 100L
+
+        /** The notification id of the alert now playing, or null: "Mark as prayed" stops only its own adhan. */
+        @Volatile
+        var playingId: Int? = null
+            private set
 
         private val ATTRIBUTES: AudioAttributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_ALARM)
@@ -164,6 +177,7 @@ class AdhanPlayerService : Service() {
                 .putExtra(AlertReceiver.EXTRA_JUMUAH, n.isJumuah)
                 .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, n.id)
                 .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(sound))
+                .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, n.prayerDay?.toString())
 
         fun stopIntent(context: Context): PendingIntent = PendingIntent.getService(
             context,
