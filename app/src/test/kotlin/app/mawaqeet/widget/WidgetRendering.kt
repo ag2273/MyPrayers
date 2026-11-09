@@ -9,7 +9,6 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.compose
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -17,10 +16,11 @@ import kotlin.math.roundToInt
 
 /**
  * Renders [widget] through Glance at [width]×[height] dp and lays the RemoteViews out as a launcher would, with real
- * text measurement under `@GraphicsMode(NATIVE)`. Composed off the main thread, since widgets query the Prayer Log.
+ * text measurement under `@GraphicsMode(NATIVE)`. Composed on the main thread, as on a phone, so a Prayer Log query
+ * in composition fails here too (Room refuses the main thread).
  */
 internal fun renderWidget(context: Context, widget: GlanceAppWidget, width: Int, height: Int): View {
-    val views = runBlocking(Dispatchers.Default) { widget.compose(context, size = DpSize(width.dp, height.dp)) }
+    val views = runBlocking { widget.compose(context, size = DpSize(width.dp, height.dp)) }
     val density = context.resources.displayMetrics.density
     val w = (width * density).roundToInt()
     val h = (height * density).roundToInt()

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
@@ -42,11 +43,15 @@ import androidx.glance.unit.ColorProvider
 import app.mawaqeet.MainActivity
 import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.R
+import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.DisplayFormatter
 import app.mawaqeet.core.PrayerCore
+import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.ui.appLocale
 import app.mawaqeet.ui.localizedContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.time.Clock
 
 /** What a widget needs to put the display day into words: the formatter, strings and direction of the app language. */
@@ -59,6 +64,9 @@ internal val LocalWidgetStyle = staticCompositionLocalOf { WidgetStyle.of(Widget
  * The shared body of a widget's `provideGlance`: reads settings, digits, the app language (the stored copy too, for a
  * fresh process on Android 8–12) and the widget appearance, builds the view from a fresh [PrayerCore] with [build],
  * and rebuilds it on every change of those and on [Widgets.refreshAll] (alarms and Prayer Log changes).
+ *
+ * [build] runs on [Dispatchers.IO], never in composition: on a phone Glance composes on the main thread, where the
+ * Prayer Log (Room) refuses to be read, and the widget then shows only "Can't show content".
  */
 internal suspend fun <T> GlanceAppWidget.provideFromCore(
     context: Context,
@@ -71,20 +79,28 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
     val initialDigits = store.digitStyle.first()
     val initialLanguage = store.appLanguage.first()
     val initialAppearance = store.widgetAppearance.first()
+    suspend fun view(settings: PrayerSettings, digits: DigitStyle, language: String): Pair<T, Boolean> =
+        withContext(Dispatchers.IO) {
+            val locale = appLocale(context, language)
+            val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
+            val core = PrayerCore(settings, Clock.systemUTC(), app.prayerLog)
+            build(core, WidgetText(DisplayFormatter(locale, digits), localizedContext(context, locale), rtl)) to rtl
+        }
+    val initialView = view(initialSettings, initialDigits, initialLanguage)
     provideContent {
         val settings by store.settings.collectAsState(initialSettings)
         val digits by store.digitStyle.collectAsState(initialDigits)
         val language by store.appLanguage.collectAsState(initialLanguage)
         val appearance by store.widgetAppearance.collectAsState(initialAppearance)
         val refreshedAt = currentState(Widgets.REFRESHED_AT)
-        val (view, rtl) = remember(settings, digits, language, refreshedAt) {
-            val locale = appLocale(context, language)
-            val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
-            val core = PrayerCore(settings, Clock.systemUTC(), app.prayerLog)
-            build(core, WidgetText(DisplayFormatter(locale, digits), localizedContext(context, locale), rtl)) to rtl
+        val current by produceState(initialView, settings, digits, language, refreshedAt) {
+            // The first composition already has its view; rebuild only after something changed.
+            if (settings != initialSettings || digits != initialDigits || language != initialLanguage || refreshedAt != null) {
+                value = view(settings, digits, language)
+            }
         }
         CompositionLocalProvider(LocalWidgetStyle provides remember(appearance) { WidgetStyle.of(appearance) }) {
-            layout(view, rtl)
+            layout(current.first, current.second)
         }
     }
 }
