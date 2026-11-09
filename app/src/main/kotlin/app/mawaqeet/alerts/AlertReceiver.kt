@@ -13,7 +13,9 @@ import java.time.Duration
  * Receives the scheduler's alarms (direct-boot aware, so it also fires before the first unlock):
  * - [ACTION_ALERT] at each Prayer Time and Prayer Reminder: asks the core what to play ([AlertPlayback.decide]), hands that to
  *   [AlertOutput] (vibration, then the adhan player or a plain notification), then reschedules.
- * - [ACTION_MIDNIGHT] at local midnight: reschedules (the display day changes; widgets refresh here in #27).
+ * - [ACTION_MIDNIGHT], the display alarm ([app.mawaqeet.core.AlertPlan.nextDisplayChange]): at local midnight, or at a
+ *   Prayer Time with no Adhan Alert. Reschedules only.
+ * Both then refresh every widget ([app.mawaqeet.widget.Widgets.refreshAll]).
  */
 class AlertReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -44,12 +46,13 @@ class AlertReceiver : BroadcastReceiver() {
                     )
                     AlertOutput.deliver(context, notification, sound, playback)
                 }
-                // #27 refreshes widgets here.
             }
-            ACTION_MIDNIGHT -> Unit // #27 refreshes widgets here.
+            ACTION_MIDNIGHT -> Unit
             else -> return
         }
-        AlertRescheduler.rescheduleAsync(this, context)
+        // Both mark a display change (a Prayer Time or local midnight), so the widgets move on. Before the first unlock
+        // Widgets.refreshAll does nothing; BOOT_COMPLETED refreshes them.
+        AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true)
     }
 
     companion object {

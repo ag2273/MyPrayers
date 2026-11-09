@@ -138,6 +138,8 @@ dependencies {
 
     implementation(libs.datastore.preferences)
 
+    implementation(libs.glance.appwidget)
+
     testImplementation(libs.junit)
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)

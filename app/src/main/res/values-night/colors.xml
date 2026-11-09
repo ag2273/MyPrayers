@@ -2,4 +2,9 @@
 <resources>
     <!-- Brand palette, dark. Keep in sync with ui/theme/Color.kt. -->
     <color name="window_background">#0E1917</color>
+    <!-- Widgets: IshaNight, InkDark, InkDark 72%, TealGlow. -->
+    <color name="widget_background">#0E1917</color>
+    <color name="widget_text">#E4EEEB</color>
+    <color name="widget_text_muted">#A8B2B0</color>
+    <color name="widget_accent">#7FC9BC</color>
 </resources>

@@ -14,9 +14,9 @@ import java.time.Instant
 /**
  * Turns the core's [AlertPlan] into alarms: one per planned alert (`setExactAndAllowWhileIdle`, or
  * `setAlarmClock` in alarm-clock mode) plus one display alarm ([AlertPlan.nextDisplayChange]: local midnight, or a Prayer
- * Time with no Adhan Alert). The stored plan keeps only midnight, so after a locked boot the display alarm is midnight. Applying a plan reconciles: alarms
- * of the previously applied plan that the new one lacks are cancelled, the rest are (re)set. The applied plan
- * is stored in device-protected storage ([AlertPlanStore]) for [rearmStoredPlan] after a locked boot.
+ * Time with no Adhan Alert). Applying a plan reconciles: alarms of the previously applied plan that the new one lacks
+ * are cancelled, the rest are (re)set. The applied plan is stored in device-protected storage ([AlertPlanStore]) for
+ * [rearmStoredPlan] after a locked boot; the stored copy keeps only midnight, so its display alarm is midnight.
  *
  * Callers normally go through [AlertRescheduler], which builds the plan and serialises calls.
  */

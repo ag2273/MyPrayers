@@ -137,4 +137,10 @@
     <string name="alerts_play_on_silent">Play adhan even on silent</string>
     <string name="alerts_play_on_silent_description">Not for reminders, nor during calls</string>
     <string name="alerts_vibration">Vibration</string>
+
+    <!-- Widgets (#27). -->
+    <string name="widget_next_prayer">Next Prayer</string>
+    <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
+    <string name="widget_next_prayer_compact_description">The next Prayer on two lines</string>
+    <string name="widget_countdown_format">in %s</string>
 </resources>
