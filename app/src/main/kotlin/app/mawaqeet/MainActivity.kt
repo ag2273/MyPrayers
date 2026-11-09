@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -24,17 +25,22 @@ import app.mawaqeet.alerts.AlertPermissions
 import app.mawaqeet.alerts.AlertRescheduler
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
+import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.location.LocationScreen
+import app.mawaqeet.ui.location.locationName
 import app.mawaqeet.ui.permissions.GrantScreen
 import app.mawaqeet.ui.settings.SettingsActions
 import app.mawaqeet.ui.settings.SettingsScreen
 import app.mawaqeet.ui.theme.MawaqeetTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Clock
 
 /** AppCompatActivity (not ComponentActivity) so the per-app language backport works on Android 8–12. */
@@ -54,11 +60,15 @@ class MainActivity : AppCompatActivity() {
                 // Null until the stored settings are read, so the default method's times never flash.
                 val settings by settingsStore.settings.collectAsState(initial = null)
                 val storedDigits by settingsStore.digitStyle.collectAsState(initial = null)
+                // Wrapped in a list so "not read yet" (null) differs from "no location set" (empty): no default-name flash.
+                val storedLocation by remember { settingsStore.savedLocation.map { listOfNotNull(it) } }.collectAsState(initial = null)
                 val current = settings ?: return@MawaqeetTheme
                 val digits = storedDigits ?: return@MawaqeetTheme
+                val savedLocation = (storedLocation ?: return@MawaqeetTheme).firstOrNull()
                 // A new core whenever the settings change: Home re-queries it, so times and next Prayer follow.
                 val core = remember(current) { PrayerCore(current, clock, prayerLog) }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
+                var showLocation by rememberSaveable { mutableStateOf(false) }
                 val scope = rememberCoroutineScope()
                 // Re-checked on every resume, so a permission revoked in system settings brings the Grant screen back.
                 var permissions by remember { mutableStateOf(AlertPermissions.of(this)) }
@@ -88,6 +98,21 @@ class MainActivity : AppCompatActivity() {
                         },
                         onGrantExactAlarms = { startActivity(AlertPermissions.exactAlarmSettingsIntent(this@MainActivity)) },
                     )
+                } else if (showSettings && showLocation) {
+                    // The city list is read once per process, off the main thread, only when this screen opens.
+                    val cities by produceState<CityDirectory?>(null) { value = withContext(Dispatchers.IO) { app.cities } }
+                    LocationScreen(
+                        cities = cities,
+                        settings = current,
+                        onChoose = { scope.launch { settingsStore.setLocation(it) } },
+                        onAcceptSuggestion = {
+                            scope.launch {
+                                settingsStore.setCalculationMethod(it.method)
+                                settingsStore.setAsrConvention(it.asrConvention)
+                            }
+                        },
+                        onBack = { showLocation = false },
+                    )
                 } else if (showSettings) {
                     val actions = remember(settingsStore) {
                         object : SettingsActions {
@@ -111,11 +136,22 @@ class MainActivity : AppCompatActivity() {
                             override fun setHijriOffsetDays(days: Int) {
                                 scope.launch { settingsStore.setHijriOffsetDays(days) }
                             }
+
+                            override fun openLocation() {
+                                showLocation = true
+                            }
                         }
                     }
-                    SettingsScreen(current, digits, core.displayDay().date, actions, onBack = { showSettings = false })
+                    SettingsScreen(
+                        current,
+                        locationName(savedLocation),
+                        digits,
+                        core.displayDay().date,
+                        actions,
+                        onBack = { showSettings = false },
+                    )
                 } else {
-                    HomeScreen(core, clock, prayerLog.changes, onOpenSettings = { showSettings = true })
+                    HomeScreen(core, clock, prayerLog.changes, locationName(savedLocation), onOpenSettings = { showSettings = true })
                 }
                 }
             }

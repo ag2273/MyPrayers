@@ -26,13 +26,20 @@ data class City(
 
     /** The name to show: Arabic when asked for and known, otherwise the English name. */
     fun displayName(arabic: Boolean): String = if (arabic) arabicName ?: name else name
+
+    /** This city as stored with a [SavedLocation]. */
+    fun ref(isNear: Boolean = false): CityRef = CityRef(id, name, arabicName, countryCode, isNear)
 }
 
 /**
  * The bundled city closest to a point. [location] is the *point itself* with that city's time zone: how manual
  * coordinates (and any other point) get a zone and a country offline.
  */
-data class NearestCity(val city: City, val distanceKm: Double, val location: Location)
+data class NearestCity(val city: City, val distanceKm: Double, val location: Location) {
+    /** The point as a manual [SavedLocation], named "near <city>". */
+    fun toSavedLocation(source: LocationSource = LocationSource.MANUAL): SavedLocation =
+        SavedLocation(location, source, city.ref(isNear = true))
+}
 
 /**
  * The offline city list (app asset `cities.tsv`, written by tools/cities/generate_cities.py): search by Arabic
