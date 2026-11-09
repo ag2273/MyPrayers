@@ -155,6 +155,11 @@
     <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
     <string name="widget_next_prayer_compact_description">The next Prayer on two lines</string>
     <string name="widget_countdown_format">in %s</string>
+    <string name="widget_today_times">Today\'s Prayer Times</string>
+    <string name="widget_today_times_description">Today\'s Prayer Times and Sunrise, with the next Prayer highlighted</string>
+    <string name="widget_date_strip">Date strip</string>
+    <string name="widget_date_strip_description">The Gregorian and Hijri dates, and the next Prayer</string>
+    <string name="widget_next_line">Next: %1$s %2$s</string>
 
     <!-- Onboarding (#29). -->
     <string name="onboarding_welcome">Prayer Times for where you are, an Adhan Alert right on time, and a private Prayer Log that never leaves your phone.</string>

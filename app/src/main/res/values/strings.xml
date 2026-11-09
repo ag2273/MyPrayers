@@ -168,6 +168,13 @@
     <string name="widget_next_prayer_compact_description">الصلاة القادمة في سطرين</string>
     <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
     <string name="widget_countdown_format">بعد %s</string>
+    <!-- Widgets (#30). -->
+    <string name="widget_today_times">مواقيت اليوم</string>
+    <string name="widget_today_times_description">مواقيت صلوات اليوم والشروق، مع إبراز الصلاة القادمة</string>
+    <string name="widget_date_strip">التاريخ</string>
+    <string name="widget_date_strip_description">التاريخ الميلادي والهجري، والصلاة القادمة</string>
+    <!-- Date strip second line. %1$s is the next Prayer's name, %2$s its time. -->
+    <string name="widget_next_line">القادمة: %1$s %2$s</string>
 
     <!-- Onboarding (#29). -->
     <string name="onboarding_welcome">مواقيت الصلاة لموقعك، وتنبيه الأذان في وقته، وسجل خاص لصلواتك لا يغادر هاتفك.</string>
