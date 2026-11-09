@@ -29,24 +29,27 @@ class PrayerCore(
     }
 
     /** The Prayer Day now falls in. */
-    fun currentPrayerDay(): PrayerDay = prayerDay(prayerDayDateAt(clock.instant()))
+    fun currentPrayerDay(): PrayerDay = places().let { prayerDay(prayerDayDateAt(clock.instant(), it), it) }
 
     /** The Prayer Day [instant] belongs to: from its Fajr (inclusive) to the next Fajr. */
-    fun prayerDayAt(instant: Instant): PrayerDay = prayerDay(prayerDayDateAt(instant))
+    fun prayerDayAt(instant: Instant): PrayerDay = places().let { prayerDay(prayerDayDateAt(instant, it), it) }
 
     /** The Prayer Day identified by [date], with each Prayer's state as of now. */
-    fun prayerDay(date: LocalDate): PrayerDay {
+    fun prayerDay(date: LocalDate): PrayerDay = prayerDay(date, places())
+
+    private fun prayerDay(date: LocalDate, places: List<PastPlace>): PrayerDay {
         val now = clock.instant()
-        val day = calculateDay(settings, date)
+        val day = calculateDay(settingsOn(date, places), date)
         val prayed = log.prayedOn(date)
         val states = day.prayerTimes.associate { (prayer, time) ->
             prayer to when {
-                time.toInstant().isAfter(now) -> LogState.NOT_YET_DUE
+                // A mark is never hidden, even if travel moved its Prayer Time later.
                 prayer in prayed -> LogState.PRAYED
+                time.toInstant().isAfter(now) -> LogState.NOT_YET_DUE
                 else -> LogState.NOT_MARKED
             }
         }
-        val today = prayerDayDateAt(now)
+        val today = prayerDayDateAt(now, places)
         return PrayerDay(
             date = date,
             prayerTimes = day.prayerTimes,
@@ -92,7 +95,19 @@ class PrayerCore(
     }
 
     /** Records the current Prayer Day as the first-use date, once; later calls change nothing. */
-    fun recordFirstUse() = log.recordFirstUseIfAbsent(prayerDayDateAt(clock.instant()))
+    fun recordFirstUse() = log.recordFirstUseIfAbsent(prayerDayDateAt(clock.instant(), places()))
+
+    /**
+     * Fixes every Prayer Day that has ended at this core's location, so travel never recomputes it. Call it on the
+     * core built with the settings in effect BEFORE the location changes, then save the new location. The Prayer
+     * Day in progress and later ones then use the new location. A second change on the same Prayer Day adds
+     * nothing: the days before it are already fixed.
+     */
+    fun recordLocationChange() {
+        val places = places()
+        val today = prayerDayDateAt(clock.instant(), places)
+        if (places.none { it.until >= today }) log.addPastPlace(PastPlace(today, settings.location))
+    }
 
     private fun setPrayed(date: LocalDate, prayer: Prayer, prayed: Boolean): LogCommandResult {
         val day = prayerDay(date)
@@ -107,12 +122,21 @@ class PrayerCore(
         }
     }
 
-    /** The local date at the location, stepped back a day before that date's Fajr. */
-    private fun prayerDayDateAt(instant: Instant): LocalDate {
+    /** The latest Prayer Day whose Fajr, at the place in effect that day, is at or before [instant]. */
+    private fun prayerDayDateAt(instant: Instant, places: List<PastPlace>): LocalDate {
         val date = LocalDate.ofInstant(instant, settings.location.zone)
-        val fajr = calculateDay(settings, date).prayerTimes.first().time.toInstant()
-        return if (instant.isBefore(fajr)) date.minusDays(1) else date
+        // Travel can shift a past day's Fajr by up to about a day relative to the current zone's dates.
+        return (1L downTo -2L).map { date.plusDays(it) }.first { day ->
+            !calculateDay(settingsOn(day, places), day).prayerTimes.first().time.toInstant().isAfter(instant)
+        }
     }
+
+    /** Past Prayer Days, oldest first. */
+    private fun places(): List<PastPlace> = log.pastPlaces().sortedBy { it.until }
+
+    /** The settings for the Prayer Day [date]: the location in effect that day (see [PastPlace]). */
+    private fun settingsOn(date: LocalDate, places: List<PastPlace>): PrayerSettings =
+        places.firstOrNull { date < it.until }?.let { settings.copy(location = it.location) } ?: settings
 
     private companion object {
         /** Today plus the 6 previous Prayer Days. */
