@@ -165,6 +165,7 @@
     <!-- Widgets (#27). -->
     <string name="widget_next_prayer">الصلاة القادمة</string>
     <string name="widget_next_prayer_description">اسم الصلاة القادمة ووقتها، مع العد التنازلي</string>
+    <string name="widget_next_prayer_compact">الصلاة القادمة (مختصرة)</string>
     <string name="widget_next_prayer_compact_description">الصلاة القادمة في سطرين</string>
     <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
     <string name="widget_countdown_format">بعد %s</string>
@@ -285,4 +286,24 @@
     <!-- Home note when a high-latitude rule set Fajr or Isha. %1$s is the rule's name. -->
     <string name="high_latitude_note">الفجر والعشاء اليوم بقاعدة «%1$s» لخطوط العرض العليا.</string>
     <string name="high_latitude_polar_note">لا تشرق الشمس أو لا تغرب هنا اليوم، فالمواقيت محسوبة على أقرب خط عرض يمكن الحساب فيه، بقاعدة «%1$s».</string>
+    <!-- Sample content for the widget picker's previews (widget_preview_*.xml). -->
+    <string name="widget_preview_date">الإثنين ٩ نوفمبر</string>
+    <string name="widget_preview_hijri">٢٨ جمادى الأولى ١٤٤٨ هـ</string>
+    <string name="widget_preview_countdown">بعد ١:١٢:٣٤</string>
+    <string name="widget_preview_next_line">القادمة: العصر ١٤:٤٤</string>
+    <string name="widget_preview_total">٢٦/٣٢</string>
+    <string name="widget_preview_fajr_time">٠٤:٤٥</string>
+    <string name="widget_preview_sunrise_time">٠٦:١٤</string>
+    <string name="widget_preview_dhuhr_time">١١:٣٩</string>
+    <string name="widget_preview_asr_time">١٤:٤٤</string>
+    <string name="widget_preview_maghrib_time">١٧:٠٥</string>
+    <string name="widget_preview_isha_time">١٨:٢٤</string>
+    <string name="widget_preview_sunrise_line">الشروق ٠٦:١٤</string>
+    <string name="widget_preview_day1">ث</string>
+    <string name="widget_preview_day2">ر</string>
+    <string name="widget_preview_day3">خ</string>
+    <string name="widget_preview_day4">ج</string>
+    <string name="widget_preview_day5">س</string>
+    <string name="widget_preview_day6">ح</string>
+    <string name="widget_preview_day7">ن</string>
 </resources>
