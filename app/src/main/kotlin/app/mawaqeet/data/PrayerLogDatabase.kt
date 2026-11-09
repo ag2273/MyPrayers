@@ -54,6 +54,12 @@ internal interface PrayerLogDao {
     @Query("DELETE FROM prayer_log WHERE prayer_day = :prayerDay AND prayer = :prayer")
     fun delete(prayerDay: String, prayer: String)
 
+    @Query("DELETE FROM prayer_log")
+    fun deleteAllEntries()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun replaceFirstUse(firstUse: FirstUse)
+
     @Query("SELECT prayer_day FROM first_use WHERE id = 0")
     fun firstUse(): String?
 

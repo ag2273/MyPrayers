@@ -46,6 +46,29 @@ class RoomPrayerLogRepositoryTest {
     }
 
     @Test
+    fun `deleting all entries leaves no marks, replaces the first-use date and keeps past places`() {
+        val place = PastPlace(day, Location(30.0444, 31.2357, ZoneId.of("Africa/Cairo")))
+        withLog(ctx) { log ->
+            log.setPrayed(day, Prayer.FAJR, true)
+            log.setPrayed(day.minusDays(3), Prayer.ASR, true)
+            log.recordFirstUseIfAbsent(day.minusDays(30))
+            log.addPastPlace(place)
+            val before = log.changes.value
+
+            log.deleteAllEntries(firstUseFrom = day)
+
+            assertNotEquals(before, log.changes.value)
+        }
+
+        withLog(ctx) { log ->
+            assertEquals(emptySet<Prayer>(), log.prayedOn(day))
+            assertEquals(emptySet<Prayer>(), log.prayedOn(day.minusDays(3)))
+            assertEquals(day, log.firstUseDate())
+            assertEquals(listOf(place), log.pastPlaces())
+        }
+    }
+
+    @Test
     fun `marks and the first-use date survive reopening the database`() {
         withLog(ctx) { log ->
             log.setPrayed(day, Prayer.FAJR, true)

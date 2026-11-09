@@ -46,6 +46,7 @@ import app.mawaqeet.location.DeviceLocation
 import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.home.HomeScreen
 import app.mawaqeet.ui.location.LocationScreen
+import app.mawaqeet.ui.log.PrayerLogScreen
 import app.mawaqeet.ui.location.locationName
 import app.mawaqeet.ui.permissions.GrantScreen
 import app.mawaqeet.ui.settings.SettingsActions
@@ -91,6 +92,7 @@ class MainActivity : AppCompatActivity() {
                 val core = remember(current) { PrayerCore(current, clock, prayerLog) }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var showLocation by rememberSaveable { mutableStateOf(false) }
+                var showLog by rememberSaveable { mutableStateOf(false) }
                 val scope = rememberCoroutineScope()
                 // Re-checked on every resume, so a permission revoked in system settings brings the Grant screen back.
                 var permissions by remember { mutableStateOf(AlertPermissions.of(this)) }
@@ -217,6 +219,13 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setVibration(on) }
                             }
 
+                            override fun deletePrayerLog() {
+                                // A core from the stored settings: these actions outlive the composition's core.
+                                scope.launch(Dispatchers.IO) {
+                                    PrayerCore(settingsStore.settings.first(), clock, prayerLog).deletePrayerLog()
+                                }
+                            }
+
                             override fun setCustomAdhan(recording: AdhanRecording, uri: Uri?) {
                                 // Keep read access before storing, so the alert can open the file after a reboot.
                                 if (uri != null) CustomAdhanFiles.keep(this@MainActivity, uri)
@@ -235,10 +244,13 @@ class MainActivity : AppCompatActivity() {
                         actions,
                         onBack = { showSettings = false },
                     )
+                } else if (showLog) {
+                    PrayerLogScreen(core, prayerLog.changes, onBack = { showLog = false })
                 } else {
                     HomeScreen(
                         core, clock, prayerLog.changes, locationName(savedLocation),
                         onOpenSettings = { showSettings = true },
+                        onOpenLog = { showLog = true },
                         locationHint = when {
                             updatedTo != null -> stringResource(
                                 R.string.location_updated,

@@ -75,6 +75,9 @@ interface SettingsActions {
      * to go back to the bundled recording.
      */
     fun setCustomAdhan(recording: AdhanRecording, uri: Uri?)
+
+    /** Settings → Prayer Log (#25): permanently deletes every Prayer Log entry. Called only after confirmation. */
+    fun deletePrayerLog()
 }
 
 /**
@@ -110,7 +113,7 @@ fun SettingsScreen(
             }
             PrayerTimesGroup(settings, locationName, actions)
             AlertsGroup(settings.alerts, actions)
-            SettingsGroup(R.string.settings_group_prayer_log) { ComingSoon() }
+            PrayerLogGroup(actions)
             LanguageDisplayGroup(settings, digitStyle, today, actions)
             SettingsGroup(R.string.settings_group_widgets) { ComingSoon() }
             SettingsGroup(R.string.settings_group_about) { ComingSoon() }
@@ -140,6 +143,37 @@ private fun ComingSoon() {
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/** Prayer Log (#25): Delete Prayer Log, behind an in-app confirmation. */
+@Composable
+private fun PrayerLogGroup(actions: SettingsActions) {
+    var confirming by rememberSaveable { mutableStateOf(false) }
+    var deleted by rememberSaveable { mutableStateOf(false) }
+    SettingsGroup(R.string.settings_group_prayer_log) {
+        SettingRow(
+            title = stringResource(R.string.delete_prayer_log),
+            summary = stringResource(if (deleted) R.string.delete_prayer_log_done else R.string.delete_prayer_log_summary),
+            onClick = { confirming = true },
+        )
+    }
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text(stringResource(R.string.delete_prayer_log_title)) },
+            text = { Text(stringResource(R.string.delete_prayer_log_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirming = false
+                    deleted = true
+                    actions.deletePrayerLog()
+                }) {
+                    Text(stringResource(R.string.delete_prayer_log_confirm), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
 }
 
 @Composable
