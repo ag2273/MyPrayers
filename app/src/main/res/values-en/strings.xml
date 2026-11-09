@@ -160,6 +160,13 @@
     <string name="widget_date_strip">Date strip</string>
     <string name="widget_date_strip_description">The Gregorian and Hijri dates, and the next Prayer</string>
     <string name="widget_next_line">Next: %1$s %2$s</string>
+    <string name="widget_today_log">Today with Prayer Log</string>
+    <string name="widget_today_log_description">Today\'s Prayers and their times, with what you marked</string>
+    <string name="widget_week_log">Week Prayer Log</string>
+    <string name="widget_week_log_description">The last seven days\' Prayers as you marked them, with the total</string>
+    <string name="widget_state_prayed">Prayed</string>
+    <string name="widget_state_not_marked">Not marked</string>
+    <string name="widget_state_not_yet_due">Not yet due</string>
 
     <!-- Onboarding (#29). -->
     <string name="onboarding_welcome">Prayer Times for where you are, an Adhan Alert right on time, and a private Prayer Log that never leaves your phone.</string>

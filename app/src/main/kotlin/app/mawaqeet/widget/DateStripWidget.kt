@@ -28,9 +28,9 @@ import app.mawaqeet.R
 class DateStripWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
-    override suspend fun provideGlance(context: Context, id: GlanceId) = provideDisplayDay(
+    override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { day, text -> DateStripView.of(DateStripContent.of(day, text.formatter), text) },
+        build = { core, text -> DateStripView.of(DateStripContent.of(core.displayDay(), text.formatter), text) },
         layout = { view, rtl -> DateStripLayout(view, rtl) },
     )
 }

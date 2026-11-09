@@ -21,7 +21,7 @@ import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
-import androidx.glance.action.actionStartActivity
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
@@ -120,7 +120,7 @@ private fun NextPrayerLayout(view: NextPrayerView, compact: Boolean) {
                 .fillMaxSize()
                 .background(ImageProvider(R.drawable.widget_background))
                 .padding(horizontal = 14.dp, vertical = if (compact) 8.dp else 12.dp)
-                .clickable(actionStartActivity<MainActivity>()),
+                .clickable(actionStartActivity(MainActivity.openIntent(androidx.glance.LocalContext.current, MainActivity.Opens.TODAY))),
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.Start,
         ) {

@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import app.mawaqeet.R
 import app.mawaqeet.core.DisplayDay
 import app.mawaqeet.core.DisplayFormatter
-import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerTime
 import java.time.Duration
 import java.time.Instant
@@ -33,13 +32,5 @@ data class NextPrayerContent(
 
 /** The string a Prayer Time is called by: Friday's Dhuhr is Jumu'ah. */
 @StringRes
-fun prayerNameRes(prayerTime: PrayerTime): Int = when {
-    prayerTime.isJumuah -> R.string.prayer_jumuah
-    else -> when (prayerTime.prayer) {
-        Prayer.FAJR -> R.string.prayer_fajr
-        Prayer.DHUHR -> R.string.prayer_dhuhr
-        Prayer.ASR -> R.string.prayer_asr
-        Prayer.MAGHRIB -> R.string.prayer_maghrib
-        Prayer.ISHA -> R.string.prayer_isha
-    }
-}
+fun prayerNameRes(prayerTime: PrayerTime): Int =
+    if (prayerTime.isJumuah) R.string.prayer_jumuah else prayerNameRes(prayerTime.prayer)

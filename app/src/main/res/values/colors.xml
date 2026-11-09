@@ -8,4 +8,6 @@
     <color name="widget_text_muted">#525F5C</color>
     <color name="widget_accent">#1F6F66</color>
     <color name="widget_on_accent">#FFFFFF</color>
+    <color name="widget_accent_soft">#D6E8E4</color>
+    <color name="widget_dot_upcoming">#2E525F5C</color>
 </resources>

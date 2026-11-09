@@ -175,6 +175,14 @@
     <string name="widget_date_strip_description">التاريخ الميلادي والهجري، والصلاة القادمة</string>
     <!-- Date strip second line. %1$s is the next Prayer's name, %2$s its time. -->
     <string name="widget_next_line">القادمة: %1$s %2$s</string>
+    <!-- Widgets (#31). They only display the Prayer Log. -->
+    <string name="widget_today_log">اليوم وسجل الصلاة</string>
+    <string name="widget_today_log_description">صلوات اليوم ومواقيتها، وما سجّلته منها</string>
+    <string name="widget_week_log">سجل الأسبوع</string>
+    <string name="widget_week_log_description">صلوات آخر سبعة أيام كما سجّلتها، ومجموعها</string>
+    <string name="widget_state_prayed">صُلّيت</string>
+    <string name="widget_state_not_marked">لم تُسجَّل</string>
+    <string name="widget_state_not_yet_due">لم يحن وقتها</string>
 
     <!-- Onboarding (#29). -->
     <string name="onboarding_welcome">مواقيت الصلاة لموقعك، وتنبيه الأذان في وقته، وسجل خاص لصلواتك لا يغادر هاتفك.</string>

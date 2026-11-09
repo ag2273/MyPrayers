@@ -86,6 +86,14 @@ class DisplayFormatterTest {
     }
 
     @Test
+    fun `a narrow weekday is one letter in either language`() {
+        val week = (0L..6L).map { SUNDAY.plusDays(it) }
+
+        assertEquals(listOf("ح", "ن", "ث", "ر", "خ", "ج", "س"), week.map { DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).narrowWeekday(it) })
+        assertEquals(listOf("S", "M", "T", "W", "T", "F", "S"), week.map { DisplayFormatter(ENGLISH, DigitStyle.WESTERN).narrowWeekday(it) })
+    }
+
+    @Test
     fun `a Prayer Log count reads prayed over possible in the chosen digits`() {
         assertEquals("\u2066٥/٧\u2069", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).count(5, 7))
         assertEquals("\u206631/35\u2069", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).count(31, 35))
