@@ -1,5 +1,7 @@
 package app.mawaqeet.data
 
+import app.mawaqeet.core.Location
+import app.mawaqeet.core.PastPlace
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerLogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -7,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * The Prayer Log in the local database. Its methods block: call them (and the core's log queries and commands)
@@ -37,5 +40,15 @@ class RoomPrayerLogRepository(db: PrayerLogDatabase) : PrayerLogRepository {
 
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {
         dao.insertFirstUse(FirstUse(prayerDay = prayerDay.toString()))
+    }
+
+    // Past places change no marks, so they do not bump [changes]; the location change that adds one rebuilds the core.
+    override fun pastPlaces(): List<PastPlace> = dao.pastPlaces().map {
+        PastPlace(LocalDate.parse(it.until), Location(it.latitude, it.longitude, ZoneId.of(it.zone)))
+    }
+
+    override fun addPastPlace(place: PastPlace) {
+        val location = place.location
+        dao.insertPastPlace(PastPlaceEntry(place.until.toString(), location.latitude, location.longitude, location.zone.id))
     }
 }

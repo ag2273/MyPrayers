@@ -1,6 +1,7 @@
 package app.mawaqeet.data
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -29,6 +30,18 @@ internal data class FirstUse(
     @ColumnInfo(name = "prayer_day") val prayerDay: String,
 )
 
+/**
+ * A past place (core `PastPlace`): the location in effect for Prayer Days before [until] (ISO date). The zone is
+ * an IANA id.
+ */
+@Entity(tableName = "past_place")
+internal data class PastPlaceEntry(
+    @PrimaryKey val until: String,
+    val latitude: Double,
+    val longitude: Double,
+    val zone: String,
+)
+
 /** Blocking queries: call them off the main thread (the core's repository interface is synchronous). */
 @Dao
 internal interface PrayerLogDao {
@@ -46,10 +59,24 @@ internal interface PrayerLogDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertFirstUse(firstUse: FirstUse)
+
+    @Query("SELECT * FROM past_place")
+    fun pastPlaces(): List<PastPlaceEntry>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertPastPlace(place: PastPlaceEntry)
 }
 
-/** The local database holding the Prayer Log and the first-use date. */
-@Database(entities = [PrayerLogEntry::class, FirstUse::class], version = 1, exportSchema = true)
+/**
+ * The local database holding the Prayer Log, the first-use date and the past places of Prayer Days. Every schema
+ * change bumps [version] with a migration (version 2 added `past_place`, an auto-migration).
+ */
+@Database(
+    entities = [PrayerLogEntry::class, FirstUse::class, PastPlaceEntry::class],
+    version = 2,
+    exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
+)
 abstract class PrayerLogDatabase : RoomDatabase() {
     internal abstract fun dao(): PrayerLogDao
 

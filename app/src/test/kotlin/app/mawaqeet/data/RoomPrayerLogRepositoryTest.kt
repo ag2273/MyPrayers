@@ -3,6 +3,9 @@ package app.mawaqeet.data
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import android.database.sqlite.SQLiteDatabase
+import app.mawaqeet.core.Location
+import app.mawaqeet.core.PastPlace
 import app.mawaqeet.core.Prayer
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -11,6 +14,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.concurrent.Executors
 
 /** Opens the database and runs [block] off the main thread: Room refuses blocking queries on it. */
@@ -55,6 +59,34 @@ class RoomPrayerLogRepositoryTest {
             assertEquals(setOf(Prayer.FAJR), log.prayedOn(day))
             assertEquals(emptySet<Prayer>(), log.prayedOn(day.plusDays(1)))
             assertEquals(day, log.firstUseDate())
+        }
+    }
+
+    @Test
+    fun `past places survive reopening the database`() {
+        val place = PastPlace(day, Location(21.4225, 39.8262, ZoneId.of("Asia/Riyadh")))
+        withLog(ctx) { log -> log.addPastPlace(place) }
+
+        withLog(ctx) { log -> assertEquals(listOf(place), log.pastPlaces()) }
+    }
+
+    @Test
+    fun `a version 1 database keeps its marks after the upgrade`() {
+        // The version 1 schema, as exported in app/schemas/.../1.json.
+        val file = ctx.getDatabasePath(PrayerLogDatabase.FILE_NAME).apply { parentFile?.mkdirs() }
+        SQLiteDatabase.openOrCreateDatabase(file, null).apply {
+            execSQL("CREATE TABLE prayer_log (prayer_day TEXT NOT NULL, prayer TEXT NOT NULL, PRIMARY KEY(prayer_day, prayer))")
+            execSQL("CREATE TABLE first_use (id INTEGER NOT NULL, prayer_day TEXT NOT NULL, PRIMARY KEY(id))")
+            execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
+            execSQL("INSERT INTO room_master_table (id,identity_hash) VALUES(42, 'b430464c135c7c0c505d6b479cebbb9a')")
+            execSQL("INSERT INTO prayer_log VALUES ('2026-11-08', 'FAJR')")
+            version = 1
+            close()
+        }
+
+        withLog(ctx) { log ->
+            assertEquals(setOf(Prayer.FAJR), log.prayedOn(day))
+            assertEquals(emptyList<PastPlace>(), log.pastPlaces())
         }
     }
 
