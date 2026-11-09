@@ -109,6 +109,16 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[HIJRI_OFFSET] = days }
     }
 
+    /**
+     * True after a time-zone change broadcast (a cheap travel signal that cannot read location) until the next
+     * location check or location change. Home shows a hint while it is set.
+     */
+    val locationMaybeStale: Flow<Boolean> = store.data.map { it[LOCATION_STALE] ?: false }.distinctUntilChanged()
+
+    suspend fun setLocationMaybeStale(stale: Boolean) {
+        store.edit { it[LOCATION_STALE] = stale }
+    }
+
     suspend fun setDigitStyle(style: DigitStyle) {
         store.edit { it[DIGITS] = style.name }
     }
@@ -124,6 +134,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val ASR = stringPreferencesKey("asr_convention")
         private val HIJRI_OFFSET = intPreferencesKey("hijri_offset_days")
         private val DIGITS = stringPreferencesKey("digit_style")
+        private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val LATITUDE = doublePreferencesKey("location_latitude")
         private val LONGITUDE = doublePreferencesKey("location_longitude")
         private val ZONE = stringPreferencesKey("location_zone")
