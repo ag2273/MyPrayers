@@ -14,10 +14,18 @@ How the code is laid out and tested. Vocabulary follows `GLOSSARY.md`; decisions
 
 ## The core's interface
 
-- `PrayerCore(settings: PrayerSettings, clock: java.time.Clock)`. It is cheap to build; create a new one when settings change. The current instant always comes from the clock, never from `Instant.now()`.
+- `PrayerCore(settings: PrayerSettings, clock: java.time.Clock, log: PrayerLogRepository)`. It is cheap to build; create a new one when settings change. The current instant always comes from the clock, never from `Instant.now()`.
 - Queries are methods returning immutable data classes (`displayDay(): DisplayDay`). New queries from the spec (Prayer Day lookup, Prayer Log commands, weekly summary, week grid, alert plan, location change check, country defaults) are added as further methods or as collaborators passed to the constructor (e.g. a Prayer Log repository interface the app implements).
 - Times are `java.time.ZonedDateTime` in the location's zone; calendar days are `LocalDate` at the location, never the device's zone.
 - Display rules (Jumu'ah, Sunrise never being the next Prayer) are answered by the core (`PrayerTime.isJumuah`, `DisplayDay.next`), so the app and widgets never re-derive them.
+
+## The Prayer Log
+
+- A **Prayer Day is identified by a `LocalDate`**: the local calendar date of its Fajr at the place the user was that day. Its identity never depends on the Calculation Method or any other setting; only its times do. `PrayerCore.prayerDayAt(instant)` / `currentPrayerDay()` / `prayerDay(date)` return a `PrayerDay` with its times, each Prayer's `LogState` (`PRAYED`, `NOT_MARKED`, `NOT_YET_DUE`) as of the clock, and `isEditable`.
+- Writes go only through `PrayerCore.mark` / `unmark(date, prayer)`, which return a `LogCommandResult` (`DONE`, `NOT_YET_DUE`, `OUTSIDE_EDIT_WINDOW`). The edit window is the current Prayer Day plus the 6 previous ones.
+- `PrayerLogRepository` (in `:core`) is plain storage keyed by (Prayer Day date, `Prayer`) plus the first-use date; every rule stays in the core. Its methods are synchronous and may block, so the app calls the core's log queries and commands on `Dispatchers.IO`. Tests use `InMemoryPrayerLog` in `core/src/test`.
+- Android: `app.mawaqeet.data.RoomPrayerLogRepository` over `PrayerLogDatabase` (Room, file `prayer_log.db`, schemas exported to `app/schemas/` and committed). Prayer Days are stored as ISO dates (`2026-11-08`), Prayers as enum names; only prayed entries have rows. A schema change needs a Room migration.
+- There is one repository per process, `MawaqeetApplication.prayerLog`. Its `changes: StateFlow<Int>` moves after every write: screens re-query the core when it changes, and widgets must refresh on it too.
 
 ## Tests
 
