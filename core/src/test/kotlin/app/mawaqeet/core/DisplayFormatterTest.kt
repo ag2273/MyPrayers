@@ -79,6 +79,19 @@ class DisplayFormatterTest {
     }
 
     @Test
+    fun `a Prayer Log day label is a short Gregorian date in the app language and chosen digits`() {
+        assertEquals("الأحد ٨ نوفمبر", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).shortGregorianDate(SUNDAY))
+        assertEquals("الأحد 8 نوفمبر", DisplayFormatter(ARABIC, DigitStyle.WESTERN).shortGregorianDate(SUNDAY))
+        assertEquals("Sun 8 Nov", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).shortGregorianDate(SUNDAY))
+    }
+
+    @Test
+    fun `a Prayer Log count reads prayed over possible in the chosen digits`() {
+        assertEquals("\u2066٥/٧\u2069", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).count(5, 7))
+        assertEquals("\u206631/35\u2069", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).count(31, 35))
+    }
+
+    @Test
     fun `a number uses the chosen digits`() {
         assertEquals("+٢", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).signedNumber(2))
         assertEquals("-1", DisplayFormatter(ARABIC, DigitStyle.WESTERN).signedNumber(-1))

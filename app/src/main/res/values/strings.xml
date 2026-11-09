@@ -169,6 +169,23 @@
     <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
     <string name="widget_countdown_format">بعد %s</string>
 
+    <!-- Prayer Log screen and summary (#25). No streaks, badges or scores. -->
+    <string name="prayer_log">سجل الصلاة</string>
+    <string name="log_previous_week">الأسبوع السابق</string>
+    <string name="log_next_week">الأسبوع التالي</string>
+    <string name="log_this_week">آخر سبعة أيام</string>
+    <string name="log_earlier_week">أسبوع سابق</string>
+    <string name="log_week_read_only">الأيام الأقدم من أسبوع للعرض فقط.</string>
+    <string name="log_summary">ملخص الأسبوع</string>
+    <string name="log_total">المجموع</string>
+    <string name="log_before_first_use">قبل بدء استخدامك للتطبيق</string>
+    <string name="log_read_only_prayed">تمّت الصلاة، لا يمكن تعديل هذا اليوم</string>
+    <string name="delete_prayer_log">حذف سجل الصلاة</string>
+    <string name="delete_prayer_log_summary">يمحو كل ما سجّلته نهائيًا</string>
+    <string name="delete_prayer_log_done">حُذف سجل الصلاة</string>
+    <string name="delete_prayer_log_title">حذف سجل الصلاة؟</string>
+    <string name="delete_prayer_log_body">سيُمحى كل ما سجّلته من صلوات نهائيًا من هذا الهاتف، ولا يمكن التراجع عن ذلك.</string>
+    <string name="delete_prayer_log_confirm">حذف</string>
     <!-- Prayer Time adjustments (#20). -->
     <string name="adjustments">تعديل المواقيت</string>
     <string name="adjustments_none">بلا تعديل</string>

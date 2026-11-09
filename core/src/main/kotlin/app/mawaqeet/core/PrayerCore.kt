@@ -60,8 +60,28 @@ class PrayerCore(
             sunrise = day.sunrise,
             states = states,
             isEditable = date <= today && date >= today.minusDays(EDIT_WINDOW_DAYS - 1),
+            hijriDate = HijriDate.of(date, settings.hijriOffsetDays),
         )
     }
+
+    /**
+     * The seven Prayer Days ending with [lastDay] (the current Prayer Day by default), oldest first, with each
+     * Prayer's state and the week's summary. Browse older weeks with `lastDay = <previous lastDay>.minusDays(7)`;
+     * only today and the 6 previous Prayer Days are editable.
+     */
+    fun week(lastDay: LocalDate? = null): PrayerWeek {
+        val places = places()
+        val end = lastDay ?: prayerDayDateAt(clock.instant(), places)
+        val days = (WEEK_DAYS - 1 downTo 0L).map { prayerDay(end.minusDays(it), places) }
+        val countedFrom = log.firstUseDate() ?: prayerDayDateAt(clock.instant(), places)
+        return PrayerWeek(days, countedFrom, WeeklySummary.of(days, countedFrom))
+    }
+
+    /**
+     * Permanently deletes every Prayer Log entry (Settings → Prayer Log, after the user confirms). The summary
+     * then counts from the current Prayer Day, so the wiped days never show as missed.
+     */
+    fun deletePrayerLog() = log.deleteAllEntries(firstUseFrom = prayerDayDateAt(clock.instant(), places()))
 
     /** Marks [prayer] on the Prayer Day [date] as prayed, unless it isn't markable yet or the day is read-only. */
     fun mark(date: LocalDate, prayer: Prayer): LogCommandResult = setPrayed(date, prayer, true)
@@ -172,5 +192,8 @@ class PrayerCore(
     private companion object {
         /** Today plus the 6 previous Prayer Days. */
         const val EDIT_WINDOW_DAYS = 7L
+
+        /** A Prayer Week's length. */
+        const val WEEK_DAYS = 7L
     }
 }

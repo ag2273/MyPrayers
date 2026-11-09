@@ -74,6 +74,8 @@ fun HomeScreen(
     logChanges: StateFlow<Int>,
     locationName: String,
     onOpenSettings: () -> Unit,
+    /** Opens the Prayer Log screen (#25). */
+    onOpenLog: () -> Unit = {},
     /** A short hint under the location (e.g. the time zone changed), tapping it calls [onLocationHint]. */
     locationHint: String? = null,
     onLocationHint: () -> Unit = {},
@@ -94,7 +96,7 @@ fun HomeScreen(
         value = withContext(Dispatchers.IO) { core.currentPrayerDay() }
     }
     val scope = rememberCoroutineScope()
-    HomeContent(day, now, prayerDay, locationName, onOpenSettings, locationHint, onLocationHint) { prayer ->
+    HomeContent(day, now, prayerDay, locationName, onOpenSettings, onOpenLog, locationHint, onLocationHint) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
             scope.launch(Dispatchers.IO) {
@@ -115,6 +117,7 @@ private fun HomeContent(
     prayerDay: PrayerDay?,
     locationName: String,
     onOpenSettings: () -> Unit,
+    onOpenLog: () -> Unit,
     locationHint: String?,
     onLocationHint: () -> Unit,
     onToggle: (Prayer) -> Unit,
@@ -136,6 +139,7 @@ private fun HomeContent(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                TextButton(onClick = onOpenLog) { Text(stringResource(R.string.prayer_log)) }
                 TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
             }
             if (locationHint != null) {

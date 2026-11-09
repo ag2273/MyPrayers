@@ -156,6 +156,23 @@
     <string name="widget_next_prayer_compact_description">The next Prayer on two lines</string>
     <string name="widget_countdown_format">in %s</string>
 
+    <!-- Prayer Log screen and summary (#25). -->
+    <string name="prayer_log">Prayer Log</string>
+    <string name="log_previous_week">Previous week</string>
+    <string name="log_next_week">Next week</string>
+    <string name="log_this_week">Last seven days</string>
+    <string name="log_earlier_week">An earlier week</string>
+    <string name="log_week_read_only">Days older than a week are read-only.</string>
+    <string name="log_summary">This week</string>
+    <string name="log_total">Total</string>
+    <string name="log_before_first_use">Before you started using the app</string>
+    <string name="log_read_only_prayed">Prayed, this day can\'t be changed</string>
+    <string name="delete_prayer_log">Delete Prayer Log</string>
+    <string name="delete_prayer_log_summary">Permanently erases everything you logged</string>
+    <string name="delete_prayer_log_done">Prayer Log deleted</string>
+    <string name="delete_prayer_log_title">Delete Prayer Log?</string>
+    <string name="delete_prayer_log_body">Everything you logged will be erased from this phone for good. This can\'t be undone.</string>
+    <string name="delete_prayer_log_confirm">Delete</string>
     <!-- Prayer Time adjustments (#20). -->
     <string name="adjustments">Prayer Time adjustments</string>
     <string name="adjustments_none">No adjustments</string>
