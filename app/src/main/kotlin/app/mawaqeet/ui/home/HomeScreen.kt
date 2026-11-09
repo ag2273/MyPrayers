@@ -247,7 +247,8 @@ private fun NextPrayerCard(next: PrayerTime, now: Instant) {
         Text(
             text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.secondary,
+            // Not the brand amber: on the card's teal it reads at 2.7:1 (light) and 1.1:1 (dark).
+            color = MaterialTheme.colorScheme.tertiary,
         )
     }
 }
