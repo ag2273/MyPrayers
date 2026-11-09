@@ -101,4 +101,4 @@ How the code is laid out and tested. Vocabulary follows `GLOSSARY.md`; decisions
 ./gradlew :core:test :app:testDebugUnitTest :app:assembleDebug
 ```
 
-Needs `local.properties` with `sdk.dir=...` (untracked). CI runs `:core:test` on every push.
+Needs `local.properties` with `sdk.dir=...` (untracked). CI runs `:core:test`, and `:app:testDebugUnitTest :app:assembleDebug` in a separate job, on every push.
