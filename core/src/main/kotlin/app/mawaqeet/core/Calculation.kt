@@ -39,6 +39,16 @@ internal fun calculateDay(settings: PrayerSettings, date: LocalDate): Calculated
 
 private fun CalculationMethod.toAdhan(): AdhanMethod = when (this) {
     CalculationMethod.UMM_AL_QURA -> AdhanMethod.UMM_AL_QURA
+    CalculationMethod.EGYPTIAN -> AdhanMethod.EGYPTIAN
+    CalculationMethod.MUSLIM_WORLD_LEAGUE -> AdhanMethod.MUSLIM_WORLD_LEAGUE
+    CalculationMethod.KARACHI -> AdhanMethod.KARACHI
+    CalculationMethod.KUWAIT -> AdhanMethod.KUWAIT
+    CalculationMethod.QATAR -> AdhanMethod.QATAR
+    CalculationMethod.DUBAI -> AdhanMethod.DUBAI
+    CalculationMethod.TURKEY -> AdhanMethod.TURKEY
+    CalculationMethod.SINGAPORE -> AdhanMethod.SINGAPORE
+    CalculationMethod.MOON_SIGHTING_COMMITTEE -> AdhanMethod.MOON_SIGHTING_COMMITTEE
+    CalculationMethod.NORTH_AMERICA -> AdhanMethod.NORTH_AMERICA
 }
 
 private fun AsrConvention.toAdhan(): Madhab = when (this) {

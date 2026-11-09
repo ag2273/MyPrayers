@@ -36,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,7 +67,7 @@ import java.util.Locale
  * or unmarks it in the Prayer Log of the current Prayer Day.
  */
 @Composable
-fun HomeScreen(core: PrayerCore, clock: Clock, logChanges: StateFlow<Int>) {
+fun HomeScreen(core: PrayerCore, clock: Clock, logChanges: StateFlow<Int>, onOpenSettings: () -> Unit) {
     // Re-query the core every second: the countdown ticks and the display day switches at local midnight.
     var now by remember { mutableStateOf(clock.instant()) }
     LaunchedEffect(core, clock) {
@@ -83,7 +84,7 @@ fun HomeScreen(core: PrayerCore, clock: Clock, logChanges: StateFlow<Int>) {
         value = withContext(Dispatchers.IO) { core.currentPrayerDay() }
     }
     val scope = rememberCoroutineScope()
-    HomeContent(day, now, prayerDay) { prayer ->
+    HomeContent(day, now, prayerDay, onOpenSettings) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
             scope.launch(Dispatchers.IO) {
@@ -98,7 +99,13 @@ fun HomeScreen(core: PrayerCore, clock: Clock, logChanges: StateFlow<Int>) {
 }
 
 @Composable
-private fun HomeContent(day: DisplayDay, now: Instant, prayerDay: PrayerDay?, onToggle: (Prayer) -> Unit) {
+private fun HomeContent(
+    day: DisplayDay,
+    now: Instant,
+    prayerDay: PrayerDay?,
+    onOpenSettings: () -> Unit,
+    onToggle: (Prayer) -> Unit,
+) {
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -108,11 +115,15 @@ private fun HomeContent(day: DisplayDay, now: Instant, prayerDay: PrayerDay?, on
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                text = stringResource(R.string.default_location_name),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.default_location_name),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
+            }
             NextPrayerCard(day.next, now)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val isNextToday = day.next.time.toLocalDate() == day.date

@@ -9,10 +9,25 @@ data class Location(
     val zone: ZoneId,
 )
 
-/** The named convention of sun angles and rules used to derive Prayer Times. More methods arrive with #16. */
-enum class CalculationMethod { UMM_AL_QURA }
+/**
+ * The named convention of sun angles and rules used to derive Prayer Times, in the order Settings lists them.
+ * Stored by name, so entries may be reordered or added but never renamed.
+ */
+enum class CalculationMethod {
+    UMM_AL_QURA,
+    EGYPTIAN,
+    MUSLIM_WORLD_LEAGUE,
+    KARACHI,
+    KUWAIT,
+    QATAR,
+    DUBAI,
+    TURKEY,
+    SINGAPORE,
+    MOON_SIGHTING_COMMITTEE,
+    NORTH_AMERICA,
+}
 
-/** Which shadow-length rule sets the Asr Prayer Time. */
+/** Which shadow-length rule sets the Asr Prayer Time. Stored by name, like [CalculationMethod]. */
 enum class AsrConvention { STANDARD, HANAFI }
 
 /** Everything the user chooses that affects the prayer core's answers. */

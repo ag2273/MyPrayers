@@ -19,4 +19,46 @@
     <string name="log_not_marked">لم تُسجَّل، اضغط لتسجيلها</string>
     <string name="log_not_yet_due">لم يحن وقتها بعد، لا يمكن تسجيلها</string>
     <string name="log_read_only">لا يمكن تعديل هذا اليوم</string>
+
+    <!-- Settings (#16). Groups in the order the spec lists them; later tickets fill the empty ones. -->
+    <string name="settings">الإعدادات</string>
+    <string name="back">رجوع</string>
+    <string name="settings_group_prayer_times">مواقيت الصلاة</string>
+    <string name="settings_group_alerts">التنبيهات</string>
+    <string name="settings_group_prayer_log">سجل الصلاة</string>
+    <string name="settings_group_language_display">اللغة والعرض</string>
+    <string name="settings_group_widgets">أدوات الشاشة الرئيسية</string>
+    <string name="settings_group_about">حول التطبيق</string>
+    <string name="settings_coming_soon">ستُضاف هذه الإعدادات لاحقًا</string>
+
+    <string name="calculation_method">طريقة الحساب</string>
+    <string name="asr_convention">وقت العصر</string>
+    <string name="asr_standard">الجمهور</string>
+    <string name="asr_standard_description">الشافعي والمالكي والحنبلي: حين يصير ظل الشيء مثله</string>
+    <string name="asr_hanafi">الحنفي</string>
+    <string name="asr_hanafi_description">حين يصير ظل الشيء مثليه، فيتأخر العصر</string>
+    <string name="cancel">إلغاء</string>
+
+    <string name="method_umm_al_qura">أم القرى</string>
+    <string name="method_umm_al_qura_description">التقويم الرسمي في المملكة العربية السعودية</string>
+    <string name="method_egyptian">الهيئة المصرية العامة للمساحة</string>
+    <string name="method_egyptian_description">مصر وأجزاء من أفريقيا والشام</string>
+    <string name="method_muslim_world_league">رابطة العالم الإسلامي</string>
+    <string name="method_muslim_world_league_description">أوروبا والشرق الأقصى وأجزاء من الأمريكيتين</string>
+    <string name="method_karachi">جامعة العلوم الإسلامية بكراتشي</string>
+    <string name="method_karachi_description">باكستان والهند وبنغلاديش وأفغانستان</string>
+    <string name="method_kuwait">وزارة الأوقاف الكويتية</string>
+    <string name="method_kuwait_description">الكويت</string>
+    <string name="method_qatar">وزارة الأوقاف القطرية</string>
+    <string name="method_qatar_description">قطر</string>
+    <string name="method_dubai">دبي</string>
+    <string name="method_dubai_description">الإمارات العربية المتحدة</string>
+    <string name="method_turkey">رئاسة الشؤون الدينية التركية</string>
+    <string name="method_turkey_description">تركيا، بتقريب لتقويم ديانت</string>
+    <string name="method_singapore">سنغافورة</string>
+    <string name="method_singapore_description">سنغافورة وماليزيا وإندونيسيا</string>
+    <string name="method_moon_sighting_committee">لجنة رؤية الهلال</string>
+    <string name="method_moon_sighting_committee_description">أمريكا الشمالية والمملكة المتحدة، بقواعد موسمية للفجر والعشاء</string>
+    <string name="method_north_america">الجمعية الإسلامية لأمريكا الشمالية</string>
+    <string name="method_north_america_description">أمريكا الشمالية، بزوايا منخفضة لا يُنصح بها عادةً</string>
 </resources>
