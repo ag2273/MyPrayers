@@ -10,7 +10,7 @@ import android.util.Log
 
 /**
  * The Android side of a Custom Adhan (#28): the file the user picks with the system file picker
- * (`ACTION_OPEN_DOCUMENT`, `audio/*`). The core only ever sees its content URI, as an opaque reference.
+ * (`ACTION_OPEN_DOCUMENT`, audio files only). The core only ever sees its content URI, as an opaque reference.
  */
 object CustomAdhanFiles {
     private const val TAG = "CustomAdhan"
