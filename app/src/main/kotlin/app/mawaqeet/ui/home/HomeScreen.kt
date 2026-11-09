@@ -50,6 +50,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
+import app.mawaqeet.ui.LocalDisplayFormatter
 import app.mawaqeet.core.DisplayDay
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerCore
@@ -59,8 +60,6 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Today's Prayer Times and Sunrise, the next Prayer highlighted, and a live countdown to it. Tapping a Prayer marks
@@ -115,6 +114,7 @@ private fun HomeContent(
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            DateLine(day)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.default_location_name),
@@ -147,6 +147,20 @@ private fun HomeContent(
     }
 }
 
+/** The display day's Gregorian date, then its Hijri date (with the user's offset). */
+@Composable
+private fun DateLine(day: DisplayDay) {
+    val format = LocalDisplayFormatter.current
+    Column {
+        Text(format.gregorianDate(day.date), style = MaterialTheme.typography.titleMedium)
+        Text(
+            format.hijriDate(day.hijriDate),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 /** What a row shows of the Prayer Log. */
 private data class LogCell(val state: LogState, val markable: Boolean)
 
@@ -162,10 +176,11 @@ private fun NextPrayerCard(next: PrayerTime, now: Instant) {
         val onPrimary = MaterialTheme.colorScheme.onPrimary
         Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.bodyLarge, color = onPrimary)
         Text(prayerName(next), style = MaterialTheme.typography.headlineLarge, color = onPrimary)
-        Text(formatTime(next.time), style = MaterialTheme.typography.displayMedium, color = onPrimary)
+        val format = LocalDisplayFormatter.current
+        Text(format.time(next.time), style = MaterialTheme.typography.displayMedium, color = onPrimary)
         Spacer(Modifier.height(4.dp))
         Text(
-            text = stringResource(R.string.countdown, formatCountdown(Duration.between(now, next.time.toInstant()))),
+            text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.secondary,
         )
@@ -212,7 +227,7 @@ private fun TimeRow(
             color = if (highlighted) colors.primary else colors.onSurface,
         )
         Text(
-            text = formatTime(time),
+            text = LocalDisplayFormatter.current.time(time),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = weight,
             color = if (highlighted) colors.primary else colors.onSurface,
@@ -261,14 +276,3 @@ private fun prayerName(prayerTime: PrayerTime): String = stringResource(
         }
     },
 )
-
-// Placeholder formatting with Western digits; locale-aware digits and 12/24-hour style belong to #17.
-private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
-
-private fun formatTime(time: ZonedDateTime): String = timeFormatter.format(time)
-
-/** Remaining time as H:MM:SS, always with seconds. */
-internal fun formatCountdown(remaining: Duration): String {
-    val seconds = remaining.seconds.coerceAtLeast(0)
-    return String.format(Locale.ROOT, "%d:%02d:%02d", seconds / 3600, seconds % 3600 / 60, seconds % 60)
-}

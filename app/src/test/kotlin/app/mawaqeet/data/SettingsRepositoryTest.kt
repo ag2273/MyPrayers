@@ -4,10 +4,12 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
+import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.PrayerSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +60,27 @@ class SettingsRepositoryTest {
 
         assertEquals(CalculationMethod.EGYPTIAN, restored.method)
         assertEquals(AsrConvention.HANAFI, restored.asrConvention)
+    }
+
+    @Test
+    fun `the Hijri offset and digit style survive an app restart`() {
+        assertEquals(DigitStyle.AUTOMATIC, withRepository { repo, _ -> repo.digitStyle.first() })
+        withRepository { repo, _ ->
+            repo.setHijriOffsetDays(-1)
+            repo.setDigitStyle(DigitStyle.ARABIC_INDIC)
+        }
+
+        withRepository { repo, _ ->
+            assertEquals(-1, repo.settings.first().hijriOffsetDays)
+            assertEquals(DigitStyle.ARABIC_INDIC, repo.digitStyle.first())
+        }
+    }
+
+    @Test
+    fun `a stored Hijri offset outside the allowed range reads as no offset`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("hijri_offset_days")] = 5 } }
+
+        assertEquals(0, withRepository { repo, _ -> repo.settings.first() }.hijriOffsetDays)
     }
 
     @Test

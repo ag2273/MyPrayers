@@ -9,6 +9,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
+import app.mawaqeet.core.DigitStyle
+import androidx.appcompat.app.AppCompatDelegate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -68,5 +70,29 @@ class SettingsScreenTest {
         compose.waitUntil(timeoutMillis = 5_000) { stored().asrConvention == AsrConvention.HANAFI }
         assertEquals(CalculationMethod.EGYPTIAN, stored().method)
         assertEquals(AsrConvention.HANAFI, stored().asrConvention)
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `choosing Western digits and a Hijri offset stores them`() {
+        openSettings("الإعدادات")
+        val store = (compose.activity.application as MawaqeetApplication).settings
+
+        compose.onNodeWithText("أرقام غربية").performScrollTo().performClick()
+        compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.digitStyle.first() } == DigitStyle.WESTERN }
+        compose.onNodeWithText("تعديل التاريخ الهجري").performScrollTo().performClick()
+        compose.onNodeWithText("-1", substring = true).performScrollTo().performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.settings.first() }.hijriOffsetDays == -1 }
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `choosing English switches the app language`() {
+        openSettings("الإعدادات")
+
+        compose.onNodeWithText("English").performScrollTo().performClick()
+
+        assertEquals("en", AppCompatDelegate.getApplicationLocales().toLanguageTags())
     }
 }

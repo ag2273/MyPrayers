@@ -71,4 +71,17 @@
     <string name="grant_exact_alarms_title">Exact alarms</string>
     <string name="grant_exact_alarms_body">So the alert arrives exactly on time, even after hours of not using the phone.</string>
     <string name="grant_button">Grant</string>
+    <!-- Language & display (#17). -->
+    <string name="language">Language</string>
+    <string name="language_arabic_description">Right to left</string>
+    <string name="language_english_description">Left to right</string>
+    <string name="digits">Digits</string>
+    <string name="digits_automatic">Automatic</string>
+    <string name="digits_automatic_description">Follow the phone\'s language and settings</string>
+    <string name="digits_arabic_indic">Arabic-Indic digits</string>
+    <string name="digits_western">Western digits</string>
+    <string name="hijri_offset">Hijri date adjustment</string>
+    <string name="hijri_offset_summary">%2$s (%1$s)</string>
+    <string name="hijri_offset_none">No adjustment: %1$s</string>
+    <string name="hijri_offset_hint">To match the moon sighting in your country</string>
 </resources>
