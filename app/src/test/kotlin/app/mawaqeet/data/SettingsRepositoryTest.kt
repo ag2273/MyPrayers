@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.mawaqeet.core.HighLatitudeRule
+import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityRef
@@ -94,6 +96,22 @@ class SettingsRepositoryTest {
 
         assertEquals(CalculationMethod.EGYPTIAN, restored.method)
         assertEquals(AsrConvention.HANAFI, restored.asrConvention)
+    }
+
+    @Test
+    fun `Prayer Time adjustments and the high-latitude rule survive an app restart`() {
+        withRepository { repo, _ ->
+            repo.setAdjustment(Prayer.FAJR, 3)
+            repo.setAdjustment(Prayer.ISHA, -30)
+            repo.setAdjustment(Prayer.DHUHR, 4)
+            repo.setAdjustment(Prayer.DHUHR, 0)
+            repo.setHighLatitudeRule(HighLatitudeRule.TWILIGHT_ANGLE)
+        }
+
+        val restored = withRepository { repo, _ -> repo.settings.first() }
+
+        assertEquals(mapOf(Prayer.FAJR to 3, Prayer.ISHA to -30), restored.adjustments)
+        assertEquals(HighLatitudeRule.TWILIGHT_ANGLE, restored.highLatitudeRule)
     }
 
     @Test

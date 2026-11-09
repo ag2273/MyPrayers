@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -40,6 +41,7 @@ import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.HighLatitudeRule
 import app.mawaqeet.core.HijriDate
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
@@ -61,6 +63,12 @@ interface SettingsActions {
     fun setDigitStyle(style: DigitStyle)
     fun setHijriOffsetDays(days: Int)
 
+    /** Settings → Prayer Times (#20): [minutes] within [PrayerSettings.ADJUSTMENT_RANGE] added to [prayer]'s time. */
+    fun setAdjustment(prayer: Prayer, minutes: Int)
+
+    /** Settings → Advanced (#20). */
+    fun setHighLatitudeRule(rule: HighLatitudeRule)
+
     /** Opens the Location screen (city search or coordinates, #21). */
     fun openLocation()
 
@@ -78,8 +86,8 @@ interface SettingsActions {
 }
 
 /**
- * Settings, in the spec's six groups: Prayer Times, Alerts, Prayer Log, Language & display, Widgets, About.
- * A ticket that adds settings fills its group's composable below; each group is a [SettingsGroup].
+ * Settings, in the spec's six groups (Prayer Times, Alerts, Prayer Log, Language & display, Widgets, About), then
+ * Advanced. A ticket that adds settings fills its group's composable below; each group is a [SettingsGroup].
  */
 @Composable
 fun SettingsScreen(
@@ -113,6 +121,7 @@ fun SettingsScreen(
             SettingsGroup(R.string.settings_group_prayer_log) { ComingSoon() }
             LanguageDisplayGroup(settings, digitStyle, today, actions)
             SettingsGroup(R.string.settings_group_widgets) { ComingSoon() }
+            AdvancedGroup(settings, actions)
             SettingsGroup(R.string.settings_group_about) { ComingSoon() }
         }
     }
@@ -145,6 +154,9 @@ private fun ComingSoon() {
 @Composable
 private fun PrayerTimesGroup(settings: PrayerSettings, locationName: String, actions: SettingsActions) {
     var choosingMethod by rememberSaveable { mutableStateOf(false) }
+    var adjusting by rememberSaveable { mutableStateOf(false) }
+    val format = LocalDisplayFormatter.current
+    val resources = LocalResources.current
     SettingsGroup(R.string.settings_group_prayer_times) {
         SettingRow(
             title = stringResource(R.string.location),
@@ -167,6 +179,33 @@ private fun PrayerTimesGroup(settings: PrayerSettings, locationName: String, act
                 )
             }
         }
+        val adjusted = Prayer.entries.filter { settings.adjustmentOf(it) != 0 }
+        SettingRow(
+            title = stringResource(R.string.adjustments),
+            summary = if (adjusted.isEmpty()) {
+                stringResource(R.string.adjustments_none)
+            } else {
+                adjusted.joinToString(resources.getString(R.string.list_separator)) { prayer ->
+                    resources.getString(R.string.adjustment_summary, resources.getString(prayer.nameRes), signedMinutes(format.signedNumber(settings.adjustmentOf(prayer))))
+                }
+            },
+            onClick = { adjusting = true },
+        )
+    }
+    if (adjusting) {
+        AlertDialog(
+            onDismissRequest = { adjusting = false },
+            title = { Text(stringResource(R.string.adjustments)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.adjustments_hint, format.number(PrayerSettings.ADJUSTMENT_RANGE.last)), style = MaterialTheme.typography.bodyMedium)
+                    Prayer.entries.forEach { prayer ->
+                        AdjustmentRow(prayer, settings.adjustmentOf(prayer)) { actions.setAdjustment(prayer, it) }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { adjusting = false }) { Text(stringResource(R.string.done)) } },
+        )
     }
     if (choosingMethod) {
         AlertDialog(
@@ -194,6 +233,84 @@ private fun PrayerTimesGroup(settings: PrayerSettings, locationName: String, act
         )
     }
 }
+
+/** A signed minute count that reads left to right even in Arabic, so "+5" never shows as "5+". */
+private fun signedMinutes(signed: String): String =
+    BidiFormatter.getInstance().unicodeWrap(signed, TextDirectionHeuristicsCompat.LTR)
+
+/** One Prayer's adjustment: its name, then −, the minutes and +, one minute per tap within the allowed range. */
+@Composable
+private fun AdjustmentRow(prayer: Prayer, minutes: Int, onChange: (Int) -> Unit) {
+    val format = LocalDisplayFormatter.current
+    val name = stringResource(prayer.nameRes)
+    val range = PrayerSettings.ADJUSTMENT_RANGE
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        val earlier = stringResource(R.string.adjustment_earlier, name)
+        val later = stringResource(R.string.adjustment_later, name)
+        TextButton(
+            onClick = { onChange(minutes - 1) },
+            enabled = minutes > range.first,
+            modifier = Modifier.semantics { contentDescription = earlier },
+        ) { Text("−", style = MaterialTheme.typography.titleLarge) }
+        Text(
+            stringResource(R.string.adjustment_minutes, signedMinutes(format.signedNumber(minutes))),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        TextButton(
+            onClick = { onChange(minutes + 1) },
+            enabled = minutes < range.last,
+            modifier = Modifier.semantics { contentDescription = later },
+        ) { Text("+", style = MaterialTheme.typography.titleLarge) }
+    }
+}
+
+/** Advanced (#20): the high-latitude rule for Fajr and Isha. */
+@Composable
+private fun AdvancedGroup(settings: PrayerSettings, actions: SettingsActions) {
+    val format = LocalDisplayFormatter.current
+    SettingsGroup(R.string.settings_group_advanced) {
+        Text(stringResource(R.string.high_latitude_rule), style = MaterialTheme.typography.titleSmall)
+        Text(
+            stringResource(R.string.high_latitude_rule_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Column(Modifier.selectableGroup()) {
+            HighLatitudeRule.entries.forEach { rule ->
+                ChoiceRow(
+                    title = stringResource(rule.label),
+                    description = when (rule) {
+                        HighLatitudeRule.AUTOMATIC ->
+                            stringResource(rule.description, format.number(HighLatitudeRule.AUTOMATIC_LATITUDE.toInt()))
+                        HighLatitudeRule.TWILIGHT_ANGLE -> stringResource(rule.description, format.number(60))
+                        else -> stringResource(rule.description)
+                    },
+                    selected = rule == settings.highLatitudeRule,
+                    onSelect = { actions.setHighLatitudeRule(rule) },
+                )
+            }
+        }
+    }
+}
+
+@get:StringRes
+internal val HighLatitudeRule.label: Int
+    get() = when (this) {
+        HighLatitudeRule.AUTOMATIC -> R.string.high_latitude_automatic
+        HighLatitudeRule.MIDDLE_OF_THE_NIGHT -> R.string.high_latitude_middle
+        HighLatitudeRule.SEVENTH_OF_THE_NIGHT -> R.string.high_latitude_seventh
+        HighLatitudeRule.TWILIGHT_ANGLE -> R.string.high_latitude_twilight
+    }
+
+@get:StringRes
+private val HighLatitudeRule.description: Int
+    get() = when (this) {
+        HighLatitudeRule.AUTOMATIC -> R.string.high_latitude_automatic_description
+        HighLatitudeRule.MIDDLE_OF_THE_NIGHT -> R.string.high_latitude_middle_description
+        HighLatitudeRule.SEVENTH_OF_THE_NIGHT -> R.string.high_latitude_seventh_description
+        HighLatitudeRule.TWILIGHT_ANGLE -> R.string.high_latitude_twilight_description
+    }
 
 @Composable
 private fun LanguageDisplayGroup(settings: PrayerSettings, digitStyle: DigitStyle, today: LocalDate, actions: SettingsActions) {

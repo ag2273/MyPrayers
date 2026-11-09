@@ -3,6 +3,7 @@ package app.mawaqeet
 import android.view.View
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -13,6 +14,7 @@ import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.HighLatitudeRule
 import androidx.appcompat.app.AppCompatDelegate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -115,6 +117,32 @@ class SettingsScreenTest {
                 store.setPrayerAlert(Prayer.FAJR, PrayerAlertSettings())
                 store.setVibration(true)
                 store.setDigitStyle(DigitStyle.AUTOMATIC)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `adjusting Fajr and choosing a high-latitude rule stores them`() {
+        openSettings("Settings")
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun stored() = runBlocking { store.settings.first() }
+        try {
+            compose.onNodeWithText("Prayer Time adjustments").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Fajr one minute later").performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { stored().adjustmentOf(Prayer.FAJR) == 1 }
+            compose.waitForIdle()
+            compose.onNodeWithContentDescription("Fajr one minute later").performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { stored().adjustmentOf(Prayer.FAJR) == 2 }
+            compose.onNodeWithText("Done").performClick()
+            compose.onNodeWithText("Middle of the night").performScrollTo().performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { stored().highLatitudeRule == HighLatitudeRule.MIDDLE_OF_THE_NIGHT }
+            assertEquals(mapOf(Prayer.FAJR to 2), stored().adjustments)
+        } finally {
+            runBlocking {
+                store.setAdjustment(Prayer.FAJR, 0)
+                store.setHighLatitudeRule(HighLatitudeRule.AUTOMATIC)
             }
         }
     }

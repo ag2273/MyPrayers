@@ -15,6 +15,7 @@ import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityRef
 import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.HighLatitudeRule
 import app.mawaqeet.core.Location
 import app.mawaqeet.core.LocationSource
 import app.mawaqeet.core.Prayer
@@ -44,6 +45,12 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                 hijriOffsetDays = prefs[HIJRI_OFFSET]?.takeIf { it in PrayerSettings.HIJRI_OFFSET_RANGE }
                     ?: default.hijriOffsetDays,
                 alerts = prefs.alertSettings(),
+                adjustments = Prayer.entries
+                    .mapNotNull { prayer ->
+                        prefs[adjustmentKey(prayer)]?.takeIf { it != 0 && it in PrayerSettings.ADJUSTMENT_RANGE }?.let { prayer to it }
+                    }
+                    .toMap(),
+                highLatitudeRule = prefs[HIGH_LATITUDE_RULE].toEnum(default.highLatitudeRule),
             )
         }
         .distinctUntilChanged()
@@ -113,6 +120,17 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
     suspend fun setHijriOffsetDays(days: Int) {
         require(days in PrayerSettings.HIJRI_OFFSET_RANGE)
         store.edit { it[HIJRI_OFFSET] = days }
+    }
+
+    /** Settings → Prayer Times: [minutes] (within [PrayerSettings.ADJUSTMENT_RANGE]) added to [prayer]'s time. */
+    suspend fun setAdjustment(prayer: Prayer, minutes: Int) {
+        require(minutes in PrayerSettings.ADJUSTMENT_RANGE)
+        store.edit { if (minutes == 0) it.remove(adjustmentKey(prayer)) else it[adjustmentKey(prayer)] = minutes }
+    }
+
+    /** Settings → Advanced. */
+    suspend fun setHighLatitudeRule(rule: HighLatitudeRule) {
+        store.edit { it[HIGH_LATITUDE_RULE] = rule.name }
     }
 
     /**
@@ -208,6 +226,9 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         )
     }
 
+    /** Keys `adjust_<prayer>`, e.g. `adjust_fajr`: minutes added to that Prayer Time. */
+    private fun adjustmentKey(prayer: Prayer) = intPreferencesKey("adjust_${prayer.name.lowercase()}")
+
     /** Keys `custom_adhan_short|full|fajr_full`: the Custom Adhan's content URI. */
     private fun customAdhanKey(recording: AdhanRecording) = stringPreferencesKey("custom_adhan_${recording.name.lowercase()}")
 
@@ -230,6 +251,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val METHOD = stringPreferencesKey("calculation_method")
         private val ASR = stringPreferencesKey("asr_convention")
         private val HIJRI_OFFSET = intPreferencesKey("hijri_offset_days")
+        private val HIGH_LATITUDE_RULE = stringPreferencesKey("high_latitude_rule")
         private val DIGITS = stringPreferencesKey("digit_style")
         private val APP_LANGUAGE = stringPreferencesKey("app_language")
         private val ALARM_CLOCK_MODE = booleanPreferencesKey("alarm_clock_mode")
