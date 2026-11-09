@@ -37,6 +37,11 @@
             android:directBootAware="true"
             android:exported="false" />
 
+        <!-- "Mark as prayed" on the Adhan Alert (#26). Not direct-boot aware: the Prayer Log needs an unlocked phone. -->
+        <receiver
+            android:name=".alerts.MarkPrayedReceiver"
+            android:exported="false" />
+
         <!-- The adhan player (#22). Direct-boot aware like AlertReceiver, which starts it. -->
         <service
             android:name=".alerts.AdhanPlayerService"

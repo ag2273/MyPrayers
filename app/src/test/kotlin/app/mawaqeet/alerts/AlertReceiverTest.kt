@@ -25,6 +25,11 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlarmManager
 import java.time.Instant
 import java.time.LocalDate
+import java.time.Clock
+import java.util.concurrent.Executors
+import app.mawaqeet.MawaqeetApplication
+import app.mawaqeet.core.PrayerCore
+import app.mawaqeet.core.PrayerSettings
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36])
@@ -46,15 +51,17 @@ class AlertReceiverTest {
         kind: AlertKind = AlertKind.ADHAN_ALERT,
         playOnSilent: Boolean = false,
         vibration: Boolean = true,
+        prayer: Prayer = Prayer.ASR,
+        prayerDay: LocalDate = LocalDate.parse("2026-11-08"),
     ): PlannedAlert {
         val now = Instant.ofEpochMilli(System.currentTimeMillis())
         return PlannedAlert(
             instant = now,
-            prayer = Prayer.ASR,
+            prayer = prayer,
             kind = kind,
             sound = sound,
             deliveryMode = DeliveryMode.EXACT,
-            prayerDay = LocalDate.parse("2026-11-08"),
+            prayerDay = prayerDay,
             isJumuah = false,
             prayerTime = if (kind == AlertKind.PRAYER_REMINDER) now.plusSeconds(15 * 60) else now,
             playOnSilent = playOnSilent,
@@ -115,5 +122,85 @@ class AlertReceiverTest {
 
         assertNull(app.nextStartedService)
         assertEquals(AdhanNotification.CHANNEL_REMINDERS, notifications.single().channelId)
+    }
+
+    private val prayerLog get() = (context.applicationContext as MawaqeetApplication).prayerLog
+
+    private fun <T> io(block: () -> T): T = Executors.newSingleThreadExecutor().let { e ->
+        try { e.submit<T> { block() }.get() } finally { e.shutdown() }
+    }
+
+    /** The current Prayer Day in Makkah (the default location) by the real clock, with its Fajr already due. */
+    private fun today(): LocalDate = io { PrayerCore(PrayerSettings.Default, Clock.systemUTC(), prayerLog).currentPrayerDay().date }
+
+    private fun markAction(n: android.app.Notification) = n.actions.single { it.title.toString() == "Mark as prayed" }
+
+    /** Taps [action] and waits for the receiver's background mark to land. */
+    private fun tap(action: android.app.Notification.Action, until: () -> Boolean) {
+        action.actionIntent.send()
+        val deadline = System.currentTimeMillis() + 5_000
+        while (!until() && System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(20)
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `an Adhan Alert offers Mark as prayed, which marks its Prayer Day and dismisses the notification`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        val day = today()
+        fire(alert(AlertSound.ShortAdhan, prayer = Prayer.FAJR, prayerDay = day))
+        val posted = notifications.single()
+
+        tap(markAction(posted)) { io { Prayer.FAJR in prayerLog.prayedOn(day) } }
+
+        assertEquals(setOf(Prayer.FAJR), io { prayerLog.prayedOn(day) })
+        assertTrue(notifications.isEmpty())
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `Mark as prayed acted on hours later marks the alert's own Prayer Day, such as last night's Isha`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        val yesterday = today().minusDays(1)
+        fire(alert(AlertSound.ShortAdhan, prayer = Prayer.ISHA, prayerDay = yesterday))
+
+        tap(markAction(notifications.single())) { io { Prayer.ISHA in prayerLog.prayedOn(yesterday) } }
+
+        assertEquals(setOf(Prayer.ISHA), io { prayerLog.prayedOn(yesterday) })
+        assertEquals(emptySet<Prayer>(), io { prayerLog.prayedOn(today()) })
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `outside the edit window Mark as prayed changes nothing but still dismisses`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        val old = today().minusDays(10)
+        fire(alert(AlertSound.ShortAdhan, prayer = Prayer.DHUHR, prayerDay = old))
+
+        tap(markAction(notifications.single())) { notifications.isEmpty() }
+        Thread.sleep(200)
+
+        assertTrue(notifications.isEmpty())
+        assertEquals(emptySet<Prayer>(), io { prayerLog.prayedOn(old) })
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `the action reads in Arabic too, and the adhan player's notification has it next to Stop`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        val n = AdhanNotification(Prayer.MAGHRIB, isJumuah = false, id = 7, prayerDay = today())
+
+        val titles = n.builder(context).addAction(0, "إيقاف", null).build().actions.map { it.title.toString() }
+
+        assertEquals(listOf("تمّت الصلاة", "إيقاف"), titles)
+    }
+
+    @Test
+    fun `a Prayer Reminder has no Mark as prayed`() {
+        val n = AdhanNotification(Prayer.MAGHRIB, isJumuah = false, id = 7, kind = AlertKind.PRAYER_REMINDER, prayerDay = today())
+
+        assertNull(n.builder(context).build().actions)
     }
 }

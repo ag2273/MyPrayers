@@ -168,4 +168,6 @@
     <string name="widget_next_prayer_compact_description">الصلاة القادمة في سطرين</string>
     <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
     <string name="widget_countdown_format">بعد %s</string>
+    <!-- Adhan Alert notification action (#26). -->
+    <string name="mark_as_prayed">تمّت الصلاة</string>
 </resources>
