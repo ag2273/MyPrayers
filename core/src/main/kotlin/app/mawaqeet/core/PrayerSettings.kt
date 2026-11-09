@@ -70,6 +70,8 @@ data class PrayerSettings(
     val asrConvention: AsrConvention,
     /** Days added to the Umm al-Qura Hijri date to match local moon sighting, within [HIJRI_OFFSET_RANGE]. */
     val hijriOffsetDays: Int = 0,
+    /** Settings → Alerts: per-Prayer Adhan Alerts and Prayer Reminders, delivery and playback. */
+    val alerts: AlertSettings = AlertSettings(),
 ) {
     init {
         require(hijriOffsetDays in HIJRI_OFFSET_RANGE) { "Hijri offset $hijriOffsetDays is outside $HIJRI_OFFSET_RANGE" }
