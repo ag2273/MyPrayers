@@ -25,6 +25,8 @@ data class DisplayDay(
     val sunrise: ZonedDateTime,
     /** The next Prayer whose time has not yet arrived. Never Sunrise. */
     val next: PrayerTime,
+    /** [date] in the Hijri calendar, with the user's Hijri offset applied. */
+    val hijriDate: HijriDate,
 ) {
     /** Whether [date] is a Friday, so its Dhuhr is Jumu'ah. */
     val isJumuah: Boolean

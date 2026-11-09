@@ -22,7 +22,10 @@ class PrayerCore(
         val day = calculateDay(settings, date)
         val next = day.prayerTimes.firstOrNull { it.time.toInstant().isAfter(now) }
             ?: calculateDay(settings, date.plusDays(1)).prayerTimes.first()
-        return DisplayDay(date = date, prayerTimes = day.prayerTimes, sunrise = day.sunrise, next = next)
+        return DisplayDay(
+            date = date, prayerTimes = day.prayerTimes, sunrise = day.sunrise, next = next,
+            hijriDate = HijriDate.of(date, settings.hijriOffsetDays),
+        )
     }
 
     /** The Prayer Day now falls in. */

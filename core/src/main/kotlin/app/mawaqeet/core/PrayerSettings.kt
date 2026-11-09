@@ -35,8 +35,17 @@ data class PrayerSettings(
     val location: Location,
     val method: CalculationMethod,
     val asrConvention: AsrConvention,
+    /** Days added to the Umm al-Qura Hijri date to match local moon sighting, within [HIJRI_OFFSET_RANGE]. */
+    val hijriOffsetDays: Int = 0,
 ) {
+    init {
+        require(hijriOffsetDays in HIJRI_OFFSET_RANGE) { "Hijri offset $hijriOffsetDays is outside $HIJRI_OFFSET_RANGE" }
+    }
+
     companion object {
+        /** The Hijri day offsets the user may choose. */
+        val HIJRI_OFFSET_RANGE = -2..2
+
         /** Before the user picks a location: Makkah (the Kaaba), Umm al-Qura, Standard Asr. */
         val Default = PrayerSettings(
             location = Location(21.4225, 39.8262, ZoneId.of("Asia/Riyadh")),
