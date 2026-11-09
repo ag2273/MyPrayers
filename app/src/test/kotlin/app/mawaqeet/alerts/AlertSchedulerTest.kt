@@ -69,6 +69,16 @@ class AlertSchedulerTest {
     }
 
     @Test
+    fun `a Prayer Time without an Adhan Alert gets the display alarm instead of midnight, so widgets move on there`() {
+        val unannouncedAsr = Instant.parse("2026-11-08T12:17:00Z")
+        AlertScheduler(context).apply(AlertPlan(listOf(dhuhr, maghrib), midnight, nextDisplayChange = unannouncedAsr))
+
+        assertEquals(listOf(dhuhr.instant, unannouncedAsr, maghrib.instant), triggerTimes())
+        val display = alarms.scheduledAlarms.single { Instant.ofEpochMilli(it.triggerAtTime) == unannouncedAsr }
+        assertEquals(AlertReceiver.ACTION_MIDNIGHT, shadowOf(display.operation).savedIntent.action)
+    }
+
+    @Test
     fun `a new plan cancels alarms it no longer contains and adds the missing ones`() {
         val scheduler = AlertScheduler(context)
         scheduler.apply(AlertPlan(listOf(dhuhr, asr, maghrib), midnight))
