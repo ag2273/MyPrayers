@@ -126,12 +126,13 @@ class CityDirectory(cities: List<City>) {
                 .replace('ı', 'i').replace('ة', 'ه').replace('ى', 'ي')
                 .replace(SEPARATORS, " ")
                 .trim()
-
-        private fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-            val p1 = Math.toRadians(lat1)
-            val p2 = Math.toRadians(lat2)
-            val h = sin((p2 - p1) / 2).pow(2) + cos(p1) * cos(p2) * sin(Math.toRadians(lon2 - lon1) / 2).pow(2)
-            return 2 * 6371.0 * asin(sqrt(h.coerceAtMost(1.0)))
-        }
     }
+}
+
+/** Great-circle distance in km between two points. */
+internal fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val p1 = Math.toRadians(lat1)
+    val p2 = Math.toRadians(lat2)
+    val h = sin((p2 - p1) / 2).pow(2) + cos(p1) * cos(p2) * sin(Math.toRadians(lon2 - lon1) / 2).pow(2)
+    return 2 * 6371.0 * asin(sqrt(h.coerceAtMost(1.0)))
 }
