@@ -125,6 +125,20 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[LOCATION_STALE] = stale }
     }
 
+    /** False until the user finishes onboarding (#29); until then the app opens to it instead of Home. */
+    val onboardingDone: Flow<Boolean> = store.data.map { it[ONBOARDING_DONE] ?: false }.distinctUntilChanged()
+
+    suspend fun setOnboardingDone(done: Boolean) {
+        store.edit { it[ONBOARDING_DONE] = done }
+    }
+
+    /** True once the user tapped "Done" on the Fix alerts tip or screen (#29): Home stops showing the tip. */
+    val fixAlertsDone: Flow<Boolean> = store.data.map { it[FIX_ALERTS_DONE] ?: false }.distinctUntilChanged()
+
+    suspend fun setFixAlertsDone(done: Boolean) {
+        store.edit { it[FIX_ALERTS_DONE] = done }
+    }
+
     suspend fun setDigitStyle(style: DigitStyle) {
         store.edit { it[DIGITS] = style.name }
     }
@@ -236,6 +250,8 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")
         private val VIBRATION = booleanPreferencesKey("vibration")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
+        private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+        private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")
         private val LATITUDE = doublePreferencesKey("location_latitude")
         private val LONGITUDE = doublePreferencesKey("location_longitude")
         private val ZONE = stringPreferencesKey("location_zone")

@@ -168,4 +168,50 @@
     <string name="widget_next_prayer_compact_description">الصلاة القادمة في سطرين</string>
     <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
     <string name="widget_countdown_format">بعد %s</string>
+
+    <!-- Onboarding (#29). -->
+    <string name="onboarding_welcome">مواقيت الصلاة لموقعك، وتنبيه الأذان في وقته، وسجل خاص لصلواتك لا يغادر هاتفك.</string>
+    <string name="onboarding_start">ابدأ</string>
+    <string name="onboarding_continue">متابعة</string>
+    <string name="onboarding_skip">تخطٍّ</string>
+    <string name="onboarding_allow">السماح</string>
+    <string name="onboarding_granted">✓ تم منح الإذن</string>
+    <string name="onboarding_permission_needed">لا يمكن إكمال الإعداد دون هذا الإذن، فالتنبيهات لن تصل بدونه.</string>
+    <string name="onboarding_allow_location">استخدم موقعي التقريبي</string>
+    <string name="onboarding_finding_location">جارٍ تحديد موقعك…</string>
+    <string name="onboarding_search_city">ابحث عن مدينتي بدلًا من ذلك</string>
+    <string name="onboarding_method_title">طريقة الحساب</string>
+    <string name="onboarding_method_change">يمكنك اختيار غيرها الآن أو لاحقًا من الإعدادات.</string>
+    <string name="onboarding_notifications_title">إشعارات الأذان</string>
+    <string name="onboarding_exact_alarms_title">التنبيه في الوقت تمامًا</string>
+    <string name="onboarding_battery_title">لا تدع الهاتف يوقف التنبيهات</string>
+
+    <!-- Fix alerts (#29): only opens system settings pages, never asks for a battery exemption. %1$s is the brand. -->
+    <string name="fix_alerts">إصلاح التنبيهات</string>
+    <string name="fix_alerts_summary">إن تأخرت التنبيهات أو لم تصل</string>
+    <string name="fix_alerts_tip">قد يؤخر هاتفك تنبيهات الأذان لتوفير البطارية. خطوات قليلة تمنع ذلك.</string>
+    <string name="fix_alerts_intro">توفير البطارية في هواتف %1$s قد يؤخر تنبيهات الأذان أو يوقفها. غيّر هذه الإعدادات بنفسك:</string>
+    <string name="fix_open_app_settings">افتح إعدادات التطبيق</string>
+    <string name="fix_open_battery_settings">افتح إعدادات تحسين البطارية</string>
+    <string name="brand_samsung">سامسونج</string>
+    <string name="brand_xiaomi">شاومي وريدمي وبوكو</string>
+    <string name="brand_huawei">هواوي وهونر</string>
+    <string name="brand_oppo">أوبو وريلمي وون بلس</string>
+    <string name="brand_vivo">فيفو</string>
+    <string name="brand_other">بعض</string>
+    <string name="fix_samsung_1">في إعدادات التطبيق: البطارية ← غير مقيّد.</string>
+    <string name="fix_samsung_2">في الإعدادات ← العناية بالبطارية والجهاز ← البطارية ← حدود استخدام الخلفية: أزل مواقيت من «التطبيقات الخاملة» و«الخاملة بعمق».</string>
+    <string name="fix_samsung_3">أضف مواقيت إلى «التطبيقات التي لا تدخل وضع الخمول أبدًا».</string>
+    <string name="fix_xiaomi_1">في إعدادات التطبيق: فعّل «التشغيل التلقائي».</string>
+    <string name="fix_xiaomi_2">في إعدادات التطبيق: موفر البطارية ← بلا قيود.</string>
+    <string name="fix_xiaomi_3">في قائمة التطبيقات الأخيرة اضغط مطولًا على مواقيت وثبّته بالقفل.</string>
+    <string name="fix_huawei_1">في الإعدادات ← البطارية ← تشغيل التطبيقات: اجعل مواقيت «إدارة يدوية» وفعّل الخيارات الثلاثة.</string>
+    <string name="fix_huawei_2">في إعدادات التطبيق: البطارية ← اسمح بالنشاط في الخلفية.</string>
+    <string name="fix_oppo_1">في إعدادات التطبيق: استخدام البطارية ← اسمح بالنشاط في الخلفية.</string>
+    <string name="fix_oppo_2">في إعدادات التطبيق: فعّل «التشغيل التلقائي».</string>
+    <string name="fix_oppo_3">في إعدادات تحسين البطارية: اجعل مواقيت «لا تحسّن».</string>
+    <string name="fix_vivo_1">في الإعدادات ← البطارية ← استهلاك الطاقة في الخلفية: اسمح لمواقيت.</string>
+    <string name="fix_vivo_2">في إعدادات التطبيق: فعّل «التشغيل التلقائي».</string>
+    <string name="fix_general_1">في إعدادات التطبيق: البطارية ← غير مقيّد أو بلا تحسين.</string>
+    <string name="fix_general_2">في إعدادات تحسين البطارية: اجعل مواقيت «لا تحسّن».</string>
 </resources>

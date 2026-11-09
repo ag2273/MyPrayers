@@ -67,6 +67,11 @@ internal fun AlertsGroup(alerts: AlertSettings, actions: SettingsActions) {
             )
         }
         CustomAdhanRows(alerts, actions)
+        SettingRow(
+            title = stringResource(R.string.fix_alerts),
+            summary = stringResource(R.string.fix_alerts_summary),
+            onClick = actions::openFixAlerts,
+        )
         SwitchRow(
             title = stringResource(R.string.alerts_alarm_clock),
             description = stringResource(R.string.alerts_alarm_clock_description),
