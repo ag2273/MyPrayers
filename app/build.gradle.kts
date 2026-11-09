@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     // AGP 9 has built-in Kotlin: do NOT apply org.jetbrains.kotlin.android.
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -45,6 +47,11 @@ kotlin {
     jvmToolchain(21)
 }
 
+room {
+    // Exported schemas are committed so later migrations can be tested against them.
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     implementation(project(":core"))
 
@@ -58,6 +65,9 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
+
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
