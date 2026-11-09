@@ -1,0 +1,98 @@
+package app.mawaqeet.alerts
+
+import android.content.Context
+import androidx.core.util.AtomicFile
+import app.mawaqeet.core.AlertKind
+import app.mawaqeet.core.AlertPlan
+import app.mawaqeet.core.AlertSound
+import app.mawaqeet.core.DeliveryMode
+import app.mawaqeet.core.PlannedAlert
+import app.mawaqeet.core.Prayer
+import java.io.File
+import java.io.FileNotFoundException
+import java.time.Instant
+import java.time.LocalDate
+
+/**
+ * The last alert plan the scheduler applied, kept in **device-protected storage** (file `files/alert_plan.txt`
+ * under `createDeviceProtectedStorageContext()`) so a locked boot can re-arm alarms before the first unlock,
+ * when settings in credential-encrypted DataStore are unreadable. One tab-separated line per alert.
+ */
+internal class AlertPlanStore(context: Context) {
+    private val file = AtomicFile(File(context.createDeviceProtectedStorageContext().filesDir, FILE_NAME))
+
+    fun read(): AlertPlan? = try {
+        decode(file.readFully().decodeToString())
+    } catch (_: FileNotFoundException) {
+        null
+    } catch (_: IllegalArgumentException) {
+        null // Unreadable (e.g. an older format): treated as no stored plan; the next full reschedule rewrites it.
+    }
+
+    fun write(plan: AlertPlan) {
+        val out = file.startWrite()
+        try {
+            out.write(encode(plan).encodeToByteArray())
+            file.finishWrite(out)
+        } catch (e: Exception) {
+            file.failWrite(out)
+            throw e
+        }
+    }
+
+    private fun encode(plan: AlertPlan): String = buildString {
+        appendLine(VERSION)
+        appendLine(plan.nextLocalMidnight.toEpochMilli())
+        for (a in plan.alerts) {
+            appendLine(
+                listOf(
+                    a.instant.toEpochMilli(), a.prayer.name, a.kind.name, a.sound.encode(),
+                    a.deliveryMode.name, a.prayerDay, a.isJumuah,
+                ).joinToString("\t"),
+            )
+        }
+    }
+
+    private fun decode(text: String): AlertPlan {
+        val lines = text.lines().filter { it.isNotEmpty() }
+        require(lines.firstOrNull() == VERSION)
+        val midnight = Instant.ofEpochMilli(lines[1].toLong())
+        val alerts = lines.drop(2).map { line ->
+            val f = line.split('\t')
+            require(f.size == 7)
+            PlannedAlert(
+                instant = Instant.ofEpochMilli(f[0].toLong()),
+                prayer = Prayer.valueOf(f[1]),
+                kind = AlertKind.valueOf(f[2]),
+                sound = decodeSound(f[3]),
+                deliveryMode = DeliveryMode.valueOf(f[4]),
+                prayerDay = LocalDate.parse(f[5]),
+                isJumuah = f[6].toBooleanStrict(),
+            )
+        }
+        return AlertPlan(alerts, midnight)
+    }
+
+    private fun AlertSound.encode(): String = when (this) {
+        AlertSound.ShortAdhan -> "SHORT_ADHAN"
+        AlertSound.FullAdhan -> "FULL_ADHAN"
+        AlertSound.FajrFullAdhan -> "FAJR_FULL_ADHAN"
+        AlertSound.Silent -> "SILENT"
+        is AlertSound.CustomAdhan -> CUSTOM_PREFIX + reference
+    }
+
+    private fun decodeSound(s: String): AlertSound = when {
+        s == "SHORT_ADHAN" -> AlertSound.ShortAdhan
+        s == "FULL_ADHAN" -> AlertSound.FullAdhan
+        s == "FAJR_FULL_ADHAN" -> AlertSound.FajrFullAdhan
+        s == "SILENT" -> AlertSound.Silent
+        s.startsWith(CUSTOM_PREFIX) -> AlertSound.CustomAdhan(s.removePrefix(CUSTOM_PREFIX))
+        else -> throw IllegalArgumentException(s)
+    }
+
+    companion object {
+        const val FILE_NAME = "alert_plan.txt"
+        private const val VERSION = "alert-plan-v1"
+        private const val CUSTOM_PREFIX = "CUSTOM:"
+    }
+}

@@ -59,6 +59,35 @@ class PrayerCore(
     /** Removes the mark from [prayer] on the Prayer Day [date], under the same rules as [mark]. */
     fun unmark(date: LocalDate, prayer: Prayer): LogCommandResult = setPrayed(date, prayer, false)
 
+    /**
+     * Every Adhan Alert due after now (exclusive, so an alarm firing now is not planned again) and within the
+     * next [AlertPlan.WINDOW]. Sunrise never alerts. Until per-Prayer alert settings exist (#23), every Prayer
+     * has a Short Adhan Adhan Alert delivered as an exact alarm.
+     */
+    fun alertPlan(): AlertPlan {
+        val now = clock.instant()
+        val end = now.plus(AlertPlan.WINDOW)
+        val zone = settings.location.zone
+        val today = LocalDate.ofInstant(now, zone)
+        // Yesterday too: a Prayer Day is a calendar date's Fajr onwards, and the window spans at most 3 dates.
+        val alerts = (-1L..2L).flatMap { offset ->
+            val date = today.plusDays(offset)
+            calculateDay(settings, date).prayerTimes.map { time ->
+                PlannedAlert(
+                    instant = time.time.toInstant(),
+                    prayer = time.prayer,
+                    kind = AlertKind.ADHAN_ALERT,
+                    sound = AlertSound.ShortAdhan,
+                    deliveryMode = DeliveryMode.EXACT,
+                    prayerDay = date,
+                    isJumuah = time.isJumuah,
+                )
+            }
+        }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
+        val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
+        return AlertPlan(alerts, midnight)
+    }
+
     /** Records the current Prayer Day as the first-use date, once; later calls change nothing. */
     fun recordFirstUse() = log.recordFirstUseIfAbsent(prayerDayDateAt(clock.instant()))
 
