@@ -123,5 +123,28 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/date_strip_widget_info" />
         </receiver>
+        <!-- Today with Prayer Log and Week Prayer Log widgets (#31), 4×3; display only. -->
+        <receiver
+            android:name=".widget.TodayLogWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_today_log">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/today_log_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.WeekLogWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_week_log">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/week_log_widget_info" />
+        </receiver>
     </application>
 </manifest>

@@ -1,6 +1,8 @@
 package app.mawaqeet
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -66,9 +68,22 @@ import java.time.Clock
 
 /** AppCompatActivity (not ComponentActivity) so the per-app language backport works on Android 8–12. */
 class MainActivity : AppCompatActivity() {
+    /** Which screen a widget tap asked for; [OpenRequest.id] makes the same request twice still count. */
+    private data class OpenRequest(val opens: Opens, val id: Long = System.nanoTime())
+
+    private var openRequest by mutableStateOf<OpenRequest?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        openRequest = Opens.from(intent)?.let(::OpenRequest)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // A recreated activity keeps its own screen; only a fresh launch follows the widget's request.
+        if (savedInstanceState == null) openRequest = Opens.from(intent)?.let(::OpenRequest)
         val clock = Clock.systemUTC()
         val app = application as MawaqeetApplication
         val prayerLog = app.prayerLog
@@ -101,6 +116,15 @@ class MainActivity : AppCompatActivity() {
                 var showLocation by rememberSaveable { mutableStateOf(false) }
                 var showFixAlerts by rememberSaveable { mutableStateOf(false) }
                 var showLog by rememberSaveable { mutableStateOf(false) }
+                // A widget tap opens today's Prayer Times (Home) or the Prayer Log, from whatever screen was open.
+                LaunchedEffect(openRequest) {
+                    val request = openRequest ?: return@LaunchedEffect
+                    showSettings = false
+                    showLocation = false
+                    showFixAlerts = false
+                    showLog = request.opens == Opens.PRAYER_LOG
+                    openRequest = null
+                }
                 val scope = rememberCoroutineScope()
                 // Re-checked on every resume, so a permission revoked in system settings brings the Grant screen back.
                 var permissions by remember { mutableStateOf(AlertPermissions.of(this)) }
@@ -361,8 +385,29 @@ class MainActivity : AppCompatActivity() {
         return app.locationUpdater.onDevicePosition(position.latitude, position.longitude)
     }
 
-    private companion object {
-        const val NOTE_MS = 6_000L
+    /** The screen a widget opens. */
+    enum class Opens {
+        TODAY,
+        PRAYER_LOG;
+
+        companion object {
+            fun from(intent: Intent?): Opens? = intent?.getStringExtra(EXTRA_OPENS)?.let { name -> entries.firstOrNull { it.name == name } }
+        }
+    }
+
+    companion object {
+        private const val NOTE_MS = 6_000L
+        private const val EXTRA_OPENS = "app.mawaqeet.extra.OPENS"
+
+        /**
+         * What a widget tap starts: [opens] on top of the app's task, replacing whatever screen was showing (the
+         * activity gets it in [onNewIntent] when it is already running).
+         */
+        fun openIntent(context: Context, opens: Opens): Intent = Intent(context, MainActivity::class.java)
+            .putExtra(EXTRA_OPENS, opens.name)
+            // Distinct data per screen, so the two widgets' PendingIntents never replace each other's extras.
+            .setData(Uri.parse("mawaqeet://open/${opens.name.lowercase()}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
 
 }

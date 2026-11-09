@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
  */
 object Widgets {
     /** Every Widget Variant's [GlanceAppWidget] class; each new variant adds itself here. */
-    private val all: List<() -> GlanceAppWidget> = listOf(::NextPrayerWidget, ::TodayTimesWidget, ::DateStripWidget)
+    private val all: List<() -> GlanceAppWidget> = listOf(::NextPrayerWidget, ::TodayTimesWidget, ::DateStripWidget, ::TodayLogWidget, ::WeekLogWidget)
 
     /**
      * Bumped on every refresh, in each widget's Glance state. A widget reads it with `currentState(REFRESHED_AT)` and

@@ -60,6 +60,9 @@ class MawaqeetApplication : Application() {
                     .drop(1)
                     .collect { Widgets.refreshAll(this@MawaqeetApplication) }
             }
+            // Every mark, unmark or delete (Home, the Prayer Log screen, "Mark as prayed") re-renders the Prayer Log
+            // widgets, which only display the log.
+            appScope.launch { prayerLog.changes.drop(1).collect { Widgets.refreshAll(this@MawaqeetApplication) } }
         }
     }
 }

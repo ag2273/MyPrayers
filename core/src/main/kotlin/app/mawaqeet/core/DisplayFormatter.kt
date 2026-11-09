@@ -46,6 +46,8 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
         .ofPattern(if (arabic) "EEEE، d MMMM y" else "EEEE, d MMMM y", locale)
         .withDecimalStyle(decimalStyle)
 
+    private val narrowWeekdayFormatter = DateTimeFormatter.ofPattern("EEEEE", locale)
+
     private val shortGregorianFormatter = DateTimeFormatter
         .ofPattern(if (arabic) "EEEE d MMMM" else "EEE d MMM", locale)
         .withDecimalStyle(decimalStyle)
@@ -64,6 +66,9 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
 
     /** A Prayer Log day label's Gregorian part: `الأحد ٨ نوفمبر` / `Sun 8 Nov`. */
     fun shortGregorianDate(date: LocalDate): String = shortGregorianFormatter.format(date)
+
+    /** A weekday as one letter, for a week grid's column heads: `ح` / `S` for Sunday. */
+    fun narrowWeekday(date: LocalDate): String = narrowWeekdayFormatter.format(date)
 
     /** A Prayer Log count such as `5/7`, in the chosen digits; left to right in both languages. */
     fun count(prayed: Int, possible: Int): String = "\u2066${number(prayed)}/${number(possible)}\u2069"

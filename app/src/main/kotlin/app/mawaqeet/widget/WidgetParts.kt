@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.glance.GlanceModifier
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
-import androidx.glance.action.actionStartActivity
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
@@ -30,7 +30,6 @@ import androidx.glance.unit.ColorProvider
 import app.mawaqeet.MainActivity
 import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.R
-import app.mawaqeet.core.DisplayDay
 import app.mawaqeet.core.DisplayFormatter
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.ui.appLocale
@@ -42,13 +41,13 @@ import java.time.Clock
 internal class WidgetText(val formatter: DisplayFormatter, val strings: Context, val rtl: Boolean)
 
 /**
- * The shared body of a display-day widget's `provideGlance`: reads settings, digits and the app language (the stored
- * copy too, for a fresh process on Android 8–12), builds the view from the core's display day with [build], and
- * rebuilds it on every settings, digit or language change and on [Widgets.refreshAll].
+ * The shared body of a widget's `provideGlance`: reads settings, digits and the app language (the stored copy too,
+ * for a fresh process on Android 8–12), builds the view from a fresh [PrayerCore] with [build], and rebuilds it on
+ * every settings, digit or language change and on [Widgets.refreshAll] (alarms and Prayer Log changes).
  */
-internal suspend fun <T> GlanceAppWidget.provideDisplayDay(
+internal suspend fun <T> GlanceAppWidget.provideFromCore(
     context: Context,
-    build: (DisplayDay, WidgetText) -> T,
+    build: (PrayerCore, WidgetText) -> T,
     layout: @Composable (T, rtl: Boolean) -> Unit,
 ) {
     val app = context.applicationContext as MawaqeetApplication
@@ -64,8 +63,8 @@ internal suspend fun <T> GlanceAppWidget.provideDisplayDay(
         val (view, rtl) = remember(settings, digits, language, refreshedAt) {
             val locale = appLocale(context, language)
             val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
-            val day = PrayerCore(settings, Clock.systemUTC(), app.prayerLog).displayDay()
-            build(day, WidgetText(DisplayFormatter(locale, digits), localizedContext(context, locale), rtl)) to rtl
+            val core = PrayerCore(settings, Clock.systemUTC(), app.prayerLog)
+            build(core, WidgetText(DisplayFormatter(locale, digits), localizedContext(context, locale), rtl)) to rtl
         }
         layout(view, rtl)
     }
@@ -73,18 +72,26 @@ internal suspend fun <T> GlanceAppWidget.provideDisplayDay(
 
 /**
  * A widget's frame: the root in the app language's direction (the launcher lays widgets out in its own), the widget
- * background, and a tap that opens the app on today's Prayer Times.
+ * background, and a tap that opens the app on today's Prayer Times, or on the Prayer Log when [opens] says so. It is
+ * the widget's only tap target: no widget changes the Prayer Log.
  */
 @Composable
-internal fun WidgetFrame(rtl: Boolean, horizontal: Dp, vertical: Dp, content: @Composable ColumnScope.() -> Unit) {
-    val root = RemoteViews(LocalContext.current.packageName, if (rtl) R.layout.widget_root_rtl else R.layout.widget_root_ltr)
+internal fun WidgetFrame(
+    rtl: Boolean,
+    horizontal: Dp,
+    vertical: Dp,
+    opens: MainActivity.Opens = MainActivity.Opens.TODAY,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val context = LocalContext.current
+    val root = RemoteViews(context.packageName, if (rtl) R.layout.widget_root_rtl else R.layout.widget_root_ltr)
     AndroidRemoteViews(root, R.id.widget_root, GlanceModifier.fillMaxSize()) {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(ImageProvider(R.drawable.widget_background))
                 .padding(horizontal = horizontal, vertical = vertical)
-                .clickable(actionStartActivity<MainActivity>()),
+                .clickable(actionStartActivity(MainActivity.openIntent(context, opens))),
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.Start,
         ) {
@@ -109,3 +116,4 @@ internal fun DateLine(date: WidgetDate) {
 internal val WIDGET_TEXT = ColorProvider(R.color.widget_text)
 internal val WIDGET_MUTED = ColorProvider(R.color.widget_text_muted)
 internal val WIDGET_ON_ACCENT = ColorProvider(R.color.widget_on_accent)
+internal val WIDGET_ACCENT = ColorProvider(R.color.widget_accent)

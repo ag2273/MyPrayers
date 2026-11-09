@@ -39,9 +39,9 @@ import app.mawaqeet.R
 class TodayTimesWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
-    override suspend fun provideGlance(context: Context, id: GlanceId) = provideDisplayDay(
+    override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { day, text -> TodayTimesView.of(TodayTimesContent.of(day, text.formatter), text) },
+        build = { core, text -> TodayTimesView.of(TodayTimesContent.of(core.displayDay(), text.formatter), text) },
         layout = { view, rtl -> TodayTimesLayout(view, rtl) },
     )
 }
