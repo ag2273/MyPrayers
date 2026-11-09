@@ -7,7 +7,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AsrConvention
+import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.DigitStyle
 import androidx.appcompat.app.AppCompatDelegate
@@ -84,6 +87,33 @@ class SettingsScreenTest {
         compose.onNodeWithText("-1", substring = true).performScrollTo().performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.settings.first() }.hijriOffsetDays == -1 }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `choosing Fajr's Full Adhan, a 10-minute reminder and no vibration stores them`() {
+        openSettings("Settings")
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun alerts() = runBlocking { store.settings.first() }.alerts
+        try {
+            runBlocking { store.setDigitStyle(DigitStyle.WESTERN) }
+            compose.onNodeWithText("Fajr").performScrollTo().performClick()
+            compose.onNodeWithText("Fajr's Full Adhan", substring = true).performScrollTo().performClick()
+            compose.onNodeWithText("Prayer Reminder").performScrollTo().performClick()
+            compose.onNodeWithText("10 minutes before").performScrollTo().performClick()
+            compose.onNodeWithText("Done").performClick()
+            compose.onNodeWithText("Vibration").performScrollTo().performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { !alerts().vibration && alerts().of(Prayer.FAJR).reminderMinutes == 10 }
+            assertEquals(PrayerAlertSettings(sound = AdhanSoundChoice.FULL, reminder = true, reminderMinutes = 10), alerts().of(Prayer.FAJR))
+        } finally {
+            // The app's DataStore outlives the test in this JVM.
+            runBlocking {
+                store.setPrayerAlert(Prayer.FAJR, PrayerAlertSettings())
+                store.setVibration(true)
+                store.setDigitStyle(DigitStyle.AUTOMATIC)
+            }
+        }
     }
 
     @Test

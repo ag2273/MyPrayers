@@ -70,15 +70,25 @@ class AlertScheduler(context: Context) {
     private fun alertIntent(alert: PlannedAlert, flag: Int): PendingIntent? = PendingIntent.getBroadcast(
         context,
         alert.requestCode,
-        Intent(context, AlertReceiver::class.java)
-            .setAction(AlertReceiver.ACTION_ALERT)
-            .putExtra(AlertReceiver.EXTRA_PRAYER, alert.prayer.name)
-            .putExtra(AlertReceiver.EXTRA_JUMUAH, alert.isJumuah)
-            .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, alert.requestCode)
-            .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(alert.sound))
-            .putExtra(AlertReceiver.EXTRA_AT, alert.instant.toEpochMilli()),
+        alarmIntent(alert),
         flag or PendingIntent.FLAG_IMMUTABLE,
     )
+
+    /**
+     * The broadcast an alert's alarm delivers to [AlertReceiver]. Everything the receiver needs travels here,
+     * since it may fire before the first unlock, when settings can't be read.
+     */
+    internal fun alarmIntent(alert: PlannedAlert): Intent = Intent(context, AlertReceiver::class.java)
+        .setAction(AlertReceiver.ACTION_ALERT)
+        .putExtra(AlertReceiver.EXTRA_PRAYER, alert.prayer.name)
+        .putExtra(AlertReceiver.EXTRA_JUMUAH, alert.isJumuah)
+        .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, alert.requestCode)
+        .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(alert.sound))
+        .putExtra(AlertReceiver.EXTRA_AT, alert.instant.toEpochMilli())
+        .putExtra(AlertReceiver.EXTRA_KIND, alert.kind.name)
+        .putExtra(AlertReceiver.EXTRA_PRAYER_TIME, alert.prayerTime.toEpochMilli())
+        .putExtra(AlertReceiver.EXTRA_PLAY_ON_SILENT, alert.playOnSilent)
+        .putExtra(AlertReceiver.EXTRA_VIBRATION, alert.vibration)
 
     private fun midnightIntent(): PendingIntent = PendingIntent.getBroadcast(
         context,

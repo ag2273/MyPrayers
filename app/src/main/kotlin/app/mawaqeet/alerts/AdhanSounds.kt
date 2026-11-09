@@ -20,7 +20,7 @@ object AdhanSounds {
     fun bundled(context: Context, sound: AlertSound): Uri {
         val name = when (sound) {
             AlertSound.ShortAdhan, AlertSound.FullAdhan, AlertSound.FajrFullAdhan, is AlertSound.CustomAdhan,
-            AlertSound.Silent,
+            AlertSound.Silent, AlertSound.ReminderTone,
             -> "adhan_placeholder"
         }
         return Uri.Builder()

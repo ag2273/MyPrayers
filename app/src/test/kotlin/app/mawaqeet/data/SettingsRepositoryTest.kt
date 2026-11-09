@@ -18,7 +18,7 @@ import app.mawaqeet.core.PrayerSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -45,7 +45,7 @@ class SettingsRepositoryTest {
             val store = PreferenceDataStoreFactory.create(scope = scope) { file }
             return runBlocking { block(SettingsRepository(store), store) }
         } finally {
-            scope.cancel()
+            runBlocking { scope.coroutineContext[kotlinx.coroutines.Job]!!.cancelAndJoin() }
         }
     }
 
@@ -124,5 +124,40 @@ class SettingsRepositoryTest {
         val restored = withRepository { repo, _ -> repo.settings.first() }
 
         assertEquals(PrayerSettings.Default.method, restored.method)
+    }
+
+    @Test
+    fun `alert settings survive an app restart and reach the core's settings`() {
+        val fajr = app.mawaqeet.core.PrayerAlertSettings(
+            sound = app.mawaqeet.core.AdhanSoundChoice.FULL,
+            reminder = true,
+            reminderMinutes = 20,
+        )
+        val maghrib = app.mawaqeet.core.PrayerAlertSettings(adhanAlert = false)
+        withRepository { repo, _ ->
+            repo.setPrayerAlert(app.mawaqeet.core.Prayer.FAJR, fajr)
+            repo.setPrayerAlert(app.mawaqeet.core.Prayer.MAGHRIB, maghrib)
+            repo.setAlarmClockMode(true)
+            repo.setPlayOnSilent(true)
+            repo.setVibration(false)
+        }
+
+        val alerts = withRepository { repo, _ -> repo.settings.first() }.alerts
+
+        assertEquals(
+            app.mawaqeet.core.AlertSettings(alarmClockMode = true, playOnSilent = true, vibration = false)
+                .with(app.mawaqeet.core.Prayer.FAJR, fajr)
+                .with(app.mawaqeet.core.Prayer.MAGHRIB, maghrib),
+            alerts,
+        )
+    }
+
+    @Test
+    fun `a stored reminder lead time below the minimum reads as the default instead of failing`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("alert_dhuhr_reminder_minutes")] = 5 } }
+
+        val dhuhr = withRepository { repo, _ -> repo.settings.first() }.alerts.of(app.mawaqeet.core.Prayer.DHUHR)
+
+        assertEquals(15, dhuhr.reminderMinutes)
     }
 }
