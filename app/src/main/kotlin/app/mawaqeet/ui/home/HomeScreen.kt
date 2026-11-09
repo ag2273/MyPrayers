@@ -72,6 +72,9 @@ fun HomeScreen(
     logChanges: StateFlow<Int>,
     locationName: String,
     onOpenSettings: () -> Unit,
+    /** A short hint under the location (e.g. the time zone changed), tapping it calls [onLocationHint]. */
+    locationHint: String? = null,
+    onLocationHint: () -> Unit = {},
 ) {
     // Re-query the core every second: the countdown ticks and the display day switches at local midnight.
     var now by remember { mutableStateOf(clock.instant()) }
@@ -89,7 +92,7 @@ fun HomeScreen(
         value = withContext(Dispatchers.IO) { core.currentPrayerDay() }
     }
     val scope = rememberCoroutineScope()
-    HomeContent(day, now, prayerDay, locationName, onOpenSettings) { prayer ->
+    HomeContent(day, now, prayerDay, locationName, onOpenSettings, locationHint, onLocationHint) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
             scope.launch(Dispatchers.IO) {
@@ -110,6 +113,8 @@ private fun HomeContent(
     prayerDay: PrayerDay?,
     locationName: String,
     onOpenSettings: () -> Unit,
+    locationHint: String?,
+    onLocationHint: () -> Unit,
     onToggle: (Prayer) -> Unit,
 ) {
     Scaffold { padding ->
@@ -130,6 +135,9 @@ private fun HomeContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
+            }
+            if (locationHint != null) {
+                TextButton(onClick = onLocationHint) { Text(locationHint) }
             }
             NextPrayerCard(day.next, now)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

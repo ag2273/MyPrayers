@@ -6,6 +6,8 @@ import androidx.core.os.UserManagerCompat
 import androidx.datastore.preferences.preferencesDataStore
 import app.mawaqeet.alerts.AlertRescheduler
 import app.mawaqeet.core.CityDirectory
+import app.mawaqeet.core.Location
+import app.mawaqeet.data.LocationUpdater
 import app.mawaqeet.data.PrayerLogDatabase
 import app.mawaqeet.data.RoomPrayerLogRepository
 import app.mawaqeet.data.SettingsRepository
@@ -13,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.time.Clock
 
 /** DataStore allows only one instance per file per process, so it is created once, here. */
 private val Context.settingsDataStore by preferencesDataStore(name = SettingsRepository.FILE_NAME)
@@ -30,6 +33,13 @@ class MawaqeetApplication : Application() {
      * off the main thread (e.g. `withContext(Dispatchers.IO) { app.cities }`). One per process.
      */
     val cities: CityDirectory by lazy { assets.open(CITIES_ASSET).use(CityDirectory::read) }
+
+    /** Every location change goes through it, so past Prayer Days keep their place (see [LocationUpdater]). */
+    val locationUpdater: LocationUpdater by lazy { LocationUpdater(settings, prayerLog, Clock.systemUTC()) { cities } }
+
+    /** A move the user declined to apply to their manual location, so it is not asked again in this process. */
+    @Volatile
+    var declinedMove: Location? = null
 
     /** Lives as long as the process; for work that must outlast any screen. */
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

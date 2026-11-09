@@ -21,7 +21,21 @@ interface PrayerLogRepository {
 
     /** Records [prayerDay] as the first-use date unless one is already recorded. */
     fun recordFirstUseIfAbsent(prayerDay: LocalDate)
+
+    /** Every recorded [PastPlace], in any order. Empty until the location first changes. */
+    fun pastPlaces(): List<PastPlace>
+
+    /** Stores [place] as told; [PrayerCore.recordLocationChange] decides what to add. */
+    fun addPastPlace(place: PastPlace)
 }
+
+/**
+ * Where the user was for past Prayer Days: [location] is in effect for every Prayer Day before [until] and on or
+ * after the previous entry's [until] (or since always, for the earliest entry). Prayer Days from the latest
+ * entry's [until] on use the current settings' location. Only the location is kept: a Calculation Method or Asr
+ * Convention change still recalculates every day.
+ */
+data class PastPlace(val until: LocalDate, val location: Location)
 
 /** A Prayer's Prayer Log state on one Prayer Day. */
 enum class LogState {

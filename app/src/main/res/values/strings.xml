@@ -115,4 +115,16 @@
     <string name="suggestion_change">اختيار غيره</string>
     <string name="done">تم</string>
     <string name="location_credit">بيانات المدن من GeoNames (CC BY 4.0) والأسماء العربية من Natural Earth</string>
+    <string name="location_use_device">استخدام موقعي الحالي</string>
+    <string name="location_permission_title">استخدام موقعك التقريبي</string>
+    <string name="location_permission_explanation">يُستخدم موقعك فقط لحساب مواقيت الصلاة، ولا يغادر هاتفك أبدًا. نطلب الموقع التقريبي فقط، ولا نقرؤه إلا والتطبيق مفتوح.</string>
+    <string name="location_permission_continue">متابعة</string>
+    <string name="not_now">ليس الآن</string>
+    <string name="location_device_unavailable">تعذّر تحديد موقعك. ابحث عن مدينتك بدلًا من ذلك.</string>
+    <string name="location_updated">تم تحديث الموقع إلى %1$s</string>
+    <string name="location_move_title">هل انتقلت؟</string>
+    <string name="location_move_question">يبدو أنك الآن قرب %1$s. هل تريد تحديث الموقع واستخدام موقعك تلقائيًا من الآن؟</string>
+    <string name="location_move_update">تحديث</string>
+    <string name="location_move_keep">إبقاء الموقع الحالي</string>
+    <string name="location_maybe_stale">تغيّرت المنطقة الزمنية. اضغط للتحقق من موقعك.</string>
 </resources>

@@ -3,6 +3,9 @@ package app.mawaqeet.alerts
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.core.os.UserManagerCompat
+import app.mawaqeet.MawaqeetApplication
+import kotlinx.coroutines.launch
 
 /**
  * System broadcasts that invalidate the scheduled alarms: boot (alarms don't survive it), locked boot (before
@@ -11,7 +14,18 @@ import android.content.Intent
  */
 class RescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) markLocationMaybeStale(context)
         if (intent.action in ACTIONS) AlertRescheduler.rescheduleAsync(this, context)
+    }
+
+    /**
+     * A time-zone change is a cheap travel signal, but location is never read in the background: it only flags
+     * the stored location as possibly stale, and Home shows a hint until the next location check.
+     */
+    private fun markLocationMaybeStale(context: Context) {
+        val app = context.applicationContext as? MawaqeetApplication ?: return
+        if (!UserManagerCompat.isUserUnlocked(context)) return
+        app.appScope.launch { app.settings.setLocationMaybeStale(true) }
     }
 
     private companion object {

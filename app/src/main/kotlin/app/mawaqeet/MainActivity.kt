@@ -3,6 +3,12 @@ package app.mawaqeet
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,7 +33,13 @@ import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.LocationChangeCheck
+import app.mawaqeet.core.LocationSource
+import app.mawaqeet.core.LocationUpdate
 import app.mawaqeet.core.PrayerCore
+import app.mawaqeet.core.SavedLocation
+import app.mawaqeet.data.LocationCheckResult
+import app.mawaqeet.location.DeviceLocation
 import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.home.HomeScreen
 import app.mawaqeet.ui.location.LocationScreen
@@ -37,6 +49,7 @@ import app.mawaqeet.ui.settings.SettingsActions
 import app.mawaqeet.ui.settings.SettingsScreen
 import app.mawaqeet.ui.theme.MawaqeetTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -80,6 +93,43 @@ class MainActivity : AppCompatActivity() {
                 val requestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
                     permissions = AlertPermissions.of(this@MainActivity)
                 }
+                // Travel check: on every resume, if approximate location was granted, read it (foreground only).
+                var proposedMove by remember { mutableStateOf<SavedLocation?>(null) }
+                // The short note after an automatic update, e.g. «تم تحديث الموقع إلى الإسكندرية», shown on Home.
+                var updatedTo by remember { mutableStateOf<SavedLocation?>(null) }
+                LaunchedEffect(updatedTo) {
+                    if (updatedTo != null) {
+                        delay(NOTE_MS)
+                        updatedTo = null
+                    }
+                }
+                LifecycleResumeEffect(Unit) {
+                    val job = lifecycleScope.launch {
+                        when (val result = checkTravel(app)) {
+                            is LocationCheckResult.Updated -> updatedTo = result.saved
+                            is LocationCheckResult.Ask -> proposedMove = result.proposed
+                            else -> Unit
+                        }
+                    }
+                    onPauseOrDispose { job.cancel() }
+                }
+                val locationMaybeStale by settingsStore.locationMaybeStale.collectAsState(initial = false)
+                proposedMove?.let { proposed ->
+                    MoveDialog(
+                        proposed,
+                        onUpdate = {
+                            proposedMove = null
+                            lifecycleScope.launch {
+                                app.locationUpdater.change(proposed)
+                                updatedTo = proposed
+                            }
+                        },
+                        onKeep = {
+                            proposedMove = null
+                            app.declinedMove = proposed.location
+                        },
+                    )
+                }
                 LaunchedEffect(permissions.allGranted) {
                     if (permissions.allGranted) launch(Dispatchers.IO) { AlertRescheduler.reschedule(app) }
                 }
@@ -104,7 +154,7 @@ class MainActivity : AppCompatActivity() {
                     LocationScreen(
                         cities = cities,
                         settings = current,
-                        onChoose = { scope.launch { settingsStore.setLocation(it) } },
+                        onChoose = { scope.launch { app.locationUpdater.change(it) } },
                         onAcceptSuggestion = {
                             scope.launch {
                                 settingsStore.setCalculationMethod(it.method)
@@ -112,6 +162,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         },
                         onBack = { showLocation = false },
+                        readDevicePosition = { DeviceLocation.current(this@MainActivity) },
                     )
                 } else if (showSettings) {
                     val actions = remember(settingsStore) {
@@ -151,10 +202,56 @@ class MainActivity : AppCompatActivity() {
                         onBack = { showSettings = false },
                     )
                 } else {
-                    HomeScreen(core, clock, prayerLog.changes, locationName(savedLocation), onOpenSettings = { showSettings = true })
+                    HomeScreen(
+                        core, clock, prayerLog.changes, locationName(savedLocation),
+                        onOpenSettings = { showSettings = true },
+                        locationHint = when {
+                            updatedTo != null -> stringResource(
+                                R.string.location_updated,
+                                updatedTo?.city?.displayName(LocalConfiguration.current.locales[0].language == "ar").orEmpty(),
+                            )
+                            locationMaybeStale -> stringResource(R.string.location_maybe_stale)
+                            else -> null
+                        },
+                        onLocationHint = { showSettings = true; showLocation = true },
+                    )
                 }
                 }
             }
         }
     }
+
+    /**
+     * Reads the approximate position (if granted) and applies the travel rule: an automatic location is updated
+     * (Updated: show the note); a manual one is only proposed (Ask), unless the user already declined that move.
+     */
+    private suspend fun checkTravel(app: MawaqeetApplication): LocationCheckResult? {
+        val position = DeviceLocation.current(this) ?: return null
+        val declined = app.declinedMove
+        if (declined != null && LocationChangeCheck.check(
+                SavedLocation(declined, LocationSource.MANUAL, null), position.latitude, position.longitude,
+            ) == LocationUpdate.NOTHING
+        ) {
+            return null
+        }
+        return app.locationUpdater.onDevicePosition(position.latitude, position.longitude)
+    }
+
+    private companion object {
+        const val NOTE_MS = 6_000L
+    }
+
+}
+
+/** Manual location, but the device is more than 10 km away: ask before changing it (yes makes it automatic). */
+@Composable
+private fun MoveDialog(proposed: SavedLocation, onUpdate: () -> Unit, onKeep: () -> Unit) {
+    val name = proposed.city?.displayName(LocalConfiguration.current.locales[0].language == "ar").orEmpty()
+    AlertDialog(
+        onDismissRequest = onKeep,
+        title = { Text(stringResource(R.string.location_move_title)) },
+        text = { Text(stringResource(R.string.location_move_question, name)) },
+        confirmButton = { TextButton(onClick = onUpdate) { Text(stringResource(R.string.location_move_update)) } },
+        dismissButton = { TextButton(onClick = onKeep) { Text(stringResource(R.string.location_move_keep)) } },
+    )
 }

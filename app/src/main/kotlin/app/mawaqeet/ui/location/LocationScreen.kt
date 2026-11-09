@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -47,6 +48,7 @@ import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.ui.settings.label
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
@@ -62,6 +64,8 @@ fun LocationScreen(
     onChoose: (SavedLocation) -> Unit,
     onAcceptSuggestion: (MethodSuggestion) -> Unit,
     onBack: () -> Unit,
+    /** The device's approximate position, or null if unavailable; called only after the permission is granted. */
+    readDevicePosition: suspend () -> android.location.Location? = { null },
 ) {
     BackHandler(onBack = onBack)
     val arabic = isArabicUi()
@@ -73,6 +77,28 @@ fun LocationScreen(
     var suggestionCountry by rememberSaveable { mutableStateOf<String?>(null) }
     var zoneNote by rememberSaveable { mutableStateOf<String?>(null) }
     var results by remember { mutableStateOf(emptyList<City>()) }
+    var deviceUnavailable by rememberSaveable { mutableStateOf(false) }
+    var findingDevice by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val requestPermission = rememberLocationPermissionRequest { granted ->
+        if (!granted || cities == null) {
+            deviceUnavailable = granted
+            return@rememberLocationPermissionRequest
+        }
+        findingDevice = true
+        scope.launch {
+            val position = readDevicePosition()
+            findingDevice = false
+            deviceUnavailable = position == null
+            if (position != null) {
+                // An automatic location, named after the nearest bundled city, whose zone and country it takes.
+                val nearest = withContext(Dispatchers.Default) { cities.nearest(position.latitude, position.longitude) }
+                onChoose(nearest.toSavedLocation(LocationSource.AUTOMATIC))
+                suggestionCountry = nearest.city.countryCode
+                zoneNote = null
+            }
+        }
+    }
     LaunchedEffect(cities, query) {
         results = cities?.let { withContext(Dispatchers.Default) { it.search(query) } } ?: emptyList()
     }
@@ -104,6 +130,15 @@ fun LocationScreen(
                     onAccept = { onAcceptSuggestion(it); onBack() },
                     onDone = onBack,
                 )
+            }
+
+            OutlinedButton(
+                enabled = cities != null && !findingDevice,
+                onClick = { deviceUnavailable = false; requestPermission.start() },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.location_use_device)) }
+            if (deviceUnavailable) {
+                Text(stringResource(R.string.location_device_unavailable), color = MaterialTheme.colorScheme.error)
             }
 
             OutlinedTextField(

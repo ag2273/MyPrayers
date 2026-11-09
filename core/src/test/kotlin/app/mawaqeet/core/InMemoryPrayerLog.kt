@@ -19,4 +19,12 @@ class InMemoryPrayerLog : PrayerLogRepository {
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {
         if (firstUse == null) firstUse = prayerDay
     }
+
+    private val places = mutableListOf<PastPlace>()
+
+    override fun pastPlaces(): List<PastPlace> = places.toList()
+
+    override fun addPastPlace(place: PastPlace) {
+        places += place
+    }
 }
