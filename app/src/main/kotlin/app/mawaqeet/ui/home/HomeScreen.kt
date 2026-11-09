@@ -1,6 +1,27 @@
 package app.mawaqeet.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
+import app.mawaqeet.core.LogState
+import app.mawaqeet.core.PrayerDay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,9 +61,12 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Today's Prayer Times and Sunrise, the next Prayer highlighted, and a live countdown to it. */
+/**
+ * Today's Prayer Times and Sunrise, the next Prayer highlighted, and a live countdown to it. Tapping a Prayer marks
+ * or unmarks it in the Prayer Log of the current Prayer Day.
+ */
 @Composable
-fun HomeScreen(core: PrayerCore, clock: Clock) {
+fun HomeScreen(core: PrayerCore, clock: Clock, logChanges: StateFlow<Int>) {
     // Re-query the core every second: the countdown ticks and the display day switches at local midnight.
     var now by remember { mutableStateOf(clock.instant()) }
     LaunchedEffect(core, clock) {
@@ -52,11 +76,29 @@ fun HomeScreen(core: PrayerCore, clock: Clock) {
         }
     }
     val day = remember(core, now) { core.displayDay() }
-    HomeContent(day, now)
+    // The log reads the database, so query it off the main thread, again whenever the log changes or a Prayer
+    // Time arrives (the next Prayer moves on, so markability and the Prayer Day may have changed).
+    val changes by logChanges.collectAsState()
+    val prayerDay by produceState<PrayerDay?>(null, core, changes, day.next) {
+        value = withContext(Dispatchers.IO) { core.currentPrayerDay() }
+    }
+    val scope = rememberCoroutineScope()
+    HomeContent(day, now, prayerDay) { prayer ->
+        val logDay = prayerDay
+        if (logDay != null && logDay.isMarkable(prayer)) {
+            scope.launch(Dispatchers.IO) {
+                if (logDay.stateOf(prayer) == LogState.PRAYED) {
+                    core.unmark(logDay.date, prayer)
+                } else {
+                    core.mark(logDay.date, prayer)
+                }
+            }
+        }
+    }
 }
 
 @Composable
-private fun HomeContent(day: DisplayDay, now: Instant) {
+private fun HomeContent(day: DisplayDay, now: Instant, prayerDay: PrayerDay?, onToggle: (Prayer) -> Unit) {
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -75,12 +117,17 @@ private fun HomeContent(day: DisplayDay, now: Instant) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val isNextToday = day.next.time.toLocalDate() == day.date
                 day.prayerTimes.forEach { prayerTime ->
+                    val prayer = prayerTime.prayer
                     TimeRow(
                         name = prayerName(prayerTime),
                         time = prayerTime.time,
                         highlighted = isNextToday && prayerTime == day.next,
+                        // Between midnight and Fajr the marks are still the previous Prayer Day's (late Isha).
+                        log = prayerDay?.let { LogCell(it.stateOf(prayer), it.isMarkable(prayer)) },
+                        onClick = { onToggle(prayer) },
                     )
-                    if (prayerTime.prayer == Prayer.FAJR) {
+                    if (prayer == Prayer.FAJR) {
+                        // Sunrise is not a Prayer: never markable.
                         TimeRow(name = stringResource(R.string.sunrise), time = day.sunrise, highlighted = false)
                     }
                 }
@@ -88,6 +135,9 @@ private fun HomeContent(day: DisplayDay, now: Instant) {
         }
     }
 }
+
+/** What a row shows of the Prayer Log. */
+private data class LogCell(val state: LogState, val markable: Boolean)
 
 @Composable
 private fun NextPrayerCard(next: PrayerTime, now: Instant) {
@@ -112,12 +162,33 @@ private fun NextPrayerCard(next: PrayerTime, now: Instant) {
 }
 
 @Composable
-private fun TimeRow(name: String, time: ZonedDateTime, highlighted: Boolean) {
+private fun TimeRow(
+    name: String,
+    time: ZonedDateTime,
+    highlighted: Boolean,
+    log: LogCell? = null,
+    onClick: () -> Unit = {},
+) {
     val colors = MaterialTheme.colorScheme
+    val stateText = log?.let { stringResource(stateDescriptionOf(it)) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(if (highlighted) colors.primaryContainer else Color.Transparent, RoundedCornerShape(16.dp))
+            .then(
+                if (log == null) {
+                    Modifier
+                } else {
+                    // Stays focusable and tappable when not yet due so TalkBack reads the reason; the tap does nothing.
+                    Modifier
+                        .clickable(role = Role.Checkbox, onClick = onClick)
+                        .semantics {
+                            stateDescription = stateText.orEmpty()
+                            toggleableState = ToggleableState(log.state == LogState.PRAYED)
+                        }
+                },
+            )
+            .heightIn(min = 48.dp)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -135,7 +206,35 @@ private fun TimeRow(name: String, time: ZonedDateTime, highlighted: Boolean) {
             fontWeight = weight,
             color = if (highlighted) colors.primary else colors.onSurface,
         )
+        Spacer(Modifier.width(16.dp))
+        // Sunrise gets an empty slot so its time lines up with the Prayers'.
+        Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+            if (log != null) LogMark(log.state)
+        }
     }
+}
+
+/** Prayed: a filled circle with a tick. Not marked: an outlined circle. Not yet due: a faint outline. */
+@Composable
+private fun LogMark(state: LogState) {
+    val colors = MaterialTheme.colorScheme
+    when (state) {
+        LogState.PRAYED -> Box(
+            Modifier.size(28.dp).background(colors.primary, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("✓", color = colors.onPrimary, style = MaterialTheme.typography.titleMedium)
+        }
+        LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.primary, CircleShape))
+        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.dp, colors.outlineVariant, CircleShape))
+    }
+}
+
+private fun stateDescriptionOf(cell: LogCell): Int = when {
+    cell.state == LogState.NOT_YET_DUE -> R.string.log_not_yet_due
+    !cell.markable -> R.string.log_read_only
+    cell.state == LogState.PRAYED -> R.string.log_prayed
+    else -> R.string.log_not_marked
 }
 
 @Composable

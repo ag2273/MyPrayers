@@ -13,4 +13,10 @@
     <string name="prayer_asr">العصر</string>
     <string name="prayer_maghrib">المغرب</string>
     <string name="prayer_isha">العشاء</string>
+
+    <!-- Prayer Log state of a Prayer row, read by TalkBack. -->
+    <string name="log_prayed">تمّت الصلاة، اضغط لإلغاء التسجيل</string>
+    <string name="log_not_marked">لم تُسجَّل، اضغط لتسجيلها</string>
+    <string name="log_not_yet_due">لم يحن وقتها بعد، لا يمكن تسجيلها</string>
+    <string name="log_read_only">لا يمكن تعديل هذا اليوم</string>
 </resources>

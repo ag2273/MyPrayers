@@ -12,4 +12,9 @@
     <string name="prayer_asr">Asr</string>
     <string name="prayer_maghrib">Maghrib</string>
     <string name="prayer_isha">Isha</string>
+
+    <string name="log_prayed">Prayed, tap to unmark</string>
+    <string name="log_not_marked">Not marked, tap to mark as prayed</string>
+    <string name="log_not_yet_due">Its time hasn\'t arrived yet, so it can\'t be marked</string>
+    <string name="log_read_only">This day can no longer be edited</string>
 </resources>

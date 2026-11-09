@@ -1,0 +1,62 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "b430464c135c7c0c505d6b479cebbb9a",
+    "entities": [
+      {
+        "tableName": "prayer_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`prayer_day` TEXT NOT NULL, `prayer` TEXT NOT NULL, PRIMARY KEY(`prayer_day`, `prayer`))",
+        "fields": [
+          {
+            "fieldPath": "prayerDay",
+            "columnName": "prayer_day",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prayer",
+            "columnName": "prayer",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "prayer_day",
+            "prayer"
+          ]
+        }
+      },
+      {
+        "tableName": "first_use",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `prayer_day` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prayerDay",
+            "columnName": "prayer_day",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b430464c135c7c0c505d6b479cebbb9a')"
+    ]
+  }
+}
