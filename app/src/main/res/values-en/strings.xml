@@ -103,4 +103,16 @@
     <string name="suggestion_change">Choose another</string>
     <string name="done">Done</string>
     <string name="location_credit">City data from GeoNames (CC BY 4.0), Arabic names from Natural Earth</string>
+    <string name="location_use_device">Use my current location</string>
+    <string name="location_permission_title">Use your approximate location</string>
+    <string name="location_permission_explanation">Your location is only used to calculate Prayer Times and never leaves your phone. We ask for approximate location only, and read it only while the app is open.</string>
+    <string name="location_permission_continue">Continue</string>
+    <string name="not_now">Not now</string>
+    <string name="location_device_unavailable">Couldn\'t find your location. Search for your city instead.</string>
+    <string name="location_updated">Location updated to %1$s</string>
+    <string name="location_move_title">Have you moved?</string>
+    <string name="location_move_question">You seem to be near %1$s now. Update the location and use your location automatically from now on?</string>
+    <string name="location_move_update">Update</string>
+    <string name="location_move_keep">Keep current location</string>
+    <string name="location_maybe_stale">Your time zone changed. Tap to check your location.</string>
 </resources>
