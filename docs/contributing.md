@@ -35,6 +35,14 @@ How the code is laid out and tested. Vocabulary follows `GLOSSARY.md`; decisions
 - **Calculation Methods:** `CalculationMethod` order is the order Settings lists them; their Arabic and English names and one-line descriptions are `method_<name>` / `method_<name>_description` strings.
 - **Spot-checks:** `core/src/test/.../CalculationSpotCheckTest.kt` compares the core with official published timetables within ±1 minute. Each table cites its source; add new ones only from a real published source.
 
+## Dates, digits and language
+
+- **One formatter:** every time, countdown, date and number the user sees goes through `app.mawaqeet.core.DisplayFormatter(locale, digitStyle)` (`time`, `countdown`, `gregorianDate`, `hijriDate`, `number`, `signedNumber`). Screens, notifications and widgets never build their own `DateTimeFormatter` or `String.format` for display; add a method to `DisplayFormatter` (with core tests in Arabic and English) when a new shape is needed. Machine strings use `Locale.ROOT`, never the formatter.
+- **Hijri:** `HijriDate.of(date, offsetDays)` (Umm al-Qura via `java.time.chrono.HijrahDate`) gives plain numbers; `DisplayDay.hijriDate` already has the user's offset (`PrayerSettings.hijriOffsetDays`, `PrayerSettings.HIJRI_OFFSET_RANGE` = -2..2). Month names live only in `DisplayFormatter`; never use a platform Islamic-calendar formatter.
+- **Digits:** `DigitStyle` (`AUTOMATIC` / `ARABIC_INDIC` / `WESTERN`) is an app-only preference (`SettingsRepository.digitStyle`), not core input. `DisplayFormatter` applies it as a `-u-nu-` extension and passes the resulting `DecimalStyle` to `java.time`.
+- **In Compose:** `MainActivity` wraps its content in `ProvideDisplayFormatter(digits)` (`app/.../ui/DisplayFormatting.kt`); read `LocalDisplayFormatter.current`. Outside Compose screens (notifications, receivers, widgets) use `displayFormatter(context, digits)`.
+- **Language:** `AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ar"|"en"))` from Settings, Language & display; the activity is recreated. The locale config is generated (`generateLocaleConfig`). Wrap a signed or Latin-script value inside Arabic text with `BidiFormatter.unicodeWrap` so `+1` never shows as `1+`.
+
 ## Alerts
 
 - **Plan (core):** `PrayerCore.alertPlan(): AlertPlan` = `alerts: List<PlannedAlert>` (time order, due strictly after now and within `AlertPlan.WINDOW` = 48 h) + `nextLocalMidnight`. A `PlannedAlert` has `instant`, `prayer`, `kind` (`AlertKind.ADHAN_ALERT` / `PRAYER_REMINDER`), `sound` (`AlertSound.ShortAdhan` / `FullAdhan` / `FajrFullAdhan` / `CustomAdhan(reference)` / `Silent`), `deliveryMode` (`DeliveryMode.EXACT` / `ALARM_CLOCK`), `prayerDay` and `isJumuah`. Per-Prayer alert settings, reminders and alarm-clock mode are decided in the core from `PrayerSettings`; the adapter only follows the plan.

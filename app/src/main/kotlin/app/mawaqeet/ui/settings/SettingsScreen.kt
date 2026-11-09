@@ -37,12 +37,25 @@ import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
+import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.HijriDate
 import app.mawaqeet.core.PrayerSettings
+import app.mawaqeet.ui.LocalDisplayFormatter
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalResources
+import androidx.core.text.BidiFormatter
+import androidx.core.text.TextDirectionHeuristicsCompat
+import java.time.LocalDate
 
 /** What the Settings screen can change. Later tickets add their own callbacks here. */
 interface SettingsActions {
     fun setCalculationMethod(method: CalculationMethod)
     fun setAsrConvention(convention: AsrConvention)
+
+    /** Switches the whole app to [languageTag] (`ar` or `en`) through the per-app language API. */
+    fun setLanguage(languageTag: String)
+    fun setDigitStyle(style: DigitStyle)
+    fun setHijriOffsetDays(days: Int)
 }
 
 /**
@@ -50,7 +63,13 @@ interface SettingsActions {
  * A ticket that adds settings fills its group's composable below; each group is a [SettingsGroup].
  */
 @Composable
-fun SettingsScreen(settings: PrayerSettings, actions: SettingsActions, onBack: () -> Unit) {
+fun SettingsScreen(
+    settings: PrayerSettings,
+    digitStyle: DigitStyle,
+    today: LocalDate,
+    actions: SettingsActions,
+    onBack: () -> Unit,
+) {
     BackHandler(onBack = onBack)
     Scaffold { padding ->
         Column(
@@ -72,7 +91,7 @@ fun SettingsScreen(settings: PrayerSettings, actions: SettingsActions, onBack: (
             PrayerTimesGroup(settings, actions)
             SettingsGroup(R.string.settings_group_alerts) { ComingSoon() }
             SettingsGroup(R.string.settings_group_prayer_log) { ComingSoon() }
-            SettingsGroup(R.string.settings_group_language_display) { ComingSoon() }
+            LanguageDisplayGroup(settings, digitStyle, today, actions)
             SettingsGroup(R.string.settings_group_widgets) { ComingSoon() }
             SettingsGroup(R.string.settings_group_about) { ComingSoon() }
         }
@@ -151,6 +170,80 @@ private fun PrayerTimesGroup(settings: PrayerSettings, actions: SettingsActions)
     }
 }
 
+@Composable
+private fun LanguageDisplayGroup(settings: PrayerSettings, digitStyle: DigitStyle, today: LocalDate, actions: SettingsActions) {
+    val format = LocalDisplayFormatter.current
+    val resources = LocalResources.current
+    var choosingOffset by rememberSaveable { mutableStateOf(false) }
+    fun offsetLabel(days: Int): String {
+        val date = format.hijriDate(HijriDate.of(today, days))
+        if (days == 0) return resources.getString(R.string.hijri_offset_none, date)
+        // A signed number reads left to right even in Arabic, so "+1" never shows as "1+".
+        val signed = BidiFormatter.getInstance().unicodeWrap(format.signedNumber(days), TextDirectionHeuristicsCompat.LTR)
+        return resources.getString(R.string.hijri_offset_summary, signed, date)
+    }
+    SettingsGroup(R.string.settings_group_language_display) {
+        Text(stringResource(R.string.language), style = MaterialTheme.typography.titleSmall)
+        val arabic = LocalConfiguration.current.locales[0].language == "ar"
+        Column(Modifier.selectableGroup()) {
+            ChoiceRow(
+                title = stringResource(R.string.language_arabic),
+                description = stringResource(R.string.language_arabic_description),
+                selected = arabic,
+                onSelect = { actions.setLanguage("ar") },
+            )
+            ChoiceRow(
+                title = stringResource(R.string.language_english),
+                description = stringResource(R.string.language_english_description),
+                selected = !arabic,
+                onSelect = { actions.setLanguage("en") },
+            )
+        }
+        Text(stringResource(R.string.digits), style = MaterialTheme.typography.titleSmall)
+        Column(Modifier.selectableGroup()) {
+            DigitStyle.entries.forEach { style ->
+                ChoiceRow(
+                    title = stringResource(style.label),
+                    description = stringResource(style.description),
+                    selected = style == digitStyle,
+                    onSelect = { actions.setDigitStyle(style) },
+                )
+            }
+        }
+        SettingRow(
+            title = stringResource(R.string.hijri_offset),
+            summary = offsetLabel(settings.hijriOffsetDays),
+            onClick = { choosingOffset = true },
+        )
+    }
+    if (choosingOffset) {
+        AlertDialog(
+            onDismissRequest = { choosingOffset = false },
+            title = { Text(stringResource(R.string.hijri_offset)) },
+            text = {
+                Column(Modifier.selectableGroup().verticalScroll(rememberScrollState())) {
+                    Text(stringResource(R.string.hijri_offset_hint), style = MaterialTheme.typography.bodyMedium)
+                    PrayerSettings.HIJRI_OFFSET_RANGE.forEach { days ->
+                        ChoiceRow(
+                            title = offsetLabel(days),
+                            description = "",
+                            selected = days == settings.hijriOffsetDays,
+                            onSelect = {
+                                actions.setHijriOffsetDays(days)
+                                choosingOffset = false
+                            },
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { choosingOffset = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
+
 /** A row that opens a chooser, showing the current choice beneath its title. */
 @Composable
 fun SettingRow(title: String, summary: String, onClick: () -> Unit) {
@@ -180,7 +273,7 @@ fun ChoiceRow(title: String, description: String, selected: Boolean, onSelect: (
         RadioButton(selected = selected, onClick = null)
         Column(Modifier.padding(start = 12.dp)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(
+            if (description.isNotEmpty()) Text(
                 description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -219,6 +312,22 @@ private val CalculationMethod.description: Int
         CalculationMethod.SINGAPORE -> R.string.method_singapore_description
         CalculationMethod.MOON_SIGHTING_COMMITTEE -> R.string.method_moon_sighting_committee_description
         CalculationMethod.NORTH_AMERICA -> R.string.method_north_america_description
+    }
+
+@get:StringRes
+private val DigitStyle.label: Int
+    get() = when (this) {
+        DigitStyle.AUTOMATIC -> R.string.digits_automatic
+        DigitStyle.ARABIC_INDIC -> R.string.digits_arabic_indic
+        DigitStyle.WESTERN -> R.string.digits_western
+    }
+
+@get:StringRes
+private val DigitStyle.description: Int
+    get() = when (this) {
+        DigitStyle.AUTOMATIC -> R.string.digits_automatic_description
+        DigitStyle.ARABIC_INDIC -> R.string.digits_arabic_indic_description
+        DigitStyle.WESTERN -> R.string.digits_western_description
     }
 
 @get:StringRes

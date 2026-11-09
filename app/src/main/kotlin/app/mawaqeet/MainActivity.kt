@@ -8,6 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,7 +24,9 @@ import app.mawaqeet.alerts.AlertPermissions
 import app.mawaqeet.alerts.AlertRescheduler
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
+import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.PrayerCore
+import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.home.HomeScreen
 import app.mawaqeet.ui.permissions.GrantScreen
 import app.mawaqeet.ui.settings.SettingsActions
@@ -49,7 +53,9 @@ class MainActivity : AppCompatActivity() {
             MawaqeetTheme {
                 // Null until the stored settings are read, so the default method's times never flash.
                 val settings by settingsStore.settings.collectAsState(initial = null)
+                val storedDigits by settingsStore.digitStyle.collectAsState(initial = null)
                 val current = settings ?: return@MawaqeetTheme
+                val digits = storedDigits ?: return@MawaqeetTheme
                 // A new core whenever the settings change: Home re-queries it, so times and next Prayer follow.
                 val core = remember(current) { PrayerCore(current, clock, prayerLog) }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
@@ -67,6 +73,7 @@ class MainActivity : AppCompatActivity() {
                 LaunchedEffect(permissions.allGranted) {
                     if (permissions.allGranted) launch(Dispatchers.IO) { AlertRescheduler.reschedule(app) }
                 }
+                ProvideDisplayFormatter(digits) {
                 if (!permissions.allGranted) {
                     GrantScreen(
                         permissions,
@@ -91,11 +98,25 @@ class MainActivity : AppCompatActivity() {
                             override fun setAsrConvention(convention: AsrConvention) {
                                 scope.launch { settingsStore.setAsrConvention(convention) }
                             }
+
+                            override fun setLanguage(languageTag: String) {
+                                // Recreates the activity in the new language; showSettings is saved, so Settings stays open.
+                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageTag))
+                            }
+
+                            override fun setDigitStyle(style: DigitStyle) {
+                                scope.launch { settingsStore.setDigitStyle(style) }
+                            }
+
+                            override fun setHijriOffsetDays(days: Int) {
+                                scope.launch { settingsStore.setHijriOffsetDays(days) }
+                            }
                         }
                     }
-                    SettingsScreen(current, actions, onBack = { showSettings = false })
+                    SettingsScreen(current, digits, core.displayDay().date, actions, onBack = { showSettings = false })
                 } else {
                     HomeScreen(core, clock, prayerLog.changes, onOpenSettings = { showSettings = true })
+                }
                 }
             }
         }

@@ -75,4 +75,21 @@
     <string name="grant_exact_alarms_title">المنبّهات الدقيقة</string>
     <string name="grant_exact_alarms_body">ليصل التنبيه في وقته تمامًا، حتى بعد ساعات من عدم استخدام الهاتف.</string>
     <string name="grant_button">منح الإذن</string>
+    <!-- Language & display (#17). Language names are written in their own language in both locales. -->
+    <string name="language">اللغة</string>
+    <string name="language_arabic" translatable="false">العربية</string>
+    <string name="language_arabic_description">من اليمين إلى اليسار</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_english_description">من اليسار إلى اليمين</string>
+    <string name="digits">الأرقام</string>
+    <string name="digits_automatic">تلقائي</string>
+    <string name="digits_automatic_description">حسب لغة الهاتف وإعداداته</string>
+    <string name="digits_arabic_indic">أرقام عربية مشرقية</string>
+    <string name="digits_arabic_indic_description" translatable="false">٠١٢٣٤٥٦٧٨٩</string>
+    <string name="digits_western">أرقام غربية</string>
+    <string name="digits_western_description" translatable="false">0123456789</string>
+    <string name="hijri_offset">تعديل التاريخ الهجري</string>
+    <string name="hijri_offset_summary">%2$s (%1$s)</string>
+    <string name="hijri_offset_none">بلا تعديل: %1$s</string>
+    <string name="hijri_offset_hint">لمطابقة رؤية الهلال في بلدك</string>
 </resources>
