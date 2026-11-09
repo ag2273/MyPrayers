@@ -75,14 +75,19 @@ private val LABEL_WIDTH = 52.dp
 private fun WeekLogLayout(view: WeekLogView, rtl: Boolean) {
     val step = textStep(MIN_WIDTH_DP, MIN_HEIGHT_DP)
     WidgetFrame(rtl, horizontal = 12.dp, vertical = 10.dp, opens = MainActivity.Opens.PRAYER_LOG) {
-        Row(GlanceModifier.fillMaxWidth().padding(bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            WidgetLine(view.title, 13f * step, Tone.TEXT, bold = true, modifier = GlanceModifier.defaultWeight())
-            WidgetLine(view.total, 13f * step, Tone.MUTED)
-        }
-        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(GlanceModifier.width(LABEL_WIDTH * step)) {}
-            view.weekdays.forEachIndexed { index, letter ->
-                val today = index == view.weekdays.lastIndex
+        ReadingRow(
+            GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
+            Alignment.CenterVertically,
+            listOf(
+                { WidgetLine(view.title, 13f * step, Tone.TEXT, bold = true, modifier = GlanceModifier.defaultWeight()) },
+                { WidgetLine(view.total, 13f * step, Tone.MUTED) },
+            ),
+        )
+        // The weekday letters above the dot columns, oldest first in reading order; the label column stays empty.
+        val corner = cell { Box(GlanceModifier.width(LABEL_WIDTH * step)) {} }
+        val letters = view.weekdays.mapIndexed { index, letter ->
+            val today = index == view.weekdays.lastIndex
+            cell {
                 WidgetLine(
                     letter,
                     11f * step,
@@ -93,6 +98,7 @@ private fun WeekLogLayout(view: WeekLogView, rtl: Boolean) {
                 )
             }
         }
+        ReadingRow(GlanceModifier.fillMaxWidth(), Alignment.CenterVertically, listOf(corner) + letters)
         view.rows.forEachIndexed { index, row -> DotRow(row, view.rowDescriptions[index], step) }
     }
 }
@@ -103,13 +109,12 @@ private const val MIN_HEIGHT_DP = 180f
 @Composable
 private fun ColumnScope.DotRow(row: WeekLogView.Row, description: String, step: Float) {
     // TalkBack reads one line per Prayer instead of 7 unlabelled dots.
-    Row(
+    val label = cell { WidgetLine(row.name, 11f * step, Tone.MUTED, modifier = GlanceModifier.width(LABEL_WIDTH * step)) }
+    ReadingRow(
         GlanceModifier.fillMaxWidth().defaultWeight().semantics { contentDescription = description },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        WidgetLine(row.name, 11f * step, Tone.MUTED, modifier = GlanceModifier.width(LABEL_WIDTH * step))
-        row.cells.forEach { Dot(it, (14 * step).dp) }
-    }
+        Alignment.CenterVertically,
+        listOf(label) + row.cells.map { state -> cell { Dot(state, (14 * step).dp) } },
+    )
 }
 
 @Composable

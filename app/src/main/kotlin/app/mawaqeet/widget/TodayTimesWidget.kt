@@ -107,7 +107,7 @@ private fun TodayTimesLayout(view: TodayTimesView, rtl: Boolean) {
         DateLine(view.date, sp = 12f * step)
         Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight().padding(top = 6.dp)) {
             // No spacers between cells: Glance keeps at most 10 children in a Row, so the gap is each cell's margin.
-            view.columns.forEach { cell -> TimeCell(cell, nameSp, timeSp) }
+            LocalWidgetDirection.current.inReadingOrder(view.columns).forEach { cell -> TimeCell(cell, nameSp, timeSp) }
         }
     }
 }
