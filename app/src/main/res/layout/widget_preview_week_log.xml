@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
+    android:backgroundTint="@color/widget_background"
     android:gravity="top"
     android:orientation="vertical"
     android:paddingHorizontal="12dp"
@@ -134,7 +135,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -146,7 +149,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -158,7 +163,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_missed" />
+                android:src="@drawable/widget_dot_missed"
+                android:tint="@color/widget_text_muted"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -170,7 +177,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -182,7 +191,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -194,7 +205,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_missed" />
+                android:src="@drawable/widget_dot_missed"
+                android:tint="@color/widget_text_muted"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -206,7 +219,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
     </LinearLayout>
 
@@ -235,7 +250,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_missed" />
+                android:src="@drawable/widget_dot_missed"
+                android:tint="@color/widget_text_muted"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -247,7 +264,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -259,7 +278,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -271,7 +292,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -283,7 +306,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -295,7 +320,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -307,7 +334,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
     </LinearLayout>
 
@@ -336,7 +365,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -348,7 +379,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_missed" />
+                android:src="@drawable/widget_dot_missed"
+                android:tint="@color/widget_text_muted"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -360,7 +393,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -372,7 +407,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -384,7 +421,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -396,7 +435,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -408,7 +449,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_upcoming" />
+                android:src="@drawable/widget_dot_upcoming"
+                android:tint="@color/widget_dot_upcoming"
+                android:tintMode="src_in" />
         </FrameLayout>
     </LinearLayout>
 
@@ -437,7 +480,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -449,7 +494,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -461,7 +508,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -473,7 +522,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -485,7 +536,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -497,7 +550,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -509,7 +564,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_upcoming" />
+                android:src="@drawable/widget_dot_upcoming"
+                android:tint="@color/widget_dot_upcoming"
+                android:tintMode="src_in" />
         </FrameLayout>
     </LinearLayout>
 
@@ -538,7 +595,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -550,7 +609,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -562,7 +623,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -574,7 +637,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -586,7 +651,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_missed" />
+                android:src="@drawable/widget_dot_missed"
+                android:tint="@color/widget_text_muted"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -598,7 +665,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_prayed" />
+                android:src="@drawable/widget_dot_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
         </FrameLayout>
         <FrameLayout
             android:layout_width="0dp"
@@ -610,7 +679,9 @@
                 android:layout_height="14dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/widget_dot_upcoming" />
+                android:src="@drawable/widget_dot_upcoming"
+                android:tint="@color/widget_dot_upcoming"
+                android:tintMode="src_in" />
         </FrameLayout>
     </LinearLayout>
 </LinearLayout>

@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
+    android:backgroundTint="@color/widget_background"
     android:gravity="top"
     android:orientation="vertical"
     android:paddingHorizontal="12dp"
@@ -59,12 +60,27 @@
             android:textColor="@color/widget_text"
             android:textSize="13sp" />
 
-        <ImageView
+        <FrameLayout
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:layout_marginStart="10dp"
-            android:importantForAccessibility="no"
-            android:src="@drawable/widget_mark_prayed" />
+            android:layout_marginStart="10dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_mark_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_mark_check"
+                android:tint="@color/widget_on_accent"
+                android:tintMode="src_in" />
+        </FrameLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -92,12 +108,27 @@
             android:textColor="@color/widget_text"
             android:textSize="13sp" />
 
-        <ImageView
+        <FrameLayout
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:layout_marginStart="10dp"
-            android:importantForAccessibility="no"
-            android:src="@drawable/widget_mark_prayed" />
+            android:layout_marginStart="10dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_mark_prayed"
+                android:tint="@color/widget_accent"
+                android:tintMode="src_in" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_mark_check"
+                android:tint="@color/widget_on_accent"
+                android:tintMode="src_in" />
+        </FrameLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -105,6 +136,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:background="@drawable/widget_row_next"
+        android:backgroundTint="@color/widget_accent_soft"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="8dp">
@@ -132,7 +164,9 @@
             android:layout_height="20dp"
             android:layout_marginStart="10dp"
             android:importantForAccessibility="no"
-            android:src="@drawable/widget_mark_due" />
+            android:src="@drawable/widget_mark_due"
+            android:tint="@color/widget_accent"
+            android:tintMode="src_in" />
     </LinearLayout>
 
     <LinearLayout
@@ -165,7 +199,9 @@
             android:layout_height="20dp"
             android:layout_marginStart="10dp"
             android:importantForAccessibility="no"
-            android:src="@drawable/widget_mark_upcoming" />
+            android:src="@drawable/widget_mark_upcoming"
+            android:tint="@color/widget_text_muted"
+            android:tintMode="src_in" />
     </LinearLayout>
 
     <LinearLayout
@@ -198,7 +234,9 @@
             android:layout_height="20dp"
             android:layout_marginStart="10dp"
             android:importantForAccessibility="no"
-            android:src="@drawable/widget_mark_upcoming" />
+            android:src="@drawable/widget_mark_upcoming"
+            android:tint="@color/widget_text_muted"
+            android:tintMode="src_in" />
     </LinearLayout>
 
     <TextView

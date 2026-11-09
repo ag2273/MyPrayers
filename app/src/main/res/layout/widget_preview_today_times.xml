@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
+    android:backgroundTint="@color/widget_background"
     android:gravity="top"
     android:orientation="vertical"
     android:paddingHorizontal="8dp"
@@ -121,6 +122,7 @@
             android:layout_marginHorizontal="1dp"
             android:layout_weight="1"
             android:background="@drawable/widget_cell_next"
+            android:backgroundTint="@color/widget_accent"
             android:gravity="center"
             android:orientation="vertical">
 
