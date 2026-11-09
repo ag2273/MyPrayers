@@ -128,6 +128,18 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { if (minutes == 0) it.remove(adjustmentKey(prayer)) else it[adjustmentKey(prayer)] = minutes }
     }
 
+    /**
+     * Moves [prayer]'s adjustment by [step] minutes, kept within [PrayerSettings.ADJUSTMENT_RANGE]. It reads and writes
+     * in one edit, so quick taps each count even before the screen shows the last one.
+     */
+    suspend fun stepAdjustment(prayer: Prayer, step: Int) {
+        store.edit {
+            val range = PrayerSettings.ADJUSTMENT_RANGE
+            val minutes = ((it[adjustmentKey(prayer)] ?: 0) + step).coerceIn(range.first, range.last)
+            if (minutes == 0) it.remove(adjustmentKey(prayer)) else it[adjustmentKey(prayer)] = minutes
+        }
+    }
+
     /** Settings → Advanced. */
     suspend fun setHighLatitudeRule(rule: HighLatitudeRule) {
         store.edit { it[HIGH_LATITUDE_RULE] = rule.name }

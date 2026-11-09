@@ -129,9 +129,8 @@ class SettingsScreenTest {
         fun stored() = runBlocking { store.settings.first() }
         try {
             compose.onNodeWithText("Prayer Time adjustments").performScrollTo().performClick()
+            // Two quick taps both count, even before the first one is stored.
             compose.onNodeWithContentDescription("Fajr one minute later").performClick()
-            compose.waitUntil(timeoutMillis = 5_000) { stored().adjustmentOf(Prayer.FAJR) == 1 }
-            compose.waitForIdle()
             compose.onNodeWithContentDescription("Fajr one minute later").performClick()
             compose.waitUntil(timeoutMillis = 5_000) { stored().adjustmentOf(Prayer.FAJR) == 2 }
             compose.onNodeWithText("Done").performClick()

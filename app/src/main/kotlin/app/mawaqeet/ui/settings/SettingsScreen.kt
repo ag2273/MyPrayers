@@ -63,8 +63,8 @@ interface SettingsActions {
     fun setDigitStyle(style: DigitStyle)
     fun setHijriOffsetDays(days: Int)
 
-    /** Settings → Prayer Times (#20): [minutes] within [PrayerSettings.ADJUSTMENT_RANGE] added to [prayer]'s time. */
-    fun setAdjustment(prayer: Prayer, minutes: Int)
+    /** Settings → Prayer Times (#20): moves [prayer]'s adjustment by [step] minutes, within [PrayerSettings.ADJUSTMENT_RANGE]. */
+    fun stepAdjustment(prayer: Prayer, step: Int)
 
     /** Settings → Advanced (#20). */
     fun setHighLatitudeRule(rule: HighLatitudeRule)
@@ -200,7 +200,7 @@ private fun PrayerTimesGroup(settings: PrayerSettings, locationName: String, act
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.adjustments_hint, format.number(PrayerSettings.ADJUSTMENT_RANGE.last)), style = MaterialTheme.typography.bodyMedium)
                     Prayer.entries.forEach { prayer ->
-                        AdjustmentRow(prayer, settings.adjustmentOf(prayer)) { actions.setAdjustment(prayer, it) }
+                        AdjustmentRow(prayer, settings.adjustmentOf(prayer)) { actions.stepAdjustment(prayer, it) }
                     }
                 }
             },
@@ -240,7 +240,7 @@ private fun signedMinutes(signed: String): String =
 
 /** One Prayer's adjustment: its name, then −, the minutes and +, one minute per tap within the allowed range. */
 @Composable
-private fun AdjustmentRow(prayer: Prayer, minutes: Int, onChange: (Int) -> Unit) {
+private fun AdjustmentRow(prayer: Prayer, minutes: Int, onStep: (Int) -> Unit) {
     val format = LocalDisplayFormatter.current
     val name = stringResource(prayer.nameRes)
     val range = PrayerSettings.ADJUSTMENT_RANGE
@@ -249,7 +249,7 @@ private fun AdjustmentRow(prayer: Prayer, minutes: Int, onChange: (Int) -> Unit)
         val earlier = stringResource(R.string.adjustment_earlier, name)
         val later = stringResource(R.string.adjustment_later, name)
         TextButton(
-            onClick = { onChange(minutes - 1) },
+            onClick = { onStep(-1) },
             enabled = minutes > range.first,
             modifier = Modifier.semantics { contentDescription = earlier },
         ) { Text("−", style = MaterialTheme.typography.titleLarge) }
@@ -258,7 +258,7 @@ private fun AdjustmentRow(prayer: Prayer, minutes: Int, onChange: (Int) -> Unit)
             style = MaterialTheme.typography.bodyLarge,
         )
         TextButton(
-            onClick = { onChange(minutes + 1) },
+            onClick = { onStep(+1) },
             enabled = minutes < range.last,
             modifier = Modifier.semantics { contentDescription = later },
         ) { Text("+", style = MaterialTheme.typography.titleLarge) }

@@ -197,8 +197,8 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setHijriOffsetDays(days) }
                             }
 
-                            override fun setAdjustment(prayer: app.mawaqeet.core.Prayer, minutes: Int) {
-                                scope.launch { settingsStore.setAdjustment(prayer, minutes) }
+                            override fun stepAdjustment(prayer: app.mawaqeet.core.Prayer, step: Int) {
+                                scope.launch { settingsStore.stepAdjustment(prayer, step) }
                             }
 
                             override fun setHighLatitudeRule(rule: app.mawaqeet.core.HighLatitudeRule) {

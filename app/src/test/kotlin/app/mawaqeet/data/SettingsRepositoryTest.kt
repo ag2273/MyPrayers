@@ -115,6 +115,18 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `stepping an adjustment stays within the allowed range and clears at zero`() = withRepository { repo, _ ->
+        repo.setAdjustment(Prayer.ASR, 29)
+        repo.stepAdjustment(Prayer.ASR, +1)
+        repo.stepAdjustment(Prayer.ASR, +1)
+        assertEquals(30, repo.settings.first().adjustmentOf(Prayer.ASR))
+
+        repo.stepAdjustment(Prayer.MAGHRIB, -1)
+        repo.stepAdjustment(Prayer.MAGHRIB, +1)
+        assertEquals(mapOf(Prayer.ASR to 30), repo.settings.first().adjustments)
+    }
+
+    @Test
     fun `the Hijri offset and digit style survive an app restart`() {
         assertEquals(DigitStyle.AUTOMATIC, withRepository { repo, _ -> repo.digitStyle.first() })
         withRepository { repo, _ ->
