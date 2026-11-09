@@ -71,8 +71,20 @@ class AlertPlaybackTest {
     }
 
     @Test
-    fun `during a phone call a Custom Adhan is skipped, since its length is unknown`() {
-        assertEquals(AlertPlayback(play = null, vibrate = true), decide(AlertSound.CustomAdhan("content://x"), inCall = true))
+    fun `during a phone call a Custom Adhan is skipped, even one chosen as the Short Adhan, since its length is unknown`() {
+        for (recording in AdhanRecording.entries) {
+            assertEquals(AlertPlayback(play = null, vibrate = true), decide(AlertSound.CustomAdhan("content://x", recording), inCall = true))
+        }
+    }
+
+    @Test
+    fun `a Custom Adhan follows the same silent-mode and lateness rules as the bundled adhan`() {
+        val custom = AlertSound.CustomAdhan("content://x", AdhanRecording.FULL)
+        assertEquals(AlertPlayback(play = custom, vibrate = true), decide(custom))
+        assertEquals(AlertPlayback(play = null, vibrate = false), decide(custom, RingerMode.SILENT))
+        assertEquals(AlertPlayback(play = null, vibrate = true), decide(custom, RingerMode.VIBRATE))
+        assertEquals(AlertPlayback(play = custom, vibrate = false), decide(custom, RingerMode.SILENT, playOnSilent = true))
+        assertEquals(null, decide(custom, late = Duration.ofMinutes(11)).play)
     }
 
     @Test

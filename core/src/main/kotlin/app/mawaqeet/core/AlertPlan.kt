@@ -12,14 +12,32 @@ sealed interface AlertSound {
     data object FullAdhan : AlertSound
     data object FajrFullAdhan : AlertSound
 
-    /** A file the user chose; [reference] is opaque to the core (a content URI on Android). */
-    data class CustomAdhan(val reference: String) : AlertSound
+    /**
+     * A file the user chose in place of the bundled [replaces] recording; [reference] is opaque to the core (a
+     * content URI on Android). If the file can't be read when the alert fires, [fallback] plays instead.
+     */
+    data class CustomAdhan(val reference: String, val replaces: AdhanRecording) : AlertSound {
+        val fallback: AlertSound get() = bundled(replaces)
+    }
 
     /** Notification only. */
     data object Silent : AlertSound
 
     /** A Prayer Reminder's short notification sound (the reminder channel's own); never an adhan. */
     data object ReminderTone : AlertSound
+
+    companion object {
+        /** The bundled sound of [recording]. */
+        fun bundled(recording: AdhanRecording): AlertSound = when (recording) {
+            AdhanRecording.SHORT -> ShortAdhan
+            AdhanRecording.FULL -> FullAdhan
+            AdhanRecording.FAJR_FULL -> FajrFullAdhan
+        }
+
+        /** What [recording] plays under [settings]: its Custom Adhan if one is chosen, else the bundled one. */
+        fun of(recording: AdhanRecording, settings: AlertSettings): AlertSound =
+            settings.customAdhan(recording)?.let { CustomAdhan(it, recording) } ?: bundled(recording)
+    }
 }
 
 /** How an alert's alarm is set: an exact alarm (the default) or an alarm clock shown on the lock screen. */

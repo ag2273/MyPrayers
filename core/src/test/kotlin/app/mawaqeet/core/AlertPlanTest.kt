@@ -159,6 +159,59 @@ class AlertPlanTest {
         assertEquals(LocalDate.parse("2026-11-08"), dhuhrReminder.prayerDay)
     }
 
+    private val everyPrayerFull = Prayer.entries.fold(AlertSettings()) { a, p -> a.with(p, PrayerAlertSettings(sound = AdhanSoundChoice.FULL)) }
+
+    private fun AlertPlan.adhanSounds() = alerts.filter { it.kind == AlertKind.ADHAN_ALERT }.associate { it.prayer to it.sound }
+
+    @Test
+    fun `a Custom Full Adhan plays at Dhuhr, Asr, Maghrib and Isha but Fajr keeps its own adhan with «الصلاة خير من النوم»`() {
+        val alerts = everyPrayerFull.withCustomAdhan(AdhanRecording.FULL, "content://reciter/full")
+        val sounds = planAt(makkah("2026-11-08", "11:00"), withAlerts(alerts)).adhanSounds()
+
+        assertEquals(AlertSound.FajrFullAdhan, sounds[Prayer.FAJR])
+        for (prayer in listOf(Prayer.DHUHR, Prayer.ASR, Prayer.MAGHRIB, Prayer.ISHA)) {
+            assertEquals(AlertSound.CustomAdhan("content://reciter/full", AdhanRecording.FULL), sounds[prayer])
+        }
+    }
+
+    @Test
+    fun `Fajr's Full Adhan is replaced only by a Custom Adhan chosen for Fajr itself`() {
+        val alerts = everyPrayerFull
+            .withCustomAdhan(AdhanRecording.FULL, "content://reciter/full")
+            .withCustomAdhan(AdhanRecording.FAJR_FULL, "content://reciter/fajr")
+        val sounds = planAt(makkah("2026-11-08", "11:00"), withAlerts(alerts)).adhanSounds()
+
+        assertEquals(AlertSound.CustomAdhan("content://reciter/fajr", AdhanRecording.FAJR_FULL), sounds[Prayer.FAJR])
+        assertEquals(AlertSound.CustomAdhan("content://reciter/full", AdhanRecording.FULL), sounds[Prayer.DHUHR])
+    }
+
+    @Test
+    fun `a Custom Short Adhan plays only where the Short Adhan is chosen, Fajr included`() {
+        val alerts = AlertSettings()
+            .with(Prayer.ASR, PrayerAlertSettings(sound = AdhanSoundChoice.FULL))
+            .with(Prayer.ISHA, PrayerAlertSettings(sound = AdhanSoundChoice.SILENT))
+            .withCustomAdhan(AdhanRecording.SHORT, "content://reciter/short")
+        val sounds = planAt(makkah("2026-11-08", "11:00"), withAlerts(alerts)).adhanSounds()
+
+        val custom = AlertSound.CustomAdhan("content://reciter/short", AdhanRecording.SHORT)
+        assertEquals(custom, sounds[Prayer.FAJR])
+        assertEquals(custom, sounds[Prayer.DHUHR])
+        assertEquals(custom, sounds[Prayer.MAGHRIB])
+        assertEquals(AlertSound.FullAdhan, sounds[Prayer.ASR])
+        assertEquals(AlertSound.Silent, sounds[Prayer.ISHA])
+    }
+
+    @Test
+    fun `clearing a Custom Adhan brings back the bundled recording`() {
+        val alerts = everyPrayerFull
+            .withCustomAdhan(AdhanRecording.FULL, "content://reciter/full")
+            .withCustomAdhan(AdhanRecording.FULL, null)
+        val sounds = planAt(makkah("2026-11-08", "11:00"), withAlerts(alerts)).adhanSounds()
+
+        assertEquals(AlertSound.FullAdhan, sounds[Prayer.DHUHR])
+        assertEquals(AlertSound.FajrFullAdhan, sounds[Prayer.FAJR])
+    }
+
     @Test
     fun `a reminder already past is left out while its Prayer's Adhan Alert is still planned`() {
         val alerts = AlertSettings().with(Prayer.DHUHR, PrayerAlertSettings(reminder = true))

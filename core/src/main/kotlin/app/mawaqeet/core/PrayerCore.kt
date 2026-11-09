@@ -112,11 +112,8 @@ class PrayerCore(
             null
         }
         val adhan = if (prayer.adhanAlert) {
-            val sound = when (prayer.sound) {
-                AdhanSoundChoice.SHORT -> AlertSound.ShortAdhan
-                AdhanSoundChoice.FULL -> if (time.prayer == Prayer.FAJR) AlertSound.FajrFullAdhan else AlertSound.FullAdhan
-                AdhanSoundChoice.SILENT -> AlertSound.Silent
-            }
+            // A Custom Adhan replaces only its own recording: one for the Full Adhan never reaches Fajr's.
+            val sound = AdhanRecording.of(time.prayer, prayer.sound)?.let { AlertSound.of(it, alerts) } ?: AlertSound.Silent
             alert(AlertKind.ADHAN_ALERT, at, sound, if (alerts.alarmClockMode) DeliveryMode.ALARM_CLOCK else DeliveryMode.EXACT)
         } else {
             null

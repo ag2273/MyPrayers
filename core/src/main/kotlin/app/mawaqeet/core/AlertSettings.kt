@@ -6,6 +6,27 @@ package app.mawaqeet.core
  */
 enum class AdhanSoundChoice { SHORT, FULL, SILENT }
 
+/**
+ * The adhan recordings an Adhan Alert can play. Each can be replaced by its own Custom Adhan, independently: a
+ * Custom Adhan for [FULL] never changes Fajr, which keeps [FAJR_FULL] (its own adhan, with «الصلاة خير من النوم»)
+ * until the user chooses a Custom Adhan for Fajr itself. Stored by name.
+ */
+enum class AdhanRecording {
+    SHORT,
+    FULL,
+    FAJR_FULL,
+    ;
+
+    companion object {
+        /** The recording [choice] plays for [prayer]; null for [AdhanSoundChoice.SILENT]. */
+        fun of(prayer: Prayer, choice: AdhanSoundChoice): AdhanRecording? = when (choice) {
+            AdhanSoundChoice.SHORT -> SHORT
+            AdhanSoundChoice.FULL -> if (prayer == Prayer.FAJR) FAJR_FULL else FULL
+            AdhanSoundChoice.SILENT -> null
+        }
+    }
+}
+
 /** One Prayer's alert settings. */
 data class PrayerAlertSettings(
     /** Whether an Adhan Alert fires at the Prayer Time. */
@@ -37,14 +58,28 @@ data class AlertSettings(
     /** The adhan plays even when the ringer is silent or vibrate. */
     val playOnSilent: Boolean = false,
     val vibration: Boolean = true,
+    /**
+     * The Custom Adhan chosen for each recording, as an opaque reference (a content URI on Android) the core never
+     * opens. A recording missing from the map plays the bundled one.
+     */
+    val customAdhans: Map<AdhanRecording, String> = emptyMap(),
 ) {
     fun of(prayer: Prayer): PrayerAlertSettings = prayers[prayer] ?: PrayerAlertSettings()
 
     fun with(prayer: Prayer, settings: PrayerAlertSettings): AlertSettings = copy(prayers = prayers + (prayer to settings))
 
+    /** The Custom Adhan for [recording], or null when it plays the bundled recording. */
+    fun customAdhan(recording: AdhanRecording): String? = customAdhans[recording]
+
+    /** Chooses [reference] as the Custom Adhan for [recording] only; null clears it back to the bundled recording. */
+    fun withCustomAdhan(recording: AdhanRecording, reference: String?): AlertSettings =
+        copy(customAdhans = if (reference == null) customAdhans - recording else customAdhans + (recording to reference))
+
     override fun equals(other: Any?): Boolean = other is AlertSettings &&
         Prayer.entries.all { of(it) == other.of(it) } &&
-        alarmClockMode == other.alarmClockMode && playOnSilent == other.playOnSilent && vibration == other.vibration
+        alarmClockMode == other.alarmClockMode && playOnSilent == other.playOnSilent && vibration == other.vibration &&
+        customAdhans == other.customAdhans
 
-    override fun hashCode(): Int = listOf(Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration).hashCode()
+    override fun hashCode(): Int =
+        listOf(Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, customAdhans).hashCode()
 }
