@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -214,7 +215,8 @@ private fun Mark(state: LogState) {
     val colors = MaterialTheme.colorScheme
     when (state) {
         LogState.PRAYED -> Box(Modifier.size(28.dp).background(colors.primary, CircleShape), contentAlignment = Alignment.Center) {
-            Text("✓", color = colors.onPrimary, style = MaterialTheme.typography.titleMedium)
+            // The row's state already says "Prayed"; TalkBack shouldn't also read "check mark".
+            Text("✓", color = colors.onPrimary, style = MaterialTheme.typography.titleMedium, modifier = Modifier.clearAndSetSemantics {})
         }
         LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.primary, CircleShape).background(Color.Transparent))
         LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.dp, colors.outlineVariant, CircleShape))
