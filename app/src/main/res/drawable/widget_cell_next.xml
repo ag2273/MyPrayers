@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The next Prayer's column in the Today's Prayer Times widget. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="@color/widget_accent" />
+    <solid android:color="@android:color/white" />
     <corners android:radius="12dp" />
 </shape>

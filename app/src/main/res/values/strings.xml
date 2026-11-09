@@ -181,6 +181,14 @@
     <string name="widget_week_log">سجل الأسبوع</string>
     <string name="widget_week_log_description">صلوات آخر سبعة أيام كما سجّلتها، ومجموعها</string>
     <string name="widget_state_prayed">صُلّيت</string>
+    <string name="widget_transparency">شفافية الخلفية</string>
+    <string name="widget_transparency_hint">من ٦٠٪ وأكثر يصبح النص فاتحًا بظل خفيف ليُقرأ فوق الخلفية.</string>
+    <string name="widget_transparency_value">%1$s٪</string>
+    <string name="widget_colors">الألوان</string>
+    <string name="widget_colors_wallpaper">ألوان الخلفية</string>
+    <string name="widget_colors_wallpaper_description">تتبع ألوان خلفية الشاشة (أندرويد ١٢ وأحدث).</string>
+    <string name="widget_colors_app">ألوان التطبيق</string>
+    <string name="widget_colors_app_description">ألوان مواقيت الثابتة.</string>
     <string name="widget_state_not_marked">لم تُسجَّل</string>
     <string name="widget_state_not_yet_due">لم يحن وقتها</string>
 

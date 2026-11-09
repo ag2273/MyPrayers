@@ -1,0 +1,86 @@
+package app.mawaqeet.widget
+
+import android.os.Build
+import androidx.annotation.ColorRes
+import app.mawaqeet.R
+
+/** Where widgets take their colours from (Android 12+; Android 8–11 always uses the app's). */
+enum class WidgetColors { WALLPAPER, APP }
+
+/**
+ * Settings → Widgets (#32), shared by every Widget Variant: one background [transparency] (0–100%, in steps of 10,
+ * default solid) and the [colors] choice.
+ */
+data class WidgetAppearance(val transparency: Int = 0, val colors: WidgetColors = WidgetColors.WALLPAPER) {
+    init {
+        require(transparency in TRANSPARENCY_RANGE && transparency % TRANSPARENCY_STEP == 0) { "transparency $transparency" }
+    }
+
+    companion object {
+        val TRANSPARENCY_RANGE = 0..100
+        const val TRANSPARENCY_STEP = 10
+
+        /** From this transparency on, text turns light with a soft shadow so it reads on any wallpaper. */
+        const val LIGHT_TEXT_FROM = 60
+    }
+}
+
+/**
+ * How a widget is drawn under a [WidgetAppearance] on this Android version: its colour resources (day and night
+ * variants each), the background's opacity, and whether text carries a shadow.
+ */
+data class WidgetStyle(
+    @param:ColorRes val background: Int,
+    @param:ColorRes val text: Int,
+    @param:ColorRes val muted: Int,
+    @param:ColorRes val accent: Int,
+    @param:ColorRes val onAccent: Int,
+    @param:ColorRes val accentSoft: Int,
+    @param:ColorRes val faint: Int,
+    /** 0 (fully transparent) to 255 (solid). */
+    val backgroundAlpha: Int,
+    /** Light text with a soft shadow, for a background at [WidgetAppearance.LIGHT_TEXT_FROM]% transparency or more. */
+    val shadowedText: Boolean,
+    /** Android 12+ only: widgets adapt across size steps; below it they keep one layout at the default size. */
+    val responsive: Boolean,
+) {
+    companion object {
+        fun of(appearance: WidgetAppearance, sdk: Int = Build.VERSION.SDK_INT): WidgetStyle {
+            val modern = sdk >= Build.VERSION_CODES.S
+            val wallpaper = modern && appearance.colors == WidgetColors.WALLPAPER
+            val light = appearance.transparency >= WidgetAppearance.LIGHT_TEXT_FROM
+            return WidgetStyle(
+                background = if (wallpaper) R.color.widget_dyn_background else R.color.widget_background,
+                text = when {
+                    light -> R.color.widget_over_text
+                    wallpaper -> R.color.widget_dyn_text
+                    else -> R.color.widget_text
+                },
+                muted = when {
+                    light -> R.color.widget_over_muted
+                    wallpaper -> R.color.widget_dyn_muted
+                    else -> R.color.widget_text_muted
+                },
+                accent = when {
+                    light -> if (wallpaper) R.color.widget_dyn_over_accent else R.color.widget_over_accent
+                    wallpaper -> R.color.widget_dyn_accent
+                    else -> R.color.widget_accent
+                },
+                onAccent = when {
+                    light -> R.color.widget_over_on_accent
+                    wallpaper -> R.color.widget_dyn_on_accent
+                    else -> R.color.widget_on_accent
+                },
+                accentSoft = when {
+                    light -> R.color.widget_over_accent_soft
+                    wallpaper -> R.color.widget_dyn_accent_soft
+                    else -> R.color.widget_accent_soft
+                },
+                faint = if (light) R.color.widget_over_faint else R.color.widget_dot_upcoming,
+                backgroundAlpha = ((100 - appearance.transparency) * 255 + 50) / 100,
+                shadowedText = light,
+                responsive = modern,
+            )
+        }
+    }
+}

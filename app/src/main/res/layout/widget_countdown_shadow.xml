@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Next Prayer countdown with the soft shadow for light text (#32), ticked by the launcher (count-down Chronometer, always with seconds). Size and colour are set in code. -->
+<Chronometer xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/countdown"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:countDown="true"
+    android:includeFontPadding="false"
+    android:textAlignment="viewStart"
+    android:shadowColor="@color/widget_text_shadow"
+    android:shadowDy="1"
+    android:shadowRadius="3"
+    android:textSize="15sp"
+    android:textStyle="bold" />

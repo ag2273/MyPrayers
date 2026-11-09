@@ -62,7 +62,7 @@ class PrayerLogWidgetsRenderTest {
         assertTrue(words.any { it.startsWith("الشروق ") })
         assertTrue(words.any { "هـ" in it })
         assertEquals(View.LAYOUT_DIRECTION_RTL, widgetTexts(root).first().layoutDirection)
-        assertNothingClipped(root, allowEllipsis = setOf(R.id.date_hijri))
+        assertNothingClipped(root, allowEllipsis = isHijriDate)
     }
 
     @Test
@@ -103,7 +103,7 @@ class PrayerLogWidgetsRenderTest {
         for (widget in listOf(TodayLogWidget(), WeekLogWidget())) {
             val root = renderWidget(context, widget, 250, 180)
             assertEquals(View.LAYOUT_DIRECTION_LTR, widgetTexts(root).first().layoutDirection)
-            assertNothingClipped(root, allowEllipsis = setOf(R.id.date_hijri))
+            assertNothingClipped(root, allowEllipsis = isHijriDate)
         }
         assertTrue(widgetTexts(renderWidget(context, WeekLogWidget(), 250, 180)).any { it.text.toString() == "Week Prayer Log" })
     }

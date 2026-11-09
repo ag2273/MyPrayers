@@ -2,5 +2,5 @@
 <!-- Prayer Log widget mark: its time has arrived, not marked (solid ring). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
     <size android:width="22dp" android:height="22dp" />
-    <stroke android:width="2dp" android:color="@color/widget_accent" />
+    <stroke android:width="2dp" android:color="@android:color/white" />
 </shape>

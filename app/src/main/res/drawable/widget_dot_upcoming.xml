@@ -2,5 +2,5 @@
 <!-- Week Prayer Log dot: not yet due (faint fill). Days before first use show no dot at all. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
     <size android:width="14dp" android:height="14dp" />
-    <solid android:color="@color/widget_dot_upcoming" />
+    <solid android:color="@android:color/white" />
 </shape>

@@ -54,9 +54,12 @@ class MawaqeetApplication : Application() {
         // and BOOT_COMPLETED restarts the process' work after unlock.
         if (UserManagerCompat.isUserUnlocked(this)) {
             appScope.launch { settings.settings.collect { AlertRescheduler.reschedule(this@MawaqeetApplication, it) } }
-            // Every later change of what widgets show (method, adjustments, location, digits, language) re-renders them.
+            // Every later change of what widgets show (method, adjustments, location, digits, language, widget appearance)
+            // re-renders them.
             appScope.launch {
-                combine(settings.settings, settings.digitStyle, settings.appLanguage) { s, d, l -> Triple(s, d, l) }
+                combine(settings.settings, settings.digitStyle, settings.appLanguage, settings.widgetAppearance) { s, d, l, w ->
+                    listOf(s, d, l, w)
+                }
                     .drop(1)
                     .collect { Widgets.refreshAll(this@MawaqeetApplication) }
             }
