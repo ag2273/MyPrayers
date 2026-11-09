@@ -13,9 +13,10 @@ import java.time.Instant
 
 /**
  * Turns the core's [AlertPlan] into alarms: one per planned alert (`setExactAndAllowWhileIdle`, or
- * `setAlarmClock` in alarm-clock mode) plus one at the next local midnight. Applying a plan reconciles: alarms
- * of the previously applied plan that the new one lacks are cancelled, the rest are (re)set. The applied plan
- * is stored in device-protected storage ([AlertPlanStore]) for [rearmStoredPlan] after a locked boot.
+ * `setAlarmClock` in alarm-clock mode) plus one display alarm ([AlertPlan.nextDisplayChange]: local midnight, or a Prayer
+ * Time with no Adhan Alert). Applying a plan reconciles: alarms of the previously applied plan that the new one lacks
+ * are cancelled, the rest are (re)set. The applied plan is stored in device-protected storage ([AlertPlanStore]) for
+ * [rearmStoredPlan] after a locked boot; the stored copy keeps only midnight, so its display alarm is midnight.
  *
  * Callers normally go through [AlertRescheduler], which builds the plan and serialises calls.
  */
@@ -52,10 +53,11 @@ class AlertScheduler(context: Context) {
                 )
             }
         }
-        if (now == null || plan.nextLocalMidnight.isAfter(now)) {
+        // The display alarm: local midnight, or earlier at a Prayer Time no Adhan Alert announces (widgets move on).
+        if (now == null || plan.nextDisplayChange.isAfter(now)) {
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
-                plan.nextLocalMidnight.toEpochMilli(),
+                plan.nextDisplayChange.toEpochMilli(),
                 midnightIntent(),
             )
         }

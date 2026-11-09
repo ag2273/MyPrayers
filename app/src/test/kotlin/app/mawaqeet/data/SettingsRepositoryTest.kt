@@ -111,6 +111,15 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `the chosen app language is kept for widgets and receivers, and empty means the system language`() {
+        assertEquals("", withRepository { repo, _ -> repo.appLanguage.first() })
+        withRepository { repo, _ -> repo.setAppLanguage("en") }
+
+        assertEquals("en", withRepository { repo, _ -> repo.appLanguage.first() })
+        withRepository { repo, _ -> repo.setAppLanguage("") }
+    }
+
+    @Test
     fun `a stored Hijri offset outside the allowed range reads as no offset`() {
         withRepository { _, store -> store.edit { it[intPreferencesKey("hijri_offset_days")] = 5 } }
 

@@ -11,9 +11,12 @@ import app.mawaqeet.data.LocationUpdater
 import app.mawaqeet.data.PrayerLogDatabase
 import app.mawaqeet.data.RoomPrayerLogRepository
 import app.mawaqeet.data.SettingsRepository
+import app.mawaqeet.widget.Widgets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.time.Clock
 
@@ -51,6 +54,12 @@ class MawaqeetApplication : Application() {
         // and BOOT_COMPLETED restarts the process' work after unlock.
         if (UserManagerCompat.isUserUnlocked(this)) {
             appScope.launch { settings.settings.collect { AlertRescheduler.reschedule(this@MawaqeetApplication, it) } }
+            // Every later change of what widgets show (method, adjustments, location, digits, language) re-renders them.
+            appScope.launch {
+                combine(settings.settings, settings.digitStyle, settings.appLanguage) { s, d, l -> Triple(s, d, l) }
+                    .drop(1)
+                    .collect { Widgets.refreshAll(this@MawaqeetApplication) }
+            }
         }
     }
 }

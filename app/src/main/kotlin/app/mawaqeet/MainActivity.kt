@@ -68,6 +68,12 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             PrayerCore(settingsStore.settings.first(), clock, prayerLog).recordFirstUse()
         }
+        // AppCompat knows the per-app language here (the activity is recreated on every change, and on 13+ the system
+        // may change it); widgets and receivers on 8–12 read this copy. A changed value refreshes the widgets.
+        val languageTags = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+        app.appScope.launch {
+            if (settingsStore.appLanguage.first() != languageTags) settingsStore.setAppLanguage(languageTags)
+        }
         setContent {
             MawaqeetTheme {
                 // Null until the stored settings are read, so the default method's times never flash.

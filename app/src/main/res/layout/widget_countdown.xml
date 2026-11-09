@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Next Prayer countdown, ticked by the launcher (count-down Chronometer, always with seconds). System font. -->
+<Chronometer xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/countdown"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:countDown="true"
+    android:textAlignment="viewStart"
+    android:textColor="@color/widget_text"
+    android:textSize="15sp"
+    android:textStyle="bold" />

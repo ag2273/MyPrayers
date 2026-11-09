@@ -149,4 +149,11 @@
     <string name="alerts_play_on_silent">تشغيل الأذان حتى في الوضع الصامت</string>
     <string name="alerts_play_on_silent_description">لا يشمل التذكير، ولا الأذان أثناء المكالمات</string>
     <string name="alerts_vibration">الاهتزاز</string>
+
+    <!-- Widgets (#27). -->
+    <string name="widget_next_prayer">الصلاة القادمة</string>
+    <string name="widget_next_prayer_description">اسم الصلاة القادمة ووقتها، مع العد التنازلي</string>
+    <string name="widget_next_prayer_compact_description">الصلاة القادمة في سطرين</string>
+    <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
+    <string name="widget_countdown_format">بعد %s</string>
 </resources>

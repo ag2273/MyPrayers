@@ -100,6 +100,9 @@ class SettingsScreenTest {
             compose.onNodeWithText("Fajr").performScrollTo().performClick()
             compose.onNodeWithText("Fajr's Full Adhan", substring = true).performScrollTo().performClick()
             compose.onNodeWithText("Prayer Reminder").performScrollTo().performClick()
+            // The lead-time choices show once the DataStore write comes back (async).
+            compose.waitUntil(timeoutMillis = 5_000) { alerts().of(Prayer.FAJR).reminder }
+            compose.waitForIdle()
             compose.onNodeWithText("10 minutes before").performScrollTo().performClick()
             compose.onNodeWithText("Done").performClick()
             compose.onNodeWithText("Vibration").performScrollTo().performClick()

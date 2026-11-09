@@ -1,7 +1,10 @@
 package app.mawaqeet.ui
 
 import android.content.Context
+import android.content.res.Configuration
+import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -27,9 +30,35 @@ fun ProvideDisplayFormatter(digits: DigitStyle, content: @Composable () -> Unit)
 
 /**
  * The formatter outside Compose screens (notifications, widgets, receivers): the per-app language if one was chosen,
- * else the context's locale. Read [digits] from `SettingsRepository.digitStyle`.
+ * else the context's locale. Read [digits] from `SettingsRepository.digitStyle`; pass `SettingsRepository.appLanguage`
+ * as [storedLanguage] wherever this may run in a process no activity has run in (widgets, receivers).
  */
-fun displayFormatter(context: Context, digits: DigitStyle): DisplayFormatter {
-    val locale = AppCompatDelegate.getApplicationLocales()[0] ?: context.resources.configuration.locales[0]
-    return DisplayFormatter(locale, digits)
+fun displayFormatter(context: Context, digits: DigitStyle, storedLanguage: String = ""): DisplayFormatter =
+    DisplayFormatter(appLocale(context, storedLanguage), digits)
+
+/** [appLocale] for this process: AppCompat's per-app language, else [storedLanguage], else the context's locale. */
+fun appLocale(context: Context, storedLanguage: String): Locale = appLocale(
+    AppCompatDelegate.getApplicationLocales(),
+    storedLanguage,
+    context.resources.configuration.locales[0],
+)
+
+/**
+ * The app language. [applicationLocales] (AppCompat) is authoritative when set, but on Android 8–12 it is empty in a
+ * fresh widget or receiver process until an activity runs, so [storedTag] (`SettingsRepository.appLanguage`) comes
+ * next; "" means follow [system].
+ */
+fun appLocale(applicationLocales: LocaleListCompat, storedTag: String, system: Locale): Locale =
+    applicationLocales[0]
+        ?: storedTag.takeIf { it.isNotEmpty() }?.let { LocaleListCompat.forLanguageTags(it)[0] }
+        ?: system
+
+/**
+ * [context] with its resources in [locale], for strings and layout direction outside an activity: on Android 8–12 the
+ * application context keeps the system language even when the user chose another.
+ */
+fun localizedContext(context: Context, locale: Locale): Context {
+    val config = Configuration(context.resources.configuration)
+    config.setLocales(LocaleList(locale))
+    return context.createConfigurationContext(config)
 }

@@ -187,4 +187,31 @@ class AlertPlanTest {
         val defaults = planAt(makkah("2026-11-08", "11:00"))
         assertTrue(defaults.alerts.all { !it.playOnSilent && it.vibration })
     }
+
+    @Test
+    fun `with every Adhan Alert on, the display changes next at local midnight, since each Prayer Time already has an alarm`() {
+        val plan = planAt(makkah("2026-11-08", "12:00"))
+
+        assertEquals(makkah("2026-11-09", "00:00").toInstant(), plan.nextDisplayChange)
+    }
+
+    @Test
+    fun `a Prayer Time without an Adhan Alert is the next display change, so widgets still move on to the next Prayer`() {
+        val alerts = AlertSettings().with(Prayer.ASR, PrayerAlertSettings(adhanAlert = false, reminder = true))
+        // Makkah 2026-11-08: Asr 15:17 (its reminder at 15:02 is not at the Prayer Time).
+        val plan = planAt(makkah("2026-11-08", "13:00"), withAlerts(alerts))
+
+        assertEquals(
+            makkah("2026-11-08", "15:17"),
+            plan.nextDisplayChange.atZone(riyadh).truncatedTo(ChronoUnit.MINUTES),
+        )
+    }
+
+    @Test
+    fun `after the last Prayer of the day without an alarm passes, the next display change is midnight again`() {
+        val alerts = AlertSettings().with(Prayer.ASR, PrayerAlertSettings(adhanAlert = false))
+        val plan = planAt(makkah("2026-11-08", "16:00"), withAlerts(alerts))
+
+        assertEquals(makkah("2026-11-09", "00:00").toInstant(), plan.nextDisplayChange)
+    }
 }

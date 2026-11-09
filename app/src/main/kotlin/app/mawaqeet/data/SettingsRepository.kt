@@ -128,6 +128,17 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[DIGITS] = style.name }
     }
 
+    /**
+     * A copy of the per-app language (BCP 47 tags, "" = follow the system) for widgets and receivers: on Android 8–12
+     * AppCompat only knows the per-app language in a process where an activity has run. [app.mawaqeet.MainActivity]
+     * keeps it in sync; read it through [app.mawaqeet.ui.appLocale].
+     */
+    val appLanguage: Flow<String> = store.data.map { it[APP_LANGUAGE] ?: "" }.distinctUntilChanged()
+
+    suspend fun setAppLanguage(languageTags: String) {
+        store.edit { it[APP_LANGUAGE] = languageTags }
+    }
+
     /** Settings → Alerts. Every change reaches the alarms through [settings] (the app reschedules on each value). */
     suspend fun setPrayerAlert(prayer: Prayer, alert: PrayerAlertSettings) = updatePrayerAlert(prayer) { alert }
 
@@ -198,6 +209,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val ASR = stringPreferencesKey("asr_convention")
         private val HIJRI_OFFSET = intPreferencesKey("hijri_offset_days")
         private val DIGITS = stringPreferencesKey("digit_style")
+        private val APP_LANGUAGE = stringPreferencesKey("app_language")
         private val ALARM_CLOCK_MODE = booleanPreferencesKey("alarm_clock_mode")
         private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")
         private val VIBRATION = booleanPreferencesKey("vibration")

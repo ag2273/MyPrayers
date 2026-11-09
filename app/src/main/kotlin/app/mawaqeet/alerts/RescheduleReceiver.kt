@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.os.UserManagerCompat
 import app.mawaqeet.MawaqeetApplication
+import app.mawaqeet.widget.Widgets
 import kotlinx.coroutines.launch
 
 /**
@@ -15,7 +16,12 @@ import kotlinx.coroutines.launch
 class RescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) markLocationMaybeStale(context)
-        if (intent.action in ACTIONS) AlertRescheduler.rescheduleAsync(this, context)
+        when (intent.action) {
+            // The widgets' times and countdown follow the clock, zone and plan; refreshAll skips a locked boot.
+            in ACTIONS -> AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true)
+            // The system language changed: widgets following it re-render (the alarms don't depend on it).
+            Intent.ACTION_LOCALE_CHANGED -> Widgets.refreshAllAsync(this, context)
+        }
     }
 
     /**

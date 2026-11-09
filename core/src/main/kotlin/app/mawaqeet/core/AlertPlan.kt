@@ -53,6 +53,12 @@ data class PlannedAlert(
 data class AlertPlan(
     val alerts: List<PlannedAlert>,
     val nextLocalMidnight: Instant,
+    /**
+     * The next moment the display day changes with no Adhan Alert to announce it: a Prayer Time whose Adhan Alert
+     * is turned off, or [nextLocalMidnight], whichever comes first. The scheduler's display alarm goes here, so
+     * widgets move on at every Prayer Time and at midnight without polling.
+     */
+    val nextDisplayChange: Instant = nextLocalMidnight,
 ) {
     companion object {
         /** The rolling window the plan covers; rebuilt on every alarm, so it never runs dry. */
