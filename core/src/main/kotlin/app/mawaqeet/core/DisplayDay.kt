@@ -27,7 +27,13 @@ data class DisplayDay(
     val next: PrayerTime,
     /** [date] in the Hijri calendar, with the user's Hijri offset applied. */
     val hijriDate: HijriDate,
+    /** Non-null when a high-latitude rule set [date]'s Fajr or Isha: Home shows a short note. */
+    val highLatitude: HighLatitudeAdjustment? = null,
 ) {
+    /** Whether a high-latitude rule was applied to [date]'s Prayer Times. */
+    val highLatitudeRuleApplied: Boolean
+        get() = highLatitude != null
+
     /** Whether [date] is a Friday, so its Dhuhr is Jumu'ah. */
     val isJumuah: Boolean
         get() = date.dayOfWeek == DayOfWeek.FRIDAY

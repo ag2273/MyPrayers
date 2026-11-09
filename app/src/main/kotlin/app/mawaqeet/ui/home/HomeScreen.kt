@@ -52,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
 import app.mawaqeet.ui.LocalDisplayFormatter
 import app.mawaqeet.core.DisplayDay
+import app.mawaqeet.core.HighLatitudeAdjustment
+import app.mawaqeet.ui.settings.label
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.core.PrayerTime
@@ -143,6 +145,7 @@ private fun HomeContent(
             if (locationHint != null) {
                 TextButton(onClick = onLocationHint) { Text(locationHint) }
             }
+            day.highLatitude?.let { HighLatitudeNote(it) }
             NextPrayerCard(day.next, now)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val isNextToday = day.next.time.toLocalDate() == day.date
@@ -178,6 +181,17 @@ private fun DateLine(day: DisplayDay) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/** Says that a high-latitude rule, not the method's angle, set today's Fajr or Isha (#20). */
+@Composable
+private fun HighLatitudeNote(adjustment: HighLatitudeAdjustment) {
+    val rule = stringResource(adjustment.rule.label)
+    Text(
+        stringResource(if (adjustment.polar) R.string.high_latitude_polar_note else R.string.high_latitude_note, rule),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** What a row shows of the Prayer Log. */

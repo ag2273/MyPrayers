@@ -36,6 +36,14 @@ _Avoid_: Calculation authority, organisation, algorithm
 Which shadow-length rule sets the Asr Prayer Time: Standard (Shafi'i, Maliki, Hanbali) or Hanafi.
 _Avoid_: Madhab, juristic method, school
 
+**High-Latitude Rule**:
+How Fajr and Isha are bounded when the sun doesn't get low enough for the Calculation Method's angles (middle of the night, seventh of the night, or twilight angle; Automatic picks the seventh above about 48°). Where the sun doesn't rise or set at all, Prayer Times come from the nearest latitude where they can be calculated.
+_Avoid_: Polar mode, angle-based method
+
+**Prayer Time Adjustment**:
+Minutes (−30 to +30) the user adds to one Prayer's calculated time to match their mosque. Sunrise is never adjusted.
+_Avoid_: Offset (that word is for the Hijri date), correction
+
 **Manual Location**:
 A location the user set by picking a city or typing coordinates. It never changes by itself; the opposite is an Automatic Location, taken from the device's approximate position.
 _Avoid_: Fixed location, custom location
