@@ -72,14 +72,30 @@ data class PrayerSettings(
     val hijriOffsetDays: Int = 0,
     /** Settings → Alerts: per-Prayer Adhan Alerts and Prayer Reminders, delivery and playback. */
     val alerts: AlertSettings = AlertSettings(),
+    /**
+     * Settings → Prayer Times: minutes added to each Prayer Time to match the local mosque (negative is earlier),
+     * each within [ADJUSTMENT_RANGE]. A missing Prayer is not adjusted. Sunrise is never adjusted.
+     */
+    val adjustments: Map<Prayer, Int> = emptyMap(),
+    /** Settings → Advanced: how Fajr and Isha are bounded at high latitudes. */
+    val highLatitudeRule: HighLatitudeRule = HighLatitudeRule.AUTOMATIC,
 ) {
     init {
         require(hijriOffsetDays in HIJRI_OFFSET_RANGE) { "Hijri offset $hijriOffsetDays is outside $HIJRI_OFFSET_RANGE" }
+        adjustments.forEach { (prayer, minutes) ->
+            require(minutes in ADJUSTMENT_RANGE) { "$prayer adjustment $minutes is outside $ADJUSTMENT_RANGE" }
+        }
     }
+
+    /** The minutes added to [prayer]'s time (0 when not adjusted). */
+    fun adjustmentOf(prayer: Prayer): Int = adjustments[prayer] ?: 0
 
     companion object {
         /** The Hijri day offsets the user may choose. */
         val HIJRI_OFFSET_RANGE = -2..2
+
+        /** The per-Prayer adjustments the user may choose, in minutes. */
+        val ADJUSTMENT_RANGE = -30..30
 
         /** Before the user picks a location: Makkah (the Kaaba), Umm al-Qura, Standard Asr. */
         val Default = PrayerSettings(

@@ -40,6 +40,31 @@ class CalculationSpotCheckTest {
         assertMatches(PrayerSettings(makkah, CalculationMethod.UMM_AL_QURA, AsrConvention.STANDARD), published)
     }
 
+    @Test
+    fun `London at 51 degrees north under the Moonsighting Committee matches its published timetable`() {
+        // A high-latitude city: from about May to August the sun never gets 18° below the horizon here, so Fajr and
+        // Isha come from the committee's seasonal high-latitude rule. Source: http://www.moonsighting.com/pray.php
+        // (London, 2016, Hanafi Asr), as transcribed in the "source" field of batoulapps/adhan-testdata
+        // Times/London-MoonsightingCommittee.json. Published 12-hour times converted to 24-hour; the transcription's
+        // "+1"/"-1" marks (adhan's own ±1 minute) are dropped, as the tolerance covers them.
+        val london = Location(51.507194, -0.116711, ZoneId.of("Europe/London"))
+        val published = """
+            2016-01-01 06:25 08:06 12:09 14:15 16:05 17:38
+            2016-02-01 06:02 07:40 12:19 15:00 16:52 18:18
+            2016-03-01 05:10 06:45 12:18 15:48 17:44 19:03
+            2016-04-01 04:59 06:35 13:09 17:31 19:37 20:49
+            2016-05-01 03:47 05:32 13:02 18:05 20:27 21:32
+            2016-06-01 02:55 04:49 13:03 18:31 21:12 22:23
+            2016-07-01 02:51 04:48 13:09 18:41 21:24 22:38
+            2016-08-01 03:38 05:25 13:12 18:23 20:51 21:56
+            2016-09-01 04:35 06:14 13:05 17:40 19:49 20:58
+            2016-10-01 05:28 07:02 12:55 16:43 18:40 19:57
+            2016-11-01 05:17 06:55 11:49 14:44 16:36 17:59
+            2016-12-01 06:04 07:44 11:55 14:08 15:58 17:29
+        """
+        assertMatches(PrayerSettings(london, CalculationMethod.MOON_SIGHTING_COMMITTEE, AsrConvention.HANAFI), published)
+    }
+
     private fun assertMatches(settings: PrayerSettings, published: String) {
         val names = listOf("Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha")
         published.trim().lines().map { it.trim().split(" ") }.forEach { row ->

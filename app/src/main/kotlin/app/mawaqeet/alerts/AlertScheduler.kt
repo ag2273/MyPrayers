@@ -91,6 +91,7 @@ class AlertScheduler(context: Context) {
         .putExtra(AlertReceiver.EXTRA_PRAYER_TIME, alert.prayerTime.toEpochMilli())
         .putExtra(AlertReceiver.EXTRA_PLAY_ON_SILENT, alert.playOnSilent)
         .putExtra(AlertReceiver.EXTRA_VIBRATION, alert.vibration)
+        .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, alert.prayerDay.toString())
 
     private fun midnightIntent(): PendingIntent = PendingIntent.getBroadcast(
         context,

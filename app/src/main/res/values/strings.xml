@@ -214,4 +214,52 @@
     <string name="fix_vivo_2">في إعدادات التطبيق: فعّل «التشغيل التلقائي».</string>
     <string name="fix_general_1">في إعدادات التطبيق: البطارية ← غير مقيّد أو بلا تحسين.</string>
     <string name="fix_general_2">في إعدادات تحسين البطارية: اجعل مواقيت «لا تحسّن».</string>
+    <!-- Adhan Alert notification action (#26). -->
+    <string name="mark_as_prayed">تمّت الصلاة</string>
+
+    <!-- Prayer Log screen and summary (#25). No streaks, badges or scores. -->
+    <string name="prayer_log">سجل الصلاة</string>
+    <string name="log_previous_week">الأسبوع السابق</string>
+    <string name="log_next_week">الأسبوع التالي</string>
+    <string name="log_this_week">آخر سبعة أيام</string>
+    <string name="log_earlier_week">أسبوع سابق</string>
+    <string name="log_week_read_only">الأيام الأقدم من أسبوع للعرض فقط.</string>
+    <string name="log_summary">ملخص الأسبوع</string>
+    <string name="log_total">المجموع</string>
+    <string name="log_before_first_use">قبل بدء استخدامك للتطبيق</string>
+    <string name="log_read_only_prayed">تمّت الصلاة، لا يمكن تعديل هذا اليوم</string>
+    <string name="delete_prayer_log">حذف سجل الصلاة</string>
+    <string name="delete_prayer_log_summary">يمحو كل ما سجّلته نهائيًا</string>
+    <string name="delete_prayer_log_done">حُذف سجل الصلاة</string>
+    <string name="delete_prayer_log_title">حذف سجل الصلاة؟</string>
+    <string name="delete_prayer_log_body">سيُمحى كل ما سجّلته من صلوات نهائيًا من هذا الهاتف، ولا يمكن التراجع عن ذلك.</string>
+    <string name="delete_prayer_log_confirm">حذف</string>
+    <!-- Prayer Time adjustments (#20). -->
+    <string name="adjustments">تعديل المواقيت</string>
+    <string name="adjustments_none">بلا تعديل</string>
+    <string name="adjustments_hint">قدّم وقت أي صلاة أو أخّره حتى %1$s دقيقة ليوافق مسجدك.</string>
+    <!-- %1$s is the Prayer name, %2$s the signed minutes, e.g. «الفجر +٢ د». -->
+    <string name="adjustment_summary">%1$s %2$s د</string>
+    <string name="list_separator">، </string>
+    <!-- %1$s is the signed number of minutes. -->
+    <string name="adjustment_minutes">%1$s د</string>
+    <!-- TalkBack labels of the − and + buttons; %1$s is the Prayer name. -->
+    <string name="adjustment_earlier">تقديم %1$s دقيقة</string>
+    <string name="adjustment_later">تأخير %1$s دقيقة</string>
+
+    <!-- Settings → Advanced (#20). -->
+    <string name="settings_group_advanced">متقدم</string>
+    <string name="high_latitude_rule">قاعدة خطوط العرض العليا</string>
+    <string name="high_latitude_rule_hint">حين لا تنخفض الشمس بما يكفي لحساب الفجر والعشاء، كما في الصيف شمال أوروبا.</string>
+    <string name="high_latitude_automatic">تلقائي</string>
+    <string name="high_latitude_automatic_description">سُبع الليل فوق خط عرض %1$s° تقريبًا، ونصف الليل فيما دونه</string>
+    <string name="high_latitude_middle">نصف الليل</string>
+    <string name="high_latitude_middle_description">لا يتأخر العشاء ولا يتقدم الفجر عن منتصف الليل</string>
+    <string name="high_latitude_seventh">سُبع الليل</string>
+    <string name="high_latitude_seventh_description">العشاء بعد أول سُبع من الليل، والفجر في آخر سُبع منه</string>
+    <string name="high_latitude_twilight">زاوية الشفق</string>
+    <string name="high_latitude_twilight_description">جزء من الليل بقدر زاوية الطريقة مقسومةً على %1$s</string>
+    <!-- Home note when a high-latitude rule set Fajr or Isha. %1$s is the rule's name. -->
+    <string name="high_latitude_note">الفجر والعشاء اليوم بقاعدة «%1$s» لخطوط العرض العليا.</string>
+    <string name="high_latitude_polar_note">لا تشرق الشمس أو لا تغرب هنا اليوم، فالمواقيت محسوبة على أقرب خط عرض يمكن الحساب فيه، بقاعدة «%1$s».</string>
 </resources>

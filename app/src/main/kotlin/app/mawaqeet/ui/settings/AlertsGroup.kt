@@ -309,7 +309,7 @@ fun SwitchRow(title: String, description: String, checked: Boolean, onChange: (B
 }
 
 @get:StringRes
-private val Prayer.nameRes: Int
+internal val Prayer.nameRes: Int
     get() = when (this) {
         Prayer.FAJR -> R.string.prayer_fajr
         Prayer.DHUHR -> R.string.prayer_dhuhr

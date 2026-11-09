@@ -18,6 +18,8 @@
     <application
         android:name=".MawaqeetApplication"
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Mawaqeet">
@@ -35,6 +37,11 @@
         <receiver
             android:name=".alerts.AlertReceiver"
             android:directBootAware="true"
+            android:exported="false" />
+
+        <!-- "Mark as prayed" on the Adhan Alert (#26). Not direct-boot aware: the Prayer Log needs an unlocked phone. -->
+        <receiver
+            android:name=".alerts.MarkPrayedReceiver"
             android:exported="false" />
 
         <!-- The adhan player (#22). Direct-boot aware like AlertReceiver, which starts it. -->

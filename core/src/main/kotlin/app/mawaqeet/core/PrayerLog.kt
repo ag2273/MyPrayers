@@ -27,6 +27,12 @@ interface PrayerLogRepository {
 
     /** Stores [place] as told; [PrayerCore.recordLocationChange] decides what to add. */
     fun addPastPlace(place: PastPlace)
+
+    /**
+     * Removes every Prayer Log entry and records [firstUseFrom] as the first-use date, replacing any recorded one,
+     * in one step. Past places stay: they fix which day each Prayer Day was, not what was prayed.
+     */
+    fun deleteAllEntries(firstUseFrom: LocalDate)
 }
 
 /**
@@ -73,6 +79,8 @@ data class PrayerDay(
     val states: Map<Prayer, LogState>,
     /** Whether [date] is within the edit window (today plus the 6 previous Prayer Days). */
     val isEditable: Boolean,
+    /** [date] in the Hijri calendar, with the user's Hijri offset (the day label shows it after the Gregorian date). */
+    val hijriDate: HijriDate,
 ) {
     fun stateOf(prayer: Prayer): LogState = states.getValue(prayer)
 

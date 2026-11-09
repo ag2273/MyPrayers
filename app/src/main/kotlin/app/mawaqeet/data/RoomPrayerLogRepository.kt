@@ -15,7 +15,7 @@ import java.time.ZoneId
  * The Prayer Log in the local database. Its methods block: call them (and the core's log queries and commands)
  * off the main thread.
  */
-class RoomPrayerLogRepository(db: PrayerLogDatabase) : PrayerLogRepository {
+class RoomPrayerLogRepository(private val db: PrayerLogDatabase) : PrayerLogRepository {
     private val dao = db.dao()
     private val version = MutableStateFlow(0)
 
@@ -50,5 +50,13 @@ class RoomPrayerLogRepository(db: PrayerLogDatabase) : PrayerLogRepository {
     override fun addPastPlace(place: PastPlace) {
         val location = place.location
         dao.insertPastPlace(PastPlaceEntry(place.until.toString(), location.latitude, location.longitude, location.zone.id))
+    }
+
+    override fun deleteAllEntries(firstUseFrom: LocalDate) {
+        db.runInTransaction {
+            dao.deleteAllEntries()
+            dao.replaceFirstUse(FirstUse(prayerDay = firstUseFrom.toString()))
+        }
+        version.update { it + 1 }
     }
 }
