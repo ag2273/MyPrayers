@@ -27,4 +27,9 @@ class InMemoryPrayerLog : PrayerLogRepository {
     override fun addPastPlace(place: PastPlace) {
         places += place
     }
+
+    override fun deleteAllEntries(firstUseFrom: LocalDate) {
+        entries.clear()
+        firstUse = firstUseFrom
+    }
 }

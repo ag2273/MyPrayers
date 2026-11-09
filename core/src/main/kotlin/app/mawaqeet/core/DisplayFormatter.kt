@@ -46,6 +46,10 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
         .ofPattern(if (arabic) "EEEE، d MMMM y" else "EEEE, d MMMM y", locale)
         .withDecimalStyle(decimalStyle)
 
+    private val shortGregorianFormatter = DateTimeFormatter
+        .ofPattern(if (arabic) "EEEE d MMMM" else "EEE d MMM", locale)
+        .withDecimalStyle(decimalStyle)
+
     /** A Prayer Time or other wall-clock time: `05:09` / `٠٥:٠٩`. */
     fun time(time: ZonedDateTime): String = timeFormatter.format(time)
 
@@ -57,6 +61,12 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
 
     /** Weekday, day, month and year: `الأحد، ٨ نوفمبر ٢٠٢٦` / `Sunday, 8 November 2026`. */
     fun gregorianDate(date: LocalDate): String = gregorianFormatter.format(date)
+
+    /** A Prayer Log day label's Gregorian part: `الأحد ٨ نوفمبر` / `Sun 8 Nov`. */
+    fun shortGregorianDate(date: LocalDate): String = shortGregorianFormatter.format(date)
+
+    /** A Prayer Log count such as `5/7`, in the chosen digits; left to right in both languages. */
+    fun count(prayed: Int, possible: Int): String = "\u2066${number(prayed)}/${number(possible)}\u2069"
 
     /** Day, our month name, year and era: `٢٨ جمادى الأولى ١٤٤٨ هـ` / `28 Jumada al-Ula 1448 AH`. */
     fun hijriDate(date: HijriDate): String {

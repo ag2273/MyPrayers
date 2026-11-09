@@ -41,6 +41,7 @@ private class FakeLog : PrayerLogRepository {
     override fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean) = Unit
     override fun firstUseDate(): LocalDate? = null
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) = Unit
+    override fun deleteAllEntries(firstUseFrom: LocalDate) = Unit
     override fun pastPlaces(): List<PastPlace> = places.toList()
     override fun addPastPlace(place: PastPlace) {
         places += place

@@ -52,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
 import app.mawaqeet.ui.LocalDisplayFormatter
 import app.mawaqeet.core.DisplayDay
+import app.mawaqeet.core.HighLatitudeAdjustment
+import app.mawaqeet.ui.settings.label
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.core.PrayerTime
@@ -72,6 +74,8 @@ fun HomeScreen(
     logChanges: StateFlow<Int>,
     locationName: String,
     onOpenSettings: () -> Unit,
+    /** Opens the Prayer Log screen (#25). */
+    onOpenLog: () -> Unit = {},
     /** A short hint under the location (e.g. the time zone changed), tapping it calls [onLocationHint]. */
     locationHint: String? = null,
     onLocationHint: () -> Unit = {},
@@ -92,7 +96,7 @@ fun HomeScreen(
         value = withContext(Dispatchers.IO) { core.currentPrayerDay() }
     }
     val scope = rememberCoroutineScope()
-    HomeContent(day, now, prayerDay, locationName, onOpenSettings, locationHint, onLocationHint) { prayer ->
+    HomeContent(day, now, prayerDay, locationName, onOpenSettings, onOpenLog, locationHint, onLocationHint) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
             scope.launch(Dispatchers.IO) {
@@ -113,6 +117,7 @@ private fun HomeContent(
     prayerDay: PrayerDay?,
     locationName: String,
     onOpenSettings: () -> Unit,
+    onOpenLog: () -> Unit,
     locationHint: String?,
     onLocationHint: () -> Unit,
     onToggle: (Prayer) -> Unit,
@@ -134,11 +139,13 @@ private fun HomeContent(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                TextButton(onClick = onOpenLog) { Text(stringResource(R.string.prayer_log)) }
                 TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
             }
             if (locationHint != null) {
                 TextButton(onClick = onLocationHint) { Text(locationHint) }
             }
+            day.highLatitude?.let { HighLatitudeNote(it) }
             NextPrayerCard(day.next, now)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val isNextToday = day.next.time.toLocalDate() == day.date
@@ -174,6 +181,17 @@ private fun DateLine(day: DisplayDay) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/** Says that a high-latitude rule, not the method's angle, set today's Fajr or Isha (#20). */
+@Composable
+private fun HighLatitudeNote(adjustment: HighLatitudeAdjustment) {
+    val rule = stringResource(adjustment.rule.label)
+    Text(
+        stringResource(if (adjustment.polar) R.string.high_latitude_polar_note else R.string.high_latitude_note, rule),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** What a row shows of the Prayer Log. */
