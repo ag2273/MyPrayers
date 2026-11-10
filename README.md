@@ -6,6 +6,7 @@ An Arabic-first Android app and set of home-screen widgets for daily prayer time
 
 - **Prayer Times** for your location: automatic, a city search over about 34k cities, or typed coordinates. The Calculation Method and Asr Convention are suggested per country. You can adjust each Prayer by minutes, and there is a high-latitude rule. Friday shows Jumu'ah. The Hijri date follows your offset.
 - **Adhan Alerts and Prayer Reminders** on exact alarms. For each Prayer you choose the Short adhan, the Full adhan or silent, and an optional reminder some minutes before. Fajr keeps its own adhan («الصلاة خير من النوم»). A Custom Adhan file can replace any recording, but a custom Full Adhan never changes Fajr's. Other options:
+  - one switch that turns every app alert off and back on
   - alarm-clock mode, which shows the alert over the lock screen
   - play on silent
   - vibration
@@ -53,7 +54,9 @@ mawaqeet.signing.storeFile=/path/to/release.jks
 mawaqeet.signing.storePassword=…
 mawaqeet.signing.keyAlias=…
 mawaqeet.signing.keyPassword=…
-mawaqeet.adhanAudio=/path/to/adhan.mp3
+mawaqeet.adhanAudio=/path/to/short-adhan.mp3
+mawaqeet.adhanFullAudio=/path/to/full-adhan.mp3
+mawaqeet.adhanFajrAudio=/path/to/fajr-adhan.mp3
 ```
 
 Then run:
@@ -62,7 +65,7 @@ Then run:
 ./gradlew :app:assembleRelease
 ```
 
-Without the signing properties, the release APK is left unsigned. Without `adhanAudio`, the bundled adhan is a silent placeholder until you pick a Custom Adhan.
+Without the signing properties, the release APK is left unsigned. Without `adhanAudio`, the bundled adhan is a silent placeholder until you pick a Custom Adhan; without `adhanFullAudio` or `adhanFajrAudio`, the Full or Fajr adhan reuses the short one.
 
 ## Repository rules
 

@@ -223,6 +223,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         }
     }
 
+    /** The master switch: off stops every Adhan Alert and Prayer Reminder (the plan then holds none). */
+    suspend fun setAlertsEnabled(on: Boolean) {
+        store.edit { it[ALERTS_ENABLED] = on }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -259,6 +264,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         val default = AlertSettings()
         val defaultPrayer = PrayerAlertSettings()
         return AlertSettings(
+            enabled = this[ALERTS_ENABLED] ?: default.enabled,
             prayers = Prayer.entries.associateWith { prayer ->
                 val keys = PrayerAlertKeys(prayer)
                 PrayerAlertSettings(
@@ -309,6 +315,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val APP_LANGUAGE = stringPreferencesKey("app_language")
         private val WIDGET_TRANSPARENCY = intPreferencesKey("widget_transparency")
         private val WIDGET_COLORS = stringPreferencesKey("widget_colors")
+        private val ALERTS_ENABLED = booleanPreferencesKey("alerts_enabled")
         private val ALARM_CLOCK_MODE = booleanPreferencesKey("alarm_clock_mode")
         private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")
         private val VIBRATION = booleanPreferencesKey("vibration")

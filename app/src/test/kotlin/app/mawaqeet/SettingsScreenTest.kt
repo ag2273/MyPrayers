@@ -135,6 +135,25 @@ class SettingsScreenTest {
 
     @Test
     @Config(qualifiers = "en")
+    fun `turning off all app alerts stores it, hides the per-Prayer settings and shows Alerts are off`() {
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun alerts() = runBlocking { store.settings.first() }.alerts
+        try {
+            compose.onNodeWithText("All app alerts").performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { !alerts().enabled }
+            compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText("Vibration").fetchSemanticsNodes().isEmpty() }
+            compose.onNodeWithContentDescription("Back").performClick()
+            compose.waitForIdle()
+            compose.onNodeWithText("Alerts are off").assertIsDisplayed()
+        } finally {
+            runBlocking { store.setAlertsEnabled(true) }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
     fun `adjusting Fajr and choosing a high-latitude rule stores them`() {
         openSettings("Settings")
         openPage("Location & calculation")

@@ -162,7 +162,7 @@ private fun HomeContent(
                         name = prayerName(prayerTime),
                         time = prayerTime.time,
                         highlighted = isNextToday && prayerTime == day.next,
-                        alert = alerts.of(prayer),
+                        alert = alerts.effective(prayer),
                         prayer = prayer,
                         // Between midnight and Fajr the marks are still the previous Prayer Day's (late Isha).
                         log = prayerDay?.let { LogCell(it.stateOf(prayer), it.isMarkable(prayer)) },

@@ -70,12 +70,22 @@ import kotlinx.coroutines.withContext
 private val REMINDER_MINUTES = listOf(10, 15, 20, 30, 45, 60)
 
 /**
- * Settings → Alerts & adhan: one row per Prayer with its Adhan Alert switch (the row opens the Prayer's own page), how
+ * Settings → Alerts & adhan: the All alerts master switch, then one row per Prayer with its Adhan Alert switch (the row opens the Prayer's own page), how
  * alerts behave (alarm-clock mode, play on silent, vibration), the adhan's volume (alarm or media), then the Custom
  * Adhan files.
  */
 @Composable
 internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenPrayer: (Prayer) -> Unit) {
+    // The master switch. Off, nothing below applies, so it is hidden until alerts are turned back on.
+    Card {
+        SwitchRow(
+            title = stringResource(R.string.alerts_all),
+            description = stringResource(if (alerts.enabled) R.string.alerts_all_on_description else R.string.alerts_all_off_description),
+            checked = alerts.enabled,
+            onChange = actions::setAlertsEnabled,
+        )
+    }
+    if (!alerts.enabled) return
     SectionTitle(stringResource(R.string.alerts_each_prayer))
     Card {
         Prayer.entries.forEachIndexed { index, prayer ->
@@ -232,6 +242,8 @@ private fun PrayerAlertRow(name: String, summary: String, on: Boolean, onToggle:
 internal fun PrayerAlertPage(
     prayer: Prayer,
     alert: PrayerAlertSettings,
+    /** Recordings replaced by a Custom Adhan: their choice names no reciter. */
+    customised: Set<AdhanRecording> = emptySet(),
     onChange: ((PrayerAlertSettings) -> PrayerAlertSettings) -> Unit,
 ) {
     Card {
@@ -242,7 +254,7 @@ internal fun PrayerAlertPage(
         Card {
             Column(Modifier.selectableGroup()) {
                 AdhanSoundChoice.entries.forEach { sound ->
-                    ChoiceRow(stringResource(soundLabel(prayer, sound)), "", sound == alert.sound) { onChange { it.copy(sound = sound) } }
+                    ChoiceRow(stringResource(soundLabel(prayer, sound)), soundReciter(prayer, sound, customised)?.let { stringResource(it) } ?: "", sound == alert.sound) { onChange { it.copy(sound = sound) } }
                 }
             }
         }
@@ -279,6 +291,15 @@ private fun soundLabel(prayer: Prayer, sound: AdhanSoundChoice): Int = when (sou
     AdhanSoundChoice.SHORT -> R.string.alerts_sound_short
     AdhanSoundChoice.FULL -> if (prayer == Prayer.FAJR) R.string.alerts_sound_full_fajr else R.string.alerts_sound_full
     AdhanSoundChoice.SILENT -> R.string.alerts_sound_silent
+}
+
+/** Who recites the bundled recording [sound] plays for [prayer]; null for silence or a [customised] recording. */
+@StringRes
+private fun soundReciter(prayer: Prayer, sound: AdhanSoundChoice, customised: Set<AdhanRecording>): Int? =
+    if (AdhanRecording.of(prayer, sound) in customised) null else when (sound) {
+    AdhanSoundChoice.SHORT -> R.string.alerts_reciter_short
+    AdhanSoundChoice.FULL -> if (prayer == Prayer.FAJR) R.string.alerts_reciter_fajr else R.string.alerts_reciter_full
+    AdhanSoundChoice.SILENT -> null
 }
 
 /**

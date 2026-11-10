@@ -95,7 +95,8 @@ class PrayerCore(
     /**
      * Every Adhan Alert due after now (exclusive, so an alarm firing now is not planned again) and within the
      * next [AlertPlan.WINDOW]. Sunrise never alerts. Each Prayer follows its [PrayerAlertSettings]; its sound is
-     * the chosen recording's Custom Adhan when one is set ([AlertSettings.customAdhans]).
+     * the chosen recording's Custom Adhan when one is set ([AlertSettings.customAdhans]). With the master switch off
+     * ([AlertSettings.enabled]) the plan holds no alerts at all; the display alarm still moves at every Prayer Time.
      */
     fun alertPlan(): AlertPlan {
         val now = clock.instant()
@@ -104,13 +105,14 @@ class PrayerCore(
         val today = LocalDate.ofInstant(now, zone)
         // Yesterday too: a Prayer Day is a calendar date's Fajr onwards, and the window spans at most 3 dates.
         val days = (-1L..2L).map { offset -> today.plusDays(offset).let { it to calculateDay(settings, it) } }
-        val alerts = days.flatMap { (date, day) ->
+        val alertsOn = settings.alerts.enabled
+        val alerts = if (!alertsOn) emptyList() else days.flatMap { (date, day) ->
             day.prayerTimes.flatMap { time -> plannedAlerts(time, date, settings.alerts) }
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
         val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
         // Prayer Times no Adhan Alert announces still move the display day's next Prayer (widgets).
         val unannounced = days.flatMap { (_, day) -> day.prayerTimes }
-            .filter { !settings.alerts.of(it.prayer).adhanAlert }
+            .filter { !alertsOn || !settings.alerts.of(it.prayer).adhanAlert }
             .map { it.time.toInstant() }
             .filter { it.isAfter(now) && it.isBefore(midnight) }
         return AlertPlan(alerts, midnight, unannounced.minOrNull() ?: midnight)

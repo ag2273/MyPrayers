@@ -13,9 +13,9 @@ import app.mawaqeet.core.RingerMode
 /** Maps the core's [AlertSound]s to audio the phone can play, and reads the phone's audio state. */
 object AdhanSounds {
     /**
-     * The bundled recording for a sound. `res/raw/adhan_placeholder` is generated at build time (see
-     * `app/build.gradle.kts`): the dev-assets clip in debug builds when present, otherwise a silent clip. It
-     * stands in for the Short, Full and Fajr Full Adhan until cleared recordings are bundled.
+     * The bundled recording for a sound, generated in `res/raw` at build time (see `app/build.gradle.kts`):
+     * `adhan_placeholder` is the Short Adhan, `adhan_full` the Full Adhan and `adhan_fajr_full` Fajr's own Full Adhan.
+     * A build without those recordings bundles the Short Adhan's clip (or silence) under each name.
      *
      * Uses the name-based `android.resource://<package>/raw/<name>` form: resource ids can change on upgrade.
      */
@@ -23,8 +23,9 @@ object AdhanSounds {
         // A Custom Adhan's bundled sound is the recording it replaces ([AlertSound.CustomAdhan.fallback]).
         val bundledSound = if (sound is AlertSound.CustomAdhan) sound.fallback else sound
         val name = when (bundledSound) {
-            AlertSound.ShortAdhan, AlertSound.FullAdhan, AlertSound.FajrFullAdhan, is AlertSound.CustomAdhan,
-            AlertSound.Silent, AlertSound.ReminderTone,
+            AlertSound.FullAdhan -> "adhan_full"
+            AlertSound.FajrFullAdhan -> "adhan_fajr_full"
+            AlertSound.ShortAdhan, is AlertSound.CustomAdhan, AlertSound.Silent, AlertSound.ReminderTone,
             -> "adhan_placeholder"
         }
         return Uri.Builder()

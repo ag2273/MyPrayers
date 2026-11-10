@@ -45,7 +45,7 @@ data class NextPrayerContent(
             }
             val span = Duration.between(previous.time.toInstant(), next.time.toInstant()).toMillis().coerceAtLeast(1)
             val done = Duration.between(previous.time.toInstant(), now).toMillis()
-            val alert = alerts.of(next.prayer)
+            val alert = alerts.effective(next.prayer)
             return NextPrayerContent(
                 nameRes = prayerNameRes(next),
                 time = formatter.time(next.time),

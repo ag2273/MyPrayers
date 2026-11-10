@@ -10,9 +10,12 @@ plugins {
 }
 
 /*
- * Adhan playback (#22), three build switches:
- * - -Pmawaqeet.adhanAudio=<file>: the adhan recording every build (release too) bundles as res/raw/adhan_placeholder.
- *   It stays outside the repo, since the repo is public and the recording isn't ours to publish. Wins over devAssets.
+ * Adhan playback (#22), these build switches:
+ * - -Pmawaqeet.adhanAudio=<file>: the Short Adhan every build (release too) bundles as res/raw/adhan_placeholder.
+ * - -Pmawaqeet.adhanFullAudio=<file>: the Full Adhan (all Prayers but Fajr), bundled as res/raw/adhan_full.
+ * - -Pmawaqeet.adhanFajrAudio=<file>: Fajr's own Full Adhan («الصلاة خير من النوم»), bundled as res/raw/adhan_fajr_full.
+ *   These recordings stay outside the repo, since the repo is public and they aren't ours to publish. Each wins over
+ *   devAssets; a missing Full or Fajr recording falls back to the Short Adhan's clip.
  * - -Pmawaqeet.devAssets=<dir>: where the uncleared dev clip lives (default: <repo>/dev-assets, git-ignored).
  *   Debug builds bundle it as res/raw/adhan_placeholder when present; release builds and checkouts without it
  *   get a generated silent clip. Nothing from dev-assets is ever tracked in git.
@@ -21,12 +24,15 @@ plugins {
  */
 val devAssetsDir: File = providers.gradleProperty("mawaqeet.devAssets").orNull?.let(::file) ?: rootProject.file("dev-assets")
 val adhanAudioFile: File? = providers.gradleProperty("mawaqeet.adhanAudio").orNull?.let(::file)
+val adhanFullAudioFile: File? = providers.gradleProperty("mawaqeet.adhanFullAudio").orNull?.let(::file)
+val adhanFajrAudioFile: File? = providers.gradleProperty("mawaqeet.adhanFajrAudio").orNull?.let(::file)
 val adhanChannelSoundFallback: Boolean =
     providers.gradleProperty("mawaqeet.adhanChannelSoundFallback").orNull?.toBoolean() ?: false
 
 /**
- * Writes res/raw/adhan_placeholder: the [adhanAudio] recording if given, else the dev clip (short-adhan-dev.*) if
- * [devAudio] holds it, else silence.
+ * Writes the bundled adhans to res/raw. adhan_placeholder (the Short Adhan): the [adhanAudio] recording if given, else
+ * the dev clip (short-adhan-dev.*) if [devAudio] holds it, else silence. adhan_full and adhan_fajr_full: [fullAudio]
+ * and [fajrAudio] if given, else the same clip as adhan_placeholder.
  */
 abstract class AdhanPlaceholderTask : DefaultTask() {
     @get:InputFiles
@@ -36,6 +42,14 @@ abstract class AdhanPlaceholderTask : DefaultTask() {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val devAudio: ConfigurableFileCollection
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val fullAudio: ConfigurableFileCollection
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val fajrAudio: ConfigurableFileCollection
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -47,11 +61,13 @@ abstract class AdhanPlaceholderTask : DefaultTask() {
         raw.mkdirs()
         val clip = adhanAudio.files.firstOrNull { it.isFile }
             ?: devAudio.asFileTree.files.firstOrNull { it.isFile && it.name.startsWith("short-adhan-dev.") }
-        if (clip != null) {
-            clip.copyTo(File(raw, "adhan_placeholder.${clip.extension}"), overwrite = true)
-        } else {
-            File(raw, "adhan_placeholder.wav").writeBytes(silentWav(seconds = 1))
+        fun write(name: String, recording: File?) = when {
+            recording != null -> recording.copyTo(File(raw, "$name.${recording.extension}"), overwrite = true)
+            else -> File(raw, "$name.wav").also { it.writeBytes(silentWav(seconds = 1)) }
         }
+        write("adhan_placeholder", clip)
+        write("adhan_full", fullAudio.files.firstOrNull { it.isFile } ?: clip)
+        write("adhan_fajr_full", fajrAudio.files.firstOrNull { it.isFile } ?: clip)
     }
 
     /** 8 kHz, 8-bit mono PCM WAV of silence (8-bit PCM silence is 0x80). */
@@ -146,6 +162,8 @@ androidComponents {
         val name = variant.name.replaceFirstChar { it.uppercase() }
         val placeholder = tasks.register<AdhanPlaceholderTask>("generate${name}AdhanPlaceholder") {
             adhanAudioFile?.let { adhanAudio.from(it) }
+            adhanFullAudioFile?.let { fullAudio.from(it) }
+            adhanFajrAudioFile?.let { fajrAudio.from(it) }
             if (variant.buildType == "debug") devAudio.from(devAssetsDir)
         }
         variant.sources.res?.addGeneratedSourceDirectory(placeholder, AdhanPlaceholderTask::outputDir)
