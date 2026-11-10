@@ -1,6 +1,14 @@
 package app.mawaqeet.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import app.mawaqeet.core.AdhanSoundChoice
+import app.mawaqeet.core.AlertSettings
+import app.mawaqeet.core.PrayerAlertSettings
+import app.mawaqeet.ui.components.Card
+import app.mawaqeet.ui.components.TabPage
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -74,9 +82,10 @@ fun HomeScreen(
     clock: Clock,
     logChanges: StateFlow<Int>,
     locationName: String,
-    onOpenSettings: () -> Unit,
-    /** Opens the Prayer Log screen (#25). */
-    onOpenLog: () -> Unit = {},
+    /** The Adhan Alert of each Prayer, shown as a bell on its row. */
+    alerts: AlertSettings = AlertSettings(),
+    /** Opens the city search, from the location chip. */
+    onOpenLocation: () -> Unit = {},
     /** A short hint under the location (e.g. the time zone changed), tapping it calls [onLocationHint]. */
     locationHint: String? = null,
     onLocationHint: () -> Unit = {},
@@ -106,7 +115,7 @@ fun HomeScreen(
     } else {
         null
     }
-    HomeContent(day, now, prayerDay, locationName, onOpenSettings, onOpenLog, locationHint, onLocationHint, tip) { prayer ->
+    HomeContent(day, now, prayerDay, locationName, alerts, onOpenLocation, locationHint, onLocationHint, tip) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
             scope.launch(Dispatchers.IO) {
@@ -126,40 +135,26 @@ private fun HomeContent(
     now: Instant,
     prayerDay: PrayerDay?,
     locationName: String,
-    onOpenSettings: () -> Unit,
-    onOpenLog: () -> Unit,
+    alerts: AlertSettings,
+    onOpenLocation: () -> Unit,
     locationHint: String?,
     onLocationHint: () -> Unit,
     tip: (@Composable () -> Unit)?,
     onToggle: (Prayer) -> Unit,
 ) {
-    Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            DateLine(day)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = locationName,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                TextButton(onClick = onOpenLog) { Text(stringResource(R.string.prayer_log)) }
-                TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
-            }
-            if (locationHint != null) {
-                TextButton(onClick = onLocationHint) { Text(locationHint) }
-            }
-            tip?.invoke()
-            day.highLatitude?.let { HighLatitudeNote(it) }
-            NextPrayerCard(day.next, now)
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    TabPage(title = null) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            DateLine(day, Modifier.weight(1f))
+            LocationChip(locationName, onOpenLocation)
+        }
+        if (locationHint != null) {
+            TextButton(onClick = onLocationHint) { Text(locationHint) }
+        }
+        tip?.invoke()
+        day.highLatitude?.let { HighLatitudeNote(it) }
+        NextPrayerCard(day, now)
+        Card(Modifier.padding(vertical = 0.dp)) {
+            Column(Modifier.padding(vertical = 4.dp)) {
                 val isNextToday = day.next.time.toLocalDate() == day.date
                 day.prayerTimes.forEach { prayerTime ->
                     val prayer = prayerTime.prayer
@@ -167,50 +162,82 @@ private fun HomeContent(
                         name = prayerName(prayerTime),
                         time = prayerTime.time,
                         highlighted = isNextToday && prayerTime == day.next,
+                        alert = alerts.of(prayer),
+                        prayer = prayer,
                         // Between midnight and Fajr the marks are still the previous Prayer Day's (late Isha).
                         log = prayerDay?.let { LogCell(it.stateOf(prayer), it.isMarkable(prayer)) },
                         onClick = { onToggle(prayer) },
                     )
                     if (prayer == Prayer.FAJR) {
-                        // Sunrise is not a Prayer: never markable.
-                        TimeRow(name = stringResource(R.string.sunrise), time = day.sunrise, highlighted = false)
+                        // Sunrise is not a Prayer: never markable, and no alert.
+                        TimeRow(name = stringResource(R.string.sunrise), time = day.sunrise, highlighted = false, muted = true)
                     }
                 }
             }
         }
+        Text(
+            stringResource(R.string.home_log_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+    }
+}
+
+/** The current location as a tappable chip: it opens the city search. */
+@Composable
+private fun LocationChip(name: String, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(colors.surfaceContainer)
+            .border(1.dp, colors.outlineVariant, RoundedCornerShape(24.dp))
+            .clickable(onClickLabel = stringResource(R.string.location), onClick = onClick)
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp))
+        Text(name, style = MaterialTheme.typography.titleSmall, maxLines = 2)
     }
 }
 
 /** On alarm-killing phones: a short tip pointing to Fix alerts, until the user taps Done. */
 @Composable
 private fun FixAlertsTip(onOpen: () -> Unit, onDone: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     Column(
         Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .background(colors.secondaryContainer, RoundedCornerShape(18.dp))
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
     ) {
-        Text(
-            stringResource(R.string.fix_alerts_tip),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-        )
-        Row {
-            TextButton(onClick = onOpen) { Text(stringResource(R.string.fix_alerts)) }
-            TextButton(onClick = onDone) { Text(stringResource(R.string.done)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(painterResource(R.drawable.ic_warning), contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(20.dp))
+            Text(
+                stringResource(R.string.fix_alerts_tip),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSecondaryContainer,
+            )
+        }
+        Row(Modifier.align(Alignment.End)) {
+            TextButton(onClick = onDone) { Text(stringResource(R.string.done), color = colors.onSecondaryContainer) }
+            TextButton(onClick = onOpen) { Text(stringResource(R.string.fix_alerts), color = colors.onSecondaryContainer, fontWeight = FontWeight.Bold) }
         }
     }
 }
 
 /** The display day's Gregorian date, then its Hijri date (with the user's offset). */
 @Composable
-private fun DateLine(day: DisplayDay) {
+private fun DateLine(day: DisplayDay, modifier: Modifier = Modifier) {
     val format = LocalDisplayFormatter.current
-    Column {
-        Text(format.gregorianDate(day.date), style = MaterialTheme.typography.titleMedium)
+    Column(modifier) {
+        Text(format.gregorianDate(day.date), style = MaterialTheme.typography.titleLarge)
         Text(
             format.hijriDate(day.hijriDate),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -230,27 +257,51 @@ private fun HighLatitudeNote(adjustment: HighLatitudeAdjustment) {
 /** What a row shows of the Prayer Log. */
 private data class LogCell(val state: LogState, val markable: Boolean)
 
+/**
+ * The next Prayer on a deep teal card: its name and time, the countdown, and how much of the time since the previous
+ * Prayer has passed (hidden before Fajr, when the previous Prayer was yesterday's).
+ */
 @Composable
-private fun NextPrayerCard(next: PrayerTime, now: Instant) {
+private fun NextPrayerCard(day: DisplayDay, now: Instant) {
+    val colors = MaterialTheme.colorScheme
+    val next = day.next
+    val format = LocalDisplayFormatter.current
+    val onCard = colors.onTertiaryContainer
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp))
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .background(colors.tertiaryContainer, RoundedCornerShape(28.dp))
+            .padding(horizontal = 22.dp, vertical = 20.dp)
+            .semantics(mergeDescendants = true) {},
     ) {
-        val onPrimary = MaterialTheme.colorScheme.onPrimary
-        Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.bodyLarge, color = onPrimary)
-        Text(prayerName(next), style = MaterialTheme.typography.headlineLarge, color = onPrimary)
-        val format = LocalDisplayFormatter.current
-        Text(format.time(next.time), style = MaterialTheme.typography.displayMedium, color = onPrimary)
-        Spacer(Modifier.height(4.dp))
+        Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.bodyMedium, color = onCard)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(prayerName(next), style = MaterialTheme.typography.headlineLarge, color = onCard, modifier = Modifier.weight(1f))
+            Text(format.time(next.time), style = MaterialTheme.typography.headlineLarge, color = onCard)
+        }
         Text(
             text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
             style = MaterialTheme.typography.titleLarge,
-            // Not the brand amber: on the card's teal it reads at 2.7:1 (light) and 1.1:1 (dark).
-            color = MaterialTheme.colorScheme.tertiary,
+            color = colors.tertiary,
         )
+        val previous = day.prayerTimes.lastOrNull { !it.time.toInstant().isAfter(now) }
+        if (previous != null && next.time.toLocalDate() == day.date) {
+            val total = Duration.between(previous.time, next.time).seconds.coerceAtLeast(1)
+            val passed = Duration.between(previous.time.toInstant(), now).seconds.coerceIn(0, total)
+            Spacer(Modifier.height(14.dp))
+            Box(Modifier.fillMaxWidth().height(6.dp).background(onCard.copy(alpha = 0.2f), RoundedCornerShape(3.dp))) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(passed.toFloat() / total)
+                        .height(6.dp)
+                        .background(colors.tertiary, RoundedCornerShape(3.dp)),
+                )
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp).clearAndSetSemantics {}) {
+                Text("${prayerName(previous)} ${format.time(previous.time)}", style = MaterialTheme.typography.bodySmall, color = onCard, modifier = Modifier.weight(1f))
+                Text("${prayerName(next)} ${format.time(next.time)}", style = MaterialTheme.typography.bodySmall, color = onCard)
+            }
+        }
     }
 }
 
@@ -259,15 +310,25 @@ private fun TimeRow(
     name: String,
     time: ZonedDateTime,
     highlighted: Boolean,
+    alert: PrayerAlertSettings? = null,
+    prayer: Prayer? = null,
+    muted: Boolean = false,
     log: LogCell? = null,
     onClick: () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     val stateText = log?.let { stringResource(stateDescriptionOf(it)) }
+    val textColor = when {
+        highlighted -> colors.onPrimaryContainer
+        muted -> colors.onSurfaceVariant
+        else -> colors.onSurface
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (highlighted) colors.primaryContainer else Color.Transparent, RoundedCornerShape(16.dp))
+            .padding(horizontal = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (highlighted) colors.primaryContainer else Color.Transparent)
             .then(
                 if (log == null) {
                     Modifier
@@ -281,30 +342,53 @@ private fun TimeRow(
                         }
                 },
             )
-            .heightIn(min = 48.dp)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .heightIn(min = 54.dp)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        val weight = if (highlighted) FontWeight.Bold else FontWeight.Normal
+        val weight = if (muted) FontWeight.Normal else FontWeight.SemiBold
         Text(
             text = name,
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = weight,
-            color = if (highlighted) colors.primary else colors.onSurface,
+            color = textColor,
         )
+        Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+            if (alert != null && prayer != null) AlertIcon(prayer, alert, if (highlighted) colors.onPrimaryContainer else colors.onSurfaceVariant)
+        }
         Text(
             text = LocalDisplayFormatter.current.time(time),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = weight,
-            color = if (highlighted) colors.primary else colors.onSurface,
+            color = textColor,
         )
-        Spacer(Modifier.width(16.dp))
         // Sunrise gets an empty slot so its time lines up with the Prayers'.
-        Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
             if (log != null) LogMark(log.state)
         }
     }
+}
+
+/** A bell for an audible Adhan Alert, a struck-out bell for a silent one or none; its description names the sound. */
+@Composable
+private fun AlertIcon(prayer: Prayer, alert: PrayerAlertSettings, tint: Color) {
+    val audible = alert.adhanAlert && alert.sound != AdhanSoundChoice.SILENT
+    val description = stringResource(
+        when {
+            !alert.adhanAlert -> R.string.alerts_adhan_off
+            alert.sound == AdhanSoundChoice.SHORT -> R.string.alerts_sound_short
+            alert.sound == AdhanSoundChoice.FULL -> if (prayer == Prayer.FAJR) R.string.alerts_sound_full_fajr else R.string.alerts_sound_full
+            else -> R.string.alerts_sound_silent
+        },
+    )
+    Icon(
+        painterResource(if (audible) R.drawable.ic_bell else R.drawable.ic_bell_off),
+        contentDescription = description,
+        tint = if (audible) tint else tint.copy(alpha = 0.6f),
+        modifier = Modifier.size(18.dp),
+    )
 }
 
 /** Prayed: a filled circle with a tick. Not marked: an outlined circle. Not yet due: a faint outline. */
@@ -317,10 +401,10 @@ private fun LogMark(state: LogState) {
             contentAlignment = Alignment.Center,
         ) {
             // The row's state already says "Prayed"; TalkBack shouldn't also read "check mark".
-            Text("✓", color = colors.onPrimary, style = MaterialTheme.typography.titleMedium, modifier = Modifier.clearAndSetSemantics {})
+            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(16.dp))
         }
         LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.primary, CircleShape))
-        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.dp, colors.outlineVariant, CircleShape))
+        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.5.dp, colors.outline.copy(alpha = 0.5f), CircleShape))
     }
 }
 

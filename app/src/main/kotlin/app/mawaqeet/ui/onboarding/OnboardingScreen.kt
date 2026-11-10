@@ -1,5 +1,20 @@
 package app.mawaqeet.ui.onboarding
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import app.mawaqeet.ui.components.Card
+import app.mawaqeet.ui.components.Segment
+import app.mawaqeet.ui.components.SegmentedChoice
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -7,7 +22,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -146,6 +160,7 @@ fun OnboardingScreen(
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            StepDots(step, brand != null)
             when (step) {
                 OnboardingStep.WELCOME -> Welcome(actions, onStart = ::next)
                 OnboardingStep.LOCATION -> LocationStep(
@@ -173,9 +188,7 @@ fun OnboardingScreen(
                     Heading(R.string.onboarding_battery_title)
                     FixAlertsContent(brand)
                     // Only reachable once both permissions are granted (their steps can't be passed otherwise).
-                    Button(onClick = { actions.finish(batteryDone = true) }, Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.done))
-                    }
+                    PrimaryButton(stringResource(R.string.done)) { actions.finish(batteryDone = true) }
                     TextButton(onClick = { actions.finish(batteryDone = false) }, Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.onboarding_skip))
                     }
@@ -191,23 +204,59 @@ private fun Heading(title: Int) {
     Text(stringResource(title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
 }
 
+/** Where the person is in onboarding: one dot per step, the current one longer. Decorative for TalkBack. */
+@Composable
+private fun StepDots(step: OnboardingStep, battery: Boolean) {
+    val steps = listOfNotNull(
+        OnboardingStep.WELCOME, OnboardingStep.LOCATION, OnboardingStep.METHOD,
+        OnboardingStep.NOTIFICATIONS, OnboardingStep.EXACT_ALARMS, OnboardingStep.BATTERY.takeIf { battery },
+    )
+    val current = steps.indexOf(step)
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier.fillMaxWidth().clearAndSetSemantics {},
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+    ) {
+        steps.forEachIndexed { i, _ ->
+            Box(
+                Modifier
+                    .size(width = if (i == current) 24.dp else 8.dp, height = 8.dp)
+                    .background(if (i <= current) colors.primary else colors.outlineVariant, CircleShape),
+            )
+        }
+    }
+}
+
+/** The big primary action at the bottom of a step. */
+@Composable
+private fun PrimaryButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
+    Button(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(text) }
+}
+
 @Composable
 private fun ColumnScope.Welcome(actions: OnboardingActions, onStart: () -> Unit) {
-    GeometricPattern()
+    Box(
+        Modifier.fillMaxWidth().height(180.dp).background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(28.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        GeometricPattern(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f))
+    }
     Text(
         stringResource(R.string.app_name),
         style = MaterialTheme.typography.displaySmall,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.semantics { heading() },
     )
-    Text(stringResource(R.string.onboarding_welcome), style = MaterialTheme.typography.bodyLarge)
+    Text(stringResource(R.string.onboarding_welcome), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Text(stringResource(R.string.language), style = MaterialTheme.typography.titleSmall)
     val arabic = LocalConfiguration.current.locales[0].language == "ar"
-    Column(Modifier.selectableGroup()) {
-        ChoiceRow(stringResource(R.string.language_arabic), "", selected = arabic, onSelect = { actions.setLanguage("ar") })
-        ChoiceRow(stringResource(R.string.language_english), "", selected = !arabic, onSelect = { actions.setLanguage("en") })
-    }
-    Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.onboarding_start)) }
+    SegmentedChoice(
+        listOf(
+            Segment(stringResource(R.string.language_arabic), arabic) { actions.setLanguage("ar") },
+            Segment(stringResource(R.string.language_english), !arabic) { actions.setLanguage("en") },
+        ),
+    )
+    PrimaryButton(stringResource(R.string.onboarding_start), onClick = onStart)
 }
 
 /** The explanation, then the system request for approximate location only; a refusal leads to city search. */
@@ -239,14 +288,19 @@ private fun ColumnScope.LocationStep(
         if (granted) locate() else onSearch()
     }
     val context = androidx.compose.ui.platform.LocalContext.current
+    Box(
+        Modifier.fillMaxWidth().height(160.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(28.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(72.dp))
+    }
     Heading(R.string.location_permission_title)
-    Text(stringResource(R.string.location_permission_explanation), style = MaterialTheme.typography.bodyLarge)
-    Button(
+    Text(stringResource(R.string.location_permission_explanation), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    PrimaryButton(
+        stringResource(if (finding) R.string.onboarding_finding_location else R.string.onboarding_allow_location),
         enabled = cities != null && !finding,
-        onClick = { if (DeviceLocation.isGranted(context)) locate() else launcher.launch(DeviceLocation.PERMISSION) },
-        modifier = Modifier.fillMaxWidth(),
-    ) { Text(stringResource(if (finding) R.string.onboarding_finding_location else R.string.onboarding_allow_location)) }
-    OutlinedButton(onClick = onSearch, modifier = Modifier.fillMaxWidth()) {
+    ) { if (DeviceLocation.isGranted(context)) locate() else launcher.launch(DeviceLocation.PERMISSION) }
+    OutlinedButton(onClick = onSearch, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
         Text(stringResource(R.string.onboarding_search_city))
     }
 }
@@ -270,7 +324,13 @@ private fun ColumnScope.MethodStep(
         }
     }
     Heading(R.string.onboarding_method_title)
-    Text(locationName(savedLocation), style = MaterialTheme.typography.titleMedium)
+    Card {
+    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Text(locationName(savedLocation), style = MaterialTheme.typography.titleMedium)
+    }
+    Text(stringResource(settings.method.label), style = MaterialTheme.typography.titleLarge)
     if (suggestion != null) {
         Text(
             stringResource(
@@ -280,29 +340,36 @@ private fun ColumnScope.MethodStep(
                 java.util.Locale.Builder().setRegion(suggestion.countryCode).build()
                     .getDisplayCountry(LocalConfiguration.current.locales[0]).ifEmpty { suggestion.countryCode },
             ),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+    }
     }
     Text(stringResource(R.string.onboarding_method_change), style = MaterialTheme.typography.bodyMedium)
     Text(stringResource(R.string.asr_convention), style = MaterialTheme.typography.titleSmall)
-    Column(Modifier.selectableGroup()) {
-        AsrConvention.entries.forEach { convention ->
-            ChoiceRow(
-                stringResource(convention.label), stringResource(convention.description),
-                selected = convention == settings.asrConvention,
-                onSelect = { actions.setAsrConvention(convention) },
-            )
+    Card {
+        Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
+            AsrConvention.entries.forEach { convention ->
+                ChoiceRow(
+                    stringResource(convention.label), stringResource(convention.description),
+                    selected = convention == settings.asrConvention,
+                    onSelect = { actions.setAsrConvention(convention) },
+                )
+            }
         }
     }
-    Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.onboarding_continue)) }
+    PrimaryButton(stringResource(R.string.onboarding_continue), onClick = onContinue)
     Text(stringResource(R.string.calculation_method), style = MaterialTheme.typography.titleSmall)
-    Column(Modifier.selectableGroup()) {
-        CalculationMethod.entries.forEach { method ->
-            ChoiceRow(
-                stringResource(method.label), stringResource(method.description),
-                selected = method == settings.method,
-                onSelect = { actions.setCalculationMethod(method) },
-            )
+    Card {
+        Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
+            CalculationMethod.entries.forEach { method ->
+                ChoiceRow(
+                    stringResource(method.label), stringResource(method.description),
+                    selected = method == settings.method,
+                    onSelect = { actions.setCalculationMethod(method) },
+                )
+            }
         }
     }
 }
@@ -312,25 +379,26 @@ private fun ColumnScope.MethodStep(
 private fun ColumnScope.PermissionStep(title: Int, body: Int, granted: Boolean, onGrant: () -> Unit, onContinue: () -> Unit) {
     var asked by rememberSaveable { mutableStateOf(false) }
     Heading(title)
-    Text(stringResource(R.string.grant_intro), style = MaterialTheme.typography.bodyLarge)
-    Text(stringResource(body), style = MaterialTheme.typography.bodyLarge)
-    if (granted) {
-        Text(stringResource(R.string.onboarding_granted), color = MaterialTheme.colorScheme.primary)
-    } else {
-        Button(onClick = { asked = true; onGrant() }, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (asked) R.string.grant_button else R.string.onboarding_allow))
+    Text(stringResource(R.string.grant_intro), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(body), style = MaterialTheme.typography.bodyLarge)
+            if (granted) {
+                Text(stringResource(R.string.onboarding_granted), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            } else {
+                Button(onClick = { asked = true; onGrant() }, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text(stringResource(if (asked) R.string.grant_button else R.string.onboarding_allow))
+                }
+                if (asked) Text(stringResource(R.string.onboarding_permission_needed), color = MaterialTheme.colorScheme.error)
+            }
         }
-        if (asked) Text(stringResource(R.string.onboarding_permission_needed), color = MaterialTheme.colorScheme.error)
     }
-    Button(onClick = onContinue, enabled = granted, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.onboarding_continue))
-    }
+    PrimaryButton(stringResource(R.string.onboarding_continue), enabled = granted, onClick = onContinue)
 }
 
 /** The app's single geometric pattern: a faint row of eight-pointed stars (two overlapping squares). */
 @Composable
-private fun GeometricPattern() {
-    val color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+private fun GeometricPattern(color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)) {
     Canvas(Modifier.fillMaxWidth().height(56.dp)) {
         val size = this.size.height * 0.7f
         val count = (this.size.width / (size * 1.3f)).toInt().coerceAtLeast(1)

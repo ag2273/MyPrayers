@@ -36,9 +36,17 @@ class ContrastTest {
         assertReadable("$theme text", onBackground, background)
         assertReadable("$theme secondary text", onSurfaceVariant, surface)
         assertReadable("$theme group titles and links", primary, background)
-        assertReadable("$theme Next Prayer card", onPrimary, primary)
-        assertReadable("$theme countdown on the card", tertiary, primary)
+        assertReadable("$theme secondary text on cards", onSurfaceVariant, surfaceContainer)
+        assertReadable("$theme text on cards", onSurface, surfaceContainer)
+        assertReadable("$theme links on cards", primary, surfaceContainer)
+        assertReadable("$theme buttons", onPrimary, primary)
+        assertReadable("$theme Next Prayer card", onTertiaryContainer, tertiaryContainer)
+        assertReadable("$theme countdown on the card", tertiary, tertiaryContainer)
         assertReadable("$theme highlighted row", onPrimaryContainer, primaryContainer)
+        assertReadable("$theme selected tab and row", primary, primaryContainer)
+        assertReadable("$theme tips", onSecondaryContainer, secondaryContainer)
+        assertReadable("$theme segment labels", onSurfaceVariant, surfaceContainerHigh)
+        assertReadable("$theme delete", error, surfaceContainer)
     }
 
     @Test

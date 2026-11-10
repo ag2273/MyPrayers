@@ -21,14 +21,17 @@
     <string name="log_read_only">لا يمكن تعديل هذا اليوم</string>
 
     <!-- Settings (#16). Groups in the order the spec lists them; later tickets fill the empty ones. -->
+    <!-- Bottom navigation (redesign). -->
+    <string name="home_log_hint">اضغط الصلاة بعد أدائها لتسجيلها. الجرس يبيّن نوع التنبيه.</string>
+    <string name="tab_today">اليوم</string>
     <string name="settings">الإعدادات</string>
     <string name="back">رجوع</string>
-    <string name="settings_group_prayer_times">مواقيت الصلاة</string>
-    <string name="settings_group_alerts">التنبيهات</string>
+    <string name="settings_group_prayer_times">الموقع وطريقة الحساب</string>
+    <string name="settings_group_alerts">التنبيهات والأذان</string>
     <string name="settings_group_prayer_log">سجل الصلاة</string>
     <string name="settings_group_language_display">اللغة والعرض</string>
     <string name="settings_group_widgets">أدوات الشاشة الرئيسية</string>
-    <string name="settings_group_about">حول التطبيق</string>
+    <string name="settings_group_about">حول مواقيت وبياناتك</string>
     <string name="about_version">الإصدار %1$s</string>
     <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك.</string>
     <string name="about_libraries">المكتبات</string>
@@ -44,7 +47,7 @@
     <string name="about_use_geonames">أسماء المدن وإحداثياتها ومناطقها الزمنية</string>
     <string name="about_use_natural_earth">الأسماء العربية للمدن</string>
     <string name="about_use_kufi">العناوين العربية</string>
-    <string name="about_use_naskh">النصوص العربية</string>
+    <string name="about_use_sans">النصوص العربية</string>
 
     <string name="calculation_method">طريقة الحساب</string>
     <string name="asr_convention">وقت العصر</string>
@@ -318,4 +321,27 @@
     <string name="widget_preview_asr_time">١٤:٤٤</string>
     <string name="widget_preview_maghrib_time">١٧:٠٥</string>
     <string name="widget_preview_isha_time">١٨:٢٤</string>
+    <!-- Settings hub and pages (redesign). -->
+    <string name="settings_section_prayer">الصلاة</string>
+    <string name="settings_section_app">التطبيق</string>
+    <string name="settings_section_help">المساعدة</string>
+    <string name="settings_section_calculation">الحساب</string>
+    <string name="settings_section_your_data">بياناتك</string>
+    <string name="settings_summary_pair">%1$s · %2$s</string>
+    <string name="settings_alerts_summary">تنبيه الأذان لـ %1$s من %2$s صلوات</string>
+    <string name="settings_widgets_summary">شفافية الخلفية %1$s</string>
+    <string name="settings_alerts_ready">التنبيهات جاهزة</string>
+    <string name="settings_alerts_ready_summary">الأذونات ممنوحة، وسيصلك الأذان في وقته.</string>
+    <string name="settings_alerts_at_risk">قد تتأخر التنبيهات</string>
+    <string name="alerts_each_prayer">لكل صلاة</string>
+    <string name="alerts_behaviour">طريقة التنبيه</string>
+    <string name="alerts_adhan_alert_of">تنبيه الأذان: %1$s</string>
+    <string name="alerts_reminder_description">إشعار هادئ قبل الصلاة، بلا أذان</string>
+    <string name="alerts_of_prayer">تنبيه %1$s</string>
+    <string name="language_hint">يتغيّر التطبيق والأدوات والإشعارات معًا، دون تغيير لغة الهاتف.</string>
+    <string name="hijri_offset_earlier">إنقاص يوم من التاريخ الهجري</string>
+    <string name="hijri_offset_later">زيادة يوم على التاريخ الهجري</string>
+    <string name="hijri_offset_days">%1$s يوم</string>
+    <string name="privacy_title">بياناتك على هاتفك</string>
+    <string name="privacy_body">لا حساب ولا خوادم ولا إعلانات. سجل الصلاة وموقعك لا يُنسخان احتياطيًا إلى السحابة، وينتقلان فقط عند النقل المباشر إلى هاتف جديد.</string>
 </resources>
