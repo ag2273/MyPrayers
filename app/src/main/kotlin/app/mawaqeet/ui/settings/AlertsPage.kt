@@ -1,6 +1,20 @@
 package app.mawaqeet.ui.settings
 
 import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import app.mawaqeet.ui.components.Card
+import app.mawaqeet.ui.components.NavRow
+import app.mawaqeet.ui.components.RowDivider
+import app.mawaqeet.ui.components.RowText
+import app.mawaqeet.ui.components.SectionTitle
+import app.mawaqeet.ui.components.SwitchRow
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
@@ -11,7 +25,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -52,38 +65,41 @@ import kotlinx.coroutines.withContext
 private val REMINDER_MINUTES = listOf(10, 15, 20, 30, 45, 60)
 
 /**
- * Settings → Alerts: one row per Prayer (opens its own dialog), the Custom Adhan rows, then alarm-clock mode, play
- * on silent, vibration.
+ * Settings → Alerts & adhan: one row per Prayer with its Adhan Alert switch (the row opens the Prayer's own page), how
+ * alerts behave (alarm-clock mode, play on silent, vibration), then the Custom Adhan files.
  */
 @Composable
-internal fun AlertsGroup(alerts: AlertSettings, actions: SettingsActions) {
-    var editing by rememberSaveable { mutableStateOf<Prayer?>(null) }
-    SettingsGroup(R.string.settings_group_alerts) {
-        Prayer.entries.forEach { prayer ->
-            SettingRow(
-                title = stringResource(prayer.nameRes),
-                summary = summary(prayer, alerts.of(prayer)),
-                onClick = { editing = prayer },
+internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenPrayer: (Prayer) -> Unit) {
+    SectionTitle(stringResource(R.string.alerts_each_prayer))
+    Card {
+        Prayer.entries.forEachIndexed { index, prayer ->
+            if (index > 0) RowDivider()
+            val alert = alerts.of(prayer)
+            PrayerAlertRow(
+                name = stringResource(prayer.nameRes),
+                summary = summary(prayer, alert),
+                on = alert.adhanAlert,
+                onToggle = { on -> actions.updatePrayerAlert(prayer) { it.copy(adhanAlert = on) } },
+                onOpen = { onOpenPrayer(prayer) },
             )
         }
-        CustomAdhanRows(alerts, actions)
-        SettingRow(
-            title = stringResource(R.string.fix_alerts),
-            summary = stringResource(R.string.fix_alerts_summary),
-            onClick = actions::openFixAlerts,
-        )
+    }
+    SectionTitle(stringResource(R.string.alerts_behaviour))
+    Card {
         SwitchRow(
             title = stringResource(R.string.alerts_alarm_clock),
             description = stringResource(R.string.alerts_alarm_clock_description),
             checked = alerts.alarmClockMode,
             onChange = actions::setAlarmClockMode,
         )
+        RowDivider()
         SwitchRow(
             title = stringResource(R.string.alerts_play_on_silent),
             description = stringResource(R.string.alerts_play_on_silent_description),
             checked = alerts.playOnSilent,
             onChange = actions::setPlayOnSilent,
         )
+        RowDivider()
         SwitchRow(
             title = stringResource(R.string.alerts_vibration),
             description = "",
@@ -91,8 +107,68 @@ internal fun AlertsGroup(alerts: AlertSettings, actions: SettingsActions) {
             onChange = actions::setVibration,
         )
     }
-    editing?.let { prayer ->
-        PrayerAlertDialog(prayer, alerts.of(prayer), { change -> actions.updatePrayerAlert(prayer, change) }, onDismiss = { editing = null })
+    CustomAdhanRows(alerts, actions)
+}
+
+/** A Prayer's row: tapping its name opens the Prayer's page; the switch beside it turns its Adhan Alert on or off. */
+@Composable
+private fun PrayerAlertRow(name: String, summary: String, on: Boolean, onToggle: (Boolean) -> Unit, onOpen: () -> Unit) {
+    val switchLabel = stringResource(R.string.alerts_adhan_alert_of, name)
+    Row(Modifier.fillMaxWidth().padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier
+                .weight(1f)
+                .clickable(role = Role.Button, onClick = onOpen)
+                .heightIn(min = 60.dp)
+                .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            RowText(name, summary)
+            Icon(painterResource(R.drawable.ic_chevron), contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(16.dp))
+        }
+        Switch(
+            checked = on,
+            onCheckedChange = onToggle,
+            modifier = Modifier.semantics { contentDescription = switchLabel },
+        )
+    }
+}
+
+/** One Prayer's alerts on their own page: the Adhan Alert and its sound, then the Prayer Reminder and its lead time. */
+@Composable
+internal fun PrayerAlertPage(
+    prayer: Prayer,
+    alert: PrayerAlertSettings,
+    onChange: ((PrayerAlertSettings) -> PrayerAlertSettings) -> Unit,
+) {
+    Card {
+        SwitchRow(stringResource(R.string.alerts_adhan_alert), "", alert.adhanAlert) { on -> onChange { it.copy(adhanAlert = on) } }
+    }
+    if (alert.adhanAlert) {
+        SectionTitle(stringResource(R.string.alerts_sound))
+        Card {
+            Column(Modifier.selectableGroup()) {
+                AdhanSoundChoice.entries.forEach { sound ->
+                    ChoiceRow(stringResource(soundLabel(prayer, sound)), "", sound == alert.sound) { onChange { it.copy(sound = sound) } }
+                }
+            }
+        }
+    }
+    Card {
+        SwitchRow(stringResource(R.string.alerts_reminder), stringResource(R.string.alerts_reminder_description), alert.reminder) { on ->
+            onChange { it.copy(reminder = on) }
+        }
+        if (alert.reminder) {
+            RowDivider()
+            Column(Modifier.selectableGroup()) {
+                REMINDER_MINUTES.forEach { minutes ->
+                    ChoiceRow(minutesLabel(minutes), "", minutes == alert.reminderMinutes) {
+                        onChange { it.copy(reminderMinutes = minutes) }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -111,43 +187,6 @@ private fun soundLabel(prayer: Prayer, sound: AdhanSoundChoice): Int = when (sou
     AdhanSoundChoice.SHORT -> R.string.alerts_sound_short
     AdhanSoundChoice.FULL -> if (prayer == Prayer.FAJR) R.string.alerts_sound_full_fajr else R.string.alerts_sound_full
     AdhanSoundChoice.SILENT -> R.string.alerts_sound_silent
-}
-
-@Composable
-private fun PrayerAlertDialog(
-    prayer: Prayer,
-    alert: PrayerAlertSettings,
-    onChange: ((PrayerAlertSettings) -> PrayerAlertSettings) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(prayer.nameRes)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                SwitchRow(stringResource(R.string.alerts_adhan_alert), "", alert.adhanAlert) { on -> onChange { it.copy(adhanAlert = on) } }
-                if (alert.adhanAlert) {
-                    Text(stringResource(R.string.alerts_sound), style = MaterialTheme.typography.titleSmall)
-                    Column(Modifier.selectableGroup()) {
-                        AdhanSoundChoice.entries.forEach { sound ->
-                            ChoiceRow(stringResource(soundLabel(prayer, sound)), "", sound == alert.sound) { onChange { it.copy(sound = sound) } }
-                        }
-                    }
-                }
-                SwitchRow(stringResource(R.string.alerts_reminder), "", alert.reminder) { on -> onChange { it.copy(reminder = on) } }
-                if (alert.reminder) {
-                    Column(Modifier.selectableGroup()) {
-                        REMINDER_MINUTES.forEach { minutes ->
-                            ChoiceRow(minutesLabel(minutes), "", minutes == alert.reminderMinutes) {
-                                onChange { it.copy(reminderMinutes = minutes) }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } },
-    )
 }
 
 /**
@@ -176,20 +215,24 @@ private fun CustomAdhanRows(alerts: AlertSettings, actions: SettingsActions) {
         return CustomAdhanState(reference, names[recording], unreadable = checked && names[recording] == null)
     }
 
-    Text(stringResource(R.string.alerts_custom_adhan), style = MaterialTheme.typography.titleSmall)
+    SectionTitle(stringResource(R.string.alerts_custom_adhan))
     Text(
         stringResource(R.string.alerts_custom_adhan_description),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 6.dp),
     )
-    AdhanRecording.entries.forEach { recording ->
-        val current = state(recording)
-        SettingRow(
-            title = stringResource(recording.labelRes),
-            summary = current.summary(),
-            onClick = { editing = recording },
-        )
-        if (current.unreadable) UnreadableNotice()
+    Card {
+        AdhanRecording.entries.forEachIndexed { index, recording ->
+            if (index > 0) RowDivider()
+            val current = state(recording)
+            NavRow(
+                title = stringResource(recording.labelRes),
+                summary = current.summary(),
+                onClick = { editing = recording },
+            )
+            if (current.unreadable) Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { UnreadableNotice() }
+        }
     }
     editing?.let { recording ->
         CustomAdhanDialog(recording, state(recording), actions, onDismiss = { editing = null })
@@ -284,29 +327,6 @@ private val AdhanRecording.labelRes: Int
         AdhanRecording.FULL -> R.string.alerts_custom_full
         AdhanRecording.FAJR_FULL -> R.string.alerts_custom_fajr_full
     }
-
-/** An on/off setting: its name, an optional one-line description and a switch. */
-@Composable
-fun SwitchRow(title: String, description: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
-            .padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            if (description.isNotEmpty()) Text(
-                description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Switch(checked = checked, onCheckedChange = null)
-    }
-}
 
 @get:StringRes
 internal val Prayer.nameRes: Int

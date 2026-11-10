@@ -1,27 +1,50 @@
 package app.mawaqeet.ui.settings
 
 import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.style.TextAlign
+import app.mawaqeet.BuildConfig
+import app.mawaqeet.ui.components.Card
+import app.mawaqeet.ui.components.CardShape
+import app.mawaqeet.ui.components.NavRow
+import app.mawaqeet.ui.components.RowDivider
+import app.mawaqeet.ui.components.RowText
+import app.mawaqeet.ui.components.SectionTitle
+import app.mawaqeet.ui.components.Segment
+import app.mawaqeet.ui.components.SegmentedChoice
+import app.mawaqeet.ui.components.SubPage
+import app.mawaqeet.ui.components.TabPage
+import app.mawaqeet.widget.WidgetStyle
+import java.io.Serializable
 import android.os.Build
-import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,7 +60,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -105,175 +127,259 @@ interface SettingsActions {
     fun deletePrayerLog()
 }
 
+/** The Settings sections, each its own page, plus the pages opened from them. */
+enum class SettingsPage(@StringRes val title: Int) {
+    PRAYER_TIMES(R.string.settings_group_prayer_times),
+    CALCULATION_METHOD(R.string.calculation_method),
+    ALERTS(R.string.settings_group_alerts),
+    PRAYER_ALERT(R.string.alerts_adhan_alert),
+    DISPLAY(R.string.settings_group_language_display),
+    WIDGETS(R.string.settings_group_widgets),
+    ABOUT(R.string.settings_group_about),
+}
+
+/** Which Settings page is open; [prayer] is the Prayer whose alerts [SettingsPage.PRAYER_ALERT] shows. */
+data class SettingsRoute(val page: SettingsPage, val prayer: Prayer? = null) : Serializable {
+    /** Where Back goes: a picker or a Prayer's page returns to its section, a section to the Settings hub. */
+    val parent: SettingsRoute?
+        get() = when (page) {
+            SettingsPage.CALCULATION_METHOD -> SettingsRoute(SettingsPage.PRAYER_TIMES)
+            SettingsPage.PRAYER_ALERT -> SettingsRoute(SettingsPage.ALERTS)
+            else -> null
+        }
+}
+
 /**
- * Settings, in the spec's six groups (Prayer Times, Alerts, Prayer Log, Language & display, Widgets, About), then
- * Advanced. A ticket that adds settings fills its group's composable below; each group is a [SettingsGroup].
+ * The Settings tab: whether alerts are ready, then the sections as rows with their current values. Each row opens the
+ * section's page ([onOpen]); Fix alerts opens its own screen.
  */
 @Composable
-fun SettingsScreen(
+fun SettingsHub(
+    settings: PrayerSettings,
+    locationName: String,
+    digitStyle: DigitStyle,
+    widgetAppearance: WidgetAppearance,
+    /** On a phone known to delay alarms whose battery steps the user hasn't confirmed (#29). */
+    alertsAtRisk: Boolean,
+    onOpen: (SettingsRoute) -> Unit,
+    onOpenFixAlerts: () -> Unit,
+) {
+    val format = LocalDisplayFormatter.current
+    val resources = LocalResources.current
+    TabPage(stringResource(R.string.settings)) {
+        AlertStatusCard(alertsAtRisk, onClick = if (alertsAtRisk) onOpenFixAlerts else { { onOpen(SettingsRoute(SettingsPage.ALERTS)) } })
+        SectionTitle(stringResource(R.string.settings_section_prayer))
+        Card {
+            NavRow(
+                stringResource(R.string.settings_group_prayer_times),
+                resources.getString(R.string.settings_summary_pair, locationName, resources.getString(settings.method.label)),
+                icon = R.drawable.ic_pin,
+            ) { onOpen(SettingsRoute(SettingsPage.PRAYER_TIMES)) }
+            RowDivider()
+            val withAdhan = Prayer.entries.count { settings.alerts.of(it).adhanAlert }
+            NavRow(
+                stringResource(R.string.settings_group_alerts),
+                resources.getString(R.string.settings_alerts_summary, format.number(withAdhan), format.number(Prayer.entries.size)),
+                icon = R.drawable.ic_bell,
+            ) { onOpen(SettingsRoute(SettingsPage.ALERTS)) }
+        }
+        SectionTitle(stringResource(R.string.settings_section_app))
+        Card {
+            val arabic = LocalConfiguration.current.locales[0].language == "ar"
+            NavRow(
+                stringResource(R.string.settings_group_language_display),
+                resources.getString(
+                    R.string.settings_summary_pair,
+                    resources.getString(if (arabic) R.string.language_arabic else R.string.language_english),
+                    resources.getString(digitStyle.label),
+                ),
+                icon = R.drawable.ic_globe,
+            ) { onOpen(SettingsRoute(SettingsPage.DISPLAY)) }
+            RowDivider()
+            NavRow(
+                stringResource(R.string.settings_group_widgets),
+                resources.getString(R.string.widget_transparency_value, format.number(widgetAppearance.transparency)).let {
+                    resources.getString(R.string.settings_widgets_summary, it)
+                },
+                icon = R.drawable.ic_widgets,
+            ) { onOpen(SettingsRoute(SettingsPage.WIDGETS)) }
+        }
+        SectionTitle(stringResource(R.string.settings_section_help))
+        Card {
+            NavRow(stringResource(R.string.fix_alerts), stringResource(R.string.fix_alerts_summary), icon = R.drawable.ic_shield, onClick = onOpenFixAlerts)
+            RowDivider()
+            NavRow(
+                stringResource(R.string.settings_group_about),
+                stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
+                icon = R.drawable.ic_info,
+            ) { onOpen(SettingsRoute(SettingsPage.ABOUT)) }
+        }
+    }
+}
+
+/** Alerts are ready (the Grant screen comes first otherwise), or this phone may delay them until Fix alerts is done. */
+@Composable
+private fun AlertStatusCard(atRisk: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val background = if (atRisk) colors.secondaryContainer else colors.tertiaryContainer
+    val content = if (atRisk) colors.onSecondaryContainer else colors.onTertiaryContainer
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(background)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            painterResource(if (atRisk) R.drawable.ic_warning else R.drawable.ic_check),
+            contentDescription = null,
+            tint = if (atRisk) content else colors.tertiary,
+            modifier = Modifier.size(24.dp),
+        )
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(if (atRisk) R.string.settings_alerts_at_risk else R.string.settings_alerts_ready), style = MaterialTheme.typography.titleMedium, color = content)
+            Text(
+                stringResource(if (atRisk) R.string.fix_alerts_tip else R.string.settings_alerts_ready_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = content,
+            )
+        }
+    }
+}
+
+/** A Settings page: its title and back arrow, then the section's settings. [onNavigate] opens another page or, with null, the hub. */
+@Composable
+fun SettingsPageScreen(
+    route: SettingsRoute,
     settings: PrayerSettings,
     locationName: String,
     digitStyle: DigitStyle,
     today: LocalDate,
     actions: SettingsActions,
-    onBack: () -> Unit,
-    widgetAppearance: WidgetAppearance = WidgetAppearance(),
+    widgetAppearance: WidgetAppearance,
+    onNavigate: (SettingsRoute?) -> Unit,
 ) {
-    BackHandler(onBack = onBack)
-    Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
-                Text(
-                    stringResource(R.string.settings),
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.semantics { heading() },
-                )
+    val prayer = route.prayer ?: Prayer.FAJR
+    val title = if (route.page == SettingsPage.PRAYER_ALERT) {
+        stringResource(R.string.alerts_of_prayer, stringResource(prayer.nameRes))
+    } else {
+        stringResource(route.page.title)
+    }
+    SubPage(title, onBack = { onNavigate(route.parent) }) {
+        when (route.page) {
+            SettingsPage.PRAYER_TIMES -> PrayerTimesPage(settings, locationName, actions) { onNavigate(SettingsRoute(SettingsPage.CALCULATION_METHOD)) }
+            SettingsPage.CALCULATION_METHOD -> MethodPage(settings) { method ->
+                actions.setCalculationMethod(method)
+                onNavigate(route.parent)
             }
-            PrayerTimesGroup(settings, locationName, actions)
-            AlertsGroup(settings.alerts, actions)
-            PrayerLogGroup(actions)
-            LanguageDisplayGroup(settings, digitStyle, today, actions)
-            WidgetsGroup(widgetAppearance, actions)
-            AdvancedGroup(settings, actions)
-            SettingsGroup(R.string.settings_group_about) { AboutContent() }
+            SettingsPage.ALERTS -> AlertsPage(settings.alerts, actions) { onNavigate(SettingsRoute(SettingsPage.PRAYER_ALERT, it)) }
+            SettingsPage.PRAYER_ALERT -> PrayerAlertPage(prayer, settings.alerts.of(prayer)) { change -> actions.updatePrayerAlert(prayer, change) }
+            SettingsPage.DISPLAY -> DisplayPage(settings, digitStyle, today, actions)
+            SettingsPage.WIDGETS -> WidgetsPage(widgetAppearance, actions)
+            SettingsPage.ABOUT -> AboutPage(actions)
         }
     }
 }
 
-/** A titled group of settings rows. */
+/** Location & calculation: the place, the Calculation Method and Asr Convention, the adjustments, and (advanced) the high-latitude rule. */
 @Composable
-fun SettingsGroup(@StringRes title: Int, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            stringResource(title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.semantics { heading() },
-        )
-        content()
-        HorizontalDivider()
-    }
-}
-
-/** Prayer Log (#25): Delete Prayer Log, behind an in-app confirmation. */
-@Composable
-private fun PrayerLogGroup(actions: SettingsActions) {
-    var confirming by rememberSaveable { mutableStateOf(false) }
-    var deleted by rememberSaveable { mutableStateOf(false) }
-    SettingsGroup(R.string.settings_group_prayer_log) {
-        SettingRow(
-            title = stringResource(R.string.delete_prayer_log),
-            summary = stringResource(if (deleted) R.string.delete_prayer_log_done else R.string.delete_prayer_log_summary),
-            onClick = { confirming = true },
-        )
-    }
-    if (confirming) {
-        AlertDialog(
-            onDismissRequest = { confirming = false },
-            title = { Text(stringResource(R.string.delete_prayer_log_title)) },
-            text = { Text(stringResource(R.string.delete_prayer_log_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirming = false
-                    deleted = true
-                    actions.deletePrayerLog()
-                }) {
-                    Text(stringResource(R.string.delete_prayer_log_confirm), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = { TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) } },
-        )
-    }
-}
-
-@Composable
-private fun PrayerTimesGroup(settings: PrayerSettings, locationName: String, actions: SettingsActions) {
-    var choosingMethod by rememberSaveable { mutableStateOf(false) }
-    var adjusting by rememberSaveable { mutableStateOf(false) }
+private fun ColumnScope.PrayerTimesPage(settings: PrayerSettings, locationName: String, actions: SettingsActions, onChooseMethod: () -> Unit) {
     val format = LocalDisplayFormatter.current
-    val resources = LocalResources.current
-    SettingsGroup(R.string.settings_group_prayer_times) {
-        SettingRow(
-            title = stringResource(R.string.location),
-            summary = locationName,
-            onClick = actions::openLocation,
-        )
-        SettingRow(
-            title = stringResource(R.string.calculation_method),
-            summary = stringResource(settings.method.label),
-            onClick = { choosingMethod = true },
-        )
-        Text(stringResource(R.string.asr_convention), style = MaterialTheme.typography.titleSmall)
-        Column(Modifier.selectableGroup()) {
-            AsrConvention.entries.forEach { convention ->
+    Card {
+        NavRow(stringResource(R.string.location), locationName, icon = R.drawable.ic_pin, onClick = actions::openLocation)
+    }
+    SectionTitle(stringResource(R.string.settings_section_calculation))
+    Card {
+        NavRow(stringResource(R.string.calculation_method), stringResource(settings.method.label), onClick = onChooseMethod)
+        RowDivider()
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.asr_convention), style = MaterialTheme.typography.titleMedium)
+            SegmentedChoice(
+                AsrConvention.entries.map { convention ->
+                    Segment(stringResource(convention.label), convention == settings.asrConvention) { actions.setAsrConvention(convention) }
+                },
+            )
+            Text(
+                stringResource(settings.asrConvention.description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    SectionTitle(stringResource(R.string.adjustments))
+    Card {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Text(
+                stringResource(R.string.adjustments_hint, format.number(PrayerSettings.ADJUSTMENT_RANGE.last)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Prayer.entries.forEach { prayer ->
+                AdjustmentRow(prayer, settings.adjustmentOf(prayer)) { actions.stepAdjustment(prayer, it) }
+            }
+        }
+    }
+    var advanced by rememberSaveable { mutableStateOf(settings.highLatitudeRule != HighLatitudeRule.AUTOMATIC) }
+    Card {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.settings_group_advanced)) { advanced = !advanced }
+                .heightIn(min = 60.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RowText(stringResource(R.string.high_latitude_rule), stringResource(settings.highLatitudeRule.label))
+            Icon(
+                painterResource(R.drawable.ic_expand),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(20.dp).graphicsLayer { if (advanced) rotationZ = 180f },
+            )
+        }
+        if (advanced) {
+            Text(
+                stringResource(R.string.high_latitude_rule_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            Column(Modifier.selectableGroup().padding(bottom = 8.dp)) {
+                HighLatitudeRule.entries.forEach { rule ->
+                    ChoiceRow(
+                        title = stringResource(rule.label),
+                        description = when (rule) {
+                            HighLatitudeRule.AUTOMATIC ->
+                                stringResource(rule.description, format.number(HighLatitudeRule.AUTOMATIC_LATITUDE.toInt()))
+                            HighLatitudeRule.TWILIGHT_ANGLE -> stringResource(rule.description, format.number(60))
+                            else -> stringResource(rule.description)
+                        },
+                        selected = rule == settings.highLatitudeRule,
+                        onSelect = { actions.setHighLatitudeRule(rule) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Every Calculation Method with the regions it's used in; choosing one returns to the section. */
+@Composable
+private fun MethodPage(settings: PrayerSettings, onChoose: (CalculationMethod) -> Unit) {
+    Card {
+        Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
+            CalculationMethod.entries.forEach { method ->
                 ChoiceRow(
-                    title = stringResource(convention.label),
-                    description = stringResource(convention.description),
-                    selected = convention == settings.asrConvention,
-                    onSelect = { actions.setAsrConvention(convention) },
+                    title = stringResource(method.label),
+                    description = stringResource(method.description),
+                    selected = method == settings.method,
+                    onSelect = { onChoose(method) },
                 )
             }
         }
-        val adjusted = Prayer.entries.filter { settings.adjustmentOf(it) != 0 }
-        SettingRow(
-            title = stringResource(R.string.adjustments),
-            summary = if (adjusted.isEmpty()) {
-                stringResource(R.string.adjustments_none)
-            } else {
-                adjusted.joinToString(resources.getString(R.string.list_separator)) { prayer ->
-                    resources.getString(R.string.adjustment_summary, resources.getString(prayer.nameRes), signedMinutes(format.signedNumber(settings.adjustmentOf(prayer))))
-                }
-            },
-            onClick = { adjusting = true },
-        )
-    }
-    if (adjusting) {
-        AlertDialog(
-            onDismissRequest = { adjusting = false },
-            title = { Text(stringResource(R.string.adjustments)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(stringResource(R.string.adjustments_hint, format.number(PrayerSettings.ADJUSTMENT_RANGE.last)), style = MaterialTheme.typography.bodyMedium)
-                    Prayer.entries.forEach { prayer ->
-                        AdjustmentRow(prayer, settings.adjustmentOf(prayer)) { actions.stepAdjustment(prayer, it) }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { adjusting = false }) { Text(stringResource(R.string.done)) } },
-        )
-    }
-    if (choosingMethod) {
-        AlertDialog(
-            onDismissRequest = { choosingMethod = false },
-            title = { Text(stringResource(R.string.calculation_method)) },
-            text = {
-                Column(Modifier.selectableGroup().verticalScroll(rememberScrollState())) {
-                    CalculationMethod.entries.forEach { method ->
-                        ChoiceRow(
-                            title = stringResource(method.label),
-                            description = stringResource(method.description),
-                            selected = method == settings.method,
-                            onSelect = {
-                                actions.setCalculationMethod(method)
-                                choosingMethod = false
-                            },
-                        )
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { choosingMethod = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
     }
 }
 
@@ -287,53 +393,28 @@ private fun AdjustmentRow(prayer: Prayer, minutes: Int, onStep: (Int) -> Unit) {
     val format = LocalDisplayFormatter.current
     val name = stringResource(prayer.nameRes)
     val range = PrayerSettings.ADJUSTMENT_RANGE
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+    Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
         val earlier = stringResource(R.string.adjustment_earlier, name)
         val later = stringResource(R.string.adjustment_later, name)
-        TextButton(
-            onClick = { onStep(-1) },
-            enabled = minutes > range.first,
-            modifier = Modifier.semantics { contentDescription = earlier },
-        ) { Text("−", style = MaterialTheme.typography.titleLarge) }
+        StepButton(R.drawable.ic_minus, earlier, enabled = minutes > range.first) { onStep(-1) }
         Text(
-            stringResource(R.string.adjustment_minutes, signedMinutes(format.signedNumber(minutes))),
+            if (minutes == 0) stringResource(R.string.adjustments_none) else stringResource(R.string.adjustment_minutes, signedMinutes(format.signedNumber(minutes))),
             style = MaterialTheme.typography.bodyLarge,
+            color = if (minutes == 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(min = 72.dp),
         )
-        TextButton(
-            onClick = { onStep(+1) },
-            enabled = minutes < range.last,
-            modifier = Modifier.semantics { contentDescription = later },
-        ) { Text("+", style = MaterialTheme.typography.titleLarge) }
+        StepButton(R.drawable.ic_plus, later, enabled = minutes < range.last) { onStep(+1) }
     }
 }
 
-/** Advanced (#20): the high-latitude rule for Fajr and Isha. */
+/** A round − or + button; [description] is what TalkBack reads (e.g. "Fajr one minute later"). An icon, not a "−"
+ * glyph, so it keeps its size when the text is enlarged. */
 @Composable
-private fun AdvancedGroup(settings: PrayerSettings, actions: SettingsActions) {
-    val format = LocalDisplayFormatter.current
-    SettingsGroup(R.string.settings_group_advanced) {
-        Text(stringResource(R.string.high_latitude_rule), style = MaterialTheme.typography.titleSmall)
-        Text(
-            stringResource(R.string.high_latitude_rule_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Column(Modifier.selectableGroup()) {
-            HighLatitudeRule.entries.forEach { rule ->
-                ChoiceRow(
-                    title = stringResource(rule.label),
-                    description = when (rule) {
-                        HighLatitudeRule.AUTOMATIC ->
-                            stringResource(rule.description, format.number(HighLatitudeRule.AUTOMATIC_LATITUDE.toInt()))
-                        HighLatitudeRule.TWILIGHT_ANGLE -> stringResource(rule.description, format.number(60))
-                        else -> stringResource(rule.description)
-                    },
-                    selected = rule == settings.highLatitudeRule,
-                    onSelect = { actions.setHighLatitudeRule(rule) },
-                )
-            }
-        }
+private fun StepButton(@DrawableRes icon: Int, description: String, enabled: Boolean, onClick: () -> Unit) {
+    OutlinedIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp)) {
+        Icon(painterResource(icon), contentDescription = description, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -355,36 +436,40 @@ private val HighLatitudeRule.description: Int
         HighLatitudeRule.TWILIGHT_ANGLE -> R.string.high_latitude_twilight_description
     }
 
+/** Widgets (#32): a live preview, the background transparency for every widget, and (Android 12+) their colours. */
 @Composable
-private fun WidgetsGroup(appearance: WidgetAppearance, actions: SettingsActions) {
+private fun WidgetsPage(appearance: WidgetAppearance, actions: SettingsActions) {
     val format = LocalDisplayFormatter.current
     val resources = LocalResources.current
-    SettingsGroup(R.string.settings_group_widgets) {
-        Text(stringResource(R.string.widget_transparency), style = MaterialTheme.typography.titleSmall)
-        Text(
-            stringResource(R.string.widget_transparency_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        // Follows the finger while dragging, stored once released.
-        var percent by remember(appearance.transparency) { mutableFloatStateOf(appearance.transparency.toFloat()) }
-        val label = resources.getString(R.string.widget_transparency_value, format.number(percent.roundToInt()))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    // Follows the finger while dragging, stored once released.
+    var percent by remember(appearance.transparency) { mutableFloatStateOf(appearance.transparency.toFloat()) }
+    WidgetPreview(appearance.copy(transparency = percent.roundToInt()))
+    Card {
+        Column(Modifier.padding(16.dp)) {
+            val label = resources.getString(R.string.widget_transparency_value, format.number(percent.roundToInt()))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.widget_transparency), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            }
             Slider(
                 value = percent,
                 onValueChange = { percent = it },
                 onValueChangeFinished = { actions.setWidgetTransparency(percent.roundToInt()) },
                 valueRange = 0f..100f,
                 steps = (WidgetAppearance.TRANSPARENCY_RANGE.last / WidgetAppearance.TRANSPARENCY_STEP) - 1,
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { stateDescription = label },
+                modifier = Modifier.semantics { stateDescription = label },
             )
-            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 12.dp))
+            Text(
+                stringResource(R.string.widget_transparency_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            Text(stringResource(R.string.widget_colors), style = MaterialTheme.typography.titleSmall)
-            Column(Modifier.selectableGroup()) {
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        SectionTitle(stringResource(R.string.widget_colors))
+        Card {
+            Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
                 ChoiceRow(
                     title = stringResource(R.string.widget_colors_wallpaper),
                     description = stringResource(R.string.widget_colors_wallpaper_description),
@@ -402,37 +487,60 @@ private fun WidgetsGroup(appearance: WidgetAppearance, actions: SettingsActions)
     }
 }
 
+/**
+ * How the Next Prayer widget looks with [appearance], on a stand-in wallpaper. Decorative: the settings below say the
+ * same in words, so TalkBack skips it.
+ */
 @Composable
-private fun LanguageDisplayGroup(settings: PrayerSettings, digitStyle: DigitStyle, today: LocalDate, actions: SettingsActions) {
-    val format = LocalDisplayFormatter.current
-    val resources = LocalResources.current
-    var choosingOffset by rememberSaveable { mutableStateOf(false) }
-    fun offsetLabel(days: Int): String {
-        val date = format.hijriDate(HijriDate.of(today, days))
-        if (days == 0) return resources.getString(R.string.hijri_offset_none, date)
-        // A signed number reads left to right even in Arabic, so "+1" never shows as "1+".
-        val signed = BidiFormatter.getInstance().unicodeWrap(format.signedNumber(days), TextDirectionHeuristicsCompat.LTR)
-        return resources.getString(R.string.hijri_offset_summary, signed, date)
+private fun WidgetPreview(appearance: WidgetAppearance) {
+    val style = WidgetStyle.of(appearance)
+    val text = colorResource(style.text)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color(0xFF3E5B57))
+            .padding(horizontal = 18.dp, vertical = 24.dp)
+            .clearAndSetSemantics {},
+    ) {
+        val shadow = if (style.shadowedText) Shadow(Color.Black.copy(alpha = 0.55f), blurRadius = 4f) else null
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(colorResource(style.background).copy(alpha = style.backgroundAlpha / 255f), RoundedCornerShape(22.dp))
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+        ) {
+            Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.labelMedium.copy(shadow = shadow), color = colorResource(style.muted))
+            Text(stringResource(R.string.prayer_asr), style = MaterialTheme.typography.headlineSmall.copy(shadow = shadow), color = text)
+            Text(stringResource(R.string.widget_countdown_format, "1:12:34"), style = MaterialTheme.typography.titleSmall.copy(shadow = shadow), color = colorResource(style.accent))
+        }
     }
-    SettingsGroup(R.string.settings_group_language_display) {
-        Text(stringResource(R.string.language), style = MaterialTheme.typography.titleSmall)
-        val arabic = LocalConfiguration.current.locales[0].language == "ar"
-        Column(Modifier.selectableGroup()) {
-            ChoiceRow(
-                title = stringResource(R.string.language_arabic),
-                description = stringResource(R.string.language_arabic_description),
-                selected = arabic,
-                onSelect = { actions.setLanguage("ar") },
+}
+
+/** Language & display: the app language, digits, and the Hijri offset with a preview of today's Hijri date. */
+@Composable
+private fun DisplayPage(settings: PrayerSettings, digitStyle: DigitStyle, today: LocalDate, actions: SettingsActions) {
+    val format = LocalDisplayFormatter.current
+    SectionTitle(stringResource(R.string.language))
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val arabic = LocalConfiguration.current.locales[0].language == "ar"
+            SegmentedChoice(
+                listOf(
+                    Segment(stringResource(R.string.language_arabic), arabic) { actions.setLanguage("ar") },
+                    Segment(stringResource(R.string.language_english), !arabic) { actions.setLanguage("en") },
+                ),
             )
-            ChoiceRow(
-                title = stringResource(R.string.language_english),
-                description = stringResource(R.string.language_english_description),
-                selected = !arabic,
-                onSelect = { actions.setLanguage("en") },
+            Text(
+                stringResource(R.string.language_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(stringResource(R.string.digits), style = MaterialTheme.typography.titleSmall)
-        Column(Modifier.selectableGroup()) {
+    }
+    SectionTitle(stringResource(R.string.digits))
+    Card {
+        Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
             DigitStyle.entries.forEach { style ->
                 ChoiceRow(
                     title = stringResource(style.label),
@@ -442,36 +550,90 @@ private fun LanguageDisplayGroup(settings: PrayerSettings, digitStyle: DigitStyl
                 )
             }
         }
-        SettingRow(
-            title = stringResource(R.string.hijri_offset),
-            summary = offsetLabel(settings.hijriOffsetDays),
-            onClick = { choosingOffset = true },
-        )
     }
-    if (choosingOffset) {
+    SectionTitle(stringResource(R.string.hijri_offset))
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val days = settings.hijriOffsetDays
+            val range = PrayerSettings.HIJRI_OFFSET_RANGE
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StepButton(R.drawable.ic_minus, stringResource(R.string.hijri_offset_earlier), enabled = days > range.first) { actions.setHijriOffsetDays(days - 1) }
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(format.hijriDate(HijriDate.of(today, days)), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                    Text(
+                        if (days == 0) stringResource(R.string.adjustments_none) else stringResource(R.string.hijri_offset_days, signedMinutes(format.signedNumber(days))),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                StepButton(R.drawable.ic_plus, stringResource(R.string.hijri_offset_later), enabled = days < range.last) { actions.setHijriOffsetDays(days + 1) }
+            }
+            Text(
+                stringResource(R.string.hijri_offset_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** About & your data (#33): the version and credits, privacy, and Delete Prayer Log behind a confirmation. */
+@Composable
+private fun ColumnScope.AboutPage(actions: SettingsActions) {
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { AboutContent() }
+    }
+    SectionTitle(stringResource(R.string.settings_section_your_data))
+    Card {
+        Column(Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.privacy_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.privacy_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        RowDivider()
+        DeletePrayerLogRow(actions)
+    }
+}
+
+/** Prayer Log (#25): Delete Prayer Log, behind an in-app confirmation. */
+@Composable
+private fun DeletePrayerLogRow(actions: SettingsActions) {
+    var confirming by rememberSaveable { mutableStateOf(false) }
+    var deleted by rememberSaveable { mutableStateOf(false) }
+    val error = MaterialTheme.colorScheme.error
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button) { confirming = true }
+            .heightIn(min = 60.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Icon(painterResource(R.drawable.ic_trash), contentDescription = null, tint = error, modifier = Modifier.size(22.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.delete_prayer_log), style = MaterialTheme.typography.titleMedium, color = error)
+            Text(
+                stringResource(if (deleted) R.string.delete_prayer_log_done else R.string.delete_prayer_log_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    if (confirming) {
         AlertDialog(
-            onDismissRequest = { choosingOffset = false },
-            title = { Text(stringResource(R.string.hijri_offset)) },
-            text = {
-                Column(Modifier.selectableGroup().verticalScroll(rememberScrollState())) {
-                    Text(stringResource(R.string.hijri_offset_hint), style = MaterialTheme.typography.bodyMedium)
-                    PrayerSettings.HIJRI_OFFSET_RANGE.forEach { days ->
-                        ChoiceRow(
-                            title = offsetLabel(days),
-                            description = "",
-                            selected = days == settings.hijriOffsetDays,
-                            onSelect = {
-                                actions.setHijriOffsetDays(days)
-                                choosingOffset = false
-                            },
-                        )
-                    }
+            onDismissRequest = { confirming = false },
+            title = { Text(stringResource(R.string.delete_prayer_log_title)) },
+            text = { Text(stringResource(R.string.delete_prayer_log_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirming = false
+                    deleted = true
+                    actions.deletePrayerLog()
+                }) {
+                    Text(stringResource(R.string.delete_prayer_log_confirm), color = error)
                 }
             },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { choosingOffset = false }) { Text(stringResource(R.string.cancel)) }
-            },
+            dismissButton = { TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -484,7 +646,7 @@ fun SettingRow(title: String, summary: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text(title, style = MaterialTheme.typography.titleSmall)
         Text(summary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -499,7 +661,7 @@ fun ChoiceRow(title: String, description: String, selected: Boolean, onSelect: (
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
-            .padding(vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = selected, onClick = null)
@@ -547,7 +709,7 @@ internal val CalculationMethod.description: Int
     }
 
 @get:StringRes
-private val DigitStyle.label: Int
+internal val DigitStyle.label: Int
     get() = when (this) {
         DigitStyle.AUTOMATIC -> R.string.digits_automatic
         DigitStyle.ARABIC_INDIC -> R.string.digits_arabic_indic
