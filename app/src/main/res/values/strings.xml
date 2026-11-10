@@ -186,11 +186,15 @@
     <string name="widget_countdown_format">بعد %s</string>
     <!-- Widgets (#30). -->
     <string name="widget_today_times">مواقيت اليوم</string>
-    <string name="widget_today_times_description">مواقيت صلوات اليوم والشروق، مع إبراز الصلاة القادمة</string>
+    <string name="widget_today_times_description">مواقيت صلوات اليوم الخمس، مع إبراز الصلاة القادمة</string>
     <string name="widget_date_strip">التاريخ</string>
     <string name="widget_date_strip_description">التاريخ الميلادي والهجري، والصلاة القادمة</string>
     <!-- Date strip second line. %1$s is the next Prayer's name, %2$s its time. -->
-    <string name="widget_next_line">القادمة: %1$s %2$s</string>
+    <!-- The Date strip's end: "القادمة:" then the next Prayer and its time in the accent. -->
+    <string name="widget_next_label">القادمة:</string>
+    <!-- A widget header count, e.g. "٢ من ٥" Prayers marked today. -->
+    <string name="widget_count">%1$s من %2$s</string>
+    <string name="widget_week_total">المجموع %1$s من %2$s</string>
     <!-- Widgets (#31). They only display the Prayer Log. -->
     <string name="widget_today_log">اليوم وسجل الصلاة</string>
     <string name="widget_today_log_description">صلوات اليوم ومواقيتها، وما سجّلته منها</string>
@@ -305,20 +309,13 @@
     <string name="widget_preview_date">الإثنين ٩ نوفمبر</string>
     <string name="widget_preview_hijri">٢٨ جمادى الأولى ١٤٤٨ هـ</string>
     <string name="widget_preview_countdown">بعد ١:١٢:٣٤</string>
-    <string name="widget_preview_next_line">القادمة: العصر ١٤:٤٤</string>
-    <string name="widget_preview_total">٢٦/٣٢</string>
+    <string name="widget_preview_total">المجموع ٢٦ من ٣٢</string>
+    <string name="widget_preview_today_count">٢ من ٥</string>
+    <string name="widget_preview_hijri_short">٢٨ جمادى الأولى</string>
+    <string name="widget_preview_next_asr">العصر ١٤:٤٤</string>
     <string name="widget_preview_fajr_time">٠٤:٤٥</string>
-    <string name="widget_preview_sunrise_time">٠٦:١٤</string>
     <string name="widget_preview_dhuhr_time">١١:٣٩</string>
     <string name="widget_preview_asr_time">١٤:٤٤</string>
     <string name="widget_preview_maghrib_time">١٧:٠٥</string>
     <string name="widget_preview_isha_time">١٨:٢٤</string>
-    <string name="widget_preview_sunrise_line">الشروق ٠٦:١٤</string>
-    <string name="widget_preview_day1">ث</string>
-    <string name="widget_preview_day2">ر</string>
-    <string name="widget_preview_day3">خ</string>
-    <string name="widget_preview_day4">ج</string>
-    <string name="widget_preview_day5">س</string>
-    <string name="widget_preview_day6">ح</string>
-    <string name="widget_preview_day7">ن</string>
 </resources>

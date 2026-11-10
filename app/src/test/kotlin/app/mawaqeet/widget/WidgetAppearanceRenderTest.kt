@@ -29,7 +29,8 @@ class WidgetAppearanceRenderTest {
         Triple(NextPrayerWidget(), 110, 40),
         Triple(TodayTimesWidget(), 250, 110),
         Triple(DateStripWidget(), 250, 40),
-        Triple(TodayLogWidget(), 250, 180),
+        Triple(NextPrayerWidget(), 250, 110),
+        Triple(TodayLogWidget(), 250, 110),
         Triple(WeekLogWidget(), 250, 180),
     )
 
@@ -70,7 +71,8 @@ class WidgetAppearanceRenderTest {
 
         val small = nameSize(250, 180)
         val large = nameSize(420, 320)
-        assertEquals(1.3f, large / small, 0.02f)
+        // A step up, at least: at its smallest the grid also shrinks a little to fit the height.
+        assertTrue("${large / small}", large / small >= 1.25f)
         assertNothingClipped(renderWidget(context, WeekLogWidget(), 420, 320), allowEllipsis = isHijriDate)
     }
 

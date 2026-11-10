@@ -2,9 +2,12 @@ package app.mawaqeet.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
@@ -13,7 +16,6 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.ColumnScope
-import androidx.glance.layout.Row
 import androidx.glance.layout.RowScope
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxWidth
@@ -26,9 +28,9 @@ import app.mawaqeet.MainActivity
 import app.mawaqeet.R
 
 /**
- * The Week Prayer Log Widget Variant (4×3): the last 7 Prayer Days × 5 Prayers as dots, oldest to newest in reading
- * direction, today's column highlighted, and the week's total. Display only: the whole widget is one tap target that
- * opens the Prayer Log screen. A thin layer over [WeekLogContent].
+ * The Week Prayer Log Widget Variant (4×3, down to 4×2): a header (title and the week's total), then a row of seven
+ * dots per Prayer, the last 7 Prayer Days oldest to newest in reading direction. Display only: the whole widget is one
+ * tap target that opens the Prayer Log screen. A thin layer over [WeekLogContent].
  */
 class WeekLogWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
@@ -43,7 +45,6 @@ class WeekLogWidget : GlanceAppWidget() {
 private data class WeekLogView(
     val title: String,
     val total: String,
-    val weekdays: List<String>,
     val rows: List<Row>,
     /** Read out by TalkBack instead of the dots: e.g. "Fajr: Prayed, Not marked, …". */
     val rowDescriptions: List<String>,
@@ -56,8 +57,7 @@ private data class WeekLogView(
             val rows = content.rows.map { Row(strings.getString(it.nameRes), it.cells) }
             return WeekLogView(
                 title = strings.getString(R.string.widget_week_log),
-                total = content.total,
-                weekdays = content.weekdays,
+                total = strings.getString(R.string.widget_week_total, content.prayed, content.possible),
                 rows = rows,
                 rowDescriptions = rows.map { row ->
                     row.name + ": " + row.cells.filter { it != WeekLogContent.Cell.BEFORE_FIRST_USE }
@@ -68,74 +68,70 @@ private data class WeekLogView(
     }
 }
 
-/** Width of the Prayer-name column; the seven day columns share the rest. */
-private val LABEL_WIDTH = 52.dp
+/** Sizes of the week grid, from the Widgets board; all shrink together to fit down to 4×2. */
+internal object WeekLogMetrics {
+    const val MIN_WIDTH_DP = 250f
+    const val MIN_HEIGHT_DP = 180f
+    val horizontalPadding = 18.dp
+    val verticalPadding = 14.dp
+    const val HEADER_SP = 12f
+    const val NAME_SP = 13f
+    const val DOT_DP = 20f
+    /** Between the header and the rows and between rows, at full size. */
+    const val ROW_GAP_DP = 6f
+    /** The Prayer-name column; the seven day columns share the rest. */
+    const val LABEL_WIDTH_DP = 64f
+
+    fun heightScale(header: String, name: String, heightDp: Float, step: Float, fontScale: Float = 1f): Float {
+        val room = heightDp - 2 * verticalPadding.value - 1
+        return step * fitScale(floor = 0.4f) {
+            val s = step * it
+            val row = maxOf(DOT_DP * s, lineHeightDp(name, NAME_SP * s, fontScale, bold = true).toFloat())
+            lineHeightDp(header, HEADER_SP * s, fontScale, bold = true) + 5 * (ROW_GAP_DP * s + row) <= room
+        }
+    }
+}
 
 @Composable
 private fun WeekLogLayout(view: WeekLogView, rtl: Boolean) {
-    val step = textStep(MIN_WIDTH_DP, MIN_HEIGHT_DP)
-    WidgetFrame(rtl, horizontal = 12.dp, vertical = 10.dp, opens = MainActivity.Opens.PRAYER_LOG) {
-        ReadingRow(
-            GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
-            Alignment.CenterVertically,
-            listOf(
-                { WidgetLine(view.title, 13f * step, Tone.TEXT, bold = true, modifier = GlanceModifier.defaultWeight()) },
-                { WidgetLine(view.total, 13f * step, Tone.MUTED) },
-            ),
-        )
-        // The weekday letters above the dot columns, oldest first in reading order; the label column stays empty.
-        val corner = cell { Box(GlanceModifier.width(LABEL_WIDTH * step)) {} }
-        val letters = view.weekdays.mapIndexed { index, letter ->
-            val today = index == view.weekdays.lastIndex
-            cell {
-                WidgetLine(
-                    letter,
-                    11f * step,
-                    if (today) Tone.ACCENT else Tone.MUTED,
-                    bold = today,
-                    center = true,
-                    modifier = GlanceModifier.defaultWeight(),
-                )
-            }
-        }
-        ReadingRow(GlanceModifier.fillMaxWidth(), Alignment.CenterVertically, listOf(corner) + letters)
-        view.rows.forEachIndexed { index, row -> DotRow(row, view.rowDescriptions[index], step) }
+    val style = LocalWidgetStyle.current
+    val height = if (style.responsive) LocalSize.current.height.value else WeekLogMetrics.MIN_HEIGHT_DP
+    val step = textStep(WeekLogMetrics.MIN_WIDTH_DP, WeekLogMetrics.MIN_HEIGHT_DP)
+    val fontScale = LocalContext.current.resources.configuration.fontScale
+    val scale = WeekLogMetrics.heightScale(view.title, view.rows.first().name, height, step, fontScale)
+    WidgetFrame(rtl, horizontal = WeekLogMetrics.horizontalPadding, vertical = WeekLogMetrics.verticalPadding, opens = MainActivity.Opens.PRAYER_LOG) {
+        WidgetHeader(view.title, view.total, WeekLogMetrics.HEADER_SP * scale)
+        view.rows.forEachIndexed { index, row -> DotRow(row, view.rowDescriptions[index], scale) }
     }
 }
 
-private const val MIN_WIDTH_DP = 250f
-private const val MIN_HEIGHT_DP = 180f
-
 @Composable
-private fun ColumnScope.DotRow(row: WeekLogView.Row, description: String, step: Float) {
+private fun ColumnScope.DotRow(row: WeekLogView.Row, description: String, scale: Float) {
     // TalkBack reads one line per Prayer instead of 7 unlabelled dots.
-    val label = cell { WidgetLine(row.name, 11f * step, Tone.MUTED, modifier = GlanceModifier.width(LABEL_WIDTH * step)) }
+    val label = cell {
+        WidgetLine(row.name, WeekLogMetrics.NAME_SP * scale, Tone.TEXT, bold = true, modifier = GlanceModifier.width((WeekLogMetrics.LABEL_WIDTH_DP * scale).dp))
+    }
     ReadingRow(
-        GlanceModifier.fillMaxWidth().defaultWeight().semantics { contentDescription = description },
+        GlanceModifier.fillMaxWidth().defaultWeight().padding(top = (WeekLogMetrics.ROW_GAP_DP * scale).dp)
+            .semantics { contentDescription = description },
         Alignment.CenterVertically,
-        listOf(label) + row.cells.map { state -> cell { Dot(state, (14 * step).dp) } },
+        listOf(label) + row.cells.map { state -> cell { Dot(state, (WeekLogMetrics.DOT_DP * scale).dp) } },
     )
 }
 
+/** Prayed is filled with the accent, not marked is a muted ring, not yet due a faint ring; before first use, nothing. */
 @Composable
-private fun RowScope.Dot(cell: WeekLogContent.Cell, size: androidx.compose.ui.unit.Dp) {
+private fun RowScope.Dot(cell: WeekLogContent.Cell, size: Dp) {
     val style = LocalWidgetStyle.current
     Box(GlanceModifier.defaultWeight().fillMaxHeight(), contentAlignment = Alignment.Center) {
-        val res = dotRes(cell)
-        val color = when (cell) {
-            WeekLogContent.Cell.PRAYED -> style.accent
-            WeekLogContent.Cell.NOT_MARKED -> style.muted
-            else -> style.faint
+        val (res, color) = when (cell) {
+            WeekLogContent.Cell.PRAYED -> R.drawable.widget_dot_prayed to style.accent
+            WeekLogContent.Cell.NOT_MARKED -> R.drawable.widget_ring to style.muted
+            WeekLogContent.Cell.NOT_YET_DUE -> R.drawable.widget_ring to style.faint
+            WeekLogContent.Cell.BEFORE_FIRST_USE -> null to 0
         }
         if (res != null) Image(ImageProvider(res), contentDescription = null, modifier = GlanceModifier.size(size), colorFilter = tint(color))
     }
-}
-
-private fun dotRes(cell: WeekLogContent.Cell) = when (cell) {
-    WeekLogContent.Cell.PRAYED -> R.drawable.widget_dot_prayed
-    WeekLogContent.Cell.NOT_MARKED -> R.drawable.widget_dot_missed
-    WeekLogContent.Cell.NOT_YET_DUE -> R.drawable.widget_dot_upcoming
-    WeekLogContent.Cell.BEFORE_FIRST_USE -> null
 }
 
 private fun cellLabelRes(cell: WeekLogContent.Cell) = when (cell) {

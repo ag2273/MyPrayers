@@ -38,22 +38,21 @@ class TodayTimesContentTest {
     private val tomorrowFajr: (List<PrayerTime>) -> PrayerTime = { PrayerTime(Prayer.FAJR, at(sunday.plusDays(1), "05:09")) }
 
     @Test
-    fun `six columns in day order with Sunrise second, times in Arabic-Indic digits with no suffix`() {
+    fun `the five Prayers in day order with no Sunrise, times in Arabic-Indic digits with no suffix`() {
         val content = TodayTimesContent.of(makkahDay(sunday, nextIs(Prayer.ASR)), arabic)
 
         assertEquals(
-            listOf(R.string.prayer_fajr, R.string.sunrise, R.string.prayer_dhuhr, R.string.prayer_asr, R.string.prayer_maghrib, R.string.prayer_isha),
+            listOf(R.string.prayer_fajr, R.string.prayer_dhuhr, R.string.prayer_asr, R.string.prayer_maghrib, R.string.prayer_isha),
             content.columns.map { it.nameRes },
         )
-        assertEquals(listOf("٠٥:٠٩", "٠٦:٢٧", "١٢:٠٤", "١٥:١٧", "١٧:٤١", "١٩:١١"), content.columns.map { it.time })
-        assertEquals(listOf(false, true, false, false, false, false), content.columns.map { it.isSunrise })
+        assertEquals(listOf("٠٥:٠٩", "١٢:٠٤", "١٥:١٧", "١٧:٤١", "١٩:١١"), content.columns.map { it.time })
     }
 
     @Test
     fun `English with Western digits`() {
         val content = TodayTimesContent.of(makkahDay(sunday, nextIs(Prayer.ASR)), english)
 
-        assertEquals(listOf("05:09", "06:27", "12:04", "15:17", "17:41", "19:11"), content.columns.map { it.time })
+        assertEquals(listOf("05:09", "12:04", "15:17", "17:41", "19:11"), content.columns.map { it.time })
         assertEquals(WidgetDate("Sun 8 Nov", "28 Jumada al-Ula 1448 AH"), content.date)
     }
 
@@ -79,8 +78,8 @@ class TodayTimesContentTest {
         val friday = LocalDate.parse("2026-11-13")
         val content = TodayTimesContent.of(makkahDay(friday, nextIs(Prayer.DHUHR)), arabic)
 
-        assertEquals(R.string.prayer_jumuah, content.columns[2].nameRes)
-        assertTrue(content.columns[2].isNext)
+        assertEquals(R.string.prayer_jumuah, content.columns[1].nameRes)
+        assertTrue(content.columns[1].isNext)
     }
 
     @Test

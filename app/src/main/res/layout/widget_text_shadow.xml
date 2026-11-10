@@ -8,7 +8,6 @@
     android:gravity="start|center_vertical"
     android:includeFontPadding="false"
     android:maxLines="1"
-    android:singleLine="true"
     android:shadowColor="@color/widget_text_shadow"
     android:shadowDy="1"
     android:shadowRadius="3"

@@ -64,21 +64,19 @@ class WidgetDirectionTest {
         assertTrue("${(a as? TextView)?.text} at ${a.screenLeft()} should be right of ${(b as? TextView)?.text} at ${b.screenLeft()}", a.screenLeft() > b.screenLeft())
 
     @Test
-    fun `Today's Prayer Times puts Fajr on the right and Isha on the left, and the date reads right to left`() {
+    fun `Today's Prayer Times puts Fajr on the right and Isha on the left, and its title before the date`() {
         val root = render(TodayTimesWidget(), 250, 110)
         assertReadsBefore(root.textView("الفجر"), root.textView("العشاء"))
-        assertReadsBefore(gregorian(root), hijri(root))
+        assertReadsBefore(root.textView("مواقيت اليوم"), hijri(root))
+        assertTrue("title on the right", root.textView("مواقيت اليوم").drawnRight() > root.width * 0.75f)
     }
 
     @Test
-    fun `Today with Prayer Log puts each name right of its time, and the date starts on the right`() {
-        val root = render(TodayLogWidget(), 250, 180)
-        val fajr = root.textView("الفجر")
-        val time = widgetTexts(root).first { it.text.length == 5 && it.text[2] == ':' }
-        assertReadsBefore(fajr, time)
-        assertTrue("name ends near the right edge", fajr.drawnRight() > root.width * 0.75f)
-        assertReadsBefore(gregorian(root), hijri(root))
-        assertTrue("date starts on the right", gregorian(root).drawnRight() > root.width * 0.75f)
+    fun `Today with Prayer Log puts Fajr on the right and its title on the right`() {
+        val root = render(TodayLogWidget(), 250, 110)
+        assertReadsBefore(root.textView("الفجر"), root.textView("العشاء"))
+        assertTrue("Fajr's column on the right", root.textView("الفجر").screenLeft() > root.width * 0.75f)
+        assertTrue("title on the right", root.textView("اليوم وسجل الصلاة").drawnRight() > root.width * 0.75f)
     }
 
     @Test
@@ -97,17 +95,26 @@ class WidgetDirectionTest {
             val countdown = widgetTexts(root).single { it.id == app.mawaqeet.R.id.countdown }
             assertTrue("countdown shown at height $height", countdown.height > 0)
             assertTrue("countdown on the right at height $height", countdown.drawnRight() > root.width * 0.6f)
-            val name = widgetTexts(root).first { it.text.toString() in names }
+            val name = widgetTexts(root).first { t -> names.any { t.text.startsWith(it) } }
             assertTrue("name on the right at height $height", name.drawnRight() > root.width * 0.6f)
         }
+        // 4×2: the name on the right, its time on the left.
+        val wide = render(NextPrayerWidget(), 300, 150)
+        val name = widgetTexts(wide).first { it.text.toString() in names }
+        val time = widgetTexts(wide).first { it.text.length == 5 && it.text[2] == ':' }
+        assertReadsBefore(name, time)
+        assertTrue("name on the right", name.drawnRight() > wide.width * 0.75f)
+        assertTrue("time on the left: ${time.text} at ${time.screenLeft()} of ${wide.width}", time.screenLeft() < wide.width * 0.25f)
     }
 
     private val names = listOf("الفجر", "الظهر", "الجمعة", "العصر", "المغرب", "العشاء")
 
     @Test
-    fun `Date strip starts on the right`() {
-        val root = render(DateStripWidget(), 250, 50)
-        assertReadsBefore(gregorian(root), hijri(root))
-        assertTrue(gregorian(root).drawnRight() > root.width * 0.6f)
+    fun `Date strip puts the dates on the right and the next Prayer on the left`() {
+        val root = render(DateStripWidget(), 300, 60)
+        assertTrue(gregorian(root).drawnRight() > root.width * 0.75f)
+        assertTrue(hijri(root).drawnRight() > root.width * 0.75f)
+        assertReadsBefore(gregorian(root), root.textView("القادمة:"))
+        assertReadsBefore(root.textView("القادمة:"), widgetTexts(root).first { t -> names.any { t.text.startsWith("$it ") } })
     }
 }

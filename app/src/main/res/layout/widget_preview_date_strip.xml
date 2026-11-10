@@ -5,15 +5,16 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
     android:backgroundTint="@color/widget_background"
-    android:gravity="center_vertical|start"
-    android:orientation="vertical"
-    android:paddingHorizontal="16dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="18dp"
     android:paddingVertical="6dp">
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
         <TextView
             android:layout_width="wrap_content"
@@ -21,27 +22,36 @@
             android:maxLines="1"
             android:text="@string/widget_preview_date"
             android:textColor="@color/widget_text"
-            android:textSize="13sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/widget_preview_hijri"
             android:textColor="@color/widget_text_muted"
-            android:textSize="13sp" />
+            android:textSize="12sp"
+            android:textStyle="bold" />
     </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:maxLines="1"
-        android:text="@string/widget_preview_next_line"
+        android:text="@string/widget_next_label"
+        android:textColor="@color/widget_text"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginStart="12dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:text="@string/widget_preview_next_asr"
         android:textColor="@color/widget_accent"
         android:textSize="13sp"
         android:textStyle="bold"
-        android:layout_marginTop="2dp" />
+        android:layout_marginStart="4dp" />
 </LinearLayout>

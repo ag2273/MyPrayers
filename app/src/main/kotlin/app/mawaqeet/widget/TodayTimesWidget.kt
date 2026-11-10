@@ -17,17 +17,17 @@ import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
 import androidx.glance.layout.RowScope
-import androidx.glance.layout.fillMaxHeight
-import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
+import androidx.glance.layout.wrapContentHeight
 import app.mawaqeet.R
 
 /**
- * The Today's Prayer Times Widget Variant (4×2): the date line, then six columns (five Prayers and Sunrise) with the
- * next Prayer highlighted, and no countdown. A thin layer over [TodayTimesContent].
+ * The Today's Prayer Times Widget Variant (4×2): a header (title and Hijri date), then the five Prayers' columns with
+ * the next Prayer filled with the accent, and no countdown. A thin layer over [TodayTimesContent].
  */
 class TodayTimesWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
@@ -40,24 +40,36 @@ class TodayTimesWidget : GlanceAppWidget() {
 }
 
 /**
- * Sizes of the 4×2 layout, shared with the test that checks no name or time is clipped at the smallest width. Names
- * and times shrink to fit their column (English "Jumu'ah" is the widest), so nothing is clipped at 4×2 widths.
+ * Sizes of the five-column widgets (Today's Prayer Times, Today with Prayer Log), from the Widgets board: a 12sp
+ * header, then columns of a 12sp name over a 16sp bold time (and a 20dp Prayer Log dot). Names and times shrink to
+ * fit their column (English "Jumu'ah" is the widest) and everything shrinks together to fit the height, so nothing is
+ * clipped down to the smallest 4×2.
  */
 internal object TodayTimesMetrics {
     const val MIN_WIDTH_DP = 250
     const val MIN_HEIGHT_DP = 110
-    val horizontalPadding = 8.dp
-    val cellGap = 2.dp
+    val horizontalPadding = 18.dp
+    val verticalPadding = 14.dp
+    val cellGap = 4.dp
     val cellPadding = 1.dp
+    const val COLUMNS = 5
 
-    const val NAME_SP = 11f
-    const val TIME_SP = 13f
+    const val HEADER_SP = 12f
+    const val NAME_SP = 12f
+    const val TIME_SP = 16f
+    const val DOT_DP = 20f
+    /** Between the header and the columns, at full size. */
+    const val HEADER_GAP_DP = 8f
+    /** Inside a column, above and below its text, at full size. */
+    const val CELL_PADDING_V_DP = 6f
+    const val NAME_TIME_GAP_DP = 2f
+    const val DOT_GAP_DP = 4f
     /** Text never shrinks below this to fit; past it a launcher font scale may still clip. */
     const val MIN_SP = 8f
 
     /** Every name a column can show, so the name size doesn't change on Fridays. */
     val NAMES = listOf(
-        R.string.prayer_fajr, R.string.sunrise, R.string.prayer_dhuhr, R.string.prayer_jumuah,
+        R.string.prayer_fajr, R.string.prayer_dhuhr, R.string.prayer_jumuah,
         R.string.prayer_asr, R.string.prayer_maghrib, R.string.prayer_isha,
     )
 
@@ -76,18 +88,58 @@ internal object TodayTimesMetrics {
         return sp
     }
 
-    /** The width each of the six columns has for its text at a widget width of [widthDp]. */
+    /** The width each of the five columns has for its text at a widget width of [widthDp]. */
     fun cellTextWidthDp(widthDp: Float): Float =
-        (widthDp - 2 * horizontalPadding.value) / 6 - cellGap.value - 2 * cellPadding.value
+        (widthDp - 2 * horizontalPadding.value) / COLUMNS - cellGap.value - 2 * cellPadding.value
+
+    /**
+     * The scale at which the header and the columns (with their dots when [dots]) fit [heightDp], from [step] (the
+     * size step for a roomier widget) down.
+     */
+    fun heightScale(header: String, name: String, time: String, heightDp: Float, dots: Boolean, step: Float, fontScale: Float = 1f): Float {
+        val room = heightDp - 2 * verticalPadding.value - 1
+        return step * fitScale(floor = 0.4f) {
+            val s = step * it
+            lineHeightDp(header, HEADER_SP * s, fontScale, bold = true) + HEADER_GAP_DP * s +
+                2 * CELL_PADDING_V_DP * s + lineHeightDp(name, NAME_SP * s, fontScale) + NAME_TIME_GAP_DP * s +
+                lineHeightDp(time, TIME_SP * s, fontScale, bold = true) +
+                (if (dots) DOT_GAP_DP * s + DOT_DP * s else 0f) <= room
+        }
+    }
 }
 
-private data class TodayTimesView(val date: WidgetDate, val columns: List<Cell>, val allNames: List<String>) {
-    data class Cell(val name: String, val time: String, val isSunrise: Boolean, val isNext: Boolean)
+/** The sizes one five-column layout draws at, worked out by [TodayTimesMetrics]. */
+internal data class CellSizes(val scale: Float, val headerSp: Float, val nameSp: Float, val timeSp: Float) {
+    companion object {
+        @Composable
+        fun of(header: String, names: List<String>, times: List<String>, dots: Boolean): CellSizes {
+            val style = LocalWidgetStyle.current
+            val size = LocalSize.current
+            // On Android 8–11 one layout at the default size: the smallest, whatever the launcher gives.
+            val width = if (style.responsive) size.width.value else TodayTimesMetrics.MIN_WIDTH_DP.toFloat()
+            val height = if (style.responsive) size.height.value else TodayTimesMetrics.MIN_HEIGHT_DP.toFloat()
+            val step = textStep(TodayTimesMetrics.MIN_WIDTH_DP.toFloat(), TodayTimesMetrics.MIN_HEIGHT_DP.toFloat())
+            val fontScale = LocalContext.current.resources.configuration.fontScale
+            val scale = TodayTimesMetrics.heightScale(header, names.first(), times.first(), height, dots, step, fontScale)
+            val room = TodayTimesMetrics.cellTextWidthDp(width)
+            return CellSizes(
+                scale = scale,
+                headerSp = TodayTimesMetrics.HEADER_SP * scale,
+                nameSp = TodayTimesMetrics.fitSp(names, room, TodayTimesMetrics.NAME_SP * scale, bold = false, fontScale),
+                timeSp = TodayTimesMetrics.fitSp(times, room, TodayTimesMetrics.TIME_SP * scale, bold = true, fontScale),
+            )
+        }
+    }
+}
+
+private data class TodayTimesView(val title: String, val date: WidgetDate, val columns: List<Cell>, val allNames: List<String>) {
+    data class Cell(val name: String, val time: String, val isNext: Boolean)
 
     companion object {
         fun of(content: TodayTimesContent, text: WidgetText) = TodayTimesView(
+            title = text.strings.getString(R.string.widget_today_times),
             date = content.date,
-            columns = content.columns.map { Cell(text.strings.getString(it.nameRes), it.time, it.isSunrise, it.isNext) },
+            columns = content.columns.map { Cell(text.strings.getString(it.nameRes), it.time, it.isNext) },
             allNames = TodayTimesMetrics.NAMES.map { text.strings.getString(it) },
         )
     }
@@ -95,36 +147,70 @@ private data class TodayTimesView(val date: WidgetDate, val columns: List<Cell>,
 
 @Composable
 private fun TodayTimesLayout(view: TodayTimesView, rtl: Boolean) {
-    val style = LocalWidgetStyle.current
-    // On Android 8–11 one layout at the default size: the smallest width, whatever the launcher gives.
-    val width = if (style.responsive) LocalSize.current.width.value else TodayTimesMetrics.MIN_WIDTH_DP.toFloat()
-    val step = textStep(TodayTimesMetrics.MIN_WIDTH_DP.toFloat(), TodayTimesMetrics.MIN_HEIGHT_DP.toFloat())
-    val room = TodayTimesMetrics.cellTextWidthDp(width)
-    val fontScale = LocalContext.current.resources.configuration.fontScale
-    val nameSp = TodayTimesMetrics.fitSp(view.allNames, room, TodayTimesMetrics.NAME_SP * step, bold = false, fontScale)
-    val timeSp = TodayTimesMetrics.fitSp(view.columns.map { it.time }, room, TodayTimesMetrics.TIME_SP * step, bold = true, fontScale)
-    WidgetFrame(rtl, horizontal = TodayTimesMetrics.horizontalPadding, vertical = 10.dp) {
-        DateLine(view.date, sp = 12f * step)
-        Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight().padding(top = 6.dp)) {
+    val sizes = CellSizes.of(view.title, view.allNames, view.columns.map { it.time }, dots = false)
+    WidgetFrame(rtl, horizontal = TodayTimesMetrics.horizontalPadding, vertical = TodayTimesMetrics.verticalPadding) {
+        WidgetHeader(view.title, view.date.hijri, sizes.headerSp, endEllipsizes = true)
+        PrayerColumns(sizes, view.columns.map { PrayerColumn(it.name, it.time, it.isNext) })
+    }
+}
+
+/** A widget's header: its title at the app language's start, and [end] (a date or a count) at its end. */
+@Composable
+internal fun WidgetHeader(title: String, end: String, sp: Float, endEllipsizes: Boolean = false) {
+    val direction = LocalWidgetDirection.current
+    ReadingRow(
+        GlanceModifier.fillMaxWidth().wrapContentHeight(),
+        Alignment.CenterVertically,
+        if (endEllipsizes) {
+            // A long Hijri date gives way to the title, and shortens at its end.
+            listOf(
+                cell { WidgetLine(title, sp, Tone.MUTED, bold = true) },
+                cell {
+                    Box(GlanceModifier.defaultWeight().then(direction.paddingStart(8.dp)), contentAlignment = direction.endAlignment) {
+                        WidgetLine(end, sp, Tone.MUTED, bold = true)
+                    }
+                },
+            )
+        } else {
+            listOf(
+                cell { WidgetLine(title, sp, Tone.MUTED, bold = true, modifier = GlanceModifier.defaultWeight()) },
+                cell { WidgetLine(end, sp, Tone.MUTED, bold = true, modifier = direction.paddingStart(8.dp)) },
+            )
+        },
+    )
+}
+
+/** One column of a five-column widget: what it shows, and its Prayer Log dot, if any. */
+internal data class PrayerColumn(
+    val name: String,
+    val time: String,
+    val isNext: Boolean,
+    val dot: (@Composable (sizeDp: Float) -> Unit)? = null,
+)
+
+/** The five columns, oldest first in reading order, at the bottom of the space under the header. */
+@Composable
+internal fun ColumnScope.PrayerColumns(sizes: CellSizes, columns: List<PrayerColumn>) {
+    Box(
+        GlanceModifier.fillMaxWidth().defaultWeight().padding(top = (TodayTimesMetrics.HEADER_GAP_DP * sizes.scale).dp),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Row(GlanceModifier.fillMaxWidth()) {
             // No spacers between cells: Glance keeps at most 10 children in a Row, so the gap is each cell's margin.
-            LocalWidgetDirection.current.inReadingOrder(view.columns).forEach { cell -> TimeCell(cell, nameSp, timeSp) }
+            LocalWidgetDirection.current.inReadingOrder(columns).forEach { column -> PrayerCell(column, sizes) }
         }
     }
 }
 
-/** One column; the outer box makes the gap to its neighbours, the inner column carries the highlight. */
+/** One column; the outer box makes the gap to its neighbours, the inner column carries the next Prayer's fill. */
 @Composable
-private fun RowScope.TimeCell(cell: TodayTimesView.Cell, nameSp: Float, timeSp: Float) {
+private fun RowScope.PrayerCell(column: PrayerColumn, sizes: CellSizes) {
     val style = LocalWidgetStyle.current
-    val tone = when {
-        cell.isNext -> Tone.ON_ACCENT
-        cell.isSunrise -> Tone.MUTED
-        else -> Tone.TEXT
-    }
-    val inner = GlanceModifier.fillMaxSize().padding(horizontal = TodayTimesMetrics.cellPadding)
-    Box(GlanceModifier.defaultWeight().fillMaxHeight().padding(horizontal = TodayTimesMetrics.cellGap / 2)) {
+    val vertical = (TodayTimesMetrics.CELL_PADDING_V_DP * sizes.scale).dp
+    val inner = GlanceModifier.fillMaxWidth().padding(horizontal = TodayTimesMetrics.cellPadding, vertical = vertical)
+    Box(GlanceModifier.defaultWeight().padding(horizontal = TodayTimesMetrics.cellGap / 2)) {
         Column(
-            modifier = if (cell.isNext) {
+            modifier = if (column.isNext) {
                 inner.background(ImageProvider(R.drawable.widget_cell_next), colorFilter = tint(style.accent))
             } else {
                 inner
@@ -132,8 +218,20 @@ private fun RowScope.TimeCell(cell: TodayTimesView.Cell, nameSp: Float, timeSp: 
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            WidgetLine(cell.name, nameSp, tone, center = true)
-            WidgetLine(cell.time, timeSp, tone, bold = !cell.isSunrise, center = true)
+            WidgetLine(column.name, sizes.nameSp, if (column.isNext) Tone.ON_ACCENT else Tone.MUTED, center = true)
+            WidgetLine(
+                column.time,
+                sizes.timeSp,
+                if (column.isNext) Tone.ON_ACCENT else Tone.TEXT,
+                bold = true,
+                center = true,
+                modifier = GlanceModifier.padding(top = (TodayTimesMetrics.NAME_TIME_GAP_DP * sizes.scale).dp),
+            )
+            column.dot?.let { dot ->
+                Box(GlanceModifier.padding(top = (TodayTimesMetrics.DOT_GAP_DP * sizes.scale).dp)) {
+                    dot(TodayTimesMetrics.DOT_DP * sizes.scale)
+                }
+            }
         }
     }
 }

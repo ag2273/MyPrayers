@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Week Prayer Log dot: prayed. -->
+<!-- Prayer Log dot: prayed (filled). Tinted with the accent; drawn at the layout's size. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <size android:width="14dp" android:height="14dp" />
+    <size android:width="20dp" android:height="20dp" />
     <solid android:color="@android:color/white" />
 </shape>

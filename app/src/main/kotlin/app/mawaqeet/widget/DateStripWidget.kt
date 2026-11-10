@@ -10,13 +10,14 @@ import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxWidth
-import androidx.glance.layout.padding
 import app.mawaqeet.R
 
 /**
- * The Date strip Widget Variant (4×1): the Gregorian date, then the Hijri date (which shortens first when space is
- * tight), with the next Prayer and its time on a second line. A thin layer over [DateStripContent].
+ * The Date strip Widget Variant (4×1): the Gregorian date over the Hijri date (which shortens first when space is
+ * tight) at the start, and «القادمة: العصر ١٤:٤٤» at the end. A thin layer over [DateStripContent].
  */
 class DateStripWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
@@ -28,64 +29,85 @@ class DateStripWidget : GlanceAppWidget() {
     )
 }
 
-private data class DateStripView(override val date: WidgetDate, override val next: String) : DateStripText {
+private data class DateStripView(override val date: WidgetDate, override val nextLabel: String, override val next: String) : DateStripText {
 
     companion object {
         fun of(content: DateStripContent, text: WidgetText) = DateStripView(
             date = content.date,
-            next = text.strings.getString(
-                R.string.widget_next_line,
-                text.strings.getString(content.nextNameRes),
-                content.nextTime,
-            ),
+            nextLabel = text.strings.getString(R.string.widget_next_label),
+            next = "${text.strings.getString(content.nextNameRes)} ${content.nextTime}",
         )
     }
 }
 
-/** Sizes of the 4×1 layout, shared with its render test. */
+/** Sizes of the 4×1 layout, from the Widgets board, shared with its render test. */
 internal object DateStripMetrics {
-    val horizontalPadding = 16.dp
+    val horizontalPadding = 18.dp
     /** Little vertical padding at the smallest heights, where every dp goes to the two lines. */
-    fun verticalPaddingDp(heightDp: Float) = if (heightDp < 56f) 2f else 6f
-    /** The gap between the two lines. */
-    const val LINE_GAP_DP = 2f
+    fun verticalPaddingDp(heightDp: Float) = if (heightDp < 56f) 2f else 8f
     const val MIN_WIDTH_DP = 250f
     const val MIN_HEIGHT_DP = 40f
-    const val MAX_SP = 13f
-    const val MIN_SP = 9f
+    const val GREGORIAN_SP = 17f
+    const val HIJRI_SP = 12f
+    const val NEXT_SP = 14f
+    /** Between the dates and the next Prayer, and between "القادمة:" and its Prayer. */
+    const val GAP_DP = 12f
+    const val WORD_GAP_DP = 4f
 
     /**
-     * The largest text size from [MAX_SP] down, in half-sp steps, at which both lines fit [heightDp] (the whole
-     * widget), measured with the system font as the launcher lays them out: Arabic lines are taller than Latin ones,
-     * and at the smallest 4×1 height they don't fit at full size.
+     * The largest scale from 1 down at which the two dates fit [heightDp] (the whole widget), measured with the system
+     * font as the launcher lays them out (Arabic lines are taller than Latin ones), and the Gregorian date and the next
+     * Prayer fit [widthDp] side by side.
      */
-    fun fitSp(view: DateStripText, heightDp: Float, fontScale: Float = 1f, maxSp: Float = MAX_SP): Float {
-        val room = heightDp - 2 * verticalPaddingDp(heightDp) - LINE_GAP_DP
-        var sp = maxSp
-        while (sp > MIN_SP) {
-            val first = maxOf(lineHeightDp(view.date.gregorian, sp, fontScale, bold = true), lineHeightDp(view.date.hijri, sp, fontScale))
-            if (first + lineHeightDp(view.next, sp, fontScale, bold = true) <= room) break
-            sp -= 0.5f
+    fun scale(view: DateStripText, widthDp: Float, heightDp: Float, fontScale: Float = 1f, step: Float = 1f): Float {
+        val room = heightDp - 2 * verticalPaddingDp(heightDp) - 1
+        val across = widthDp - 2 * horizontalPadding.value
+        return step * fitScale(floor = 0.5f) {
+            val s = step * it
+            lineHeightDp(view.date.gregorian, GREGORIAN_SP * s, fontScale, bold = true) +
+                lineHeightDp(view.date.hijri, HIJRI_SP * s, fontScale, bold = true) <= room &&
+                textWidthDp(view.date.gregorian, GREGORIAN_SP * s, fontScale, bold = true) + GAP_DP +
+                textWidthDp(view.nextLabel, NEXT_SP * s, fontScale, bold = true) + WORD_GAP_DP +
+                textWidthDp(view.next, NEXT_SP * s, fontScale, bold = true) <= across
         }
-        return sp
     }
 }
 
-/** The two lines' text, for measuring. */
+/** The texts, for measuring. */
 internal interface DateStripText {
     val date: WidgetDate
+    val nextLabel: String
     val next: String
 }
 
 @Composable
 private fun DateStripLayout(view: DateStripView, rtl: Boolean) {
-    val height = LocalSize.current.height.value
+    val size = LocalSize.current
+    val style = LocalWidgetStyle.current
+    val width = if (style.responsive) size.width.value else DateStripMetrics.MIN_WIDTH_DP
+    val height = if (style.responsive) size.height.value else DateStripMetrics.MIN_HEIGHT_DP
     val step = textStep(DateStripMetrics.MIN_WIDTH_DP, DateStripMetrics.MIN_HEIGHT_DP)
-    // Both lines shrink to fit the height: at the smallest 4×1 size Arabic doesn't fit at full size.
-    val sp = DateStripMetrics.fitSp(view, height, LocalContext.current.resources.configuration.fontScale, DateStripMetrics.MAX_SP * step)
+    val scale = DateStripMetrics.scale(view, width, height, LocalContext.current.resources.configuration.fontScale, step)
+    val direction = LocalWidgetDirection.current
     WidgetFrame(rtl, horizontal = DateStripMetrics.horizontalPadding, vertical = DateStripMetrics.verticalPaddingDp(height).dp) {
-        DateLine(view.date, sp, boldGregorian = true)
-        WidgetLine(view.next, sp, Tone.ACCENT, bold = true, modifier = GlanceModifier.fillMaxWidth().padding(top = DateStripMetrics.LINE_GAP_DP.dp))
+        ReadingRow(
+            GlanceModifier.fillMaxWidth(),
+            Alignment.CenterVertically,
+            listOf(
+                cell {
+                    Column(GlanceModifier.defaultWeight(), horizontalAlignment = direction.start) {
+                        WidgetLine(view.date.gregorian, DateStripMetrics.GREGORIAN_SP * scale, Tone.TEXT, bold = true)
+                        WidgetLine(view.date.hijri, DateStripMetrics.HIJRI_SP * scale, Tone.MUTED, bold = true)
+                    }
+                },
+                cell {
+                    WidgetLine(view.nextLabel, DateStripMetrics.NEXT_SP * scale, Tone.TEXT, bold = true, modifier = direction.paddingStart(DateStripMetrics.GAP_DP.dp))
+                },
+                cell {
+                    WidgetLine(view.next, DateStripMetrics.NEXT_SP * scale, Tone.ACCENT, bold = true, modifier = direction.paddingStart(DateStripMetrics.WORD_GAP_DP.dp))
+                },
+            ),
+        )
     }
 }
 
