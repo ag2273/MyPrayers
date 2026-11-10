@@ -56,6 +56,19 @@ abstract class AdhanPlaceholderTask : DefaultTask() {
     }
 }
 
+/*
+ * Release signing. The keystore and its passwords never live in the repo: they come from Gradle properties
+ * (~/.gradle/gradle.properties or -P) or the environment, as below. Without them the release APK is left unsigned.
+ *   mawaqeet.signing.storeFile / MAWAQEET_SIGNING_STORE_FILE        path to the .jks keystore
+ *   mawaqeet.signing.storePassword / MAWAQEET_SIGNING_STORE_PASSWORD
+ *   mawaqeet.signing.keyAlias / MAWAQEET_SIGNING_KEY_ALIAS
+ *   mawaqeet.signing.keyPassword / MAWAQEET_SIGNING_KEY_PASSWORD
+ */
+fun signingValue(name: String): String? =
+    providers.gradleProperty("mawaqeet.signing.$name").orNull
+        ?: providers.environmentVariable("MAWAQEET_SIGNING_" + name.replace(Regex("([A-Z])"), "_$1").uppercase()).orNull
+val releaseStoreFile: String? = signingValue("storeFile")
+
 android {
     namespace = "app.mawaqeet"
     compileSdk = 37
@@ -67,6 +80,23 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         buildConfigField("boolean", "ADHAN_CHANNEL_SOUND_FALLBACK", adhanChannelSoundFallback.toString())
+    }
+
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = signingValue("storePassword")
+                keyAlias = signingValue("keyAlias")
+                keyPassword = signingValue("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+        }
     }
 
     buildFeatures {
