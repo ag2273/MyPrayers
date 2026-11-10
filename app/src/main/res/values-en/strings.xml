@@ -166,6 +166,15 @@
     <string name="alerts_play_on_silent">Play adhan even on silent</string>
     <string name="alerts_play_on_silent_description">Not for reminders, nor during calls</string>
     <string name="alerts_vibration">Vibration</string>
+    <string name="alerts_volume">Adhan volume</string>
+    <string name="alerts_volume_alarm">Follow the alarm volume</string>
+    <string name="alerts_volume_alarm_description">As loud as your phone\'s alarm volume</string>
+    <string name="alerts_volume_media">Follow the media volume</string>
+    <string name="alerts_volume_media_description">As loud as your music and video volume</string>
+    <string name="alerts_volume_level_alarm">Alarm volume</string>
+    <string name="alerts_volume_level_media">Media volume</string>
+    <string name="alerts_volume_level_value">%1$s%%</string>
+    <string name="alerts_volume_test">Hear the short adhan</string>
     <string name="alerts_custom_adhan">Custom Adhan</string>
     <string name="alerts_custom_adhan_description">Pick an audio file from your phone to play instead of the bundled recording</string>
     <string name="alerts_custom_full">Full Adhan (not Fajr)</string>

@@ -178,6 +178,15 @@
     <string name="alerts_play_on_silent">تشغيل الأذان حتى في الوضع الصامت</string>
     <string name="alerts_play_on_silent_description">لا يشمل التذكير، ولا الأذان أثناء المكالمات</string>
     <string name="alerts_vibration">الاهتزاز</string>
+    <string name="alerts_volume">صوت الأذان</string>
+    <string name="alerts_volume_alarm">يتبع صوت المنبّه</string>
+    <string name="alerts_volume_alarm_description">يعلو ويخفت مع مستوى صوت المنبّه في الهاتف</string>
+    <string name="alerts_volume_media">يتبع صوت الوسائط (الميديا)</string>
+    <string name="alerts_volume_media_description">يعلو ويخفت مع صوت الموسيقى والفيديو</string>
+    <string name="alerts_volume_level_alarm">مستوى صوت المنبّه</string>
+    <string name="alerts_volume_level_media">مستوى صوت الوسائط</string>
+    <string name="alerts_volume_level_value">%1$s٪</string>
+    <string name="alerts_volume_test">استمع للأذان المختصر</string>
     <string name="alerts_custom_adhan">أذان من اختيارك</string>
     <string name="alerts_custom_adhan_description">اختر ملفًا صوتيًا من هاتفك ليُشغَّل بدل التسجيل المرفق</string>
     <string name="alerts_custom_full">الأذان كاملًا (لغير الفجر)</string>

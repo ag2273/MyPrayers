@@ -179,12 +179,18 @@ class SettingsRepositoryTest {
             repo.setAlarmClockMode(true)
             repo.setPlayOnSilent(true)
             repo.setVibration(false)
+            repo.setAdhanVolume(app.mawaqeet.core.AdhanVolume.MEDIA)
         }
 
         val alerts = withRepository { repo, _ -> repo.settings.first() }.alerts
 
         assertEquals(
-            app.mawaqeet.core.AlertSettings(alarmClockMode = true, playOnSilent = true, vibration = false)
+            app.mawaqeet.core.AlertSettings(
+                alarmClockMode = true,
+                playOnSilent = true,
+                vibration = false,
+                adhanVolume = app.mawaqeet.core.AdhanVolume.MEDIA,
+            )
                 .with(app.mawaqeet.core.Prayer.FAJR, fajr)
                 .with(app.mawaqeet.core.Prayer.MAGHRIB, maghrib),
             alerts,

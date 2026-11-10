@@ -28,6 +28,10 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.ui.semantics.stateDescription
+import android.media.AudioManager
+import kotlin.math.roundToInt
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,6 +57,7 @@ import app.mawaqeet.alerts.AdhanSounds
 import app.mawaqeet.alerts.CustomAdhanFiles
 import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhanSoundChoice
+import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
@@ -66,7 +71,8 @@ private val REMINDER_MINUTES = listOf(10, 15, 20, 30, 45, 60)
 
 /**
  * Settings → Alerts & adhan: one row per Prayer with its Adhan Alert switch (the row opens the Prayer's own page), how
- * alerts behave (alarm-clock mode, play on silent, vibration), then the Custom Adhan files.
+ * alerts behave (alarm-clock mode, play on silent, vibration), the adhan's volume (alarm or media), then the Custom
+ * Adhan files.
  */
 @Composable
 internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenPrayer: (Prayer) -> Unit) {
@@ -110,7 +116,90 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
             onChange = actions::setVibration,
         )
     }
+    AdhanVolumeRows(alerts, actions)
     CustomAdhanRows(alerts, actions)
+}
+
+/**
+ * Adhan volume: whether the adhan follows the alarm volume or the media volume, a slider that sets that volume right
+ * here (it is the phone's own volume, so it also changes alarms or media), and a button to hear the Short Adhan at it.
+ */
+@Composable
+private fun AdhanVolumeRows(alerts: AlertSettings, actions: SettingsActions) {
+    val context = LocalContext.current
+    val audio = remember { context.getSystemService(AudioManager::class.java) }
+    val volume = alerts.adhanVolume
+    val stream = AdhanSounds.stream(volume)
+    val max = remember(stream) { audio.getStreamMaxVolume(stream).coerceAtLeast(1) }
+    val min = remember(stream) { if (android.os.Build.VERSION.SDK_INT >= 28) audio.getStreamMinVolume(stream) else 0 }
+    var level by remember(stream) { mutableStateOf(audio.getStreamVolume(stream).toFloat()) }
+    // The volume keys or another app may change it meanwhile.
+    LifecycleResumeEffect(stream) {
+        level = audio.getStreamVolume(stream).toFloat()
+        onPauseOrDispose { }
+    }
+    val preview = remember { AdhanPreview(context) }
+    var playing by remember { mutableStateOf(false) }
+    DisposableEffect(preview) { onDispose { preview.stop() } }
+    LaunchedEffect(volume) {
+        preview.stop()
+        playing = false
+    }
+
+    SectionTitle(stringResource(R.string.alerts_volume))
+    Card {
+        Column(Modifier.selectableGroup()) {
+            ChoiceRow(
+                stringResource(R.string.alerts_volume_alarm),
+                stringResource(R.string.alerts_volume_alarm_description),
+                volume == AdhanVolume.ALARM,
+            ) { actions.setAdhanVolume(AdhanVolume.ALARM) }
+            ChoiceRow(
+                stringResource(R.string.alerts_volume_media),
+                stringResource(R.string.alerts_volume_media_description),
+                volume == AdhanVolume.MEDIA,
+            ) { actions.setAdhanVolume(AdhanVolume.MEDIA) }
+        }
+        RowDivider()
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            val percent = ((level - min) / (max - min).coerceAtLeast(1) * 100).roundToInt().coerceIn(0, 100)
+            val label = stringResource(R.string.alerts_volume_level_value, LocalDisplayFormatter.current.number(percent))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(if (volume == AdhanVolume.ALARM) R.string.alerts_volume_level_alarm else R.string.alerts_volume_level_media),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+            }
+            Slider(
+                value = level,
+                onValueChange = { new ->
+                    level = new.roundToInt().toFloat()
+                    // Do Not Disturb can forbid changing a stream's volume: keep what the phone allows.
+                    runCatching { audio.setStreamVolume(stream, level.toInt(), 0) }
+                },
+                onValueChangeFinished = { level = audio.getStreamVolume(stream).toFloat() },
+                valueRange = min.toFloat()..max.toFloat(),
+                steps = (max - min - 1).coerceAtLeast(0),
+                modifier = Modifier.semantics { stateDescription = label },
+            )
+            TextButton(
+                onClick = {
+                    if (playing) {
+                        preview.stop()
+                        playing = false
+                    } else {
+                        playing = true
+                        val sound = AlertSound.of(AdhanRecording.SHORT, alerts)
+                        preview.play(AdhanSounds.uri(context, sound), volume) { playing = false }
+                    }
+                },
+            ) {
+                Text(stringResource(if (playing) R.string.alerts_custom_preview_stop else R.string.alerts_volume_test))
+            }
+        }
+    }
 }
 
 /** A Prayer's row: tapping its name opens the Prayer's page; the switch beside it turns its Adhan Alert on or off. */
@@ -238,7 +327,7 @@ private fun CustomAdhanRows(alerts: AlertSettings, actions: SettingsActions) {
         }
     }
     editing?.let { recording ->
-        CustomAdhanDialog(recording, state(recording), actions, onDismiss = { editing = null })
+        CustomAdhanDialog(recording, state(recording), alerts.adhanVolume, actions, onDismiss = { editing = null })
     }
 }
 
@@ -263,7 +352,13 @@ private fun UnreadableNotice() {
 }
 
 @Composable
-private fun CustomAdhanDialog(recording: AdhanRecording, current: CustomAdhanState, actions: SettingsActions, onDismiss: () -> Unit) {
+private fun CustomAdhanDialog(
+    recording: AdhanRecording,
+    current: CustomAdhanState,
+    volume: AdhanVolume,
+    actions: SettingsActions,
+    onDismiss: () -> Unit,
+) {
     val context = LocalContext.current
     val preview = remember { AdhanPreview(context) }
     var playing by remember { mutableStateOf(false) }
@@ -303,7 +398,7 @@ private fun CustomAdhanDialog(recording: AdhanRecording, current: CustomAdhanSta
                             stopPreview()
                         } else {
                             playing = true
-                            preview.play(previewUri) { playing = false }
+                            preview.play(previewUri, volume) { playing = false }
                         }
                     },
                 ) {

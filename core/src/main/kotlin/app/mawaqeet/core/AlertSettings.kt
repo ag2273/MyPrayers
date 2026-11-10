@@ -49,6 +49,12 @@ data class PrayerAlertSettings(
     }
 }
 
+/**
+ * The phone volume an adhan follows. [ALARM] plays on the alarm stream (the alarm volume, which the ringer never mutes);
+ * [MEDIA] plays on the media stream, so the media volume sets how loud it is. Prayer Reminders keep their own sound.
+ */
+enum class AdhanVolume { ALARM, MEDIA }
+
 /** Everything in Settings → Alerts. */
 data class AlertSettings(
     /** Per-Prayer settings; a Prayer missing from the map has the defaults. */
@@ -58,6 +64,8 @@ data class AlertSettings(
     /** The adhan plays even when the ringer is silent or vibrate. */
     val playOnSilent: Boolean = false,
     val vibration: Boolean = true,
+    /** Whose volume the adhan follows: the alarm volume (the default) or the media volume. */
+    val adhanVolume: AdhanVolume = AdhanVolume.ALARM,
     /**
      * The Custom Adhan chosen for each recording, as an opaque reference (a content URI on Android) the core never
      * opens. A recording missing from the map plays the bundled one.
@@ -78,8 +86,8 @@ data class AlertSettings(
     override fun equals(other: Any?): Boolean = other is AlertSettings &&
         Prayer.entries.all { of(it) == other.of(it) } &&
         alarmClockMode == other.alarmClockMode && playOnSilent == other.playOnSilent && vibration == other.vibration &&
-        customAdhans == other.customAdhans
+        adhanVolume == other.adhanVolume && customAdhans == other.customAdhans
 
     override fun hashCode(): Int =
-        listOf(Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, customAdhans).hashCode()
+        listOf(Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, adhanVolume, customAdhans).hashCode()
 }

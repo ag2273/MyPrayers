@@ -3,6 +3,7 @@ package app.mawaqeet.alerts
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlayback
 import app.mawaqeet.core.AlertSound
@@ -47,7 +48,7 @@ class AlertReceiver : BroadcastReceiver() {
                         playOnSilent = intent.getBooleanExtra(EXTRA_PLAY_ON_SILENT, false),
                         vibration = intent.getBooleanExtra(EXTRA_VIBRATION, true),
                     )
-                    AlertOutput.deliver(context, notification, sound, playback)
+                    AlertOutput.deliver(context, notification, sound, playback, adhanVolume(intent))
                 }
             }
             ACTION_MIDNIGHT -> Unit
@@ -62,6 +63,10 @@ class AlertReceiver : BroadcastReceiver() {
         /** The alert's Prayer Day from [EXTRA_PRAYER_DAY], or null if missing or unreadable (no "Mark as prayed"). */
         internal fun prayerDay(intent: Intent): LocalDate? =
             intent.getStringExtra(EXTRA_PRAYER_DAY)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+        /** The alert's [EXTRA_ADHAN_VOLUME]; missing or unknown reads as the alarm volume. */
+        internal fun adhanVolume(intent: Intent): AdhanVolume =
+            AdhanVolume.entries.firstOrNull { it.name == intent.getStringExtra(EXTRA_ADHAN_VOLUME) } ?: AdhanVolume.ALARM
 
         const val ACTION_ALERT = "app.mawaqeet.action.ADHAN_ALERT"
         const val ACTION_MIDNIGHT = "app.mawaqeet.action.LOCAL_MIDNIGHT"
@@ -87,6 +92,9 @@ class AlertReceiver : BroadcastReceiver() {
         /** The alert's Prayer Day ([app.mawaqeet.core.PlannedAlert.prayerDay], ISO date), for "Mark as prayed". */
         const val EXTRA_PRAYER_DAY = "prayer_day"
         const val EXTRA_VIBRATION = "vibration"
+
+        /** [app.mawaqeet.core.PlannedAlert.adhanVolume] name: whether the adhan follows the alarm or media volume. */
+        const val EXTRA_ADHAN_VOLUME = "adhan_volume"
 
         /** Alarm-clock mode: show the alert over the lock screen ([AdhanAlarmActivity]). */
         const val EXTRA_FULL_SCREEN = "full_screen"

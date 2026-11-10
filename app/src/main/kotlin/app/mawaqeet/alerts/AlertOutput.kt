@@ -9,6 +9,7 @@ import android.os.VibratorManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import app.mawaqeet.BuildConfig
+import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlayback
 import app.mawaqeet.core.AlertSound
@@ -19,7 +20,13 @@ import app.mawaqeet.core.AlertSound
  * Reminder never starts the player: its sound is the reminder channel's.
  */
 object AlertOutput {
-    fun deliver(context: Context, notification: AdhanNotification, sound: AlertSound, playback: AlertPlayback) {
+    fun deliver(
+        context: Context,
+        notification: AdhanNotification,
+        sound: AlertSound,
+        playback: AlertPlayback,
+        volume: AdhanVolume = AdhanVolume.ALARM,
+    ) {
         if (playback.vibrate) vibrate(context)
         val play = playback.play
         when {
@@ -30,7 +37,7 @@ object AlertOutput {
             BuildConfig.ADHAN_CHANNEL_SOUND_FALLBACK ->
                 notification.post(context, notification.builder(context, AdhanNotification.CHANNEL_ADHAN_SOUND).build())
             else -> try {
-                ContextCompat.startForegroundService(context, AdhanPlayerService.playIntent(context, notification, play))
+                ContextCompat.startForegroundService(context, AdhanPlayerService.playIntent(context, notification, play, volume))
             } catch (e: IllegalStateException) {
                 // ForegroundServiceStartNotAllowedException (12+) is an IllegalStateException: never lose the alert.
                 Log.w("AlertOutput", "Adhan player could not start", e)
