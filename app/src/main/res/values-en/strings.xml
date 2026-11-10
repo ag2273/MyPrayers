@@ -150,6 +150,9 @@
     <string name="alerts_sound_full">Full Adhan</string>
     <string name="alerts_sound_full_fajr">Fajr\'s Full Adhan, with «الصلاة خير من النوم»</string>
     <string name="alerts_sound_silent">Silent (notification only)</string>
+    <string name="alerts_reciter_short">The adhan\'s opening takbirs, by Mishary Alafasy</string>
+    <string name="alerts_reciter_full">The adhan of the Grand Mosque in Makkah</string>
+    <string name="alerts_reciter_fajr">Fajr adhan by Mishary Alafasy</string>
     <string name="alerts_reminder">Prayer Reminder</string>
     <string name="alerts_reminder_minutes">%1$s minutes before</string>
     <string name="alerts_adhan_off">No Adhan Alert</string>
@@ -339,6 +342,12 @@
     <string name="settings_alerts_at_risk">Alerts may be delayed</string>
     <string name="alerts_each_prayer">Each Prayer</string>
     <string name="alerts_behaviour">How alerts behave</string>
+    <string name="alerts_all">All app alerts</string>
+    <string name="alerts_all_on_description">Adhan Alerts and reminders follow each Prayer\'s settings</string>
+    <string name="alerts_all_off_description">Off: no adhan, no reminder and no notification from the app until you turn them back on</string>
+    <string name="settings_alerts_summary_off">All turned off</string>
+    <string name="settings_alerts_off">Alerts are off</string>
+    <string name="settings_alerts_off_summary">You turned off every app alert. Tap to turn them back on.</string>
     <string name="alerts_adhan_alert_of">Adhan Alert: %1$s</string>
     <string name="alerts_reminder_description">A quiet notification before the Prayer, without the adhan</string>
     <string name="alerts_of_prayer">%1$s alerts</string>

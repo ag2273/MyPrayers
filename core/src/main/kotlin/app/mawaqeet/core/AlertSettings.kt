@@ -57,6 +57,11 @@ enum class AdhanVolume { ALARM, MEDIA }
 
 /** Everything in Settings → Alerts. */
 data class AlertSettings(
+    /**
+     * The master switch: false silences the whole app, so no Adhan Alert and no Prayer Reminder is planned for any
+     * Prayer, whatever its own settings say (they are kept for when it is turned back on).
+     */
+    val enabled: Boolean = true,
     /** Per-Prayer settings; a Prayer missing from the map has the defaults. */
     val prayers: Map<Prayer, PrayerAlertSettings> = emptyMap(),
     /** Adhan Alerts are set with `setAlarmClock` (next Prayer on the lock screen) instead of exact alarms. */
@@ -74,6 +79,13 @@ data class AlertSettings(
 ) {
     fun of(prayer: Prayer): PrayerAlertSettings = prayers[prayer] ?: PrayerAlertSettings()
 
+    /**
+     * What [prayer] actually gets, for Home and the widgets: its own settings, or no Adhan Alert and no Prayer
+     * Reminder while the master switch is off.
+     */
+    fun effective(prayer: Prayer): PrayerAlertSettings =
+        if (enabled) of(prayer) else of(prayer).copy(adhanAlert = false, reminder = false)
+
     fun with(prayer: Prayer, settings: PrayerAlertSettings): AlertSettings = copy(prayers = prayers + (prayer to settings))
 
     /** The Custom Adhan for [recording], or null when it plays the bundled recording. */
@@ -83,11 +95,11 @@ data class AlertSettings(
     fun withCustomAdhan(recording: AdhanRecording, reference: String?): AlertSettings =
         copy(customAdhans = if (reference == null) customAdhans - recording else customAdhans + (recording to reference))
 
-    override fun equals(other: Any?): Boolean = other is AlertSettings &&
+    override fun equals(other: Any?): Boolean = other is AlertSettings && enabled == other.enabled &&
         Prayer.entries.all { of(it) == other.of(it) } &&
         alarmClockMode == other.alarmClockMode && playOnSilent == other.playOnSilent && vibration == other.vibration &&
         adhanVolume == other.adhanVolume && customAdhans == other.customAdhans
 
     override fun hashCode(): Int =
-        listOf(Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, adhanVolume, customAdhans).hashCode()
+        listOf(enabled, Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, adhanVolume, customAdhans).hashCode()
 }

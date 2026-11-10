@@ -162,6 +162,9 @@
     <string name="alerts_sound_full">الأذان كاملًا</string>
     <string name="alerts_sound_full_fajr">أذان الفجر كاملًا، مع «الصلاة خير من النوم»</string>
     <string name="alerts_sound_silent">صامت (إشعار فقط)</string>
+    <string name="alerts_reciter_short">تكبيرات الأذان، بصوت مشاري العفاسي</string>
+    <string name="alerts_reciter_full">أذان الحرم المكي</string>
+    <string name="alerts_reciter_fajr">أذان الفجر بصوت مشاري العفاسي</string>
     <string name="alerts_reminder">التذكير قبل الصلاة</string>
     <string name="alerts_reminder_minutes">قبل %1$s دقيقة</string>
     <string name="alerts_adhan_off">بلا تنبيه أذان</string>
@@ -362,6 +365,12 @@
     <string name="settings_alerts_at_risk">قد تتأخر التنبيهات</string>
     <string name="alerts_each_prayer">لكل صلاة</string>
     <string name="alerts_behaviour">طريقة التنبيه</string>
+    <string name="alerts_all">كل تنبيهات التطبيق</string>
+    <string name="alerts_all_on_description">الأذان والتذكير يعملان حسب إعداد كل صلاة</string>
+    <string name="alerts_all_off_description">متوقفة: لن يصلك أذان ولا تذكير ولا أي إشعار من التطبيق حتى تشغّلها</string>
+    <string name="settings_alerts_summary_off">كلها موقوفة</string>
+    <string name="settings_alerts_off">التنبيهات متوقفة</string>
+    <string name="settings_alerts_off_summary">أوقفت كل تنبيهات التطبيق. اضغط لتشغيلها من جديد.</string>
     <string name="alerts_adhan_alert_of">تنبيه الأذان: %1$s</string>
     <string name="alerts_reminder_description">إشعار هادئ قبل الصلاة، بلا أذان</string>
     <string name="alerts_of_prayer">تنبيه %1$s</string>

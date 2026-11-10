@@ -254,6 +254,10 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.updatePrayerAlert(prayer, change) }
                             }
 
+                            override fun setAlertsEnabled(on: Boolean) {
+                                scope.launch { settingsStore.setAlertsEnabled(on) }
+                            }
+
                             override fun setAlarmClockMode(on: Boolean) {
                                 scope.launch { settingsStore.setAlarmClockMode(on) }
                             }

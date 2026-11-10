@@ -159,6 +159,20 @@ class AlertPlanTest {
         assertEquals(LocalDate.parse("2026-11-08"), dhuhrReminder.prayerDay)
     }
 
+    @Test
+    fun `with every alert turned off the plan holds no Adhan Alert and no Prayer Reminder, and the display moves at each Prayer Time`() {
+        val alerts = AlertSettings(enabled = false)
+            .with(Prayer.DHUHR, PrayerAlertSettings(sound = AdhanSoundChoice.FULL, reminder = true))
+        val plan = planAt(makkah("2026-11-08", "11:00"), withAlerts(alerts))
+
+        assertTrue(plan.alerts.isEmpty())
+        // Dhuhr 12:04 is the next display change: no Adhan Alert announces it any more.
+        assertEquals("12:04", plan.nextDisplayChange.atZone(riyadh).truncatedTo(ChronoUnit.MINUTES).toLocalTime().toString())
+        // Turning them back on restores each Prayer's own settings.
+        val again = planAt(makkah("2026-11-08", "11:00"), withAlerts(alerts.copy(enabled = true)))
+        assertEquals(AlertKind.PRAYER_REMINDER, again.alerts.first().kind)
+    }
+
     private val everyPrayerFull = Prayer.entries.fold(AlertSettings()) { a, p -> a.with(p, PrayerAlertSettings(sound = AdhanSoundChoice.FULL)) }
 
     private fun AlertPlan.adhanSounds() = alerts.filter { it.kind == AlertKind.ADHAN_ALERT }.associate { it.prayer to it.sound }

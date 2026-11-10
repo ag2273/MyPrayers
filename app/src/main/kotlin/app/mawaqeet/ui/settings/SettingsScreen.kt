@@ -117,6 +117,9 @@ interface SettingsActions {
 
     /** Settings → Alerts (#23); each change reschedules the alarms through the settings flow. */
     fun updatePrayerAlert(prayer: Prayer, change: (PrayerAlertSettings) -> PrayerAlertSettings)
+
+    /** Settings → Alerts → All alerts: the master switch; off silences every Adhan Alert and Prayer Reminder. */
+    fun setAlertsEnabled(on: Boolean)
     fun setAlarmClockMode(on: Boolean)
 
     /** Settings → Alerts → Try it: an Adhan Alert for the next Prayer in 10 seconds, in the current mode. False if it can't be scheduled. */
@@ -187,7 +190,12 @@ fun SettingsHub(
     val format = LocalDisplayFormatter.current
     val resources = LocalResources.current
     TabPage(stringResource(R.string.settings)) {
-        AlertStatusCard(alertsAtRisk, onClick = if (alertsAtRisk) onOpenFixAlerts else { { onOpen(SettingsRoute(SettingsPage.ALERTS)) } })
+        val alertsOn = settings.alerts.enabled
+        AlertStatusCard(
+            alertsOn = alertsOn,
+            atRisk = alertsAtRisk,
+            onClick = if (alertsOn && alertsAtRisk) onOpenFixAlerts else { { onOpen(SettingsRoute(SettingsPage.ALERTS)) } },
+        )
         SectionTitle(stringResource(R.string.settings_section_prayer))
         Card {
             NavRow(
@@ -199,7 +207,11 @@ fun SettingsHub(
             val withAdhan = Prayer.entries.count { settings.alerts.of(it).adhanAlert }
             NavRow(
                 stringResource(R.string.settings_group_alerts),
-                resources.getString(R.string.settings_alerts_summary, format.number(withAdhan), format.number(Prayer.entries.size)),
+                if (alertsOn) {
+                    resources.getString(R.string.settings_alerts_summary, format.number(withAdhan), format.number(Prayer.entries.size))
+                } else {
+                    resources.getString(R.string.settings_alerts_summary_off)
+                },
                 icon = R.drawable.ic_bell,
             ) { onOpen(SettingsRoute(SettingsPage.ALERTS)) }
         }
@@ -237,12 +249,46 @@ fun SettingsHub(
     }
 }
 
-/** Alerts are ready (the Grant screen comes first otherwise), or this phone may delay them until Fix alerts is done. */
+/**
+ * Alerts are ready (the Grant screen comes first otherwise), this phone may delay them until Fix alerts is done, or
+ * the user turned every alert off (Settings → Alerts → All alerts).
+ */
 @Composable
-private fun AlertStatusCard(atRisk: Boolean, onClick: () -> Unit) {
+private fun AlertStatusCard(alertsOn: Boolean, atRisk: Boolean, onClick: () -> Unit) {
+    if (!alertsOn) {
+        StatusCard(
+            icon = R.drawable.ic_bell_off,
+            title = stringResource(R.string.settings_alerts_off),
+            summary = stringResource(R.string.settings_alerts_off_summary),
+            background = MaterialTheme.colorScheme.surfaceVariant,
+            content = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+            onClick = onClick,
+        )
+        return
+    }
     val colors = MaterialTheme.colorScheme
-    val background = if (atRisk) colors.secondaryContainer else colors.tertiaryContainer
-    val content = if (atRisk) colors.onSecondaryContainer else colors.onTertiaryContainer
+    StatusCard(
+        icon = if (atRisk) R.drawable.ic_warning else R.drawable.ic_check,
+        title = stringResource(if (atRisk) R.string.settings_alerts_at_risk else R.string.settings_alerts_ready),
+        summary = stringResource(if (atRisk) R.string.fix_alerts_tip else R.string.settings_alerts_ready_summary),
+        background = if (atRisk) colors.secondaryContainer else colors.tertiaryContainer,
+        content = if (atRisk) colors.onSecondaryContainer else colors.onTertiaryContainer,
+        iconTint = if (atRisk) colors.onSecondaryContainer else colors.tertiary,
+        onClick = onClick,
+    )
+}
+
+@Composable
+private fun StatusCard(
+    @DrawableRes icon: Int,
+    title: String,
+    summary: String,
+    background: Color,
+    content: Color,
+    iconTint: Color,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -253,19 +299,10 @@ private fun AlertStatusCard(atRisk: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(
-            painterResource(if (atRisk) R.drawable.ic_warning else R.drawable.ic_check),
-            contentDescription = null,
-            tint = if (atRisk) content else colors.tertiary,
-            modifier = Modifier.size(24.dp),
-        )
+        Icon(painterResource(icon), contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
         Column(Modifier.weight(1f)) {
-            Text(stringResource(if (atRisk) R.string.settings_alerts_at_risk else R.string.settings_alerts_ready), style = MaterialTheme.typography.titleMedium, color = content)
-            Text(
-                stringResource(if (atRisk) R.string.fix_alerts_tip else R.string.settings_alerts_ready_summary),
-                style = MaterialTheme.typography.bodyMedium,
-                color = content,
-            )
+            Text(title, style = MaterialTheme.typography.titleMedium, color = content)
+            Text(summary, style = MaterialTheme.typography.bodyMedium, color = content)
         }
     }
 }
@@ -296,7 +333,9 @@ fun SettingsPageScreen(
                 onNavigate(route.parent)
             }
             SettingsPage.ALERTS -> AlertsPage(settings.alerts, actions) { onNavigate(SettingsRoute(SettingsPage.PRAYER_ALERT, it)) }
-            SettingsPage.PRAYER_ALERT -> PrayerAlertPage(prayer, settings.alerts.of(prayer)) { change -> actions.updatePrayerAlert(prayer, change) }
+            SettingsPage.PRAYER_ALERT -> PrayerAlertPage(prayer, settings.alerts.of(prayer), settings.alerts.customAdhans.keys) { change ->
+                actions.updatePrayerAlert(prayer, change)
+            }
             SettingsPage.DISPLAY -> DisplayPage(settings, digitStyle, today, actions)
             SettingsPage.WIDGETS -> WidgetsPage(widgetAppearance, actions)
             SettingsPage.ABOUT -> AboutPage(actions) { onNavigate(SettingsRoute(SettingsPage.CREDITS)) }
