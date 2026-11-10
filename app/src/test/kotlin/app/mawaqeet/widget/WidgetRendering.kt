@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.compose
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -17,10 +18,12 @@ import kotlin.math.roundToInt
 /**
  * Renders [widget] through Glance at [width]×[height] dp and lays the RemoteViews out as a launcher would, with real
  * text measurement under `@GraphicsMode(NATIVE)`. Composed on the main thread, as on a phone, so a Prayer Log query
- * in composition fails here too (Room refuses the main thread).
+ * in composition fails here too (Room refuses the main thread). A Responsive widget is composed at the bucket the
+ * launcher would pick for that size (the largest that fits, else the smallest), as on a phone, and laid out at the
+ * real size.
  */
 internal fun renderWidget(context: Context, widget: GlanceAppWidget, width: Int, height: Int): View {
-    val views = runBlocking { widget.compose(context, size = DpSize(width.dp, height.dp)) }
+    val views = runBlocking { widget.compose(context, size = composedSize(widget, DpSize(width.dp, height.dp))) }
     val density = context.resources.displayMetrics.density
     val w = (width * density).roundToInt()
     val h = (height * density).roundToInt()
@@ -30,6 +33,13 @@ internal fun renderWidget(context: Context, widget: GlanceAppWidget, width: Int,
         parent.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
         parent.layout(0, 0, w, h)
     }
+}
+
+/** The size Glance composes [widget] at when the launcher gives it [real]. */
+internal fun composedSize(widget: GlanceAppWidget, real: DpSize): DpSize {
+    val sizes = (widget.sizeMode as? SizeMode.Responsive)?.sizes ?: return real
+    return sizes.filter { it.width <= real.width && it.height <= real.height }.maxByOrNull { it.width.value * it.height.value }
+        ?: sizes.minBy { it.width.value * it.height.value }
 }
 
 /** Every visible, non-empty TextView under [view]. */
