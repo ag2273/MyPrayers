@@ -71,6 +71,9 @@ internal class WidgetDirection(val rtl: Boolean, hostRtl: Boolean = phoneRtl()) 
 
     val start: Alignment.Horizontal get() = if (flipped) Alignment.End else Alignment.Start
 
+    /** A Box's content at the app language's end, vertically centred. */
+    val endAlignment: Alignment get() = if (flipped) Alignment.CenterStart else Alignment.CenterEnd
+
     fun <T> inReadingOrder(items: List<T>): List<T> = if (flipped) items.asReversed() else items
 
     /** Padding on the app language's start side, whatever the launcher's direction. */
@@ -273,24 +276,6 @@ private fun RemoteViews.setColor(context: Context, id: Int, listMethod: String, 
 }
 
 /**
- * The date line, Gregorian then Hijri: the Hijri date takes the remaining width and is the one that ellipsizes when
- * space is tight. Gaps are padding, never a Spacer: before Android 12 Glance sizes a Spacer with a hidden 14sp text
- * that makes the line taller than its text.
- */
-@Composable
-internal fun DateLine(date: WidgetDate, sp: Float = 12f, boldGregorian: Boolean = false) {
-    val direction = LocalWidgetDirection.current
-    ReadingRow(
-        GlanceModifier.fillMaxWidth().wrapContentHeight(),
-        Alignment.CenterVertically,
-        listOf(
-            { WidgetLine(date.gregorian, sp, Tone.TEXT, bold = boldGregorian) },
-            { WidgetLine(date.hijri, sp, Tone.MUTED, modifier = GlanceModifier.defaultWeight().then(direction.paddingStart(8.dp))) },
-        ),
-    )
-}
-
-/**
  * The height in dp of one line of [text] at [sp], measured with the system font as the launcher lays it out (no font
  * padding). Arabic lines are taller than Latin ones, so layouts that must fit a small height measure rather than guess.
  */
@@ -304,4 +289,21 @@ internal fun lineHeightDp(text: String, sp: Float, fontScale: Float = 1f, bold: 
         // TextView uses the (taller) Arabic fallback font's line spacing from Android 9 on.
         .apply { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) setUseLineSpacingFromFallbacks(true) }
         .build().height
+}
+
+/** The width in dp of [text] at [sp] in the system font the launcher draws in. */
+internal fun textWidthDp(text: String, sp: Float, fontScale: Float = 1f, bold: Boolean = false): Float =
+    TextPaint().apply {
+        textSize = sp * fontScale
+        typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+    }.measureText(text)
+
+/**
+ * The largest scale from 1 down, in 5% steps and never below [floor], at which [fits] holds: a layout drawn at the
+ * design's sizes shrinks as a whole, so its proportions stay, when the launcher gives it less room than the design.
+ */
+internal inline fun fitScale(floor: Float = 0.6f, fits: (Float) -> Boolean): Float {
+    var scale = 1f
+    while (scale > floor + 0.001f && !fits(scale)) scale -= 0.05f
+    return scale
 }

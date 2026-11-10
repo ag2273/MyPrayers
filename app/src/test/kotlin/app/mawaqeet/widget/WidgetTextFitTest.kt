@@ -87,24 +87,23 @@ class WidgetTextFitTest {
     }
 
     @Test
-    fun `the Gregorian date and the next Prayer line fit at the smallest 4x1 width`() {
-        val room = 250f - 2 * 16f
+    fun `the Date strip's dates and next Prayer fit side by side at a readable size at the smallest 4x1`() {
         for (locale in languages) {
             val strings = localizedContext(context, locale)
             for (digits in DigitStyle.entries) {
                 val formatter = DisplayFormatter(locale, digits)
-                // Every weekday and month, on the widest day numbers.
+                // Every weekday and month, on the widest day numbers, with the widest Prayer and time.
                 val dates = (1..12).flatMap { month -> (24..30).map { LocalDate.of(2026, month, if (month == 2) it - 2 else it) } }
+                val next = names.map { strings.getString(it) }.flatMap { name -> widestTime(formatter).map { "$name $it" } }
+                    .maxBy { width(it, DateStripMetrics.NEXT_SP, bold = true) }
                 for (date in dates) {
-                    val gregorian = formatter.shortGregorianDate(date)
-                    // The Gregorian date keeps at least a few characters' room for the Hijri date beside it.
-                    assertTrue("$gregorian is too wide", width(gregorian, 13f, bold = true) + 8f + 40f <= room)
-                    assertTrue("$gregorian is too wide for 4×2", width(gregorian, 12f) + 8f + 40f <= 250f - 20f)
-                }
-                for (name in names.map { strings.getString(it) }) {
-                    val time = widestTime(formatter).maxBy { width(it, 13f, bold = true) }
-                    val line = strings.getString(R.string.widget_next_line, name, time)
-                    assertTrue("$line is too wide", width(line, 13f, bold = true) <= room)
+                    val text = object : DateStripText {
+                        override val date = WidgetDate(formatter.shortGregorianDate(date), "")
+                        override val nextLabel = strings.getString(R.string.widget_next_label)
+                        override val next = next
+                    }
+                    val scale = DateStripMetrics.scale(text, DateStripMetrics.MIN_WIDTH_DP, 56f)
+                    assertTrue("${text.date.gregorian} | $next: scale $scale", scale >= 0.6f)
                 }
             }
         }

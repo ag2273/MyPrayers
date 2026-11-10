@@ -25,7 +25,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.time.Clock
 
 /**
- * Renders the two Prayer Log widgets over the app's real Prayer Log (Room) at their smallest 4×3 size: the words, the
+ * Renders the two Prayer Log widgets over the app's real Prayer Log (Room) at their smallest size (4×2 and 4×3): the words, the
  * marks, nothing clipped, one tap target each, and where that tap goes.
  */
 @RunWith(AndroidJUnit4::class)
@@ -54,13 +54,12 @@ class PrayerLogWidgetsRenderTest {
     }
 
     @Test
-    fun `Today with Prayer Log shows the five Prayers, Sunrise and the date in Arabic, with nothing clipped`() {
-        val root = renderWidget(context, TodayLogWidget(), 250, 180)
+    fun `Today with Prayer Log shows its title, the count marked and the five Prayers in Arabic, with nothing clipped`() {
+        val root = renderWidget(context, TodayLogWidget(), 250, 110)
         val words = widgetTexts(root).map { it.text.toString() }
 
-        for (name in listOf("الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
-        assertTrue(words.any { it.startsWith("الشروق ") })
-        assertTrue(words.any { "هـ" in it })
+        for (name in listOf("اليوم وسجل الصلاة", "الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
+        assertTrue("no count in $words", words.any { it.endsWith(" من ٥") })
         assertEquals(View.LAYOUT_DIRECTION_RTL, widgetTexts(root).first().layoutDirection)
         assertNothingClipped(root, allowEllipsis = isHijriDate)
     }
@@ -70,7 +69,7 @@ class PrayerLogWidgetsRenderTest {
         val core = core()
         val today = io { core.prayerDay(core.displayDay().date) }
         val due = Prayer.entries.firstOrNull { today.isMarkable(it) } ?: return // before Fajr: nothing can be marked yet
-        fun labels() = images(renderWidget(context, TodayLogWidget(), 250, 180)).mapNotNull { it.contentDescription?.toString() }
+        fun labels() = images(renderWidget(context, TodayLogWidget(), 250, 110)).mapNotNull { it.contentDescription?.toString() }
 
         assertEquals(0, labels().count { it == "صُلّيت" })
         io { core.mark(today.date, due) }
@@ -81,18 +80,17 @@ class PrayerLogWidgetsRenderTest {
 
     @Test
     fun `Today with Prayer Log opens today's Prayer Times`() {
-        assertEquals(MainActivity.Opens.TODAY, tapOpens(renderWidget(context, TodayLogWidget(), 250, 180)))
+        assertEquals(MainActivity.Opens.TODAY, tapOpens(renderWidget(context, TodayLogWidget(), 250, 110)))
     }
 
     @Test
-    fun `Week Prayer Log shows seven day letters, five rows and the total, with nothing clipped, and opens the Prayer Log`() {
+    fun `Week Prayer Log shows five rows and the total, with nothing clipped, and opens the Prayer Log`() {
         val root = renderWidget(context, WeekLogWidget(), 250, 180)
         val words = widgetTexts(root).map { it.text.toString() }
 
         assertTrue("سجل الأسبوع" in words)
-        assertTrue("no total in $words", words.any { "/" in it })
+        assertTrue("no total in $words", words.any { it.startsWith("المجموع ") })
         for (name in listOf("الفجر", "الظهر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
-        assertEquals(7, words.count { it.length == 1 })
         assertNothingClipped(root)
         assertEquals(MainActivity.Opens.PRAYER_LOG, tapOpens(root))
     }
@@ -100,8 +98,8 @@ class PrayerLogWidgetsRenderTest {
     @Test
     @Config(qualifiers = "en-night")
     fun `in English and dark mode both are LTR with nothing clipped`() {
-        for (widget in listOf(TodayLogWidget(), WeekLogWidget())) {
-            val root = renderWidget(context, widget, 250, 180)
+        for ((widget, height) in listOf(TodayLogWidget() to 110, WeekLogWidget() to 180, WeekLogWidget() to 110)) {
+            val root = renderWidget(context, widget, 250, height)
             assertEquals(View.LAYOUT_DIRECTION_LTR, widgetTexts(root).first().layoutDirection)
             assertNothingClipped(root, allowEllipsis = isHijriDate)
         }
@@ -119,7 +117,7 @@ class PrayerLogWidgetsRenderTest {
         for (names in listOf(listOf("Fajr"), listOf("Dhuhr", "Jumu'ah"), listOf("Asr"), listOf("Maghrib"), listOf("Isha"))) {
             assertTrue("no row for $names in $week", week.any { row -> names.any { row.startsWith("$it:") } })
         }
-        val marks = images(renderWidget(context, TodayLogWidget(), 250, 180)).mapNotNull { it.contentDescription?.toString() }
+        val marks = images(renderWidget(context, TodayLogWidget(), 250, 110)).mapNotNull { it.contentDescription?.toString() }
         assertEquals(marks.toString(), 5, marks.size)
         assertTrue(marks.toString(), marks.all { it in setOf("Prayed", "Not marked", "Not yet due") })
     }

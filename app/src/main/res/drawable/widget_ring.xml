@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Prayer Log widget mark: its time has arrived, not marked (solid ring). -->
+<!--
+  Prayer Log ring: not marked (muted), not yet due (faint), or the next Prayer on its accent fill (on-accent).
+  Tinted per use; drawn at the layout's size.
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
     <!-- A transparent fill, never none: with no fill, a tinted shape fills its inside with the tint colour. -->
     <solid android:color="@android:color/transparent" />
-    <size android:width="22dp" android:height="22dp" />
+    <size android:width="20dp" android:height="20dp" />
     <stroke android:width="2dp" android:color="@android:color/white" />
 </shape>

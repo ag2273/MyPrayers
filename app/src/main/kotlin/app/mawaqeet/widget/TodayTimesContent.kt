@@ -7,7 +7,7 @@ import app.mawaqeet.core.DisplayFormatter
 
 /**
  * What the Today's Prayer Times widget (4×2) shows, decided from the core's display day and the shared formatter
- * only: the date line and six columns in day order (Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha). There is no
+ * only: the date and the five Prayers' columns in day order (no Sunrise, as on the Widgets board). There is no
  * countdown. [TodayTimesWidget] just lays it out.
  */
 data class TodayTimesContent(
@@ -15,12 +15,10 @@ data class TodayTimesContent(
     val columns: List<Column>,
 ) {
     data class Column(
-        /** The Prayer's name (Jumu'ah for Friday's Dhuhr), or Sunrise. */
+        /** The Prayer's name (Jumu'ah for Friday's Dhuhr). */
         @param:StringRes val nameRes: Int,
         /** Its time, in the user's digits and with no ص/م suffix (always `HH:mm`). */
         val time: String,
-        /** Sunrise is shown, but muted and never highlighted. */
-        val isSunrise: Boolean,
         /** The next Prayer, when it is on the displayed date. After Isha nothing is highlighted until midnight. */
         val isNext: Boolean,
     )
@@ -32,20 +30,17 @@ data class TodayTimesContent(
                 Column(
                     nameRes = prayerNameRes(prayerTime),
                     time = formatter.time(prayerTime.time),
-                    isSunrise = false,
                     isNext = nextToday && prayerTime == day.next,
                 )
             }
-            val sunrise = Column(R.string.sunrise, formatter.time(day.sunrise), isSunrise = true, isNext = false)
-            // Sunrise always falls between Fajr and Dhuhr.
-            return TodayTimesContent(WidgetDate.of(day, formatter), listOf(prayers.first(), sunrise) + prayers.drop(1))
+            return TodayTimesContent(WidgetDate.of(day, formatter), prayers)
         }
     }
 }
 
 /**
- * What the Date strip widget (4×1) shows: the date line, then the next Prayer and its time on a second line. The
- * next Prayer is shown even when it is tomorrow's Fajr.
+ * What the Date strip widget (4×1) shows: the Gregorian date over the Hijri date, and the next Prayer with its time
+ * at the end. The next Prayer is shown even when it is tomorrow's Fajr.
  */
 data class DateStripContent(
     val date: WidgetDate,

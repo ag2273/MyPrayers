@@ -10,9 +10,9 @@ import app.mawaqeet.core.PrayerDay
 import app.mawaqeet.core.PrayerWeek
 
 /**
- * What the Today with Prayer Log widget (4×3) shows: the display day's date line, then its five Prayers, each with
- * its time and its Prayer Log state, the next one highlighted, and Sunrise as a footer. Display only: the widget
- * never changes the log.
+ * What the Today with Prayer Log widget (4×2) shows: how many of the display day's Prayers are marked, then its five
+ * Prayers, each with its time and its Prayer Log state, the next one highlighted. Display only: the widget never
+ * changes the log.
  *
  * Like every widget it follows the display day, which switches at midnight: after midnight and before Fajr it shows
  * the new date, whose Prayers are all not yet due, although the current Prayer Day is still the previous one.
@@ -20,9 +20,10 @@ import app.mawaqeet.core.PrayerWeek
 data class TodayLogContent(
     val date: WidgetDate,
     val rows: List<Row>,
-    /** Sunrise's time, for the footer line. */
-    val sunrise: String,
 ) {
+    /** How many of the five are marked prayed. */
+    val prayedCount: Int get() = rows.count { it.state == LogState.PRAYED }
+
     data class Row(
         val prayer: Prayer,
         @param:StringRes val nameRes: Int,
@@ -47,7 +48,6 @@ data class TodayLogContent(
                         isNext = nextToday && prayerTime == day.next,
                     )
                 },
-                sunrise = formatter.time(day.sunrise),
             )
         }
     }
@@ -55,16 +55,16 @@ data class TodayLogContent(
 
 /**
  * What the Week Prayer Log widget (4×3) shows: the core's week grid (the last 7 Prayer Days, oldest first in reading
- * direction, × 5 Prayers), today's column highlighted, and the week's total, the same numbers as the Prayer Log
- * screen's summary (days before first use don't count). Display only.
+ * direction, × 5 Prayers), and the week's total, the same numbers as the Prayer Log screen's summary (days before
+ * first use don't count). Display only.
  */
 data class WeekLogContent(
-    /** One letter per Prayer Day, oldest first; the last is today. */
-    val weekdays: List<String>,
     /** For each Prayer in day order, its seven cells, oldest first. */
     val rows: List<Row>,
-    /** The week's total, e.g. `٣١/٣٥`. */
-    val total: String,
+    /** The week's prayed total, in the user's digits, e.g. `٢٦`. */
+    val prayed: String,
+    /** Out of how many, e.g. `٣٢`. */
+    val possible: String,
 ) {
     enum class Cell { PRAYED, NOT_MARKED, NOT_YET_DUE, BEFORE_FIRST_USE }
 
@@ -72,13 +72,16 @@ data class WeekLogContent(
     data class Row(val prayer: Prayer, @param:StringRes val nameRes: Int, val cells: List<Cell>)
 
     companion object {
-        fun of(week: PrayerWeek, formatter: DisplayFormatter): WeekLogContent = WeekLogContent(
-            weekdays = week.days.map { formatter.narrowWeekday(it.date) },
-            rows = Prayer.entries.map { prayer ->
-                Row(prayer, prayerNameRes(prayer), week.days.map { day -> cellOf(week, day, prayer) })
-            },
-            total = week.summary.total.let { formatter.count(it.prayed, it.possible) },
-        )
+        fun of(week: PrayerWeek, formatter: DisplayFormatter): WeekLogContent {
+            val total = week.summary.total
+            return WeekLogContent(
+                rows = Prayer.entries.map { prayer ->
+                    Row(prayer, prayerNameRes(prayer), week.days.map { day -> cellOf(week, day, prayer) })
+                },
+                prayed = formatter.number(total.prayed),
+                possible = formatter.number(total.possible),
+            )
+        }
 
         private fun cellOf(week: PrayerWeek, day: PrayerDay, prayer: Prayer): Cell = when {
             week.isBeforeFirstUse(day) -> Cell.BEFORE_FIRST_USE

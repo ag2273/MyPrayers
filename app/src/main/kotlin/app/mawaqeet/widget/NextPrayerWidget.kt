@@ -20,17 +20,18 @@ import androidx.glance.layout.Alignment
 import androidx.glance.layout.padding
 import androidx.glance.layout.wrapContentHeight
 import androidx.glance.layout.wrapContentWidth
-import androidx.glance.layout.Row
+import androidx.glance.layout.fillMaxWidth
 import app.mawaqeet.R
 import java.time.Clock
 
 /**
- * The Next Prayer Widget Variant (2×2, and 2×1 via [NextPrayerCompactWidgetReceiver]): the next Prayer's name, its
- * time and a live `بعد H:MM:SS` countdown. A thin layer over [NextPrayerContent]; it re-renders on
- * [Widgets.refreshAll]. Tapping opens the app on today's Prayer Times. On Android 12+ it has three size steps.
+ * The Next Prayer Widget Variant (4×2, and 2×1 via [NextPrayerCompactWidgetReceiver]): the next Prayer's name and
+ * time, and a live `بعد H:MM:SS` countdown. A thin layer over [NextPrayerContent]; it re-renders on
+ * [Widgets.refreshAll]. Tapping opens the app on today's Prayer Times. On Android 12+ it has three layouts: two lines
+ * at 2×1, name over time when narrow, and name and time side by side from 4 cells wide.
  */
 class NextPrayerWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, SQUARE, LARGE))
+    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, SQUARE, WIDE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
@@ -42,8 +43,8 @@ class NextPrayerWidget : GlanceAppWidget() {
                 view,
                 rtl,
                 compact = size.height < SQUARE.height,
-                // Android 8–11 keeps one layout at the default size.
-                large = style.responsive && size.width >= LARGE.width && size.height >= LARGE.height,
+                // Android 8–11 keeps one layout at the default size, which is 4×2.
+                wide = !style.responsive || size.width >= WIDE.width,
             )
         },
     )
@@ -51,7 +52,7 @@ class NextPrayerWidget : GlanceAppWidget() {
     private companion object {
         val COMPACT = DpSize(110.dp, 40.dp)
         val SQUARE = DpSize(110.dp, 100.dp)
-        val LARGE = DpSize(180.dp, 180.dp)
+        val WIDE = DpSize(220.dp, 100.dp)
     }
 }
 
@@ -65,6 +66,9 @@ private data class NextPrayerView(
     /** `SystemClock.elapsedRealtime()` at which the countdown reaches zero. */
     val countdownBase: Long,
 ) {
+    /** The longest the countdown reads, for measuring. */
+    val countdownSample: String get() = countdownFormat.format("00:00:00")
+
     companion object {
         fun of(content: NextPrayerContent, text: WidgetText) = NextPrayerView(
             label = text.strings.getString(R.string.widget_next_prayer),
@@ -77,52 +81,112 @@ private data class NextPrayerView(
 }
 
 @Composable
-private fun NextPrayerLayout(view: NextPrayerView, rtl: Boolean, compact: Boolean, large: Boolean) {
-    val step = if (large) 1.3f else 1f
-    val height = LocalSize.current.height.value
-    val vertical = if (compact) NextPrayerMetrics.compactPaddingDp(height) else 12f
-    WidgetFrame(rtl, horizontal = 14.dp, vertical = vertical.dp) {
-        if (compact) {
-            // Two lines in as little as 40dp: both shrink together until they fit, measured as the launcher draws them.
-            val fontScale = LocalContext.current.resources.configuration.fontScale
-            val scale = NextPrayerMetrics.compactScale(view.name, view.countdownFormat.format(view.time), height, fontScale)
-            val direction = LocalWidgetDirection.current
-            ReadingRow(
-                verticalAlignment = Alignment.CenterVertically,
-                children = listOf(
-                    { WidgetLine(view.name, NextPrayerMetrics.COMPACT_NAME_SP * scale, Tone.ACCENT, bold = true, modifier = GlanceModifier.defaultWeight()) },
-                    { WidgetLine(view.time, NextPrayerMetrics.COMPACT_TIME_SP * scale, Tone.MUTED, modifier = direction.paddingStart(8.dp)) },
-                ),
-            )
-            Countdown(view, NextPrayerMetrics.COMPACT_COUNTDOWN_SP * scale)
-        } else {
-            WidgetLine(view.label, 12f * step, Tone.MUTED)
-            WidgetLine(view.name, 26f * step, Tone.ACCENT, bold = true)
-            WidgetLine(view.time, 15f * step, Tone.TEXT)
-            Countdown(view, 15f * step, GlanceModifier.padding(top = 4.dp))
+private fun NextPrayerLayout(view: NextPrayerView, rtl: Boolean, compact: Boolean, wide: Boolean) {
+    val size = LocalSize.current
+    val fontScale = LocalContext.current.resources.configuration.fontScale
+    when {
+        compact -> {
+            val vertical = NextPrayerMetrics.compactPaddingDp(size.height.value)
+            WidgetFrame(rtl, horizontal = NextPrayerMetrics.COMPACT_PADDING, vertical = vertical.dp) {
+                // Two lines in as little as 40dp: both shrink together until they fit, measured as the launcher draws them.
+                val line = NextPrayerMetrics.compactLine(view.name, view.time)
+                val scale = NextPrayerMetrics.compactScale(line, view.countdownSample, size.width.value, size.height.value, fontScale)
+                WidgetLine(line, NextPrayerMetrics.COMPACT_LINE_SP * scale, Tone.TEXT, bold = true)
+                Countdown(view, NextPrayerMetrics.COMPACT_COUNTDOWN_SP * scale)
+            }
+        }
+        wide -> {
+            // On Android 8–11 the launcher's size isn't known: lay out for the smallest 4×2.
+            val width = if (LocalWidgetStyle.current.responsive) size.width.value else NextPrayerMetrics.WIDE_MIN_WIDTH
+            val height = if (LocalWidgetStyle.current.responsive) size.height.value else NextPrayerMetrics.WIDE_MIN_HEIGHT
+            val scale = NextPrayerMetrics.wideScale(view.label, view.name, view.time, view.countdownSample, width, height, fontScale)
+            WidgetFrame(rtl, horizontal = NextPrayerMetrics.PADDING_H, vertical = NextPrayerMetrics.PADDING_V) {
+                WidgetLine(view.label, NextPrayerMetrics.LABEL_SP * scale, Tone.MUTED, bold = true)
+                // The name at the app language's start, the time at its end.
+                ReadingRow(
+                    GlanceModifier.fillMaxWidth().padding(top = (NextPrayerMetrics.ROW_GAP_DP * scale).dp),
+                    Alignment.Bottom,
+                    listOf(
+                        cell { WidgetLine(view.name, NextPrayerMetrics.NAME_SP * scale, Tone.TEXT, bold = true, modifier = GlanceModifier.defaultWeight()) },
+                        cell { WidgetLine(view.time, NextPrayerMetrics.TIME_SP * scale, Tone.TEXT, bold = true) },
+                    ),
+                )
+                Countdown(view, NextPrayerMetrics.COUNTDOWN_SP * scale)
+            }
+        }
+        else -> {
+            val scale = NextPrayerMetrics.squareScale(view.label, view.name, view.time, view.countdownSample, size.width.value, size.height.value, fontScale)
+            WidgetFrame(rtl, horizontal = NextPrayerMetrics.COMPACT_PADDING, vertical = NextPrayerMetrics.PADDING_V) {
+                WidgetLine(view.label, NextPrayerMetrics.LABEL_SP * scale, Tone.MUTED, bold = true)
+                WidgetLine(view.name, NextPrayerMetrics.SQUARE_NAME_SP * scale, Tone.TEXT, bold = true)
+                WidgetLine(view.time, NextPrayerMetrics.SQUARE_TIME_SP * scale, Tone.TEXT, bold = true)
+                Countdown(view, NextPrayerMetrics.SQUARE_COUNTDOWN_SP * scale)
+            }
         }
     }
 }
 
-/** Sizes of the compact (2×1) layout. */
+/**
+ * Sizes of the three layouts, from the Widgets board: the 4×2 shows the name (34sp) and time (30sp) side by side
+ * under a 12sp label, with an 18sp countdown; everything shrinks together when the launcher gives less room.
+ */
 internal object NextPrayerMetrics {
-    const val COMPACT_NAME_SP = 18f
-    const val COMPACT_TIME_SP = 13f
+    val PADDING_H = 18.dp
+    val PADDING_V = 14.dp
+    val COMPACT_PADDING = 14.dp
+    const val WIDE_MIN_WIDTH = 250f
+    const val WIDE_MIN_HEIGHT = 110f
+    const val LABEL_SP = 12f
+    const val NAME_SP = 34f
+    const val TIME_SP = 30f
+    const val COUNTDOWN_SP = 18f
+    const val ROW_GAP_DP = 6f
+    const val NAME_TIME_GAP_DP = 12f
+    const val SQUARE_NAME_SP = 26f
+    const val SQUARE_TIME_SP = 18f
+    const val SQUARE_COUNTDOWN_SP = 15f
+    const val COMPACT_LINE_SP = 18f
     const val COMPACT_COUNTDOWN_SP = 14f
+
+    /** The 2×1's first line: "العصر ٢:٤٤". */
+    fun compactLine(name: String, time: String) = "$name $time"
 
     fun compactPaddingDp(heightDp: Float) = if (heightDp < 56f) 4f else 8f
 
-    /** The largest scale from 1 down, in 5% steps, at which the name line and the countdown fit [heightDp]. */
-    fun compactScale(name: String, countdown: String, heightDp: Float, fontScale: Float = 1f): Float {
+    /** The 2×1's scale: its line and the countdown fit [widthDp] across and [heightDp] down. */
+    fun compactScale(line: String, countdown: String, widthDp: Float, heightDp: Float, fontScale: Float = 1f): Float {
         // 1dp spare: the Chronometer's ticking text can measure a pixel taller than the sample.
         val room = heightDp - 2 * compactPaddingDp(heightDp) - 1
-        var scale = 1f
-        while (scale > 0.6f) {
-            val first = lineHeightDp(name, COMPACT_NAME_SP * scale, fontScale, bold = true)
-            if (first + lineHeightDp(countdown, COMPACT_COUNTDOWN_SP * scale, fontScale, bold = true) <= room) break
-            scale -= 0.05f
+        val across = widthDp - 2 * COMPACT_PADDING.value
+        return fitScale {
+            lineHeightDp(line, COMPACT_LINE_SP * it, fontScale, bold = true) +
+                lineHeightDp(countdown, COMPACT_COUNTDOWN_SP * it, fontScale, bold = true) <= room &&
+                textWidthDp(line, COMPACT_LINE_SP * it, fontScale, bold = true) <= across &&
+                textWidthDp(countdown, COMPACT_COUNTDOWN_SP * it, fontScale, bold = true) <= across
         }
-        return scale
+    }
+
+    /** The 4×2's scale: name and time side by side fit the width, and the three lines fit the height. */
+    fun wideScale(label: String, name: String, time: String, countdown: String, widthDp: Float, heightDp: Float, fontScale: Float = 1f): Float {
+        val across = widthDp - 2 * PADDING_H.value
+        val room = heightDp - 2 * PADDING_V.value - 1
+        return fitScale(floor = 0.4f) {
+            textWidthDp(name, NAME_SP * it, fontScale, bold = true) + NAME_TIME_GAP_DP + textWidthDp(time, TIME_SP * it, fontScale, bold = true) <= across &&
+                lineHeightDp(label, LABEL_SP * it, fontScale, bold = true) + ROW_GAP_DP * it +
+                maxOf(lineHeightDp(name, NAME_SP * it, fontScale, bold = true), lineHeightDp(time, TIME_SP * it, fontScale, bold = true)) +
+                lineHeightDp(countdown, COUNTDOWN_SP * it, fontScale, bold = true) <= room
+        }
+    }
+
+    /** The narrow layout's scale: four lines, each within the width, all within the height. */
+    fun squareScale(label: String, name: String, time: String, countdown: String, widthDp: Float, heightDp: Float, fontScale: Float = 1f): Float {
+        val across = widthDp - 2 * COMPACT_PADDING.value
+        val room = heightDp - 2 * PADDING_V.value - 1
+        val lines = listOf(name to SQUARE_NAME_SP, time to SQUARE_TIME_SP, countdown to SQUARE_COUNTDOWN_SP)
+        return fitScale(floor = 0.4f) { s ->
+            lines.all { (text, sp) -> textWidthDp(text, sp * s, fontScale, bold = true) <= across } &&
+                lineHeightDp(label, LABEL_SP * s, fontScale, bold = true) + lines.sumOf { (text, sp) -> lineHeightDp(text, sp * s, fontScale, bold = true) } <= room
+        }
     }
 }
 
@@ -138,10 +202,11 @@ private fun Countdown(view: NextPrayerView, sp: Float, modifier: GlanceModifier 
         setChronometer(R.id.countdown, view.countdownBase, view.countdownFormat, true)
         setChronometerCountDown(R.id.countdown, true)
         setTextViewTextSize(R.id.countdown, TypedValue.COMPLEX_UNIT_SP, sp)
+        // The countdown is the accent line (Widgets board).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            setColorStateList(R.id.countdown, "setTextColor", style.text)
+            setColorStateList(R.id.countdown, "setTextColor", style.accent)
         } else {
-            setTextColor(R.id.countdown, context.getColor(style.text))
+            setTextColor(R.id.countdown, context.getColor(style.accent))
         }
         LocalWidgetDirection.current.applyTo(this, R.id.countdown)
     }
@@ -149,7 +214,7 @@ private fun Countdown(view: NextPrayerView, sp: Float, modifier: GlanceModifier 
     AndroidRemoteViews(chronometer, GlanceModifier.wrapContentWidth().wrapContentHeight().then(modifier))
 }
 
-/** The 2×2 entry in the widget picker. */
+/** The 4×2 entry in the widget picker. */
 class NextPrayerWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = NextPrayerWidget()
 }

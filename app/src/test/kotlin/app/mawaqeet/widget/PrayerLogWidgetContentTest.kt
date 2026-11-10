@@ -55,7 +55,7 @@ class PrayerLogWidgetContentTest {
         )
         assertEquals(listOf(Prayer.ASR), content.rows.filter { it.isNext }.map { it.prayer })
         assertEquals("١٥:١٧", content.rows[2].time)
-        assertEquals("٠٦:٢٧", content.sunrise)
+        assertEquals(1, content.prayedCount)
         assertEquals(WidgetDate("الأحد ٨ نوفمبر", "٢٨ جمادى الأولى ١٤٤٨ هـ"), content.date)
     }
 
@@ -102,7 +102,6 @@ class PrayerLogWidgetContentTest {
         val week = core.week()
         val content = WeekLogContent.of(week, english)
 
-        assertEquals(listOf("M", "T", "W", "T", "F", "S", "S"), content.weekdays)
         val fajr = content.rows.first { it.prayer == Prayer.FAJR }.cells
         assertEquals(Cell.PRAYED, fajr.first())
         assertEquals(Cell.PRAYED, fajr.last())
@@ -111,8 +110,8 @@ class PrayerLogWidgetContentTest {
         assertEquals(Cell.PRAYED, isha[3])
         assertEquals(Cell.NOT_YET_DUE, isha.last())
         // 6 full days and today's Fajr and Dhuhr: 32 possible, 3 prayed. The Prayer Log screen shows the same summary.
-        assertEquals(week.summary.total.let { english.count(it.prayed, it.possible) }, content.total)
-        assertEquals(english.count(3, 32), content.total)
+        assertEquals(week.summary.total.let { english.number(it.prayed) to english.number(it.possible) }, content.prayed to content.possible)
+        assertEquals("3" to "32", content.prayed to content.possible)
     }
 
     @Test
@@ -125,7 +124,7 @@ class PrayerLogWidgetContentTest {
         val dhuhr = content.rows.first { it.prayer == Prayer.DHUHR }.cells
         assertEquals(List(5) { Cell.BEFORE_FIRST_USE }, dhuhr.take(5))
         assertEquals(listOf(Cell.NOT_MARKED, Cell.NOT_MARKED), dhuhr.drop(5))
-        assertEquals(arabic.count(0, 7), content.total)
+        assertEquals("٠" to "٧", content.prayed to content.possible)
     }
 
     @Test
