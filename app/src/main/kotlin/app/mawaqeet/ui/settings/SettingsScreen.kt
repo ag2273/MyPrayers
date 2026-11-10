@@ -118,6 +118,15 @@ interface SettingsActions {
     /** Settings → Alerts (#23); each change reschedules the alarms through the settings flow. */
     fun updatePrayerAlert(prayer: Prayer, change: (PrayerAlertSettings) -> PrayerAlertSettings)
     fun setAlarmClockMode(on: Boolean)
+
+    /** Settings → Alerts → Try it: an Adhan Alert for the next Prayer in 10 seconds, in the current mode. False if it can't be scheduled. */
+    fun tryAdhanAlert(): Boolean
+
+    /** Whether alerts may show over the lock screen (full-screen intents; Android 14+ lets the user turn this off). */
+    fun canShowOverLockScreen(): Boolean
+
+    /** The system page that allows showing over the lock screen (Android 14+). */
+    fun openLockScreenPermission()
     fun setPlayOnSilent(on: Boolean)
     fun setVibration(on: Boolean)
 

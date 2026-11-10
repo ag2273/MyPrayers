@@ -128,6 +128,21 @@ class PrayerLogWidgetContentTest {
     }
 
     @Test
+    fun `a Prayer marked in the app on a day before first use shows as prayed and counts`() {
+        val log = MemoryLog(firstUse = date("2026-11-08"))
+        val core = coreAt("2026-11-08T13:00", log)
+        core.mark(date("2026-11-05"), Prayer.ASR)
+
+        val content = WeekLogContent.of(core.week(), arabic)
+
+        val asr = content.rows.first { it.prayer == Prayer.ASR }.cells
+        assertEquals(Cell.PRAYED, asr[3])
+        assertEquals(Cell.BEFORE_FIRST_USE, asr[2])
+        // Today's Fajr and Dhuhr, plus the one marked earlier.
+        assertEquals("١" to "٣", content.prayed to content.possible)
+    }
+
+    @Test
     fun `the week's Dhuhr row keeps Dhuhr's name, even with a Friday in it`() {
         val content = WeekLogContent.of(coreAt("2026-11-13T13:00", MemoryLog(date("2026-10-01"))).week(), arabic)
 

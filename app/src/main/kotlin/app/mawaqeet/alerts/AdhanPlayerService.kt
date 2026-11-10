@@ -51,6 +51,7 @@ class AdhanPlayerService : Service() {
             intent.getBooleanExtra(AlertReceiver.EXTRA_JUMUAH, false),
             intent.getIntExtra(AlertReceiver.EXTRA_REQUEST_CODE, 1),
             prayerDay = AlertReceiver.prayerDay(intent),
+            fullScreen = intent.getBooleanExtra(AlertReceiver.EXTRA_FULL_SCREEN, false),
         )
         stopPlayback() // A new alert replaces one still playing.
         notification?.let { if (it.id != next.id) it.post(this) }
@@ -178,6 +179,7 @@ class AdhanPlayerService : Service() {
                 .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, n.id)
                 .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(sound))
                 .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, n.prayerDay?.toString())
+                .putExtra(AlertReceiver.EXTRA_FULL_SCREEN, n.fullScreen)
 
         fun stopIntent(context: Context): PendingIntent = PendingIntent.getService(
             context,

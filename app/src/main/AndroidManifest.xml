@@ -4,6 +4,8 @@
     <!-- Adhan Alerts (#18). SCHEDULE_EXACT_ALARM, never USE_EXACT_ALARM (Play policy: alarm/calendar apps only). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Alarm-clock mode: the Adhan Alert shows over the lock screen like a clock app's alarm. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Adhan playback (#22): the player is a mediaPlayback foreground service; the app vibrates itself.
@@ -34,6 +36,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- The Adhan Alert as an alarm over the lock screen (alarm-clock mode). It reads no storage, so it can run before the first unlock. -->
+        <activity
+            android:name=".alerts.AdhanAlarmActivity"
+            android:directBootAware="true"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:turnScreenOn="true" />
 
         <!-- The scheduler's own alarms. Direct-boot aware so alerts fire before the first unlock. -->
         <receiver

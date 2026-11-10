@@ -6,9 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import app.mawaqeet.MainActivity
+import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlan
+import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.PlannedAlert
+import app.mawaqeet.core.Prayer
 import java.time.Instant
 
 /**
@@ -92,6 +95,36 @@ class AlertScheduler(context: Context) {
         .putExtra(AlertReceiver.EXTRA_PLAY_ON_SILENT, alert.playOnSilent)
         .putExtra(AlertReceiver.EXTRA_VIBRATION, alert.vibration)
         .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, alert.prayerDay.toString())
+        .putExtra(AlertReceiver.EXTRA_FULL_SCREEN, alert.deliveryMode == DeliveryMode.ALARM_CLOCK)
+
+    /**
+     * Settings → Alerts → Try it: an Adhan Alert for [prayer] in [delaySeconds], delivered like a real one in the
+     * current mode (in alarm-clock mode as an alarm, so the status bar's alarm icon and the lock-screen alarm show),
+     * with nothing to mark. Returns false when exact alarms aren't allowed.
+     */
+    fun scheduleTest(prayer: Prayer, isJumuah: Boolean, alarmClockMode: Boolean, sound: AlertSound, delaySeconds: Long = 10): Boolean {
+        if (!canScheduleExact(alarmManager)) return false
+        val at = System.currentTimeMillis() + delaySeconds * 1000
+        val intent = Intent(context, AlertReceiver::class.java)
+            .setAction(AlertReceiver.ACTION_ALERT)
+            .putExtra(AlertReceiver.EXTRA_PRAYER, prayer.name)
+            .putExtra(AlertReceiver.EXTRA_JUMUAH, isJumuah)
+            .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, TEST_REQUEST_CODE)
+            .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(sound))
+            .putExtra(AlertReceiver.EXTRA_AT, at)
+            .putExtra(AlertReceiver.EXTRA_KIND, AlertKind.ADHAN_ALERT.name)
+            .putExtra(AlertReceiver.EXTRA_PRAYER_TIME, at)
+            .putExtra(AlertReceiver.EXTRA_PLAY_ON_SILENT, false)
+            .putExtra(AlertReceiver.EXTRA_VIBRATION, true)
+            .putExtra(AlertReceiver.EXTRA_FULL_SCREEN, alarmClockMode)
+        val operation = PendingIntent.getBroadcast(context, TEST_REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        if (alarmClockMode) {
+            alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(at, openAppIntent(context)), operation)
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, operation)
+        }
+        return true
+    }
 
     private fun midnightIntent(): PendingIntent = PendingIntent.getBroadcast(
         context,
@@ -102,6 +135,9 @@ class AlertScheduler(context: Context) {
 
     companion object {
         private const val MIDNIGHT_REQUEST_CODE = 0
+
+        /** The Try it alert's request code and notification id; planned alerts' codes are all positive. */
+        const val TEST_REQUEST_CODE = -1
 
         /**
          * Stable and distinct per (Prayer Day, Prayer, kind), so re-planning replaces the same alarm and a

@@ -31,6 +31,8 @@ data class AdhanNotification(
     val kind: AlertKind = AlertKind.ADHAN_ALERT,
     val prayerTime: Long = 0,
     val prayerDay: LocalDate? = null,
+    /** Alarm-clock mode: the Adhan Alert also opens [AdhanAlarmActivity] over the lock screen, like an alarm. */
+    val fullScreen: Boolean = false,
 ) {
 
     /**
@@ -58,6 +60,7 @@ data class AdhanNotification(
                 .setContentTitle(context.getString(R.string.adhan_alert_title, name))
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .apply { if (fullScreen) setFullScreenIntent(AdhanAlarmActivity.pendingIntent(context, this@AdhanNotification), true) }
                 .apply {
                     val day = prayerDay ?: return@apply
                     addAction(

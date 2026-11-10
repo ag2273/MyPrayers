@@ -24,6 +24,18 @@ class TodayWidgetsRenderTest {
     private fun render(widget: GlanceAppWidget, width: Int, height: Int) = renderWidget(context, widget, width, height)
 
     @Test
+    fun `Next Prayer in one cell stacks the name, its time and the countdown, with nothing clipped`() {
+        for ((width, height) in listOf(70 to 80, 57 to 60)) {
+            val root = render(NextPrayerWidget(), width, height)
+            val texts = widgetTexts(root)
+            assertTrue("no countdown at $width×$height", texts.any { it.id == app.mawaqeet.R.id.countdown })
+            assertTrue("no time at $width×$height in ${texts.map { it.text }}", texts.any { t -> t.text.length == 5 && t.text[2] == ':' })
+            assertTrue("label shown at $width×$height", texts.none { it.text.toString() == "الصلاة القادمة" })
+            assertNothingClipped(root)
+        }
+    }
+
+    @Test
     fun `Today's Prayer Times shows its title and five columns in Arabic RTL with nothing clipped at 250x110`() {
         val root = render(TodayTimesWidget(), 250, 110)
         val words = widgetTexts(root).map { it.text.toString() }

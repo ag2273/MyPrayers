@@ -32,8 +32,10 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.lifecycleScope
 import app.mawaqeet.alerts.AlertPermissions
 import app.mawaqeet.alerts.AlertRescheduler
-import app.mawaqeet.alerts.CustomAdhanFiles
+import app.mawaqeet.alerts.AlertScheduler
 import app.mawaqeet.core.AdhanRecording
+import app.mawaqeet.core.AlertSound
+import app.mawaqeet.alerts.CustomAdhanFiles
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityDirectory
@@ -254,6 +256,39 @@ class MainActivity : AppCompatActivity() {
 
                             override fun setAlarmClockMode(on: Boolean) {
                                 scope.launch { settingsStore.setAlarmClockMode(on) }
+                            }
+
+                            override fun tryAdhanAlert(): Boolean {
+                                val alarms = getSystemService(android.app.AlarmManager::class.java)
+                                if (!AlertScheduler.canScheduleExact(alarms)) return false
+                                scope.launch(Dispatchers.IO) {
+                                    // The settings as they are now (this object outlives a settings change).
+                                    val now = settingsStore.settings.first()
+                                    val next = PrayerCore(now, clock, prayerLog).displayDay().next
+                                    AlertScheduler(this@MainActivity).scheduleTest(
+                                        next.prayer,
+                                        next.isJumuah,
+                                        now.alerts.alarmClockMode,
+                                        AdhanRecording.of(next.prayer, now.alerts.of(next.prayer).sound)
+                                            ?.let { AlertSound.of(it, now.alerts) } ?: AlertSound.Silent,
+                                    )
+                                }
+                                return true
+                            }
+
+                            override fun canShowOverLockScreen(): Boolean =
+                                android.os.Build.VERSION.SDK_INT < 34 ||
+                                    getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
+
+                            override fun openLockScreenPermission() {
+                                if (android.os.Build.VERSION.SDK_INT >= 34) {
+                                    runCatching {
+                                        startActivity(
+                                            android.content.Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
+                                                .setData(android.net.Uri.parse("package:$packageName")),
+                                        )
+                                    }
+                                }
                             }
 
                             override fun setPlayOnSilent(on: Boolean) {

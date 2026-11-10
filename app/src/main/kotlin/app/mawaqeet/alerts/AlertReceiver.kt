@@ -35,6 +35,7 @@ class AlertReceiver : BroadcastReceiver() {
                         kind,
                         intent.getLongExtra(EXTRA_PRAYER_TIME, at),
                         prayerDay(intent),
+                        fullScreen = intent.getBooleanExtra(EXTRA_FULL_SCREEN, false),
                     )
                     val sound = intent.getStringExtra(EXTRA_SOUND)?.let(::decodeAlertSound) ?: AlertSound.ShortAdhan
                     val late = Duration.ofMillis((now - at).coerceAtLeast(0))
@@ -86,5 +87,8 @@ class AlertReceiver : BroadcastReceiver() {
         /** The alert's Prayer Day ([app.mawaqeet.core.PlannedAlert.prayerDay], ISO date), for "Mark as prayed". */
         const val EXTRA_PRAYER_DAY = "prayer_day"
         const val EXTRA_VIBRATION = "vibration"
+
+        /** Alarm-clock mode: show the alert over the lock screen ([AdhanAlarmActivity]). */
+        const val EXTRA_FULL_SCREEN = "full_screen"
     }
 }
