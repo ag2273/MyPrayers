@@ -194,8 +194,8 @@
     <!-- Widgets (#27). -->
     <string name="widget_next_prayer">الصلاة القادمة</string>
     <string name="widget_next_prayer_description">اسم الصلاة القادمة ووقتها، مع العد التنازلي</string>
-    <string name="widget_next_prayer_compact">الصلاة القادمة (مختصرة)</string>
-    <string name="widget_next_prayer_compact_description">الصلاة القادمة ووقتها والعدّ التنازلي في خانة واحدة</string>
+    <string name="widget_next_prayer_compact">الصلاة القادمة (حلقة)</string>
+    <string name="widget_next_prayer_compact_description">حلقة تمتلئ حتى الصلاة القادمة، والعدّ التنازلي، في خانة واحدة</string>
     <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
     <string name="widget_countdown_format">بعد %s</string>
     <!-- Widgets (#30). -->
@@ -362,4 +362,19 @@
     <string name="hijri_offset_days">%1$s يوم</string>
     <string name="privacy_title">بياناتك على هاتفك</string>
     <string name="privacy_body">لا حساب ولا خوادم ولا إعلانات. سجل الصلاة وموقعك لا يُنسخان احتياطيًا إلى السحابة، وينتقلان فقط عند النقل المباشر إلى هاتف جديد.</string>
+    <!-- Widget design board (2026-11-10). -->
+    <string name="widget_tomorrow">غدًا</string>
+    <string name="widget_next_short">القادمة</string>
+    <string name="widget_chip_silent">صامت</string>
+    <string name="widget_chip_off">بلا أذان</string>
+    <string name="widget_today_log_header">سجل اليوم</string>
+    <string name="widget_today_log_done">تمّت الصلوات الخمس</string>
+    <string name="widget_today_log_hint">اضغط الدائرة بعد الصلاة لتسجيلها</string>
+    <string name="widget_today_log_done_hint">تقبّل الله</string>
+    <string name="widget_legend_prayed">صلّيت</string>
+    <string name="widget_legend_missed">فاتت</string>
+    <string name="widget_legend_not_yet">لم يحن</string>
+    <!-- TalkBack on a Prayer's column in the Today with Prayer Log widget: "الظهر: لم تُسجَّل. اضغط للتسجيل". -->
+    <string name="widget_mark_hint">%1$s: %2$s. اضغط للتسجيل</string>
+    <string name="widget_unmark_hint">%1$s: %2$s. اضغط للإلغاء</string>
 </resources>

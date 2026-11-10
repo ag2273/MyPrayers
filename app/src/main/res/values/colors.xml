@@ -3,13 +3,13 @@
     <!-- Brand palette, light. Keep in sync with ui/theme/Color.kt. -->
     <color name="window_background">#F2F6F4</color>
     <!-- Widgets (default look; #32 adds appearance settings). DayMist, Ink, Ink 72%, NightTeal. -->
-    <color name="widget_background">#F2F6F4</color>
+    <color name="widget_background">#F7FAF8</color>
     <color name="widget_text">#142421</color>
-    <color name="widget_text_muted">#525F5C</color>
+    <color name="widget_text_muted">#4F5E5A</color>
     <color name="widget_accent">#1F6F66</color>
     <color name="widget_on_accent">#FFFFFF</color>
-    <color name="widget_accent_soft">#D6E8E4</color>
-    <color name="widget_dot_upcoming">#47525F5C</color>
+    <color name="widget_accent_soft">#DCEBE8</color>
+    <color name="widget_dot_upcoming">#C3CECB</color>
     <!-- #32: text over a 60%+ transparent background: light, with a soft shadow, on any wallpaper (both themes). -->
     <color name="widget_over_text">#F4F7F5</color>
     <color name="widget_over_muted">#DFE8E3</color>
@@ -26,4 +26,26 @@
     <color name="widget_dyn_on_accent">@color/widget_on_accent</color>
     <color name="widget_dyn_accent_soft">@color/widget_accent_soft</color>
     <color name="widget_dyn_over_accent">@color/widget_over_accent</color>
+    <!-- Widget board (2026-11-10): text on the next Prayer's soft fill, hairline dividers, today's band in the week grid. -->
+    <color name="widget_on_accent_soft">#134A44</color>
+    <color name="widget_divider">#DCE5E2</color>
+    <color name="widget_band">#E3EFEC</color>
+    <color name="widget_ring_muted">#6B7A76</color>
+    <!-- Next Prayer's deep surface: deep teal, light text, a gold countdown and progress. -->
+    <color name="widget_deep_background">#134A44</color>
+    <color name="widget_deep_text">#F2F6F4</color>
+    <color name="widget_deep_muted">#B9CFCB</color>
+    <color name="widget_deep_gold">#F2B65E</color>
+    <color name="widget_deep_track">#2EF2F6F4</color>
+    <color name="widget_over_gold">#F7D08F</color>
+    <color name="widget_dyn_on_accent_soft">@color/widget_on_accent_soft</color>
+    <color name="widget_dyn_divider">@color/widget_divider</color>
+    <color name="widget_dyn_band">@color/widget_band</color>
+    <color name="widget_dyn_deep_background">@color/widget_deep_background</color>
+    <color name="widget_dyn_deep_text">@color/widget_deep_text</color>
+    <color name="widget_dyn_deep_muted">@color/widget_deep_muted</color>
+    <color name="widget_dyn_deep_gold">@color/widget_deep_gold</color>
+    <!-- The sun on the day path, and the eight-point star's hairline (with its own soft alpha). -->
+    <color name="widget_sun">#E0A23F</color>
+    <color name="widget_deep_star">#21F2F6F4</color>
 </resources>

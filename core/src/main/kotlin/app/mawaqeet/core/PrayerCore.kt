@@ -15,6 +15,9 @@ class PrayerCore(
     private val clock: Clock,
     private val log: PrayerLogRepository,
 ) {
+    /** The alert settings in effect, for showing each Prayer's kind of alert (the Next Prayer widget's chip). */
+    fun alerts(): AlertSettings = settings.alerts
+
     /**
      * The calendar date to display now, at the location, with its Prayer Times (after the user's adjustments) and
      * Sunrise, and whether a high-latitude rule was applied to them.

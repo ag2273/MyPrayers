@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.MainActivity
 import app.mawaqeet.R
 import app.mawaqeet.MawaqeetApplication
+import app.mawaqeet.core.LogState
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerCore
 import kotlinx.coroutines.Dispatchers
@@ -45,20 +46,31 @@ class PrayerLogWidgetsRenderTest {
         else -> emptyList()
     }
 
-    /** The intent the widget's one tap target starts. */
+    /** The intent the widget's one tap target that isn't a Prayer's column starts. */
     private fun tapOpens(root: View): MainActivity.Opens? {
-        val targets = clickableViews(root)
-        assertEquals("one tap target, never one that changes the Prayer Log", 1, targets.size)
+        val targets = clickableViews(root).filter { !isColumn(it) }
+        assertEquals("one tap target besides the Prayers' columns", 1, targets.size)
         targets.single().performClick()
         return MainActivity.Opens.from(shadowOf(context as Application).nextStartedActivity)
     }
+
+    /** A Prayer's column in Today with Prayer Log: its description is on it, or on a view it wraps or sits in. */
+    private fun isColumn(view: View): Boolean {
+        val children = (view as? android.view.ViewGroup)?.let { g -> (0 until g.childCount).map { g.getChildAt(it) } } ?: emptyList()
+        val around = (listOf(view, view.parent as? View) + children).mapNotNull { it?.contentDescription?.toString() }
+        return around.any { d -> (ARABIC_NAMES + ENGLISH_NAMES).any { d.startsWith("$it:") } }
+    }
+
+    /** What TalkBack reads for each of Today with Prayer Log's five columns: «name: state», and how to change it. */
+    private fun columnDescriptions(root: View, names: List<String> = ARABIC_NAMES): List<String> =
+        descriptions(root).filter { d -> names.any { d.startsWith("$it:") } }
 
     @Test
     fun `Today with Prayer Log shows its title, the count marked and the five Prayers in Arabic, with nothing clipped`() {
         val root = renderWidget(context, TodayLogWidget(), 250, 150)
         val words = widgetTexts(root).map { it.text.toString() }
 
-        for (name in listOf("اليوم وسجل الصلاة", "الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
+        for (name in listOf("سجل اليوم", "الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
         assertTrue("no count in $words", words.any { it.endsWith(" من ٥") })
         assertEquals(View.LAYOUT_DIRECTION_RTL, widgetTexts(root).first().layoutDirection)
         assertNothingClipped(root, allowEllipsis = isHijriDate)
@@ -69,9 +81,9 @@ class PrayerLogWidgetsRenderTest {
         val root = renderWidget(context, TodayLogWidget(), 250, 80)
         val words = widgetTexts(root).map { it.text.toString() }
 
-        assertTrue("header kept in $words", "اليوم وسجل الصلاة" !in words)
+        assertTrue("header kept in $words", "سجل اليوم" !in words)
         for (name in listOf("الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
-        assertEquals(5, images(root).count { it.contentDescription != null })
+        assertEquals(5, columnDescriptions(root).size)
         assertNothingClipped(root)
     }
 
@@ -88,18 +100,40 @@ class PrayerLogWidgetsRenderTest {
         val core = core()
         val today = io { core.prayerDay(core.displayDay().date) }
         val due = Prayer.entries.firstOrNull { today.isMarkable(it) } ?: return // before Fajr: nothing can be marked yet
-        fun labels() = images(renderWidget(context, TodayLogWidget(), 250, 110)).mapNotNull { it.contentDescription?.toString() }
+        fun labels() = columnDescriptions(renderWidget(context, TodayLogWidget(), 250, 110))
 
-        assertEquals(0, labels().count { it == "صُلّيت" })
+        assertEquals(0, labels().count { ": صُلّيت" in it })
         io { core.mark(today.date, due) }
-        assertEquals(1, labels().count { it == "صُلّيت" })
+        assertEquals(1, labels().count { ": صُلّيت" in it })
         io { core.unmark(today.date, due) }
-        assertEquals(0, labels().count { it == "صُلّيت" })
+        assertEquals(0, labels().count { ": صُلّيت" in it })
     }
 
     @Test
-    fun `Today with Prayer Log opens today's Prayer Times`() {
-        assertEquals(MainActivity.Opens.TODAY, tapOpens(renderWidget(context, TodayLogWidget(), 250, 110)))
+    fun `Today with Prayer Log opens today's Prayer Times, and each Prayer whose time has come is its own tap target`() {
+        val root = renderWidget(context, TodayLogWidget(), 250, 110)
+        val core = core()
+        val day = io { core.prayerDay(core.displayDay().date) }
+        val due = Prayer.entries.count { day.isMarkable(it) }
+        assertEquals(due, clickableViews(root).count { isColumn(it) })
+        assertEquals(MainActivity.Opens.TODAY, tapOpens(root))
+    }
+
+    @Test
+    fun `tapping a due Prayer's column marks it, and tapping again removes the mark`() {
+        val core = core()
+        val today = io { core.prayerDay(core.displayDay().date) }
+        val due = Prayer.entries.firstOrNull { today.isMarkable(it) } ?: return // before Fajr: nothing can be marked yet
+        val tap = androidx.glance.action.actionParametersOf(
+            ToggleMarkAction.PRAYER to due.name,
+            ToggleMarkAction.DATE to today.date.toString(),
+        )
+        val id = object : androidx.glance.GlanceId {}
+
+        runBlocking { ToggleMarkAction().onAction(context, id, tap) }
+        assertEquals(LogState.PRAYED, io { core.prayerDay(today.date).stateOf(due) })
+        runBlocking { ToggleMarkAction().onAction(context, id, tap) }
+        assertEquals(LogState.NOT_MARKED, io { core.prayerDay(today.date).stateOf(due) })
     }
 
     @Test
@@ -108,7 +142,7 @@ class PrayerLogWidgetsRenderTest {
         val words = widgetTexts(root).map { it.text.toString() }
 
         assertTrue("سجل الأسبوع" in words)
-        assertTrue("no total in $words", words.any { it.startsWith("المجموع ") })
+        assertTrue("no total in $words", words.any { it.startsWith("من ") })
         for (name in listOf("الفجر", "الظهر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
         assertNothingClipped(root)
         assertEquals(MainActivity.Opens.PRAYER_LOG, tapOpens(root))
@@ -136,8 +170,13 @@ class PrayerLogWidgetsRenderTest {
         for (names in listOf(listOf("Fajr"), listOf("Dhuhr", "Jumu'ah"), listOf("Asr"), listOf("Maghrib"), listOf("Isha"))) {
             assertTrue("no row for $names in $week", week.any { row -> names.any { row.startsWith("$it:") } })
         }
-        val marks = images(renderWidget(context, TodayLogWidget(), 250, 110)).mapNotNull { it.contentDescription?.toString() }
+        val marks = columnDescriptions(renderWidget(context, TodayLogWidget(), 250, 110), ENGLISH_NAMES)
         assertEquals(marks.toString(), 5, marks.size)
-        assertTrue(marks.toString(), marks.all { it in setOf("Prayed", "Not marked", "Not yet due") })
+        assertTrue(marks.toString(), marks.all { m -> listOf("Prayed", "Not marked", "Not yet due").any { ": $it" in m } })
+    }
+
+    private companion object {
+        val ARABIC_NAMES = listOf("الفجر", "الظهر", "الجمعة", "العصر", "المغرب", "العشاء")
+        val ENGLISH_NAMES = listOf("Fajr", "Dhuhr", "Jumu'ah", "Asr", "Maghrib", "Isha")
     }
 }

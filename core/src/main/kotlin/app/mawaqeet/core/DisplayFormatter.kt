@@ -47,6 +47,10 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
         .withDecimalStyle(decimalStyle)
 
     private val narrowWeekdayFormatter = DateTimeFormatter.ofPattern("EEEEE", locale)
+    private val weekdayFormatter = DateTimeFormatter.ofPattern("EEEE", locale)
+    private val dayMonthFormatter = DateTimeFormatter
+        .ofPattern(if (arabic) "d MMMM" else "d MMM", locale)
+        .withDecimalStyle(decimalStyle)
 
     private val shortGregorianFormatter = DateTimeFormatter
         .ofPattern(if (arabic) "EEEE d MMMM" else "EEE d MMM", locale)
@@ -70,6 +74,16 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
     /** A weekday as one letter, for a week grid's column heads: `ح` / `S` for Sunday. */
     fun narrowWeekday(date: LocalDate): String = narrowWeekdayFormatter.format(date)
 
+    /** A weekday's full name: `الإثنين` / `Monday`. */
+    fun weekday(date: LocalDate): String = weekdayFormatter.format(date)
+
+    /** Day and month: `٩ نوفمبر` / `9 Nov`. */
+    fun dayMonth(date: LocalDate): String = dayMonthFormatter.format(date)
+
+    /** A week's span: `٣ – ٩ نوفمبر`, or `٢٨ أكتوبر – ٣ نوفمبر` across two months. */
+    fun dayRange(first: LocalDate, last: LocalDate): String =
+        if (first.month == last.month) "${number(first.dayOfMonth)} – ${dayMonth(last)}" else "${dayMonth(first)} – ${dayMonth(last)}"
+
     /** A Prayer Log count such as `5/7`, in the chosen digits; left to right in both languages. */
     fun count(prayed: Int, possible: Int): String = "\u2066${number(prayed)}/${number(possible)}\u2069"
 
@@ -79,6 +93,15 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
         val era = if (arabic) "هـ" else "AH"
         return "${number(date.day)} $month ${number(date.year)} $era"
     }
+
+    /** The Hijri day and our month name: `٢٨ جمادى الأولى` / `28 Jumada al-Ula`. */
+    fun hijriDayMonth(date: HijriDate): String {
+        val month = (if (arabic) ARABIC_HIJRI_MONTHS else ENGLISH_HIJRI_MONTHS)[date.month - 1]
+        return "${number(date.day)} $month"
+    }
+
+    /** The Hijri year and era: `١٤٤٨ هـ` / `1448 AH`. */
+    fun hijriYear(date: HijriDate): String = "${number(date.year)} ${if (arabic) "هـ" else "AH"}"
 
     fun number(value: Int): String = digits(value.toString())
 
