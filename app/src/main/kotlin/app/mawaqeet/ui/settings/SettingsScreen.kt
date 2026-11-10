@@ -3,6 +3,12 @@ package app.mawaqeet.ui.settings
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.layout.ContentScale
+import app.mawaqeet.about.CreditKind
+import app.mawaqeet.about.Credits
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -136,6 +142,7 @@ enum class SettingsPage(@StringRes val title: Int) {
     DISPLAY(R.string.settings_group_language_display),
     WIDGETS(R.string.settings_group_widgets),
     ABOUT(R.string.settings_group_about),
+    CREDITS(R.string.about_sources_title),
 }
 
 /** Which Settings page is open; [prayer] is the Prayer whose alerts [SettingsPage.PRAYER_ALERT] shows. */
@@ -145,6 +152,7 @@ data class SettingsRoute(val page: SettingsPage, val prayer: Prayer? = null) : S
         get() = when (page) {
             SettingsPage.CALCULATION_METHOD -> SettingsRoute(SettingsPage.PRAYER_TIMES)
             SettingsPage.PRAYER_ALERT -> SettingsRoute(SettingsPage.ALERTS)
+            SettingsPage.CREDITS -> SettingsRoute(SettingsPage.ABOUT)
             else -> null
         }
 }
@@ -279,7 +287,8 @@ fun SettingsPageScreen(
             SettingsPage.PRAYER_ALERT -> PrayerAlertPage(prayer, settings.alerts.of(prayer)) { change -> actions.updatePrayerAlert(prayer, change) }
             SettingsPage.DISPLAY -> DisplayPage(settings, digitStyle, today, actions)
             SettingsPage.WIDGETS -> WidgetsPage(widgetAppearance, actions)
-            SettingsPage.ABOUT -> AboutPage(actions)
+            SettingsPage.ABOUT -> AboutPage(actions) { onNavigate(SettingsRoute(SettingsPage.CREDITS)) }
+            SettingsPage.CREDITS -> CreditsPage()
         }
     }
 }
@@ -577,20 +586,71 @@ private fun DisplayPage(settings: PrayerSettings, digitStyle: DigitStyle, today:
     }
 }
 
-/** About & your data (#33): the version and credits, privacy, and Delete Prayer Log behind a confirmation. */
+/**
+ * About & your data (#33), as on the redesign's board: the app's icon, name and version, the privacy promise, the
+ * sources (each kind of credit with its names, opening the full list with licences), and Delete Prayer Log behind a
+ * confirmation.
+ */
 @Composable
-private fun ColumnScope.AboutPage(actions: SettingsActions) {
-    Card {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { AboutContent() }
+private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        AppIconTile()
+        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
+        Text(
+            stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            stringResource(R.string.about_summary),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
-    SectionTitle(stringResource(R.string.settings_section_your_data))
+    SectionTitle(stringResource(R.string.about_privacy_section))
     Card {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.privacy_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.privacy_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        RowDivider()
+    }
+    SectionTitle(stringResource(R.string.about_sources_section))
+    Card {
+        CreditKind.entries.forEachIndexed { index, kind ->
+            if (index > 0) RowDivider()
+            val names = Credits.of(kind).joinToString(" · ") { it.name.substringBefore(" (").substringBefore(":") }
+            NavRow(stringResource(kind.title), names.ifEmpty { stringResource(R.string.about_recordings_none_short) }, onClick = onOpenCredits)
+        }
+    }
+    SectionTitle(stringResource(R.string.settings_section_your_data))
+    Card {
         DeletePrayerLogRow(actions)
+    }
+}
+
+/** The launcher icon as a rounded tile: its background layer with the foreground drawn over it. Decorative. */
+@Composable
+private fun AppIconTile() {
+    Box(
+        Modifier.size(84.dp).clip(RoundedCornerShape(24.dp)).clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(painterResource(R.drawable.ic_launcher_background), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        // An adaptive icon's foreground is 108dp with the visible 72dp in the middle: scale it so that part fills the tile.
+        Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null, modifier = Modifier.requiredSize(126.dp))
+    }
+}
+
+/** Every library, dataset, font and recording the app is built from, with its licence; each opens its website. */
+@Composable
+private fun ColumnScope.CreditsPage() {
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { AboutContent() }
     }
 }
 

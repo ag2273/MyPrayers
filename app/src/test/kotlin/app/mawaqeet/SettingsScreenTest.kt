@@ -192,6 +192,10 @@ class SettingsScreenTest {
         openPage("حول مواقيت وبياناتك")
 
         compose.onNodeWithText("الإصدار ${BuildConfig.VERSION_NAME}").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("الخصوصية").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("حذف سجل الصلاة").performScrollTo().assertIsDisplayed()
+        // The sources open the full list with each licence.
+        compose.onNodeWithText("المكتبات").performScrollTo().performClick()
         for (name in listOf("adhan-kotlin (Batoul Apps)", "GeoNames", "Natural Earth", "Noto Sans Arabic (Google)")) {
             compose.onNodeWithContentDescription(name, substring = true).performScrollTo().assertIsDisplayed()
         }

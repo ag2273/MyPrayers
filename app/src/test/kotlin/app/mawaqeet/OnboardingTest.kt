@@ -71,8 +71,8 @@ class OnboardingTest {
 
     /** Welcome → refuse approximate location → search Cairo → Egypt's suggestion, applied. */
     private fun walkToPermissions() {
-        compose.onNodeWithText("ابدأ").performScrollTo().performClick()
-        compose.onNodeWithText("ابحث عن مدينتي بدلًا من ذلك").performScrollTo().performClick()
+        compose.onNodeWithText("ابدأ").performClick()
+        compose.onNodeWithText("ابحث عن مدينتي بدلًا من ذلك").performClick()
         compose.waitUntil(timeoutMillis = 10_000) {
             compose.onAllNodesWithText("جارٍ تحميل قائمة المدن…").fetchSemanticsNodes().isEmpty()
         }
@@ -81,31 +81,33 @@ class OnboardingTest {
         compose.onAllNodesWithText("القاهرة")[1].performClick()
         waitForText("لأنك في مصر")
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.settings.first() }.method == CalculationMethod.EGYPTIAN }
-        compose.onNodeWithText("متابعة").performScrollTo().performClick()
+        waitForText("مقترحة لمصر")
+        compose.onNodeWithText("متابعة").performClick()
     }
 
     @Test
     @Config(qualifiers = "ar")
     fun `a fresh install walks through every step in Arabic, right to left, and city search replaces a refused location`() {
-        compose.onNodeWithText("ابدأ").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("ابدأ").assertIsDisplayed()
         assertEquals(View.LAYOUT_DIRECTION_RTL, compose.activity.window.decorView.layoutDirection)
 
         walkToPermissions()
         assertEquals("Cairo", runBlocking { store.savedLocation.first() }?.city?.name)
 
-        // Notifications are on in this test device, so that step is skipped; exact alarms are not.
-        compose.onNodeWithText("التنبيه في الوقت تمامًا").assertIsDisplayed()
-        compose.onNodeWithText("متابعة").performScrollTo().assertIsNotEnabled()
+        // Both permissions on one screen: notifications are on in this test device, exact alarms are not.
+        compose.onNodeWithText("ليصلك الأذان في وقته").assertIsDisplayed()
+        compose.onNodeWithText("✓ تم").assertIsDisplayed()
+        compose.onNodeWithText("متابعة").assertIsNotEnabled()
         compose.onNodeWithText("السماح").performClick()
         // "Don't allow" in system settings: the button becomes Grant, and setup still can't finish.
         compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
         compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
         compose.onNodeWithText("منح الإذن").assertIsDisplayed()
-        compose.onNodeWithText("متابعة").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("متابعة").assertIsNotEnabled()
         assertFalse(runBlocking { store.onboardingDone.first() })
 
         grantExactAlarmsAndReturn()
-        compose.onNodeWithText("متابعة").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithText("متابعة").assertIsEnabled().performClick()
 
         // Not an alarm-killing brand: no battery step, straight to Home with working Prayer Times.
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.onboardingDone.first() } }
@@ -130,11 +132,11 @@ class OnboardingTest {
         ShadowBuild.setManufacturer("samsung")
         walkToPermissions()
         grantExactAlarmsAndReturn()
-        compose.onNodeWithText("متابعة").performScrollTo().performClick()
+        compose.onNodeWithText("متابعة").performClick()
 
         compose.onNodeWithText("لا تدع الهاتف يوقف التنبيهات").assertIsDisplayed()
         compose.onNodeWithText("سامسونج", substring = true).assertIsDisplayed()
-        compose.onNodeWithText("تخطٍّ").performScrollTo().performClick()
+        compose.onNodeWithText("تخطٍّ").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.onboardingDone.first() } }
         waitForText("قد يؤخر هاتفك تنبيهات الأذان")
