@@ -1,5 +1,7 @@
 package app.mawaqeet.ui.permissions
 
+import androidx.compose.foundation.layout.heightIn
+import app.mawaqeet.ui.components.Card
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,9 +59,11 @@ fun GrantScreen(
 
 @Composable
 private fun PermissionStep(@StringRes title: Int, @StringRes body: Int, onGrant: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(body), style = MaterialTheme.typography.bodyMedium)
-        Button(onClick = onGrant) { Text(stringResource(R.string.grant_button)) }
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Button(onClick = onGrant, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.grant_button)) }
+        }
     }
 }
