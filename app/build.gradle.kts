@@ -10,7 +10,9 @@ plugins {
 }
 
 /*
- * Adhan playback (#22), two build switches:
+ * Adhan playback (#22), three build switches:
+ * - -Pmawaqeet.adhanAudio=<file>: the adhan recording every build (release too) bundles as res/raw/adhan_placeholder.
+ *   It stays outside the repo, since the repo is public and the recording isn't ours to publish. Wins over devAssets.
  * - -Pmawaqeet.devAssets=<dir>: where the uncleared dev clip lives (default: <repo>/dev-assets, git-ignored).
  *   Debug builds bundle it as res/raw/adhan_placeholder when present; release builds and checkouts without it
  *   get a generated silent clip. Nothing from dev-assets is ever tracked in git.
@@ -18,11 +20,19 @@ plugins {
  *   sound and the mediaPlayback foreground service is removed from the manifest.
  */
 val devAssetsDir: File = providers.gradleProperty("mawaqeet.devAssets").orNull?.let(::file) ?: rootProject.file("dev-assets")
+val adhanAudioFile: File? = providers.gradleProperty("mawaqeet.adhanAudio").orNull?.let(::file)
 val adhanChannelSoundFallback: Boolean =
     providers.gradleProperty("mawaqeet.adhanChannelSoundFallback").orNull?.toBoolean() ?: false
 
-/** Writes res/raw/adhan_placeholder: the dev clip (short-adhan-dev.*) if [devAudio] holds it, else silence. */
+/**
+ * Writes res/raw/adhan_placeholder: the [adhanAudio] recording if given, else the dev clip (short-adhan-dev.*) if
+ * [devAudio] holds it, else silence.
+ */
 abstract class AdhanPlaceholderTask : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val adhanAudio: ConfigurableFileCollection
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val devAudio: ConfigurableFileCollection
@@ -35,7 +45,8 @@ abstract class AdhanPlaceholderTask : DefaultTask() {
         val raw = outputDir.get().dir("raw").asFile
         raw.deleteRecursively()
         raw.mkdirs()
-        val clip = devAudio.asFileTree.files.firstOrNull { it.isFile && it.name.startsWith("short-adhan-dev.") }
+        val clip = adhanAudio.files.firstOrNull { it.isFile }
+            ?: devAudio.asFileTree.files.firstOrNull { it.isFile && it.name.startsWith("short-adhan-dev.") }
         if (clip != null) {
             clip.copyTo(File(raw, "adhan_placeholder.${clip.extension}"), overwrite = true)
         } else {
@@ -134,6 +145,7 @@ androidComponents {
     onVariants { variant ->
         val name = variant.name.replaceFirstChar { it.uppercase() }
         val placeholder = tasks.register<AdhanPlaceholderTask>("generate${name}AdhanPlaceholder") {
+            adhanAudioFile?.let { adhanAudio.from(it) }
             if (variant.buildType == "debug") devAudio.from(devAssetsDir)
         }
         variant.sources.res?.addGeneratedSourceDirectory(placeholder, AdhanPlaceholderTask::outputDir)
