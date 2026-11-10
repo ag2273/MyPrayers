@@ -47,7 +47,7 @@ class TodayTimesWidget : GlanceAppWidget() {
  */
 internal object TodayTimesMetrics {
     const val MIN_WIDTH_DP = 250
-    const val MIN_HEIGHT_DP = 110
+    const val MIN_HEIGHT_DP = 60
     val horizontalPadding = 18.dp
     val verticalPadding = 14.dp
     val cellGap = 4.dp
@@ -96,11 +96,11 @@ internal object TodayTimesMetrics {
      * The scale at which the header and the columns (with their dots when [dots]) fit [heightDp], from [step] (the
      * size step for a roomier widget) down.
      */
-    fun heightScale(header: String, name: String, time: String, heightDp: Float, dots: Boolean, step: Float, fontScale: Float = 1f): Float {
+    fun heightScale(header: String?, name: String, time: String, heightDp: Float, dots: Boolean, step: Float, fontScale: Float = 1f): Float {
         val room = heightDp - 2 * verticalPadding.value - 1
         return step * fitScale(floor = 0.4f) {
             val s = step * it
-            lineHeightDp(header, HEADER_SP * s, fontScale, bold = true) + HEADER_GAP_DP * s +
+            (if (header != null) lineHeightDp(header, HEADER_SP * s, fontScale, bold = true) + HEADER_GAP_DP * s else 0f) +
                 2 * CELL_PADDING_V_DP * s + lineHeightDp(name, NAME_SP * s, fontScale) + NAME_TIME_GAP_DP * s +
                 lineHeightDp(time, TIME_SP * s, fontScale, bold = true) +
                 (if (dots) DOT_GAP_DP * s + DOT_DP * s else 0f) <= room
@@ -108,9 +108,15 @@ internal object TodayTimesMetrics {
     }
 }
 
-/** The sizes one five-column layout draws at, worked out by [TodayTimesMetrics]. */
-internal data class CellSizes(val scale: Float, val headerSp: Float, val nameSp: Float, val timeSp: Float) {
+/**
+ * The sizes one five-column layout draws at, worked out by [TodayTimesMetrics]. In a short widget (one row of home
+ * screen cells) the header gives way, so the Prayers keep a readable size: [showHeader] is false then.
+ */
+internal data class CellSizes(val scale: Float, val headerSp: Float, val nameSp: Float, val timeSp: Float, val showHeader: Boolean = true) {
     companion object {
+        /** Below this share of its full size the header is dropped rather than shrinking everything further. */
+        private const val HEADER_MIN_SCALE = 0.7f
+
         @Composable
         fun of(header: String, names: List<String>, times: List<String>, dots: Boolean): CellSizes {
             val style = LocalWidgetStyle.current
@@ -120,9 +126,12 @@ internal data class CellSizes(val scale: Float, val headerSp: Float, val nameSp:
             val height = if (style.responsive) size.height.value else TodayTimesMetrics.MIN_HEIGHT_DP.toFloat()
             val step = textStep(TodayTimesMetrics.MIN_WIDTH_DP.toFloat(), TodayTimesMetrics.MIN_HEIGHT_DP.toFloat())
             val fontScale = LocalContext.current.resources.configuration.fontScale
-            val scale = TodayTimesMetrics.heightScale(header, names.first(), times.first(), height, dots, step, fontScale)
+            val withHeader = TodayTimesMetrics.heightScale(header, names.first(), times.first(), height, dots, step, fontScale)
+            val showHeader = withHeader >= step * HEADER_MIN_SCALE
+            val scale = if (showHeader) withHeader else TodayTimesMetrics.heightScale(null, names.first(), times.first(), height, dots, step, fontScale)
             val room = TodayTimesMetrics.cellTextWidthDp(width)
             return CellSizes(
+                showHeader = showHeader,
                 scale = scale,
                 headerSp = TodayTimesMetrics.HEADER_SP * scale,
                 nameSp = TodayTimesMetrics.fitSp(names, room, TodayTimesMetrics.NAME_SP * scale, bold = false, fontScale),
@@ -149,7 +158,7 @@ private data class TodayTimesView(val title: String, val date: WidgetDate, val c
 private fun TodayTimesLayout(view: TodayTimesView, rtl: Boolean) {
     val sizes = CellSizes.of(view.title, view.allNames, view.columns.map { it.time }, dots = false)
     WidgetFrame(rtl, horizontal = TodayTimesMetrics.horizontalPadding, vertical = TodayTimesMetrics.verticalPadding) {
-        WidgetHeader(view.title, view.date.hijri, sizes.headerSp, endEllipsizes = true)
+        if (sizes.showHeader) WidgetHeader(view.title, view.date.hijri, sizes.headerSp, endEllipsizes = true)
         PrayerColumns(sizes, view.columns.map { PrayerColumn(it.name, it.time, it.isNext) })
     }
 }
@@ -188,12 +197,16 @@ internal data class PrayerColumn(
     val dot: (@Composable (sizeDp: Float) -> Unit)? = null,
 )
 
-/** The five columns, oldest first in reading order, at the bottom of the space under the header. */
+/**
+ * The five columns, oldest first in reading order, right under the header. The frame centres header and columns
+ * together, so a taller widget than the content needs has even margins, not a gap between header and columns.
+ */
 @Composable
 internal fun ColumnScope.PrayerColumns(sizes: CellSizes, columns: List<PrayerColumn>) {
+    val gap = if (sizes.showHeader) (TodayTimesMetrics.HEADER_GAP_DP * sizes.scale).dp else 0.dp
     Box(
-        GlanceModifier.fillMaxWidth().defaultWeight().padding(top = (TodayTimesMetrics.HEADER_GAP_DP * sizes.scale).dp),
-        contentAlignment = Alignment.BottomCenter,
+        GlanceModifier.fillMaxWidth().padding(top = gap),
+        contentAlignment = Alignment.Center,
     ) {
         Row(GlanceModifier.fillMaxWidth()) {
             // No spacers between cells: Glance keeps at most 10 children in a Row, so the gap is each cell's margin.

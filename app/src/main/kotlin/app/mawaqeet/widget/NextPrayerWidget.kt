@@ -25,13 +25,14 @@ import app.mawaqeet.R
 import java.time.Clock
 
 /**
- * The Next Prayer Widget Variant (4×2, and 2×1 via [NextPrayerCompactWidgetReceiver]): the next Prayer's name and
+ * The Next Prayer Widget Variant (4×2, and 1×1 via [NextPrayerCompactWidgetReceiver]): the next Prayer's name and
  * time, and a live `بعد H:MM:SS` countdown. A thin layer over [NextPrayerContent]; it re-renders on
- * [Widgets.refreshAll]. Tapping opens the app on today's Prayer Times. On Android 12+ it has three layouts: two lines
- * at 2×1, name over time when narrow, and name and time side by side from 4 cells wide.
+ * [Widgets.refreshAll]. Tapping opens the app on today's Prayer Times. On Android 12+ it has four layouts: name, time
+ * and countdown stacked in one cell, two lines when one row high, name over time when narrow, and name and time side
+ * by side from 4 cells wide.
  */
 class NextPrayerWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, SQUARE, WIDE))
+    override val sizeMode = SizeMode.Responsive(TINY_CELLS + setOf(COMPACT, SQUARE, WIDE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
@@ -42,6 +43,7 @@ class NextPrayerWidget : GlanceAppWidget() {
             NextPrayerLayout(
                 view,
                 rtl,
+                tiny = style.responsive && size.width < COMPACT.width,
                 compact = size.height < SQUARE.height,
                 // Android 8–11 keeps one layout at the default size, which is 4×2.
                 wide = !style.responsive || size.width >= WIDE.width,
@@ -50,6 +52,12 @@ class NextPrayerWidget : GlanceAppWidget() {
     )
 
     private companion object {
+        /**
+         * One home-screen cell, in steps: in Responsive mode the layout is drawn at the bucket's size, not the cell's,
+         * so a single 40×40 bucket drew a real 1×1 cell's text at a 40dp cell's size. Android maps at most 16 sizes.
+         */
+        val TINY_CELLS = listOf(40 to 40, 52 to 52, 60 to 60, 60 to 80, 70 to 70, 70 to 90, 80 to 80, 80 to 100, 90 to 90, 100 to 100)
+            .map { (w, h) -> DpSize(w.dp, h.dp) }.toSet()
         val COMPACT = DpSize(110.dp, 40.dp)
         val SQUARE = DpSize(110.dp, 100.dp)
         val WIDE = DpSize(220.dp, 100.dp)
@@ -81,10 +89,19 @@ private data class NextPrayerView(
 }
 
 @Composable
-private fun NextPrayerLayout(view: NextPrayerView, rtl: Boolean, compact: Boolean, wide: Boolean) {
+private fun NextPrayerLayout(view: NextPrayerView, rtl: Boolean, tiny: Boolean, compact: Boolean, wide: Boolean) {
     val size = LocalSize.current
     val fontScale = LocalContext.current.resources.configuration.fontScale
     when {
+        tiny -> {
+            // One cell: the name, its time and the countdown, no label, as large as the cell allows.
+            val sizes = NextPrayerMetrics.tinySizes(view.name, view.time, view.countdownFormat, size.width.value, size.height.value, fontScale)
+            WidgetFrame(rtl, horizontal = NextPrayerMetrics.TINY_PADDING, vertical = NextPrayerMetrics.TINY_PADDING) {
+                WidgetLine(view.name, sizes.nameSp, Tone.TEXT, bold = true)
+                WidgetLine(view.time, sizes.timeSp, Tone.TEXT, bold = true)
+                Countdown(view.copy(countdownFormat = sizes.countdownFormat), sizes.countdownSp)
+            }
+        }
         compact -> {
             val vertical = NextPrayerMetrics.compactPaddingDp(size.height.value)
             WidgetFrame(rtl, horizontal = NextPrayerMetrics.COMPACT_PADDING, vertical = vertical.dp) {
@@ -145,6 +162,13 @@ internal object NextPrayerMetrics {
     const val SQUARE_NAME_SP = 26f
     const val SQUARE_TIME_SP = 18f
     const val SQUARE_COUNTDOWN_SP = 15f
+    val TINY_PADDING = 6.dp
+    const val TINY_NAME_SP = 22f
+    const val TINY_TIME_SP = 18f
+    const val TINY_COUNTDOWN_SP = 13f
+    const val TINY_MIN_COUNTDOWN_SP = 10f
+    /** The longest a countdown reads. */
+    const val COUNTDOWN_SAMPLE = "00:00:00"
     const val COMPACT_LINE_SP = 18f
     const val COMPACT_COUNTDOWN_SP = 14f
 
@@ -164,6 +188,32 @@ internal object NextPrayerMetrics {
                 textWidthDp(line, COMPACT_LINE_SP * it, fontScale, bold = true) <= across &&
                 textWidthDp(countdown, COMPACT_COUNTDOWN_SP * it, fontScale, bold = true) <= across
         }
+    }
+
+    /** The 1×1's text: what the countdown reads and how large each line is. */
+    data class TinySizes(val nameSp: Float, val timeSp: Float, val countdownSp: Float, val countdownFormat: String)
+
+    /**
+     * The 1×1's sizes. The name and time take one scale from the width; the countdown, the widest line, takes its own,
+     * dropping its "بعد" when that would push it under [TINY_MIN_COUNTDOWN_SP]; then all three shrink together until
+     * they fit the height.
+     */
+    fun tinySizes(name: String, time: String, countdownFormat: String, widthDp: Float, heightDp: Float, fontScale: Float = 1f): TinySizes {
+        val across = widthDp - 2 * TINY_PADDING.value
+        val room = heightDp - 2 * TINY_PADDING.value - 1
+        fun fitsAcross(text: String, sp: Float) = textWidthDp(text, sp, fontScale, bold = true) <= across
+        val textScale = fitScale(floor = 0.4f) { fitsAcross(name, TINY_NAME_SP * it) && fitsAcross(time, TINY_TIME_SP * it) }
+        fun countdownScale(format: String) = fitScale(floor = 0.4f) { fitsAcross(format.format(COUNTDOWN_SAMPLE), TINY_COUNTDOWN_SP * it) }
+        val format = if (TINY_COUNTDOWN_SP * countdownScale(countdownFormat) >= TINY_MIN_COUNTDOWN_SP) countdownFormat else "%s"
+        val countdown = format.format(COUNTDOWN_SAMPLE)
+        val nameSp = TINY_NAME_SP * textScale
+        val timeSp = TINY_TIME_SP * textScale
+        val countdownSp = minOf(TINY_COUNTDOWN_SP * countdownScale(format), timeSp)
+        val down = fitScale(floor = 0.4f) {
+            lineHeightDp(name, nameSp * it, fontScale, bold = true) + lineHeightDp(time, timeSp * it, fontScale, bold = true) +
+                lineHeightDp(countdown, countdownSp * it, fontScale, bold = true) <= room
+        }
+        return TinySizes(nameSp * down, timeSp * down, countdownSp * down, format)
     }
 
     /** The 4×2's scale: name and time side by side fit the width, and the three lines fit the height. */
@@ -219,7 +269,7 @@ class NextPrayerWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = NextPrayerWidget()
 }
 
-/** The compact 2×1 entry in the widget picker; the same widget, laid out for its height. */
+/** The compact 1×1 entry in the widget picker; the same widget, laid out for its size. */
 class NextPrayerCompactWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = NextPrayerWidget()
 }

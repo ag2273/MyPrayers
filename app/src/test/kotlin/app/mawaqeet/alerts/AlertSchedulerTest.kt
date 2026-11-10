@@ -70,6 +70,40 @@ class AlertSchedulerTest {
     }
 
     @Test
+    fun `alarm-clock alerts carry the full-screen flag, so they open the alarm screen over the lock screen`() {
+        AlertScheduler(context).apply(AlertPlan(listOf(dhuhr, maghrib), midnight))
+
+        fun fullScreen(alert: PlannedAlert) = shadowOf(alarms.scheduledAlarms.single { it.triggerAtTime == alert.instant.toEpochMilli() }.operation)
+            .savedIntent.getBooleanExtra(AlertReceiver.EXTRA_FULL_SCREEN, false)
+        assertTrue(fullScreen(maghrib))
+        assertTrue(!fullScreen(dhuhr))
+    }
+
+    @Test
+    fun `Try it schedules an Adhan Alert in 10 seconds, as an alarm in alarm-clock mode, with nothing to mark`() {
+        val before = System.currentTimeMillis()
+        assertTrue(AlertScheduler(context).scheduleTest(Prayer.ASR, isJumuah = false, alarmClockMode = true, sound = AlertSound.Silent))
+
+        val alarm = alarms.scheduledAlarms.single()
+        assertNotNull(alarm.alarmClockInfo)
+        assertTrue(alarm.triggerAtTime in before + 9_000..System.currentTimeMillis() + 10_000)
+        val intent = shadowOf(alarm.operation).savedIntent
+        assertEquals(AlertReceiver.ACTION_ALERT, intent.action)
+        assertEquals("ASR", intent.getStringExtra(AlertReceiver.EXTRA_PRAYER))
+        assertTrue(intent.getBooleanExtra(AlertReceiver.EXTRA_FULL_SCREEN, false))
+        assertNull(AlertReceiver.prayerDay(intent))
+    }
+
+    @Test
+    fun `an alarm-clock Adhan Alert notification has a full-screen intent, an ordinary one doesn't`() {
+        val alarm = AdhanNotification(Prayer.FAJR, isJumuah = false, id = 7, fullScreen = true).builder(context).build()
+        val plain = AdhanNotification(Prayer.FAJR, isJumuah = false, id = 8).builder(context).build()
+
+        assertNotNull(alarm.fullScreenIntent)
+        assertNull(plain.fullScreenIntent)
+    }
+
+    @Test
     fun `a Prayer Time without an Adhan Alert gets the display alarm instead of midnight, so widgets move on there`() {
         val unannouncedAsr = Instant.parse("2026-11-08T12:17:00Z")
         AlertScheduler(context).apply(AlertPlan(listOf(dhuhr, maghrib), midnight, nextDisplayChange = unannouncedAsr))

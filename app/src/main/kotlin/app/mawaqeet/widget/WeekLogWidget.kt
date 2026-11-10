@@ -119,7 +119,7 @@ private fun ColumnScope.DotRow(row: WeekLogView.Row, description: String, scale:
     )
 }
 
-/** Prayed is filled with the accent, not marked is a muted ring, not yet due a faint ring; before first use, nothing. */
+/** Prayed is filled with the accent, not marked is a muted ring, not yet due (or before first use) a faint ring. */
 @Composable
 private fun RowScope.Dot(cell: WeekLogContent.Cell, size: Dp) {
     val style = LocalWidgetStyle.current
@@ -127,10 +127,10 @@ private fun RowScope.Dot(cell: WeekLogContent.Cell, size: Dp) {
         val (res, color) = when (cell) {
             WeekLogContent.Cell.PRAYED -> R.drawable.widget_dot_prayed to style.accent
             WeekLogContent.Cell.NOT_MARKED -> R.drawable.widget_ring to style.muted
-            WeekLogContent.Cell.NOT_YET_DUE -> R.drawable.widget_ring to style.faint
-            WeekLogContent.Cell.BEFORE_FIRST_USE -> null to 0
+            // Days before the app was first used still get their column, so the week always reads as seven days.
+            WeekLogContent.Cell.NOT_YET_DUE, WeekLogContent.Cell.BEFORE_FIRST_USE -> R.drawable.widget_ring to style.faint
         }
-        if (res != null) Image(ImageProvider(res), contentDescription = null, modifier = GlanceModifier.size(size), colorFilter = tint(color))
+        Image(ImageProvider(res), contentDescription = null, modifier = GlanceModifier.size(size), colorFilter = tint(color))
     }
 }
 

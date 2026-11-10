@@ -67,18 +67,20 @@ class PrayerWeekTest {
     }
 
     @Test
-    fun `days before the first-use date never count as missed`() {
+    fun `days before the first-use date never count as missed, only as prayed where marked`() {
         val log = logSince("2026-11-06")
         val core = coreAt("2026-11-08T22:00", log)
         core.mark(date("2026-11-07"), Prayer.MAGHRIB)
+        // Marked in the app for a day before first use: it counts as prayed, and its unmarked Prayers aren't missed.
+        core.mark(date("2026-11-04"), Prayer.MAGHRIB)
 
         val week = core.week()
 
         assertEquals(date("2026-11-06"), week.countedFrom)
         assertTrue(week.isBeforeFirstUse(week.days.first()))
         assertFalse(week.isBeforeFirstUse(week.days.last()))
-        assertEquals(PrayerCount(1, 3), week.summary.of(Prayer.MAGHRIB))
-        assertEquals(PrayerCount(1, 15), week.summary.total)
+        assertEquals(PrayerCount(2, 4), week.summary.of(Prayer.MAGHRIB))
+        assertEquals(PrayerCount(2, 16), week.summary.total)
     }
 
     @Test

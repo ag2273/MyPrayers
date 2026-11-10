@@ -84,7 +84,8 @@ data class WeekLogContent(
         }
 
         private fun cellOf(week: PrayerWeek, day: PrayerDay, prayer: Prayer): Cell = when {
-            week.isBeforeFirstUse(day) -> Cell.BEFORE_FIRST_USE
+            // A day before first use still shows what was marked on it in the app.
+            week.isBeforeFirstUse(day) -> if (day.stateOf(prayer) == LogState.PRAYED) Cell.PRAYED else Cell.BEFORE_FIRST_USE
             else -> when (day.stateOf(prayer)) {
                 LogState.PRAYED -> Cell.PRAYED
                 LogState.NOT_MARKED -> Cell.NOT_MARKED

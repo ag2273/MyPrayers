@@ -1,6 +1,7 @@
 package app.mawaqeet.ui.onboarding
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
@@ -95,14 +96,15 @@ interface OnboardingActions {
     fun finish(batteryDone: Boolean)
 }
 
-/** The steps, in order. A step that has nothing to ask (a permission already granted, a brand that keeps alarms) is skipped. */
-enum class OnboardingStep { WELCOME, LOCATION, CITY, METHOD, NOTIFICATIONS, EXACT_ALARMS, BATTERY }
+/** The steps, in order. A step that has nothing to ask (permissions already granted, a brand that keeps alarms) is skipped. */
+enum class OnboardingStep { WELCOME, LOCATION, CITY, METHOD, PERMISSIONS, BATTERY }
 
 /**
- * First run (#29): language, location (approximate, else city search or coordinates), the suggested Calculation
- * Method and Asr Convention with the reason, then notification and (14+) exact-alarm permissions, each explained
- * first. It cannot finish until both alert permissions are granted. On alarm-killing brands a skippable battery
- * step follows. The welcome screen carries the app's only geometric pattern.
+ * First run (#29), as on the redesign's Onboarding board: language, location (approximate, else city search or
+ * coordinates), the suggested Calculation Method and Asr Convention with the reason (the full lists one tap away),
+ * then the notification and (14+) exact-alarm permissions together on one screen, each explained. It cannot finish
+ * until both are granted. On alarm-killing brands a skippable battery step follows. Each step keeps its actions at the
+ * bottom, under the step dots; the welcome screen carries the app's only geometric pattern.
  */
 @Composable
 fun OnboardingScreen(
@@ -118,9 +120,8 @@ fun OnboardingScreen(
     fun after(current: OnboardingStep): OnboardingStep? = when (current) {
         OnboardingStep.WELCOME -> OnboardingStep.LOCATION
         OnboardingStep.LOCATION, OnboardingStep.CITY -> OnboardingStep.METHOD
-        OnboardingStep.METHOD -> if (permissions.notifications) after(OnboardingStep.NOTIFICATIONS) else OnboardingStep.NOTIFICATIONS
-        OnboardingStep.NOTIFICATIONS -> if (permissions.exactAlarms) after(OnboardingStep.EXACT_ALARMS) else OnboardingStep.EXACT_ALARMS
-        OnboardingStep.EXACT_ALARMS -> if (brand != null) OnboardingStep.BATTERY else null
+        OnboardingStep.METHOD -> if (permissions.allGranted) after(OnboardingStep.PERMISSIONS) else OnboardingStep.PERMISSIONS
+        OnboardingStep.PERMISSIONS -> if (brand != null) OnboardingStep.BATTERY else null
         OnboardingStep.BATTERY -> null
     }
     fun next() {
@@ -132,9 +133,8 @@ fun OnboardingScreen(
         OnboardingStep.LOCATION -> OnboardingStep.WELCOME
         OnboardingStep.CITY -> OnboardingStep.LOCATION
         OnboardingStep.METHOD -> OnboardingStep.LOCATION
-        OnboardingStep.NOTIFICATIONS -> OnboardingStep.METHOD
-        OnboardingStep.EXACT_ALARMS -> OnboardingStep.NOTIFICATIONS
-        OnboardingStep.BATTERY -> OnboardingStep.EXACT_ALARMS
+        OnboardingStep.PERMISSIONS -> OnboardingStep.METHOD
+        OnboardingStep.BATTERY -> OnboardingStep.PERMISSIONS
     }
     BackHandler(enabled = previous != null) { previous?.let { step = it } }
     val cities by produceState<CityDirectory?>(null) { value = withContext(Dispatchers.IO) { loadCities() } }
@@ -151,50 +151,58 @@ fun OnboardingScreen(
         )
         return
     }
+    val dots: @Composable () -> Unit = { StepDots(step, brand != null) }
     Scaffold { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            StepDots(step, brand != null)
+        Box(Modifier.fillMaxSize().padding(padding)) {
             when (step) {
-                OnboardingStep.WELCOME -> Welcome(actions, onStart = ::next)
+                OnboardingStep.WELCOME -> Welcome(actions, dots, onStart = ::next)
                 OnboardingStep.LOCATION -> LocationStep(
                     cities = cities,
                     actions = actions,
+                    dots = dots,
                     onLocated = { step = OnboardingStep.METHOD },
                     onSearch = { step = OnboardingStep.CITY },
                 )
-                OnboardingStep.METHOD -> MethodStep(settings, savedLocation, actions, onContinue = ::next)
-                OnboardingStep.NOTIFICATIONS -> PermissionStep(
-                    title = R.string.onboarding_notifications_title,
-                    body = R.string.grant_notifications_body,
-                    granted = permissions.notifications,
-                    onGrant = actions::grantNotifications,
-                    onContinue = ::next,
-                )
-                OnboardingStep.EXACT_ALARMS -> PermissionStep(
-                    title = R.string.onboarding_exact_alarms_title,
-                    body = R.string.grant_exact_alarms_body,
-                    granted = permissions.exactAlarms,
-                    onGrant = actions::grantExactAlarms,
-                    onContinue = ::next,
-                )
-                OnboardingStep.BATTERY -> {
+                OnboardingStep.METHOD -> MethodStep(settings, savedLocation, actions, dots, onContinue = ::next)
+                OnboardingStep.PERMISSIONS -> PermissionsStep(permissions, brand != null, actions, dots, onContinue = ::next)
+                OnboardingStep.BATTERY -> StepLayout(
+                    dots = dots,
+                    bottom = {
+                        // Only reachable once both permissions are granted (their step can't be passed otherwise).
+                        PrimaryButton(stringResource(R.string.done)) { actions.finish(batteryDone = true) }
+                        TextButton(onClick = { actions.finish(batteryDone = false) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                            Text(stringResource(R.string.onboarding_skip))
+                        }
+                    },
+                ) {
                     Heading(R.string.onboarding_battery_title)
                     FixAlertsContent(brand)
-                    // Only reachable once both permissions are granted (their steps can't be passed otherwise).
-                    PrimaryButton(stringResource(R.string.done)) { actions.finish(batteryDone = true) }
-                    TextButton(onClick = { actions.finish(batteryDone = false) }, Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.onboarding_skip))
-                    }
                 }
                 OnboardingStep.CITY -> Unit
             }
+        }
+    }
+}
+
+/**
+ * One step's page: its content scrolls at the top, and the step dots and its actions stay at the bottom, where the
+ * thumb is, as on the Onboarding board.
+ */
+@Composable
+private fun StepLayout(
+    dots: @Composable () -> Unit,
+    bottom: @Composable ColumnScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 20.dp)) {
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            content = content,
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            dots()
+            bottom()
         }
     }
 }
@@ -204,12 +212,17 @@ private fun Heading(title: Int) {
     Text(stringResource(title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
 }
 
+@Composable
+private fun Explanation(text: String) {
+    Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
 /** Where the person is in onboarding: one dot per step, the current one longer. Decorative for TalkBack. */
 @Composable
 private fun StepDots(step: OnboardingStep, battery: Boolean) {
     val steps = listOfNotNull(
         OnboardingStep.WELCOME, OnboardingStep.LOCATION, OnboardingStep.METHOD,
-        OnboardingStep.NOTIFICATIONS, OnboardingStep.EXACT_ALARMS, OnboardingStep.BATTERY.takeIf { battery },
+        OnboardingStep.PERMISSIONS, OnboardingStep.BATTERY.takeIf { battery },
     )
     val current = steps.indexOf(step)
     val colors = MaterialTheme.colorScheme
@@ -221,7 +234,7 @@ private fun StepDots(step: OnboardingStep, battery: Boolean) {
             Box(
                 Modifier
                     .size(width = if (i == current) 24.dp else 8.dp, height = 8.dp)
-                    .background(if (i <= current) colors.primary else colors.outlineVariant, CircleShape),
+                    .background(if (i == current) colors.primary else colors.outlineVariant, CircleShape),
             )
         }
     }
@@ -230,40 +243,47 @@ private fun StepDots(step: OnboardingStep, battery: Boolean) {
 /** The big primary action at the bottom of a step. */
 @Composable
 private fun PrimaryButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(text) }
+    Button(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)) { Text(text) }
+}
+
+/** A step's picture: a rounded block with an icon or the pattern in the middle. Decorative. */
+@Composable
+private fun Hero(color: Color, content: @Composable () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().height(200.dp).background(color, RoundedCornerShape(28.dp)).clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) { content() }
 }
 
 @Composable
-private fun ColumnScope.Welcome(actions: OnboardingActions, onStart: () -> Unit) {
-    Box(
-        Modifier.fillMaxWidth().height(180.dp).background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(28.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        GeometricPattern(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f))
+private fun Welcome(actions: OnboardingActions, dots: @Composable () -> Unit, onStart: () -> Unit) {
+    StepLayout(dots, bottom = { PrimaryButton(stringResource(R.string.onboarding_start), onClick = onStart) }) {
+        Hero(MaterialTheme.colorScheme.tertiaryContainer) {
+            GeometricStar(MaterialTheme.colorScheme.tertiary)
+        }
+        Text(
+            stringResource(R.string.app_name),
+            style = MaterialTheme.typography.displaySmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.semantics { heading() },
+        )
+        Explanation(stringResource(R.string.onboarding_welcome))
+        val arabic = LocalConfiguration.current.locales[0].language == "ar"
+        SegmentedChoice(
+            listOf(
+                Segment(stringResource(R.string.language_arabic), arabic) { actions.setLanguage("ar") },
+                Segment(stringResource(R.string.language_english), !arabic) { actions.setLanguage("en") },
+            ),
+        )
     }
-    Text(
-        stringResource(R.string.app_name),
-        style = MaterialTheme.typography.displaySmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.semantics { heading() },
-    )
-    Text(stringResource(R.string.onboarding_welcome), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Text(stringResource(R.string.language), style = MaterialTheme.typography.titleSmall)
-    val arabic = LocalConfiguration.current.locales[0].language == "ar"
-    SegmentedChoice(
-        listOf(
-            Segment(stringResource(R.string.language_arabic), arabic) { actions.setLanguage("ar") },
-            Segment(stringResource(R.string.language_english), !arabic) { actions.setLanguage("en") },
-        ),
-    )
-    PrimaryButton(stringResource(R.string.onboarding_start), onClick = onStart)
 }
 
 /** The explanation, then the system request for approximate location only; a refusal leads to city search. */
 @Composable
-private fun ColumnScope.LocationStep(
+private fun LocationStep(
     cities: CityDirectory?,
     actions: OnboardingActions,
+    dots: @Composable () -> Unit,
     onLocated: () -> Unit,
     onSearch: () -> Unit,
 ) {
@@ -288,34 +308,42 @@ private fun ColumnScope.LocationStep(
         if (granted) locate() else onSearch()
     }
     val context = androidx.compose.ui.platform.LocalContext.current
-    Box(
-        Modifier.fillMaxWidth().height(160.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(28.dp)),
-        contentAlignment = Alignment.Center,
+    StepLayout(
+        dots,
+        bottom = {
+            PrimaryButton(
+                stringResource(if (finding) R.string.onboarding_finding_location else R.string.onboarding_allow_location),
+                enabled = cities != null && !finding,
+            ) { if (DeviceLocation.isGranted(context)) locate() else launcher.launch(DeviceLocation.PERMISSION) }
+            OutlinedButton(onClick = onSearch, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) {
+                Text(stringResource(R.string.onboarding_search_city))
+            }
+        },
     ) {
-        Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(72.dp))
-    }
-    Heading(R.string.location_permission_title)
-    Text(stringResource(R.string.location_permission_explanation), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    PrimaryButton(
-        stringResource(if (finding) R.string.onboarding_finding_location else R.string.onboarding_allow_location),
-        enabled = cities != null && !finding,
-    ) { if (DeviceLocation.isGranted(context)) locate() else launcher.launch(DeviceLocation.PERMISSION) }
-    OutlinedButton(onClick = onSearch, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-        Text(stringResource(R.string.onboarding_search_city))
+        Hero(MaterialTheme.colorScheme.primaryContainer) {
+            Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(88.dp))
+        }
+        Heading(R.string.location_permission_title)
+        Explanation(stringResource(R.string.location_permission_explanation))
     }
 }
 
-/** The country's suggestion, applied once with its reason, and every method and convention to change it. */
+/**
+ * The country's suggestion, applied once, in a card with its reason; every method and convention is one tap away
+ * ("Choose another method") rather than a long list in the way of Continue.
+ */
 @Composable
-private fun ColumnScope.MethodStep(
+private fun MethodStep(
     settings: PrayerSettings,
     savedLocation: SavedLocation?,
     actions: OnboardingActions,
+    dots: @Composable () -> Unit,
     onContinue: () -> Unit,
 ) {
     val country = savedLocation?.city?.countryCode
     val suggestion = country?.let(CountryDefaults::suggestionFor)
     var appliedFor by rememberSaveable { mutableStateOf<String?>(null) }
+    var showAll by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(suggestion) {
         if (suggestion != null && appliedFor != suggestion.countryCode) {
             appliedFor = suggestion.countryCode
@@ -323,97 +351,174 @@ private fun ColumnScope.MethodStep(
             actions.setAsrConvention(suggestion.asrConvention)
         }
     }
-    Heading(R.string.onboarding_method_title)
-    Card {
-    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-        Text(locationName(savedLocation), style = MaterialTheme.typography.titleMedium)
+    val locale = LocalConfiguration.current.locales[0]
+    val countryName = suggestion?.let {
+        java.util.Locale.Builder().setRegion(it.countryCode).build().getDisplayCountry(locale).ifEmpty { it.countryCode }
     }
-    Text(stringResource(settings.method.label), style = MaterialTheme.typography.titleLarge)
-    if (suggestion != null) {
-        Text(
-            stringResource(
-                R.string.suggestion_reason,
-                stringResource(suggestion.method.label),
-                stringResource(suggestion.asrConvention.label),
-                java.util.Locale.Builder().setRegion(suggestion.countryCode).build()
-                    .getDisplayCountry(LocalConfiguration.current.locales[0]).ifEmpty { suggestion.countryCode },
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-    }
-    }
-    Text(stringResource(R.string.onboarding_method_change), style = MaterialTheme.typography.bodyMedium)
-    Text(stringResource(R.string.asr_convention), style = MaterialTheme.typography.titleSmall)
-    Card {
-        Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
-            AsrConvention.entries.forEach { convention ->
-                ChoiceRow(
-                    stringResource(convention.label), stringResource(convention.description),
-                    selected = convention == settings.asrConvention,
-                    onSelect = { actions.setAsrConvention(convention) },
+    val isSuggested = suggestion != null && settings.method == suggestion.method && settings.asrConvention == suggestion.asrConvention
+    StepLayout(dots, bottom = { PrimaryButton(stringResource(R.string.onboarding_continue), onClick = onContinue) }) {
+        Heading(R.string.onboarding_method_title)
+        Explanation(stringResource(R.string.onboarding_method_change))
+        val colors = MaterialTheme.colorScheme
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(colors.surfaceContainerLowest, RoundedCornerShape(22.dp))
+                .border(2.dp, if (isSuggested) colors.primary else colors.outlineVariant, RoundedCornerShape(22.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (isSuggested && countryName != null) {
+                Text(
+                    stringResource(R.string.onboarding_suggested_for, countryName),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colors.onPrimaryContainer,
+                    modifier = Modifier.background(colors.primaryContainer, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 2.dp),
+                )
+            }
+            Text(stringResource(settings.method.label), style = MaterialTheme.typography.titleLarge)
+            Text(
+                stringResource(R.string.onboarding_asr_line, stringResource(settings.asrConvention.label)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurfaceVariant,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = colors.primary, modifier = Modifier.size(16.dp))
+                Text(locationName(savedLocation), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            }
+            if (suggestion != null) {
+                Text(
+                    stringResource(
+                        R.string.suggestion_reason,
+                        stringResource(suggestion.method.label),
+                        stringResource(suggestion.asrConvention.label),
+                        countryName.orEmpty(),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
                 )
             }
         }
-    }
-    PrimaryButton(stringResource(R.string.onboarding_continue), onClick = onContinue)
-    Text(stringResource(R.string.calculation_method), style = MaterialTheme.typography.titleSmall)
-    Card {
-        Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
-            CalculationMethod.entries.forEach { method ->
-                ChoiceRow(
-                    stringResource(method.label), stringResource(method.description),
-                    selected = method == settings.method,
-                    onSelect = { actions.setCalculationMethod(method) },
-                )
+        // With no suggestion for the country (or none yet), the lists are the step.
+        if (suggestion != null) {
+            TextButton(onClick = { showAll = !showAll }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(if (showAll) R.string.onboarding_hide_methods else R.string.onboarding_other_method))
             }
         }
-    }
-}
-
-/** A permission explained first; Continue only once it is granted, so onboarding can't finish without it. */
-@Composable
-private fun ColumnScope.PermissionStep(title: Int, body: Int, granted: Boolean, onGrant: () -> Unit, onContinue: () -> Unit) {
-    var asked by rememberSaveable { mutableStateOf(false) }
-    Heading(title)
-    Text(stringResource(R.string.grant_intro), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Card {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(body), style = MaterialTheme.typography.bodyLarge)
-            if (granted) {
-                Text(stringResource(R.string.onboarding_granted), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            } else {
-                Button(onClick = { asked = true; onGrant() }, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(if (asked) R.string.grant_button else R.string.onboarding_allow))
+        if (showAll || suggestion == null) {
+            Text(stringResource(R.string.asr_convention), style = MaterialTheme.typography.titleSmall)
+            Card {
+                Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
+                    AsrConvention.entries.forEach { convention ->
+                        ChoiceRow(
+                            stringResource(convention.label), stringResource(convention.description),
+                            selected = convention == settings.asrConvention,
+                            onSelect = { actions.setAsrConvention(convention) },
+                        )
+                    }
                 }
-                if (asked) Text(stringResource(R.string.onboarding_permission_needed), color = MaterialTheme.colorScheme.error)
+            }
+            Text(stringResource(R.string.calculation_method), style = MaterialTheme.typography.titleSmall)
+            Card {
+                Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
+                    CalculationMethod.entries.forEach { method ->
+                        ChoiceRow(
+                            stringResource(method.label), stringResource(method.description),
+                            selected = method == settings.method,
+                            onSelect = { actions.setCalculationMethod(method) },
+                        )
+                    }
+                }
             }
         }
     }
-    PrimaryButton(stringResource(R.string.onboarding_continue), enabled = granted, onClick = onContinue)
 }
 
-/** The app's single geometric pattern: a faint row of eight-pointed stars (two overlapping squares). */
+/**
+ * Both alert permissions on one screen, each explained, with its own Allow (or ✓ once granted). Continue only once
+ * both are granted, so onboarding can't finish without them. On alarm-killing brands a note says what comes next.
+ */
 @Composable
-private fun GeometricPattern(color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)) {
-    Canvas(Modifier.fillMaxWidth().height(56.dp)) {
-        val size = this.size.height * 0.7f
-        val count = (this.size.width / (size * 1.3f)).toInt().coerceAtLeast(1)
-        val gap = this.size.width / count
-        repeat(count) { i ->
-            val centre = Offset(gap * (i + 0.5f), this.size.height / 2)
+private fun PermissionsStep(
+    permissions: AlertPermissions,
+    battery: Boolean,
+    actions: OnboardingActions,
+    dots: @Composable () -> Unit,
+    onContinue: () -> Unit,
+) {
+    StepLayout(
+        dots,
+        bottom = { PrimaryButton(stringResource(R.string.onboarding_continue), enabled = permissions.allGranted, onClick = onContinue) },
+    ) {
+        Heading(R.string.onboarding_permissions_title)
+        Explanation(stringResource(R.string.onboarding_permissions_intro))
+        PermissionCard(
+            R.string.grant_notifications_title, R.string.grant_notifications_body,
+            granted = permissions.notifications, onGrant = actions::grantNotifications,
+        )
+        PermissionCard(
+            R.string.grant_exact_alarms_title, R.string.grant_exact_alarms_body,
+            granted = permissions.exactAlarms, onGrant = actions::grantExactAlarms,
+        )
+        if (battery) {
+            val colors = MaterialTheme.colorScheme
+            Column(
+                Modifier.fillMaxWidth().background(colors.tertiaryContainer, RoundedCornerShape(20.dp)).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(stringResource(R.string.onboarding_battery_row), style = MaterialTheme.typography.titleSmall, color = colors.onTertiaryContainer)
+                Text(stringResource(R.string.onboarding_battery_hint), style = MaterialTheme.typography.bodySmall, color = colors.onTertiaryContainer)
+            }
+        }
+    }
+}
+
+/** One permission: what it is for, then Allow, or ✓ once granted; after a refusal, why setup needs it. */
+@Composable
+private fun PermissionCard(title: Int, body: Int, granted: Boolean, onGrant: () -> Unit) {
+    var asked by rememberSaveable { mutableStateOf(false) }
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (granted) {
+                    Text(stringResource(R.string.onboarding_granted_short), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                } else {
+                    Button(onClick = { asked = true; onGrant() }, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(if (asked) R.string.grant_button else R.string.onboarding_allow))
+                    }
+                }
+            }
+            if (asked && !granted) Text(stringResource(R.string.onboarding_permission_needed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+/**
+ * The app's single geometric pattern, as on the welcome board: an eight-pointed star (two overlapping squares) with
+ * a smaller one inside and a dot at its centre.
+ */
+@Composable
+private fun GeometricStar(color: Color) {
+    Canvas(Modifier.size(150.dp)) {
+        val centre = Offset(size.width / 2, size.height / 2)
+        val stroke = Stroke(width = 1.6.dp.toPx())
+        fun star(side: Float) {
             val square = Path().apply {
-                moveTo(centre.x - size / 2, centre.y - size / 2)
-                lineTo(centre.x + size / 2, centre.y - size / 2)
-                lineTo(centre.x + size / 2, centre.y + size / 2)
-                lineTo(centre.x - size / 2, centre.y + size / 2)
+                moveTo(centre.x - side / 2, centre.y - side / 2)
+                lineTo(centre.x + side / 2, centre.y - side / 2)
+                lineTo(centre.x + side / 2, centre.y + side / 2)
+                lineTo(centre.x - side / 2, centre.y + side / 2)
                 close()
             }
-            drawPath(square, color, style = Stroke(width = 2.dp.toPx()))
-            rotate(45f, centre) { drawPath(square, color, style = Stroke(width = 2.dp.toPx())) }
+            drawPath(square, color, style = stroke)
+            rotate(45f, centre) { drawPath(square, color, style = stroke) }
         }
+        star(size.width * 0.62f)
+        star(size.width * 0.36f)
+        drawCircle(color, radius = size.width * 0.06f, center = centre)
     }
 }

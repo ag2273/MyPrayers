@@ -3,6 +3,7 @@ package app.mawaqeet.widget
 import android.text.TextPaint
 import android.text.StaticLayout
 import android.graphics.Typeface
+import android.app.LocaleManager
 import android.content.Context
 import android.content.res.Resources
 import android.os.Build
@@ -85,8 +86,20 @@ internal class WidgetDirection(val rtl: Boolean, hostRtl: Boolean = phoneRtl()) 
         views.setInt(viewId, "setLayoutDirection", if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR)
 
     companion object {
-        /** The direction the launcher lays widgets out in: the phone's language. */
-        fun phoneRtl(): Boolean = Resources.getSystem().configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        /**
+         * The direction the launcher lays widgets out in: the phone's language. From Android 13 the app's own
+         * language (a per-app language) also reaches this process's system resources, so there it is read from
+         * [LocaleManager.getSystemLocales], the phone's language whatever the app's.
+         */
+        fun phoneRtl(context: Context? = null): Boolean {
+            if (context != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val system = context.getSystemService(LocaleManager::class.java)?.systemLocales
+                if (system != null && !system.isEmpty) {
+                    return TextUtils.getLayoutDirectionFromLocale(system[0]) == View.LAYOUT_DIRECTION_RTL
+                }
+            }
+            return Resources.getSystem().configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        }
     }
 }
 
@@ -156,7 +169,7 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
         }
         CompositionLocalProvider(
             LocalWidgetStyle provides remember(appearance) { WidgetStyle.of(appearance) },
-            LocalWidgetDirection provides remember(current.second) { WidgetDirection(current.second) },
+            LocalWidgetDirection provides remember(current.second) { WidgetDirection(current.second, WidgetDirection.phoneRtl(context)) },
         ) {
             layout(current.first, current.second)
         }

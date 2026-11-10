@@ -32,6 +32,10 @@
     <string name="settings_group_language_display">اللغة والعرض</string>
     <string name="settings_group_widgets">أدوات الشاشة الرئيسية</string>
     <string name="settings_group_about">حول مواقيت وبياناتك</string>
+    <string name="about_privacy_section">الخصوصية</string>
+    <string name="about_sources_section">المصادر</string>
+    <string name="about_sources_title">المصادر والتراخيص</string>
+    <string name="about_recordings_none_short">لا توجد بعد</string>
     <string name="about_version">الإصدار %1$s</string>
     <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك.</string>
     <string name="about_libraries">المكتبات</string>
@@ -163,7 +167,14 @@
     <string name="alerts_adhan_off">بلا تنبيه أذان</string>
     <string name="alerts_summary_with_reminder">%1$s، والتذكير %2$s</string>
     <string name="alerts_alarm_clock">وضع المنبه</string>
-    <string name="alerts_alarm_clock_description">يظهر موعد الصلاة القادمة على شاشة القفل كالمنبه</string>
+    <string name="alerts_alarm_clock_description">يظهر الأذان على شاشة القفل كالمنبه، وموعد الصلاة القادمة في شريط الحالة</string>
+    <string name="alerts_try">جرّب تنبيه الأذان</string>
+    <string name="alerts_try_summary">يصل تنبيه الصلاة القادمة بعد ١٠ ثوانٍ كما سيصل في وقته. اقفل الشاشة لترى شكله.</string>
+    <string name="alerts_try_scheduled">سيصل خلال ١٠ ثوانٍ. اقفل الشاشة الآن.</string>
+    <string name="alerts_try_not_allowed">اسمح بالمنبّهات الدقيقة أولًا من «إصلاح التنبيهات».</string>
+    <string name="alerts_lock_screen_permission">اسمح بالظهور على شاشة القفل</string>
+    <string name="alerts_lock_screen_permission_summary">بدونه يصل التنبيه إشعارًا فقط، لا شاشة منبّه.</string>
+    <string name="adhan_alarm_label">حان وقت الصلاة</string>
     <string name="alerts_play_on_silent">تشغيل الأذان حتى في الوضع الصامت</string>
     <string name="alerts_play_on_silent_description">لا يشمل التذكير، ولا الأذان أثناء المكالمات</string>
     <string name="alerts_vibration">الاهتزاز</string>
@@ -184,7 +195,7 @@
     <string name="widget_next_prayer">الصلاة القادمة</string>
     <string name="widget_next_prayer_description">اسم الصلاة القادمة ووقتها، مع العد التنازلي</string>
     <string name="widget_next_prayer_compact">الصلاة القادمة (مختصرة)</string>
-    <string name="widget_next_prayer_compact_description">الصلاة القادمة في سطرين</string>
+    <string name="widget_next_prayer_compact_description">الصلاة القادمة ووقتها والعدّ التنازلي في خانة واحدة</string>
     <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
     <string name="widget_countdown_format">بعد %s</string>
     <!-- Widgets (#30). -->
@@ -221,16 +232,23 @@
     <string name="onboarding_continue">متابعة</string>
     <string name="onboarding_skip">تخطٍّ</string>
     <string name="onboarding_allow">السماح</string>
-    <string name="onboarding_granted">✓ تم منح الإذن</string>
     <string name="onboarding_permission_needed">لا يمكن إكمال الإعداد دون هذا الإذن، فالتنبيهات لن تصل بدونه.</string>
     <string name="onboarding_allow_location">استخدم موقعي التقريبي</string>
     <string name="onboarding_finding_location">جارٍ تحديد موقعك…</string>
     <string name="onboarding_search_city">ابحث عن مدينتي بدلًا من ذلك</string>
     <string name="onboarding_method_title">طريقة الحساب</string>
     <string name="onboarding_method_change">يمكنك اختيار غيرها الآن أو لاحقًا من الإعدادات.</string>
-    <string name="onboarding_notifications_title">إشعارات الأذان</string>
-    <string name="onboarding_exact_alarms_title">التنبيه في الوقت تمامًا</string>
     <string name="onboarding_battery_title">لا تدع الهاتف يوقف التنبيهات</string>
+    <string name="onboarding_permissions_title">ليصلك الأذان في وقته</string>
+    <string name="onboarding_permissions_intro">إذنان فقط، ولا يكتمل الإعداد بدونهما.</string>
+    <string name="onboarding_granted_short">✓ تم</string>
+    <string name="onboarding_battery_row">البطارية</string>
+    <string name="onboarding_battery_hint">هاتفك قد يوقف التنبيهات. سنريك الخطوات بعد قليل.</string>
+    <!-- The badge on the suggested method, e.g. «مقترحة لمصر». %s is the country. -->
+    <string name="onboarding_suggested_for">مقترحة ل%s</string>
+    <string name="onboarding_asr_line">العصر: %s</string>
+    <string name="onboarding_other_method">اختيار طريقة أخرى</string>
+    <string name="onboarding_hide_methods">إخفاء الطرق الأخرى</string>
 
     <!-- Fix alerts (#29): only opens system settings pages, never asks for a battery exemption. %1$s is the brand. -->
     <string name="fix_alerts">إصلاح التنبيهات</string>

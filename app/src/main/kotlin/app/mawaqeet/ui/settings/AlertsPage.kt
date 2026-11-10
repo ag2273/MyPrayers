@@ -92,6 +92,9 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
             checked = alerts.alarmClockMode,
             onChange = actions::setAlarmClockMode,
         )
+        if (alerts.alarmClockMode) LockScreenPermissionRow(actions)
+        RowDivider()
+        TryAlertRow(actions)
         RowDivider()
         SwitchRow(
             title = stringResource(R.string.alerts_play_on_silent),
@@ -337,3 +340,46 @@ internal val Prayer.nameRes: Int
         Prayer.MAGHRIB -> R.string.prayer_maghrib
         Prayer.ISHA -> R.string.prayer_isha
     }
+
+/**
+ * In alarm-clock mode on Android 14+, where the user can stop an app showing over the lock screen: a row to allow it,
+ * shown only while it's off. Checked again each time the page comes back.
+ */
+@Composable
+private fun LockScreenPermissionRow(actions: SettingsActions) {
+    var allowed by remember { mutableStateOf(actions.canShowOverLockScreen()) }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) allowed = actions.canShowOverLockScreen()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    if (allowed) return
+    RowDivider()
+    NavRow(
+        stringResource(R.string.alerts_lock_screen_permission),
+        stringResource(R.string.alerts_lock_screen_permission_summary),
+        icon = R.drawable.ic_warning,
+        onClick = actions::openLockScreenPermission,
+    )
+}
+
+/** Try it: an Adhan Alert for the next Prayer in 10 seconds, so the person can lock the phone and see how it arrives. */
+@Composable
+private fun TryAlertRow(actions: SettingsActions) {
+    var state by rememberSaveable { mutableIntStateOf(0) } // 0 idle, 1 scheduled, 2 not allowed
+    NavRow(
+        stringResource(R.string.alerts_try),
+        stringResource(
+            when (state) {
+                1 -> R.string.alerts_try_scheduled
+                2 -> R.string.alerts_try_not_allowed
+                else -> R.string.alerts_try_summary
+            },
+        ),
+        icon = R.drawable.ic_bell,
+        onClick = { state = if (actions.tryAdhanAlert()) 1 else 2 },
+    )
+}

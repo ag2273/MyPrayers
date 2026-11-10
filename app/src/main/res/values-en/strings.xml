@@ -29,6 +29,10 @@
     <string name="settings_group_language_display">Language &amp; display</string>
     <string name="settings_group_widgets">Widgets</string>
     <string name="settings_group_about">About &amp; your data</string>
+    <string name="about_privacy_section">Privacy</string>
+    <string name="about_sources_section">Sources</string>
+    <string name="about_sources_title">Sources &amp; licences</string>
+    <string name="about_recordings_none_short">None yet</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_summary">Prayer Times, Adhan Alerts and a Prayer Log, all on your device.</string>
     <string name="about_libraries">Libraries</string>
@@ -151,7 +155,14 @@
     <string name="alerts_adhan_off">No Adhan Alert</string>
     <string name="alerts_summary_with_reminder">%1$s, reminder %2$s</string>
     <string name="alerts_alarm_clock">Alarm-clock mode</string>
-    <string name="alerts_alarm_clock_description">Shows the next Prayer on the lock screen like an alarm</string>
+    <string name="alerts_alarm_clock_description">Shows the adhan on the lock screen like an alarm, and the next Prayer in the status bar</string>
+    <string name="alerts_try">Try the Adhan Alert</string>
+    <string name="alerts_try_summary">The next Prayer\'s alert arrives in 10 seconds, as it will at its time. Lock the screen to see it.</string>
+    <string name="alerts_try_scheduled">Arriving in 10 seconds. Lock the screen now.</string>
+    <string name="alerts_try_not_allowed">Allow exact alarms first, from Fix alerts.</string>
+    <string name="alerts_lock_screen_permission">Allow showing on the lock screen</string>
+    <string name="alerts_lock_screen_permission_summary">Without it the alert arrives only as a notification, not an alarm screen.</string>
+    <string name="adhan_alarm_label">It\'s time to pray</string>
     <string name="alerts_play_on_silent">Play adhan even on silent</string>
     <string name="alerts_play_on_silent_description">Not for reminders, nor during calls</string>
     <string name="alerts_vibration">Vibration</string>
@@ -172,7 +183,7 @@
     <string name="widget_next_prayer">Next Prayer</string>
     <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
     <string name="widget_next_prayer_compact">Next Prayer (compact)</string>
-    <string name="widget_next_prayer_compact_description">The next Prayer on two lines</string>
+    <string name="widget_next_prayer_compact_description">The next Prayer, its time and the countdown in one cell</string>
     <string name="widget_countdown_format">in %s</string>
     <string name="widget_today_times">Today\'s Prayer Times</string>
     <string name="widget_today_times_description">Today\'s five Prayer Times, with the next Prayer highlighted</string>
@@ -203,16 +214,22 @@
     <string name="onboarding_continue">Continue</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_allow">Allow</string>
-    <string name="onboarding_granted">✓ Permission granted</string>
     <string name="onboarding_permission_needed">Setup can\'t finish without this permission: alerts can\'t reach you without it.</string>
     <string name="onboarding_allow_location">Use my approximate location</string>
     <string name="onboarding_finding_location">Finding your location…</string>
     <string name="onboarding_search_city">Search for my city instead</string>
     <string name="onboarding_method_title">Calculation Method</string>
     <string name="onboarding_method_change">You can choose another now or later in Settings.</string>
-    <string name="onboarding_notifications_title">Adhan Alert notifications</string>
-    <string name="onboarding_exact_alarms_title">Alerts right on time</string>
     <string name="onboarding_battery_title">Don\'t let your phone stop alerts</string>
+    <string name="onboarding_permissions_title">So the adhan reaches you on time</string>
+    <string name="onboarding_permissions_intro">Just two permissions; setup can\'t finish without them.</string>
+    <string name="onboarding_granted_short">✓ Done</string>
+    <string name="onboarding_battery_row">Battery</string>
+    <string name="onboarding_battery_hint">Your phone may stop alerts. We\'ll show you the steps next.</string>
+    <string name="onboarding_suggested_for">Suggested for %s</string>
+    <string name="onboarding_asr_line">Asr: %s</string>
+    <string name="onboarding_other_method">Choose another method</string>
+    <string name="onboarding_hide_methods">Hide other methods</string>
 
     <!-- Fix alerts (#29). -->
     <string name="fix_alerts">Fix alerts</string>

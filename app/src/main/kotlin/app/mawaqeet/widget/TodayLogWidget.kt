@@ -55,7 +55,7 @@ private data class TodayLogView(val title: String, val count: String, val rows: 
 private fun TodayLogLayout(view: TodayLogView, rtl: Boolean) {
     val sizes = CellSizes.of(view.title, view.allNames, view.rows.map { it.time }, dots = true)
     WidgetFrame(rtl, horizontal = TodayTimesMetrics.horizontalPadding, vertical = TodayTimesMetrics.verticalPadding) {
-        WidgetHeader(view.title, view.count, sizes.headerSp)
+        if (sizes.showHeader) WidgetHeader(view.title, view.count, sizes.headerSp)
         PrayerColumns(
             sizes,
             view.rows.map { row -> PrayerColumn(row.name, row.time, row.isNext) { size -> Mark(row, size) } },

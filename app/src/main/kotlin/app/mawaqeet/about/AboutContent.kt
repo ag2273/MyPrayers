@@ -19,6 +19,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.mawaqeet.BuildConfig
 import app.mawaqeet.R
@@ -73,12 +76,17 @@ private fun CreditRow(credit: Credit) {
             }
             .padding(vertical = 6.dp),
     ) {
-        Text(credit.name, style = MaterialTheme.typography.bodyLarge)
-        Text(use, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Latin names in an Arabic page still line up at the page's start, not at their own (left) one.
+        val align = if (LocalLayoutDirection.current == LayoutDirection.Rtl) TextAlign.Right else TextAlign.Left
+        val full = Modifier.fillMaxWidth()
+        Text(credit.name, style = MaterialTheme.typography.bodyLarge, textAlign = align, modifier = full)
+        Text(use, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = align, modifier = full)
         Text(
             stringResource(R.string.about_licence, credit.licence),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = align,
+            modifier = full,
         )
     }
 }
