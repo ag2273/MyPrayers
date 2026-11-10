@@ -47,6 +47,7 @@ class LocationScreenTest {
 
     private fun openLocation() {
         compose.onNodeWithText("الإعدادات").performClick()
+        compose.onNodeWithText("الموقع وطريقة الحساب").performScrollTo().performClick()
         compose.onNodeWithText("الموقع").performScrollTo().performClick()
         // The city list loads off the main thread.
         compose.waitUntil(timeoutMillis = 10_000) {
@@ -79,6 +80,7 @@ class LocationScreenTest {
     @Config(qualifiers = "en")
     fun `typed coordinates take the nearest city's zone and suggest Hanafi Asr in Pakistan`() {
         compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithText("Location & calculation").performScrollTo().performClick()
         compose.onNodeWithText("Location").performScrollTo().performClick()
         compose.waitUntil(timeoutMillis = 10_000) {
             compose.onAllNodesWithText("Loading the city list…").fetchSemanticsNodes().isEmpty()

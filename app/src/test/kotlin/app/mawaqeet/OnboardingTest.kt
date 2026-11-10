@@ -87,7 +87,7 @@ class OnboardingTest {
     @Test
     @Config(qualifiers = "ar")
     fun `a fresh install walks through every step in Arabic, right to left, and city search replaces a refused location`() {
-        compose.onNodeWithText("ابدأ").assertIsDisplayed()
+        compose.onNodeWithText("ابدأ").performScrollTo().assertIsDisplayed()
         assertEquals(View.LAYOUT_DIRECTION_RTL, compose.activity.window.decorView.layoutDirection)
 
         walkToPermissions()

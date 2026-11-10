@@ -1,9 +1,11 @@
 package app.mawaqeet
 
+
 import android.view.View
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -38,25 +40,31 @@ class SettingsScreenTest {
         compose.waitForIdle()
     }
 
+    /** Opens a Settings section's page from the hub. */
+    private fun openPage(title: String) {
+        compose.onNodeWithText(title).performScrollTo().performClick()
+        compose.waitForIdle()
+    }
+
     private fun assertGroupsShown(vararg titles: String) = titles.forEach {
         compose.onNodeWithText(it).performScrollTo().assertIsDisplayed()
     }
 
     @Test
     @Config(qualifiers = "ar")
-    fun `Settings shows its six groups in Arabic, right to left`() {
+    fun `Settings shows its six sections in Arabic, right to left`() {
         openSettings("الإعدادات")
 
-        assertGroupsShown("مواقيت الصلاة", "التنبيهات", "سجل الصلاة", "اللغة والعرض", "أدوات الشاشة الرئيسية", "حول التطبيق")
+        assertGroupsShown("التنبيهات جاهزة", "الموقع وطريقة الحساب", "التنبيهات والأذان", "اللغة والعرض", "أدوات الشاشة الرئيسية", "إصلاح التنبيهات", "حول مواقيت وبياناتك")
         assertEquals(View.LAYOUT_DIRECTION_RTL, compose.activity.window.decorView.layoutDirection)
     }
 
     @Test
     @Config(qualifiers = "en")
-    fun `Settings shows its six groups in English, left to right`() {
+    fun `Settings shows its six sections in English, left to right`() {
         openSettings("Settings")
 
-        assertGroupsShown("Prayer Times", "Alerts", "Prayer Log", "Language & display", "Widgets", "About")
+        assertGroupsShown("Alerts are ready", "Location & calculation", "Alerts & adhan", "Language & display", "Widgets", "Fix alerts", "About & your data")
         assertEquals(View.LAYOUT_DIRECTION_LTR, compose.activity.window.decorView.layoutDirection)
     }
 
@@ -64,9 +72,11 @@ class SettingsScreenTest {
     @Config(qualifiers = "ar")
     fun `choosing a Calculation Method and Asr Convention stores them`() {
         openSettings("الإعدادات")
+        openPage("الموقع وطريقة الحساب")
 
         compose.onNodeWithText("طريقة الحساب").performClick()
         compose.onNodeWithText("الهيئة المصرية العامة للمساحة").performScrollTo().performClick()
+        // Choosing a method returns to the section, where the Asr Convention is a segmented choice.
         compose.onNodeWithText("الحنفي").performScrollTo().performClick()
 
         // DataStore writes off the main thread, so wait for the stored value rather than for Compose to be idle.
@@ -81,12 +91,12 @@ class SettingsScreenTest {
     @Config(qualifiers = "ar")
     fun `choosing Western digits and a Hijri offset stores them`() {
         openSettings("الإعدادات")
+        openPage("اللغة والعرض")
         val store = (compose.activity.application as MawaqeetApplication).settings
 
         compose.onNodeWithText("أرقام غربية").performScrollTo().performClick()
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.digitStyle.first() } == DigitStyle.WESTERN }
-        compose.onNodeWithText("تعديل التاريخ الهجري").performScrollTo().performClick()
-        compose.onNodeWithText("-1", substring = true).performScrollTo().performClick()
+        compose.onNodeWithContentDescription("إنقاص يوم من التاريخ الهجري").performScrollTo().performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.settings.first() }.hijriOffsetDays == -1 }
     }
@@ -95,6 +105,7 @@ class SettingsScreenTest {
     @Config(qualifiers = "en")
     fun `choosing Fajr's Full Adhan, a 10-minute reminder and no vibration stores them`() {
         openSettings("Settings")
+        openPage("Alerts & adhan")
         val store = (compose.activity.application as MawaqeetApplication).settings
         fun alerts() = runBlocking { store.settings.first() }.alerts
         try {
@@ -103,10 +114,11 @@ class SettingsScreenTest {
             compose.onNodeWithText("Fajr's Full Adhan", substring = true).performScrollTo().performClick()
             compose.onNodeWithText("Prayer Reminder").performScrollTo().performClick()
             // The lead-time choices show once the DataStore write comes back (async).
-            compose.waitUntil(timeoutMillis = 5_000) { alerts().of(Prayer.FAJR).reminder }
-            compose.waitForIdle()
+            compose.waitUntil(timeoutMillis = 5_000) {
+                alerts().of(Prayer.FAJR).reminder && compose.onAllNodesWithText("10 minutes before").fetchSemanticsNodes().isNotEmpty()
+            }
             compose.onNodeWithText("10 minutes before").performScrollTo().performClick()
-            compose.onNodeWithText("Done").performClick()
+            compose.onNodeWithContentDescription("Back").performClick()
             compose.onNodeWithText("Vibration").performScrollTo().performClick()
 
             compose.waitUntil(timeoutMillis = 5_000) { !alerts().vibration && alerts().of(Prayer.FAJR).reminderMinutes == 10 }
@@ -125,15 +137,15 @@ class SettingsScreenTest {
     @Config(qualifiers = "en")
     fun `adjusting Fajr and choosing a high-latitude rule stores them`() {
         openSettings("Settings")
+        openPage("Location & calculation")
         val store = (compose.activity.application as MawaqeetApplication).settings
         fun stored() = runBlocking { store.settings.first() }
         try {
-            compose.onNodeWithText("Prayer Time adjustments").performScrollTo().performClick()
             // Two quick taps both count, even before the first one is stored.
-            compose.onNodeWithContentDescription("Fajr one minute later").performClick()
+            compose.onNodeWithContentDescription("Fajr one minute later").performScrollTo().performClick()
             compose.onNodeWithContentDescription("Fajr one minute later").performClick()
             compose.waitUntil(timeoutMillis = 5_000) { stored().adjustmentOf(Prayer.FAJR) == 2 }
-            compose.onNodeWithText("Done").performClick()
+            compose.onNodeWithText("High-latitude rule").performScrollTo().performClick()
             compose.onNodeWithText("Middle of the night").performScrollTo().performClick()
 
             compose.waitUntil(timeoutMillis = 5_000) { stored().highLatitudeRule == HighLatitudeRule.MIDDLE_OF_THE_NIGHT }
@@ -150,6 +162,7 @@ class SettingsScreenTest {
     @Config(qualifiers = "ar")
     fun `choosing English switches the app language`() {
         openSettings("الإعدادات")
+        openPage("اللغة والعرض")
 
         compose.onNodeWithText("English").performScrollTo().performClick()
 
@@ -160,6 +173,7 @@ class SettingsScreenTest {
     @Config(qualifiers = "en")
     fun `choosing app colours for the widgets stores it, and transparency reads as a percentage`() {
         openSettings("Settings")
+        openPage("Widgets")
         val store = (compose.activity.application as MawaqeetApplication).settings
 
         compose.onNodeWithText("Background transparency").performScrollTo().assertIsDisplayed()
@@ -175,9 +189,10 @@ class SettingsScreenTest {
     @Config(qualifiers = "ar")
     fun `About shows the version and credits each library, dataset and font with its licence`() {
         openSettings("الإعدادات")
+        openPage("حول مواقيت وبياناتك")
 
         compose.onNodeWithText("الإصدار ${BuildConfig.VERSION_NAME}").performScrollTo().assertIsDisplayed()
-        for (name in listOf("adhan-kotlin (Batoul Apps)", "GeoNames", "Natural Earth", "Noto Naskh Arabic (Google)")) {
+        for (name in listOf("adhan-kotlin (Batoul Apps)", "GeoNames", "Natural Earth", "Noto Sans Arabic (Google)")) {
             compose.onNodeWithContentDescription(name, substring = true).performScrollTo().assertIsDisplayed()
         }
         compose.onNodeWithContentDescription("GeoNames: أسماء المدن وإحداثياتها ومناطقها الزمنية، الترخيص: CC BY 4.0. يفتح الموقع")
