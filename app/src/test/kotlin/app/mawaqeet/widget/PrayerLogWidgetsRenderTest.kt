@@ -55,13 +55,32 @@ class PrayerLogWidgetsRenderTest {
 
     @Test
     fun `Today with Prayer Log shows its title, the count marked and the five Prayers in Arabic, with nothing clipped`() {
-        val root = renderWidget(context, TodayLogWidget(), 250, 110)
+        val root = renderWidget(context, TodayLogWidget(), 250, 150)
         val words = widgetTexts(root).map { it.text.toString() }
 
         for (name in listOf("اليوم وسجل الصلاة", "الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
         assertTrue("no count in $words", words.any { it.endsWith(" من ٥") })
         assertEquals(View.LAYOUT_DIRECTION_RTL, widgetTexts(root).first().layoutDirection)
         assertNothingClipped(root, allowEllipsis = isHijriDate)
+    }
+
+    @Test
+    fun `one row high, Today with Prayer Log drops its header and keeps the five Prayers and their marks unclipped`() {
+        val root = renderWidget(context, TodayLogWidget(), 250, 80)
+        val words = widgetTexts(root).map { it.text.toString() }
+
+        assertTrue("header kept in $words", "اليوم وسجل الصلاة" !in words)
+        for (name in listOf("الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
+        assertEquals(5, images(root).count { it.contentDescription != null })
+        assertNothingClipped(root)
+    }
+
+    @Test
+    fun `Week Prayer Log draws all seven days for every Prayer, even before the app was first used`() {
+        val root = renderWidget(context, WeekLogWidget(), 250, 180)
+        // 7 × 5 dots, besides the frame's own images.
+        val dots = images(root).count { it.drawable != null && it.id != R.id.widget_bg }
+        assertTrue("only $dots dots", dots >= 35)
     }
 
     @Test

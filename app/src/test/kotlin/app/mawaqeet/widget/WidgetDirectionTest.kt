@@ -73,7 +73,7 @@ class WidgetDirectionTest {
 
     @Test
     fun `Today with Prayer Log puts Fajr on the right and its title on the right`() {
-        val root = render(TodayLogWidget(), 250, 110)
+        val root = render(TodayLogWidget(), 250, 150)
         assertReadsBefore(root.textView("الفجر"), root.textView("العشاء"))
         assertTrue("Fajr's column on the right", root.textView("الفجر").screenLeft() > root.width * 0.75f)
         assertTrue("title on the right", root.textView("اليوم وسجل الصلاة").drawnRight() > root.width * 0.75f)
