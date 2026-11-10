@@ -46,6 +46,8 @@ import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.data.LocationCheckResult
 import app.mawaqeet.location.DeviceLocation
 import app.mawaqeet.ui.ProvideDisplayFormatter
+import app.mawaqeet.ui.components.MainScaffold
+import app.mawaqeet.ui.components.Tab
 import app.mawaqeet.ui.home.HomeScreen
 import app.mawaqeet.ui.fixalerts.FixAlerts
 import app.mawaqeet.ui.fixalerts.FixAlertsScreen
@@ -56,7 +58,9 @@ import app.mawaqeet.ui.log.PrayerLogScreen
 import app.mawaqeet.ui.location.locationName
 import app.mawaqeet.ui.permissions.GrantScreen
 import app.mawaqeet.ui.settings.SettingsActions
-import app.mawaqeet.ui.settings.SettingsScreen
+import app.mawaqeet.ui.settings.SettingsHub
+import app.mawaqeet.ui.settings.SettingsPageScreen
+import app.mawaqeet.ui.settings.SettingsRoute
 import app.mawaqeet.widget.WidgetAppearance
 import app.mawaqeet.widget.WidgetColors
 import app.mawaqeet.ui.theme.MawaqeetTheme
@@ -115,17 +119,18 @@ class MainActivity : AppCompatActivity() {
                 val savedLocation = (storedLocation ?: return@MawaqeetTheme).firstOrNull()
                 // A new core whenever the settings change: Home re-queries it, so times and next Prayer follow.
                 val core = remember(current) { PrayerCore(current, clock, prayerLog) }
-                var showSettings by rememberSaveable { mutableStateOf(false) }
+                var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
+                // The open Settings page, over the tabs (no bottom bar); null shows the tabs.
+                var settingsRoute by rememberSaveable { mutableStateOf<SettingsRoute?>(null) }
                 var showLocation by rememberSaveable { mutableStateOf(false) }
                 var showFixAlerts by rememberSaveable { mutableStateOf(false) }
-                var showLog by rememberSaveable { mutableStateOf(false) }
                 // A widget tap opens today's Prayer Times (Home) or the Prayer Log, from whatever screen was open.
                 LaunchedEffect(openRequest) {
                     val request = openRequest ?: return@LaunchedEffect
-                    showSettings = false
                     showLocation = false
                     showFixAlerts = false
-                    showLog = request.opens == Opens.PRAYER_LOG
+                    settingsRoute = null
+                    tab = if (request.opens == Opens.PRAYER_LOG) Tab.LOG else Tab.TODAY
                     openRequest = null
                 }
                 val scope = rememberCoroutineScope()
@@ -196,77 +201,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-                ProvideDisplayFormatter(digits) {
-                if (!onboardingDone) {
-                    OnboardingScreen(
-                        settings = current,
-                        savedLocation = savedLocation,
-                        loadCities = { app.cities },
-                        permissions = permissions,
-                        brand = FixAlerts.deviceBrand,
-                        actions = object : OnboardingActions {
-                            override fun setLanguage(languageTag: String) =
-                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageTag))
-
-                            override fun chooseLocation(saved: SavedLocation) {
-                                scope.launch { app.locationUpdater.change(saved) }
-                            }
-
-                            override fun setCalculationMethod(method: CalculationMethod) {
-                                scope.launch { settingsStore.setCalculationMethod(method) }
-                            }
-
-                            override fun setAsrConvention(convention: AsrConvention) {
-                                scope.launch { settingsStore.setAsrConvention(convention) }
-                            }
-
-                            override fun grantNotifications() = grantNotifications()
-
-                            override fun grantExactAlarms() =
-                                startActivity(AlertPermissions.exactAlarmSettingsIntent(this@MainActivity))
-
-                            override suspend fun readDevicePosition() = DeviceLocation.current(this@MainActivity)
-
-                            override fun finish(batteryDone: Boolean) {
-                                scope.launch {
-                                    if (batteryDone) settingsStore.setFixAlertsDone(true)
-                                    settingsStore.setOnboardingDone(true)
-                                }
-                            }
-                        },
-                    )
-                } else if (!permissions.allGranted) {
-                    GrantScreen(
-                        permissions,
-                        onGrantNotifications = grantNotifications,
-                        onGrantExactAlarms = { startActivity(AlertPermissions.exactAlarmSettingsIntent(this@MainActivity)) },
-                    )
-                } else if (showFixAlerts) {
-                    FixAlertsScreen(
-                        onDone = {
-                            showFixAlerts = false
-                            scope.launch { settingsStore.setFixAlertsDone(true) }
-                        },
-                        onBack = { showFixAlerts = false },
-                    )
-                } else if (showSettings && showLocation) {
-                    // The city list is read once per process, off the main thread, only when this screen opens.
-                    val cities by produceState<CityDirectory?>(null) { value = withContext(Dispatchers.IO) { app.cities } }
-                    LocationScreen(
-                        cities = cities,
-                        settings = current,
-                        onChoose = { scope.launch { app.locationUpdater.change(it) } },
-                        onAcceptSuggestion = {
-                            scope.launch {
-                                settingsStore.setCalculationMethod(it.method)
-                                settingsStore.setAsrConvention(it.asrConvention)
-                            }
-                        },
-                        onBack = { showLocation = false },
-                        readDevicePosition = { DeviceLocation.current(this@MainActivity) },
-                    )
-                } else if (showSettings) {
-                    val actions = remember(settingsStore) {
+                    val settingsActions = remember(settingsStore) {
                         object : SettingsActions {
                             override fun setCalculationMethod(method: CalculationMethod) {
                                 scope.launch { settingsStore.setCalculationMethod(method) }
@@ -277,7 +212,7 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             override fun setLanguage(languageTag: String) {
-                                // Recreates the activity in the new language; showSettings is saved, so Settings stays open.
+                                // Recreates the activity in the new language; the tab is saved, so Settings stays open.
                                 AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageTag))
                             }
 
@@ -346,22 +281,105 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     }
-                    SettingsScreen(
+                ProvideDisplayFormatter(digits) {
+                if (!onboardingDone) {
+                    OnboardingScreen(
+                        settings = current,
+                        savedLocation = savedLocation,
+                        loadCities = { app.cities },
+                        permissions = permissions,
+                        brand = FixAlerts.deviceBrand,
+                        actions = object : OnboardingActions {
+                            override fun setLanguage(languageTag: String) =
+                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageTag))
+
+                            override fun chooseLocation(saved: SavedLocation) {
+                                scope.launch { app.locationUpdater.change(saved) }
+                            }
+
+                            override fun setCalculationMethod(method: CalculationMethod) {
+                                scope.launch { settingsStore.setCalculationMethod(method) }
+                            }
+
+                            override fun setAsrConvention(convention: AsrConvention) {
+                                scope.launch { settingsStore.setAsrConvention(convention) }
+                            }
+
+                            override fun grantNotifications() = grantNotifications()
+
+                            override fun grantExactAlarms() =
+                                startActivity(AlertPermissions.exactAlarmSettingsIntent(this@MainActivity))
+
+                            override suspend fun readDevicePosition() = DeviceLocation.current(this@MainActivity)
+
+                            override fun finish(batteryDone: Boolean) {
+                                scope.launch {
+                                    if (batteryDone) settingsStore.setFixAlertsDone(true)
+                                    settingsStore.setOnboardingDone(true)
+                                }
+                            }
+                        },
+                    )
+                } else if (!permissions.allGranted) {
+                    GrantScreen(
+                        permissions,
+                        onGrantNotifications = grantNotifications,
+                        onGrantExactAlarms = { startActivity(AlertPermissions.exactAlarmSettingsIntent(this@MainActivity)) },
+                    )
+                } else if (showFixAlerts) {
+                    FixAlertsScreen(
+                        onDone = {
+                            showFixAlerts = false
+                            scope.launch { settingsStore.setFixAlertsDone(true) }
+                        },
+                        onBack = { showFixAlerts = false },
+                    )
+                } else if (showLocation) {
+                    // The city list is read once per process, off the main thread, only when this screen opens.
+                    val cities by produceState<CityDirectory?>(null) { value = withContext(Dispatchers.IO) { app.cities } }
+                    LocationScreen(
+                        cities = cities,
+                        settings = current,
+                        onChoose = { scope.launch { app.locationUpdater.change(it) } },
+                        onAcceptSuggestion = {
+                            scope.launch {
+                                settingsStore.setCalculationMethod(it.method)
+                                settingsStore.setAsrConvention(it.asrConvention)
+                            }
+                        },
+                        onBack = { showLocation = false },
+                        readDevicePosition = { DeviceLocation.current(this@MainActivity) },
+                    )
+                } else if (settingsRoute != null) {
+                    SettingsPageScreen(
+                        settingsRoute ?: return@ProvideDisplayFormatter,
                         current,
                         locationName(savedLocation),
                         digits,
                         core.displayDay().date,
-                        actions,
-                        widgetAppearance = widgetAppearance,
-                        onBack = { showSettings = false },
+                        settingsActions,
+                        widgetAppearance,
+                        onNavigate = { settingsRoute = it },
                     )
-                } else if (showLog) {
-                    PrayerLogScreen(core, prayerLog.changes, onBack = { showLog = false })
                 } else {
-                    HomeScreen(
+                    MainScaffold(tab, onSelect = { tab = it }) {
+                    when (tab) {
+                    Tab.SETTINGS -> {
+                    SettingsHub(
+                        current,
+                        locationName(savedLocation),
+                        digits,
+                        widgetAppearance,
+                        alertsAtRisk = !fixAlertsDone && FixAlerts.deviceBrand != null,
+                        onOpen = { settingsRoute = it },
+                        onOpenFixAlerts = { showFixAlerts = true },
+                    )
+                    }
+                    Tab.LOG -> PrayerLogScreen(core, prayerLog.changes)
+                    Tab.TODAY -> HomeScreen(
                         core, clock, prayerLog.changes, locationName(savedLocation),
-                        onOpenSettings = { showSettings = true },
-                        onOpenLog = { showLog = true },
+                        alerts = current.alerts,
+                        onOpenLocation = { showLocation = true },
                         locationHint = when {
                             updatedTo != null -> stringResource(
                                 R.string.location_updated,
@@ -370,11 +388,13 @@ class MainActivity : AppCompatActivity() {
                             locationMaybeStale -> stringResource(R.string.location_maybe_stale)
                             else -> null
                         },
-                        onLocationHint = { showSettings = true; showLocation = true },
+                        onLocationHint = { showLocation = true },
                         showFixAlertsTip = !fixAlertsDone && FixAlerts.deviceBrand != null,
                         onOpenFixAlerts = { showFixAlerts = true },
                         onFixAlertsDone = { scope.launch { settingsStore.setFixAlertsDone(true) } },
                     )
+                    }
+                    }
                 }
                 }
             }

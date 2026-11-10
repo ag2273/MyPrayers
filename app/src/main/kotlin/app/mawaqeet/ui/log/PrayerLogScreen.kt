@@ -1,5 +1,18 @@
 package app.mawaqeet.ui.log
 
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import app.mawaqeet.ui.components.Card
+import app.mawaqeet.ui.components.RowDivider
+import app.mawaqeet.ui.components.TabPage
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,8 +73,7 @@ import kotlinx.coroutines.withContext
  * Prayer of an editable day marks or unmarks it through the core, under the same rules as Home.
  */
 @Composable
-fun PrayerLogScreen(core: PrayerCore, logChanges: StateFlow<Int>, onBack: () -> Unit) {
-    BackHandler(onBack = onBack)
+fun PrayerLogScreen(core: PrayerCore, logChanges: StateFlow<Int>) {
     // How many weeks back from the current one; saved so rotation keeps the week.
     var weeksBack by rememberSaveable { mutableStateOf(0) }
     val changes by logChanges.collectAsState()
@@ -72,45 +84,39 @@ fun PrayerLogScreen(core: PrayerCore, logChanges: StateFlow<Int>, onBack: () -> 
         }
     }
     val scope = rememberCoroutineScope()
-    Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
-                Text(
-                    stringResource(R.string.prayer_log),
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.semantics { heading() },
-                )
-            }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { weeksBack += 1 }) { Text(stringResource(R.string.log_previous_week)) }
+    val format = LocalDisplayFormatter.current
+    TabPage(stringResource(R.string.prayer_log)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            WeekButton(R.string.log_previous_week, mirrored = false, enabled = true) { weeksBack += 1 }
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     stringResource(if (weeksBack == 0) R.string.log_this_week else R.string.log_earlier_week),
-                    modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
                 )
-                TextButton(onClick = { weeksBack -= 1 }, enabled = weeksBack > 0) {
-                    Text(stringResource(R.string.log_next_week))
+                week?.let {
+                    Text(
+                        "${format.shortGregorianDate(it.days.first().date)} – ${format.shortGregorianDate(it.days.last().date)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-            val shown = week ?: return@Column
-            Summary(shown)
-            if (shown.days.none { it.isEditable }) {
-                Text(
-                    stringResource(R.string.log_week_read_only),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            shown.days.asReversed().forEach { day ->
-                DayRow(day, beforeFirstUse = shown.isBeforeFirstUse(day)) { prayer ->
+            WeekButton(R.string.log_next_week, mirrored = true, enabled = weeksBack > 0) { weeksBack -= 1 }
+        }
+        val shown = week ?: return@TabPage
+        Summary(shown)
+        if (shown.days.none { it.isEditable }) {
+            Text(
+                stringResource(R.string.log_week_read_only),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Card {
+            Header()
+            shown.days.asReversed().forEachIndexed { index, day ->
+                if (index > 0) RowDivider()
+                DayRow(day, beforeFirstUse = shown.isBeforeFirstUse(day), today = weeksBack == 0 && index == 0) { prayer ->
                     if (day.isMarkable(prayer)) {
                         scope.launch(Dispatchers.IO) {
                             if (day.stateOf(prayer) == LogState.PRAYED) core.unmark(day.date, prayer) else core.mark(day.date, prayer)
@@ -122,67 +128,115 @@ fun PrayerLogScreen(core: PrayerCore, logChanges: StateFlow<Int>, onBack: () -> 
     }
 }
 
-/** Per-Prayer counts and the total, e.g. «الفجر ٥/٧» … «المجموع ٣١/٣٥». */
+/** An outlined round arrow button for the previous or next week; [label] is read by TalkBack. */
+@Composable
+private fun WeekButton(label: Int, mirrored: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    OutlinedIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp)) {
+        // ic_back points to the start (right in Arabic): the previous week; turned around, the next one.
+        Icon(
+            painterResource(R.drawable.ic_back),
+            contentDescription = stringResource(label),
+            modifier = Modifier.size(20.dp).graphicsLayer { if (mirrored) rotationZ = 180f },
+        )
+    }
+}
+
+/** Per-Prayer counts as bars and the total, e.g. «الفجر ٥/٧» … «المجموع ٣١/٣٥». */
 @Composable
 private fun Summary(week: PrayerWeek) {
     val format = LocalDisplayFormatter.current
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            stringResource(R.string.log_summary),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.semantics { heading() },
-        )
-        Prayer.entries.forEach { prayer ->
-            val count = week.summary.of(prayer)
-            SummaryLine(stringResource(prayer.nameRes), format.count(count.prayed, count.possible))
+    Card {
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val total = week.summary.total
+            Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.log_summary),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
+                Text(stringResource(R.string.log_total), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(8.dp))
+                Text(format.count(total.prayed, total.possible), style = MaterialTheme.typography.titleLarge)
+            }
+            Prayer.entries.forEach { prayer ->
+                val count = week.summary.of(prayer)
+                SummaryBar(stringResource(prayer.nameRes), count.prayed, count.possible, format.count(count.prayed, count.possible))
+            }
         }
-        val total = week.summary.total
-        SummaryLine(stringResource(R.string.log_total), format.count(total.prayed, total.possible), bold = true)
     }
 }
 
 @Composable
-private fun SummaryLine(label: String, value: String, bold: Boolean = false) {
-    val weight = if (bold) FontWeight.Bold else FontWeight.Normal
-    Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = weight)
-        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = weight)
+private fun SummaryBar(label: String, prayed: Int, possible: Int, value: String) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(label, Modifier.widthIn(min = 56.dp), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        Box(Modifier.weight(1f).height(8.dp).background(colors.surfaceContainerHigh, RoundedCornerShape(4.dp))) {
+            if (possible > 0 && prayed > 0) {
+                Box(Modifier.fillMaxWidth(prayed.toFloat() / possible).height(8.dp).background(colors.primary, RoundedCornerShape(4.dp)))
+            }
+        }
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
     }
 }
 
-/** One Prayer Day: its Gregorian then Hijri date, then a mark per Prayer with the Prayer's name under it. */
+/** The Prayer names over the columns of marks. TalkBack skips it: each cell already says its Prayer. */
 @Composable
-private fun DayRow(day: PrayerDay, beforeFirstUse: Boolean, onToggle: (Prayer) -> Unit) {
+private fun Header() {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(top = 10.dp).clearAndSetSemantics {}) {
+        Prayer.entries.forEach { prayer ->
+            Text(
+                stringResource(prayer.nameRes),
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/** One Prayer Day: its Gregorian and Hijri date, then a mark per Prayer under the Prayer names. */
+@Composable
+private fun DayRow(day: PrayerDay, beforeFirstUse: Boolean, today: Boolean, onToggle: (Prayer) -> Unit) {
     val format = LocalDisplayFormatter.current
     val colors = MaterialTheme.colorScheme
     Column(
         Modifier
             .fillMaxWidth()
-            .border(1.dp, colors.outlineVariant, RoundedCornerShape(16.dp))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (today) colors.primaryContainer else Color.Transparent)
+            .padding(horizontal = 4.dp, vertical = 6.dp),
     ) {
-        Column(Modifier.semantics(mergeDescendants = true) {}) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp).semantics(mergeDescendants = true) {},
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Text(format.shortGregorianDate(day.date), style = MaterialTheme.typography.titleSmall)
-            Text(format.hijriDate(day.hijriDate), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-            if (beforeFirstUse) {
-                Text(stringResource(R.string.log_before_first_use), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-            }
+            Text(format.hijriDate(day.hijriDate), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, modifier = Modifier.weight(1f))
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Prayer.entries.forEach { prayer -> PrayerCell(day, prayer, onToggle) }
+        if (beforeFirstUse) {
+            Text(
+                stringResource(R.string.log_before_first_use),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+        }
+        Row(Modifier.fillMaxWidth()) {
+            Prayer.entries.forEach { prayer -> PrayerCell(day, prayer, onToggle, Modifier.weight(1f)) }
         }
     }
 }
 
 @Composable
-private fun PrayerCell(day: PrayerDay, prayer: Prayer, onToggle: (Prayer) -> Unit) {
+private fun PrayerCell(day: PrayerDay, prayer: Prayer, onToggle: (Prayer) -> Unit, modifier: Modifier) {
     val state = day.stateOf(prayer)
     val name = stringResource(prayer.nameRes)
     val stateText = stringResource(
@@ -193,19 +247,18 @@ private fun PrayerCell(day: PrayerDay, prayer: Prayer, onToggle: (Prayer) -> Uni
             else -> R.string.log_not_marked
         },
     )
-    Column(
-        Modifier
+    Box(
+        modifier
             .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(12.dp))
             .clickable(role = Role.Checkbox, enabled = day.isMarkable(prayer)) { onToggle(prayer) }
             .semantics(mergeDescendants = true) {
                 contentDescription = name
                 stateDescription = stateText
-            }
-            .padding(4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            },
+        contentAlignment = Alignment.Center,
     ) {
         Mark(state)
-        Text(name, style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -215,10 +268,10 @@ private fun Mark(state: LogState) {
     val colors = MaterialTheme.colorScheme
     when (state) {
         LogState.PRAYED -> Box(Modifier.size(28.dp).background(colors.primary, CircleShape), contentAlignment = Alignment.Center) {
-            // The row's state already says "Prayed"; TalkBack shouldn't also read "check mark".
-            Text("✓", color = colors.onPrimary, style = MaterialTheme.typography.titleMedium, modifier = Modifier.clearAndSetSemantics {})
+            // The cell's state already says "Prayed"; TalkBack shouldn't also read "check mark".
+            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(16.dp))
         }
-        LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.primary, CircleShape).background(Color.Transparent))
-        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.dp, colors.outlineVariant, CircleShape))
+        LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.outline, CircleShape))
+        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.5.dp, colors.outline.copy(alpha = 0.5f), CircleShape))
     }
 }

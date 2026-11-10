@@ -3,6 +3,7 @@ package app.mawaqeet
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -47,7 +48,7 @@ class PrayerLogScreenTest {
         compose.onNodeWithText("المجموع").performScrollTo().assertIsDisplayed()
         // Every day label ends with its Hijri date.
         compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText(" هـ", substring = true).fetchSemanticsNodes().size == 7 }
-        compose.onNodeWithText("الأسبوع السابق").performClick()
+        compose.onNodeWithContentDescription("الأسبوع السابق").performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText("الأيام الأقدم من أسبوع للعرض فقط.").fetchSemanticsNodes().isNotEmpty()
         }
@@ -63,6 +64,7 @@ class PrayerLogScreenTest {
         assertTrue(io { Prayer.FAJR in app.prayerLog.prayedOn(day.date) })
 
         compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithText("About & your data").performScrollTo().performClick()
         compose.onNodeWithText("Delete Prayer Log").performScrollTo().performClick()
         compose.onNodeWithText("Delete Prayer Log?").assertIsDisplayed()
         compose.onNodeWithText("Cancel").performClick()

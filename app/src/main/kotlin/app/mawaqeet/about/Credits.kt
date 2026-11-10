@@ -56,8 +56,8 @@ object Credits {
             "https://fonts.google.com/noto/specimen/Noto+Kufi+Arabic", R.string.about_use_kufi,
         ),
         Credit(
-            "Noto Naskh Arabic (Google)", CreditKind.FONT, "SIL Open Font License 1.1",
-            "https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic", R.string.about_use_naskh,
+            "Noto Sans Arabic (Google)", CreditKind.FONT, "SIL Open Font License 1.1",
+            "https://fonts.google.com/noto/specimen/Noto+Sans+Arabic", R.string.about_use_sans,
         ),
     )
 

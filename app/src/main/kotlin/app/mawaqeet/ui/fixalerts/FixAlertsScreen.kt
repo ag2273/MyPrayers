@@ -1,5 +1,17 @@
 package app.mawaqeet.ui.fixalerts
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.semantics
+import app.mawaqeet.ui.LocalDisplayFormatter
+import app.mawaqeet.ui.components.Card
+import app.mawaqeet.ui.components.SubPage
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -29,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
 import app.mawaqeet.core.AlarmKillingBrand
@@ -85,47 +96,40 @@ object FixAlerts {
 @Composable
 fun ColumnScope.FixAlertsContent(brand: AlarmKillingBrand?) {
     val context = LocalContext.current
-    Text(
-        stringResource(R.string.fix_alerts_intro, stringResource(FixAlerts.brandName(brand))),
-        style = MaterialTheme.typography.bodyLarge,
-    )
+    val colors = MaterialTheme.colorScheme
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(44.dp).background(colors.secondaryContainer, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+            Icon(painterResource(R.drawable.ic_warning), contentDescription = null, tint = colors.onSecondaryContainer)
+        }
+        Text(
+            stringResource(R.string.fix_alerts_intro, stringResource(FixAlerts.brandName(brand))),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+    }
     FixAlerts.steps(brand).forEachIndexed { i, step ->
-        Row {
-            Text("${i + 1}. ", style = MaterialTheme.typography.bodyLarge)
-            Text(stringResource(step), style = MaterialTheme.typography.bodyLarge)
+        Card {
+            Row(Modifier.padding(16.dp).semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.size(30.dp).background(colors.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
+                    Text(LocalDisplayFormatter.current.number(i + 1), style = MaterialTheme.typography.titleSmall, color = colors.onPrimaryContainer)
+                }
+                Text(stringResource(step), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            }
         }
     }
-    OutlinedButton(onClick = { FixAlerts.open(context, FixAlerts.appSettingsIntent(context)) }, modifier = Modifier.fillMaxWidth()) {
+    OutlinedButton(onClick = { FixAlerts.open(context, FixAlerts.appSettingsIntent(context)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
         Text(stringResource(R.string.fix_open_app_settings))
     }
-    OutlinedButton(onClick = { FixAlerts.open(context, FixAlerts.batteryOptimisationListIntent()) }, modifier = Modifier.fillMaxWidth()) {
+    OutlinedButton(onClick = { FixAlerts.open(context, FixAlerts.batteryOptimisationListIntent()) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
         Text(stringResource(R.string.fix_open_battery_settings))
     }
 }
 
-/** Settings → Alerts → Fix alerts. "Done" also hides the Home tip. */
+/** Settings → Help → Fix alerts. "Done" also hides the Home tip. */
 @Composable
 fun FixAlertsScreen(onDone: () -> Unit, onBack: () -> Unit) {
-    BackHandler(onBack = onBack)
-    Scaffold { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
-                Text(
-                    stringResource(R.string.fix_alerts),
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.semantics { heading() },
-                )
-            }
-            FixAlertsContent(FixAlerts.deviceBrand)
-            Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.done)) }
-        }
+    SubPage(stringResource(R.string.fix_alerts), onBack = onBack) {
+        FixAlertsContent(FixAlerts.deviceBrand)
+        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.done)) }
     }
 }

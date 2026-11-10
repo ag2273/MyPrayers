@@ -145,6 +145,7 @@ class LocationDeniedTest {
     @Test
     fun `using the device location explains first and declining keeps city search`() {
         compose.onNodeWithText("الإعدادات").performClick()
+        compose.onNodeWithText("الموقع وطريقة الحساب").performScrollTo().performClick()
         compose.onNodeWithText("الموقع").performScrollTo().performClick()
         compose.waitUntil(timeoutMillis = 10_000) {
             compose.onAllNodesWithText("جارٍ تحميل قائمة المدن…").fetchSemanticsNodes().isEmpty()

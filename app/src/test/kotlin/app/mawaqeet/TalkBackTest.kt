@@ -37,7 +37,8 @@ class TalkBackTest {
     )
 
     private fun checkHome(names: List<String>, language: String) {
-        compose.waitForIdle()
+        // Home shows its rows once the saved settings have loaded (async).
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText(names.first()) and hasState).fetchSemanticsNodes().isNotEmpty() }
         for (name in names) {
             val row = compose.onNode(hasText(name) and hasState).fetchSemanticsNode()
             val texts = row.config[SemanticsProperties.Text].map { it.text }

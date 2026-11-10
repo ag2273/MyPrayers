@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.core.app.ApplicationProvider
 import org.junit.After
@@ -53,6 +54,7 @@ class WidgetOpensTest {
         launch(null)
         waitFor("Settings")
         compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithText("About & your data").performScrollTo().performClick()
         waitFor("Delete Prayer Log")
 
         tapWidget(MainActivity.Opens.PRAYER_LOG)

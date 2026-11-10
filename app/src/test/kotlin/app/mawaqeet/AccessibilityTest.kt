@@ -2,6 +2,7 @@ package app.mawaqeet
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -32,25 +33,36 @@ class AccessibilityTest {
         compose.waitForIdle()
     }
 
-    private fun checkScreens(log: String, back: String, settings: String, fajr: String) {
+    private fun checkScreens(log: String, back: String, settings: String, fajr: String, pages: List<String>) {
         compose.waitForIdle()
         compose.assertAccessible("Home", density)
         open(log)
         // The week loads off the main thread.
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription(fajr).fetchSemanticsNodes().isNotEmpty() }
         compose.assertAccessible("Prayer Log", density)
-        open(back)
         open(settings)
         compose.assertAccessible("Settings", density)
+        for (page in pages) {
+            open(page)
+            compose.assertAccessible(page, density)
+            compose.onNodeWithContentDescription(back).performClick()
+            compose.waitForIdle()
+        }
     }
 
     @Test
     @Config(qualifiers = "ar-w360dp-h12000dp")
     fun `in Arabic at 200% text nothing is cut off and every tap target is big enough`() =
-        checkScreens("سجل الصلاة", "رجوع", "الإعدادات", "الفجر")
+        checkScreens(
+            "سجل الصلاة", "رجوع", "الإعدادات", "الفجر",
+            listOf("الموقع وطريقة الحساب", "التنبيهات والأذان", "اللغة والعرض", "أدوات الشاشة الرئيسية", "حول مواقيت وبياناتك"),
+        )
 
     @Test
     @Config(qualifiers = "en-w360dp-h12000dp")
     fun `in English at 200% text nothing is cut off and every tap target is big enough`() =
-        checkScreens("Prayer Log", "Back", "Settings", "Fajr")
+        checkScreens(
+            "Prayer Log", "Back", "Settings", "Fajr",
+            listOf("Location & calculation", "Alerts & adhan", "Language & display", "Widgets", "About & your data"),
+        )
 }

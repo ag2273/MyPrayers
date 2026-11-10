@@ -102,7 +102,7 @@ How the code is laid out and tested. Vocabulary follows `GLOSSARY.md`; decisions
 
 - Arabic strings in `res/values/` (the unqualified default, `res/resources.properties`), English in `res/values-en/`. Write Arabic first.
 - Colours: `ui/theme/Theme.kt` holds the brand palette as light and dark `ColorScheme`s; use `MaterialTheme.colorScheme`, not hex values, in screens.
-- Fonts: `MaterialTheme.typography` display/headline/title styles are Noto Kufi Arabic (headings, large times); body/label styles are Noto Naskh Arabic (running text). Widgets use the system font.
+- Fonts: `MaterialTheme.typography` display/headline/title styles are Noto Kufi Arabic (headings, large times); body/label styles are Noto Sans Arabic (running text and controls). Widgets use the system font.
 - Font licences (OFL) are in `app/src/main/assets/licenses/` for the About screen.
 
 ## Commands

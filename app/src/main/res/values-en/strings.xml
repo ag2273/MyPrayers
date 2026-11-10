@@ -18,14 +18,17 @@
     <string name="log_not_yet_due">Its time hasn\'t arrived yet, so it can\'t be marked</string>
     <string name="log_read_only">This day can no longer be edited</string>
 
+    <!-- Bottom navigation (redesign). -->
+    <string name="home_log_hint">Tap a Prayer after you pray it to log it. The bell shows its alert.</string>
+    <string name="tab_today">Today</string>
     <string name="settings">Settings</string>
     <string name="back">Back</string>
-    <string name="settings_group_prayer_times">Prayer Times</string>
-    <string name="settings_group_alerts">Alerts</string>
+    <string name="settings_group_prayer_times">Location &amp; calculation</string>
+    <string name="settings_group_alerts">Alerts &amp; adhan</string>
     <string name="settings_group_prayer_log">Prayer Log</string>
     <string name="settings_group_language_display">Language &amp; display</string>
     <string name="settings_group_widgets">Widgets</string>
-    <string name="settings_group_about">About</string>
+    <string name="settings_group_about">About &amp; your data</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_summary">Prayer Times, Adhan Alerts and a Prayer Log, all on your device.</string>
     <string name="about_libraries">Libraries</string>
@@ -41,7 +44,7 @@
     <string name="about_use_geonames">City names, coordinates and time zones</string>
     <string name="about_use_natural_earth">Arabic city names</string>
     <string name="about_use_kufi">Arabic headings</string>
-    <string name="about_use_naskh">Arabic text</string>
+    <string name="about_use_sans">Arabic text</string>
 
     <string name="calculation_method">Calculation Method</string>
     <string name="asr_convention">Asr Convention</string>
@@ -301,4 +304,27 @@
     <string name="widget_preview_day5">S</string>
     <string name="widget_preview_day6">S</string>
     <string name="widget_preview_day7">M</string>
+    <!-- Settings hub and pages (redesign). -->
+    <string name="settings_section_prayer">Prayer</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_section_help">Help</string>
+    <string name="settings_section_calculation">Calculation</string>
+    <string name="settings_section_your_data">Your data</string>
+    <string name="settings_summary_pair">%1$s · %2$s</string>
+    <string name="settings_alerts_summary">Adhan Alert for %1$s of %2$s Prayers</string>
+    <string name="settings_widgets_summary">Background transparency %1$s</string>
+    <string name="settings_alerts_ready">Alerts are ready</string>
+    <string name="settings_alerts_ready_summary">Permissions granted. Each Adhan Alert will arrive on time.</string>
+    <string name="settings_alerts_at_risk">Alerts may be delayed</string>
+    <string name="alerts_each_prayer">Each Prayer</string>
+    <string name="alerts_behaviour">How alerts behave</string>
+    <string name="alerts_adhan_alert_of">Adhan Alert: %1$s</string>
+    <string name="alerts_reminder_description">A quiet notification before the Prayer, without the adhan</string>
+    <string name="alerts_of_prayer">%1$s alerts</string>
+    <string name="language_hint">Changes the app, widgets and notifications, not your phone\'s language.</string>
+    <string name="hijri_offset_earlier">Hijri date one day less</string>
+    <string name="hijri_offset_later">Hijri date one day more</string>
+    <string name="hijri_offset_days">%1$s days</string>
+    <string name="privacy_title">Your data stays on your phone</string>
+    <string name="privacy_body">No account, servers or ads. Your Prayer Log and location are never copied to cloud backup; they move only with a direct transfer to a new phone.</string>
 </resources>
