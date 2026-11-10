@@ -3,6 +3,7 @@ package app.mawaqeet.alerts
 import android.content.Context
 import androidx.core.util.AtomicFile
 import app.mawaqeet.core.AdhanRecording
+import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.AlertSound
@@ -49,6 +50,7 @@ internal class AlertPlanStore(context: Context) {
                 listOf(
                     a.instant.toEpochMilli(), a.prayer.name, a.kind.name, encodeAlertSound(a.sound),
                     a.deliveryMode.name, a.prayerDay, a.isJumuah, a.prayerTime.toEpochMilli(), a.playOnSilent, a.vibration,
+                    a.adhanVolume.name,
                 ).joinToString("\t"),
             )
         }
@@ -60,7 +62,7 @@ internal class AlertPlanStore(context: Context) {
         val midnight = Instant.ofEpochMilli(lines[1].toLong())
         val alerts = lines.drop(2).map { line ->
             val f = line.split('\t')
-            require(f.size == 10)
+            require(f.size == 11)
             PlannedAlert(
                 instant = Instant.ofEpochMilli(f[0].toLong()),
                 prayer = Prayer.valueOf(f[1]),
@@ -72,6 +74,7 @@ internal class AlertPlanStore(context: Context) {
                 prayerTime = Instant.ofEpochMilli(f[7].toLong()),
                 playOnSilent = f[8].toBooleanStrict(),
                 vibration = f[9].toBooleanStrict(),
+                adhanVolume = AdhanVolume.valueOf(f[10]),
             )
         }
         return AlertPlan(alerts, midnight)
@@ -79,7 +82,7 @@ internal class AlertPlanStore(context: Context) {
 
     companion object {
         const val FILE_NAME = "alert_plan.txt"
-        private const val VERSION = "alert-plan-v3"
+        private const val VERSION = "alert-plan-v4"
     }
 }
 

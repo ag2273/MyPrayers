@@ -145,6 +145,16 @@ class AlertSchedulerTest {
     }
 
     @Test
+    fun `the adhan volume choice survives the stored plan and rides on the alarm intent`() {
+        val media = isha.copy(adhanVolume = app.mawaqeet.core.AdhanVolume.MEDIA)
+        val scheduler = AlertScheduler(context)
+        scheduler.apply(AlertPlan(listOf(media), midnight))
+
+        assertEquals(app.mawaqeet.core.AdhanVolume.MEDIA, AlertPlanStore(context).read()!!.alerts.single().adhanVolume)
+        assertEquals("MEDIA", scheduler.alarmIntent(media).getStringExtra(AlertReceiver.EXTRA_ADHAN_VOLUME))
+    }
+
+    @Test
     fun `without the exact-alarm permission nothing is scheduled`() {
         ShadowAlarmManager.setCanScheduleExactAlarms(false)
 

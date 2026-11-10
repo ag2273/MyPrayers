@@ -271,6 +271,7 @@ class MainActivity : AppCompatActivity() {
                                         now.alerts.alarmClockMode,
                                         AdhanRecording.of(next.prayer, now.alerts.of(next.prayer).sound)
                                             ?.let { AlertSound.of(it, now.alerts) } ?: AlertSound.Silent,
+                                        now.alerts.adhanVolume,
                                     )
                                 }
                                 return true
@@ -297,6 +298,10 @@ class MainActivity : AppCompatActivity() {
 
                             override fun setVibration(on: Boolean) {
                                 scope.launch { settingsStore.setVibration(on) }
+                            }
+
+                            override fun setAdhanVolume(volume: app.mawaqeet.core.AdhanVolume) {
+                                scope.launch { settingsStore.setAdhanVolume(volume) }
                             }
 
                             override fun deletePrayerLog() {

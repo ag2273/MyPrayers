@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhanSoundChoice
+import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
@@ -234,6 +235,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[VIBRATION] = on }
     }
 
+    /** Whether the adhan follows the alarm or the media volume; reaches the alarms through [settings] like the rest. */
+    suspend fun setAdhanVolume(volume: AdhanVolume) {
+        store.edit { it[ADHAN_VOLUME] = volume.name }
+    }
+
     /**
      * Chooses [reference] (a content URI the app holds a persistable read permission to) as the Custom Adhan for
      * [recording] only, or clears it with null. Returns the references no recording uses any more, whose
@@ -266,6 +272,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             alarmClockMode = this[ALARM_CLOCK_MODE] ?: default.alarmClockMode,
             playOnSilent = this[PLAY_ON_SILENT] ?: default.playOnSilent,
             vibration = this[VIBRATION] ?: default.vibration,
+            adhanVolume = this[ADHAN_VOLUME].toEnum(default.adhanVolume),
             customAdhans = AdhanRecording.entries
                 .mapNotNull { recording -> this[customAdhanKey(recording)]?.takeIf { it.isNotEmpty() }?.let { recording to it } }
                 .toMap(),
@@ -305,6 +312,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val ALARM_CLOCK_MODE = booleanPreferencesKey("alarm_clock_mode")
         private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")
         private val VIBRATION = booleanPreferencesKey("vibration")
+        private val ADHAN_VOLUME = stringPreferencesKey("adhan_volume")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

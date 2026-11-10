@@ -242,6 +242,14 @@ class AlertPlanTest {
     }
 
     @Test
+    fun `the adhan volume choice travels with every planned alert, alarm volume by default`() {
+        val media = planAt(makkah("2026-11-08", "11:00"), withAlerts(AlertSettings(adhanVolume = AdhanVolume.MEDIA)))
+        assertTrue(media.alerts.all { it.adhanVolume == AdhanVolume.MEDIA })
+
+        assertTrue(planAt(makkah("2026-11-08", "11:00")).alerts.all { it.adhanVolume == AdhanVolume.ALARM })
+    }
+
+    @Test
     fun `with every Adhan Alert on, the display changes next at local midnight, since each Prayer Time already has an alarm`() {
         val plan = planAt(makkah("2026-11-08", "12:00"))
 
