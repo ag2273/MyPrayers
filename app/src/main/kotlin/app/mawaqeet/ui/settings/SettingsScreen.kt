@@ -2,6 +2,9 @@ package app.mawaqeet.ui.settings
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
@@ -259,54 +262,50 @@ fun SettingsHub(
  */
 @Composable
 private fun AlertStatusCard(alertsOn: Boolean, atRisk: Boolean, onClick: () -> Unit) {
-    if (!alertsOn) {
-        StatusCard(
-            icon = R.drawable.ic_bell_off,
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    when {
+        !alertsOn -> StatusCard(
+            dot = MaterialTheme.colorScheme.outline,
             title = stringResource(R.string.settings_alerts_off),
             summary = stringResource(R.string.settings_alerts_off_summary),
-            background = MaterialTheme.colorScheme.surfaceVariant,
-            content = MaterialTheme.colorScheme.onSurfaceVariant,
-            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = onClick,
         )
-        return
+        atRisk -> StatusCard(
+            dot = if (dark) Color(0xFFF2B65E) else Color(0xFFC98A2E),
+            title = stringResource(R.string.settings_alerts_at_risk),
+            summary = stringResource(R.string.fix_alerts_tip),
+            onClick = onClick,
+        )
+        else -> StatusCard(
+            dot = if (dark) Color(0xFF6FBF9A) else Color(0xFF3C8D6E),
+            title = stringResource(R.string.settings_alerts_ready),
+            summary = stringResource(R.string.settings_alerts_ready_summary),
+            onClick = onClick,
+        )
     }
-    val colors = MaterialTheme.colorScheme
-    StatusCard(
-        icon = if (atRisk) R.drawable.ic_warning else R.drawable.ic_check,
-        title = stringResource(if (atRisk) R.string.settings_alerts_at_risk else R.string.settings_alerts_ready),
-        summary = stringResource(if (atRisk) R.string.fix_alerts_tip else R.string.settings_alerts_ready_summary),
-        background = if (atRisk) colors.secondaryContainer else colors.tertiaryContainer,
-        content = if (atRisk) colors.onSecondaryContainer else colors.onTertiaryContainer,
-        iconTint = if (atRisk) colors.onSecondaryContainer else colors.tertiary,
-        onClick = onClick,
-    )
 }
 
+/**
+ * The alerts' state as a quiet card: a small status dot, the state and what it means. The deep teal surface belongs to
+ * the Next Prayer card alone (unslop pass, 2026-11-10).
+ */
 @Composable
-private fun StatusCard(
-    @DrawableRes icon: Int,
-    title: String,
-    summary: String,
-    background: Color,
-    content: Color,
-    iconTint: Color,
-    onClick: () -> Unit,
-) {
+private fun StatusCard(dot: Color, title: String, summary: String, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     Row(
         Modifier
             .fillMaxWidth()
             .clip(CardShape)
-            .background(background)
+            .background(colors.surfaceContainer)
+            .border(1.dp, colors.outlineVariant, CardShape)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = content)
-            Text(summary, style = MaterialTheme.typography.bodyMedium, color = content)
+        Box(Modifier.padding(top = 8.dp).size(8.dp).background(dot, CircleShape))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
+            Text(summary, style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
         }
     }
 }

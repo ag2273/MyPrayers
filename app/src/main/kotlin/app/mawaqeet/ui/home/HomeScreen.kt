@@ -3,6 +3,12 @@ package app.mawaqeet.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import app.mawaqeet.ui.theme.HeroGold
+import app.mawaqeet.ui.theme.nextPrayerGold
 import androidx.compose.ui.res.painterResource
 import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AlertSettings
@@ -153,8 +159,8 @@ private fun HomeContent(
         tip?.invoke()
         day.highLatitude?.let { HighLatitudeNote(it) }
         NextPrayerCard(day, now)
-        Card(Modifier.padding(vertical = 0.dp)) {
-            Column(Modifier.padding(vertical = 4.dp)) {
+        Card {
+            Column(Modifier.padding(vertical = 8.dp)) {
                 val isNextToday = day.next.time.toLocalDate() == day.date
                 day.prayerTimes.forEach { prayerTime ->
                     val prayer = prayerTime.prayer
@@ -190,16 +196,16 @@ private fun LocationChip(name: String, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Row(
         Modifier
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(colors.surfaceContainer)
-            .border(1.dp, colors.outlineVariant, RoundedCornerShape(24.dp))
+            .border(1.dp, colors.outlineVariant, RoundedCornerShape(12.dp))
             .clickable(onClickLabel = stringResource(R.string.location), onClick = onClick)
             .heightIn(min = 48.dp)
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp))
+        Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(18.dp))
         Text(name, style = MaterialTheme.typography.titleSmall, maxLines = 2)
     }
 }
@@ -211,10 +217,10 @@ private fun FixAlertsTip(onOpen: () -> Unit, onDone: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .background(colors.secondaryContainer, RoundedCornerShape(18.dp))
+            .background(colors.secondaryContainer, RoundedCornerShape(20.dp))
             .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(painterResource(R.drawable.ic_warning), contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(20.dp))
             Text(
                 stringResource(R.string.fix_alerts_tip),
@@ -258,8 +264,8 @@ private fun HighLatitudeNote(adjustment: HighLatitudeAdjustment) {
 private data class LogCell(val state: LogState, val markable: Boolean)
 
 /**
- * The next Prayer on a deep teal card: its name and time, the countdown, and how much of the time since the previous
- * Prayer has passed (hidden before Fajr, when the previous Prayer was yesterday's).
+ * The next Prayer on the deep teal card, the screen's one rich moment: its name and time, the countdown in gold, and
+ * the day's sky from Fajr to Isha with "now" on it ([SkyArc]). A faint hairline star sits in the card's corner.
  */
 @Composable
 private fun NextPrayerCard(day: DisplayDay, now: Instant) {
@@ -267,40 +273,45 @@ private fun NextPrayerCard(day: DisplayDay, now: Instant) {
     val next = day.next
     val format = LocalDisplayFormatter.current
     val onCard = colors.onTertiaryContainer
+    val shape = RoundedCornerShape(24.dp)
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(colors.tertiaryContainer, RoundedCornerShape(28.dp))
-            .padding(horizontal = 22.dp, vertical = 20.dp)
+            .clip(shape)
+            .background(colors.tertiaryContainer, shape)
+            .drawBehind {
+                val side = 104.dp.toPx()
+                val corner = Offset(if (rtl) 24.dp.toPx() else size.width - 24.dp.toPx(), 16.dp.toPx())
+                hairlineStar(corner, side, onCard.copy(alpha = 0.10f))
+            }
+            .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 16.dp)
             .semantics(mergeDescendants = true) {},
     ) {
-        Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.bodyMedium, color = onCard)
-        Row(verticalAlignment = Alignment.Bottom) {
+        Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.bodyMedium, color = onCard.copy(alpha = 0.72f))
+        Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.Bottom) {
             Text(prayerName(next), style = MaterialTheme.typography.headlineLarge, color = onCard, modifier = Modifier.weight(1f))
             Text(format.time(next.time), style = MaterialTheme.typography.headlineLarge, color = onCard)
         }
         Text(
             text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
-            style = MaterialTheme.typography.titleLarge,
-            color = colors.tertiary,
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium),
+            color = HeroGold,
         )
-        val previous = day.prayerTimes.lastOrNull { !it.time.toInstant().isAfter(now) }
-        if (previous != null && next.time.toLocalDate() == day.date) {
-            val total = Duration.between(previous.time, next.time).seconds.coerceAtLeast(1)
-            val passed = Duration.between(previous.time.toInstant(), now).seconds.coerceIn(0, total)
-            Spacer(Modifier.height(14.dp))
-            Box(Modifier.fillMaxWidth().height(6.dp).background(onCard.copy(alpha = 0.2f), RoundedCornerShape(3.dp))) {
-                Box(
-                    Modifier
-                        .fillMaxWidth(passed.toFloat() / total)
-                        .height(6.dp)
-                        .background(colors.tertiary, RoundedCornerShape(3.dp)),
-                )
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 6.dp).clearAndSetSemantics {}) {
-                Text("${prayerName(previous)} ${format.time(previous.time)}", style = MaterialTheme.typography.bodySmall, color = onCard, modifier = Modifier.weight(1f))
-                Text("${prayerName(next)} ${format.time(next.time)}", style = MaterialTheme.typography.bodySmall, color = onCard)
-            }
+        val fajr = day.prayerTimes.first { it.prayer == Prayer.FAJR }
+        val isha = day.prayerTimes.first { it.prayer == Prayer.ISHA }
+        val sky = SkyPath(
+            fajr = fajr.time.toInstant(),
+            sunrise = day.sunrise.toInstant(),
+            maghrib = day.timeOf(Prayer.MAGHRIB).toInstant(),
+            isha = isha.time.toInstant(),
+        )
+        Box(Modifier.padding(top = 16.dp).clearAndSetSemantics {}) {
+            SkyArc(sky, now, next.time.toInstant(), ink = onCard, gold = HeroGold, card = colors.tertiaryContainer)
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {}) {
+            Text("${prayerName(fajr)} ${format.time(fajr.time)}", style = MaterialTheme.typography.bodySmall, color = onCard.copy(alpha = 0.72f), modifier = Modifier.weight(1f))
+            Text("${prayerName(isha)} ${format.time(isha.time)}", style = MaterialTheme.typography.bodySmall, color = onCard.copy(alpha = 0.72f))
         }
     }
 }
@@ -318,16 +329,12 @@ private fun TimeRow(
 ) {
     val colors = MaterialTheme.colorScheme
     val stateText = log?.let { stringResource(stateDescriptionOf(it)) }
-    val textColor = when {
-        highlighted -> colors.onPrimaryContainer
-        muted -> colors.onSurfaceVariant
-        else -> colors.onSurface
-    }
+    val textColor = if (muted) colors.onSurfaceVariant else colors.onSurface
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(if (highlighted) colors.primaryContainer else Color.Transparent)
             .then(
                 if (log == null) {
@@ -342,12 +349,14 @@ private fun TimeRow(
                         }
                 },
             )
-            .heightIn(min = 54.dp)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .heightIn(min = 56.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        val weight = if (muted) FontWeight.Normal else FontWeight.SemiBold
+        val weight = if (muted) FontWeight.Normal else FontWeight.Medium
+        // The gold dot marks the next Prayer, the only place gold appears outside the Next Prayer card.
+        Box(Modifier.size(8.dp).background(if (highlighted) colors.nextPrayerGold else Color.Transparent, CircleShape))
         Text(
             text = name,
             modifier = Modifier.weight(1f),
@@ -356,7 +365,7 @@ private fun TimeRow(
             color = textColor,
         )
         Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-            if (alert != null && prayer != null) AlertIcon(prayer, alert, if (highlighted) colors.onPrimaryContainer else colors.onSurfaceVariant)
+            if (alert != null && prayer != null) AlertIcon(prayer, alert, colors.outline)
         }
         Text(
             text = LocalDisplayFormatter.current.time(time),
@@ -365,7 +374,7 @@ private fun TimeRow(
             color = textColor,
         )
         // Sunrise gets an empty slot so its time lines up with the Prayers'.
-        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
             if (log != null) LogMark(log.state)
         }
     }
@@ -397,14 +406,14 @@ private fun LogMark(state: LogState) {
     val colors = MaterialTheme.colorScheme
     when (state) {
         LogState.PRAYED -> Box(
-            Modifier.size(28.dp).background(colors.primary, CircleShape),
+            Modifier.size(24.dp).background(colors.primary, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             // The row's state already says "Prayed"; TalkBack shouldn't also read "check mark".
-            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(16.dp))
+            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(14.dp))
         }
-        LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.primary, CircleShape))
-        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.5.dp, colors.outline.copy(alpha = 0.5f), CircleShape))
+        LogState.NOT_MARKED -> Box(Modifier.size(24.dp).border(1.5.dp, colors.outline, CircleShape))
+        LogState.NOT_YET_DUE -> Box(Modifier.size(24.dp).border(1.5.dp, colors.outline.copy(alpha = 0.35f), CircleShape))
     }
 }
 

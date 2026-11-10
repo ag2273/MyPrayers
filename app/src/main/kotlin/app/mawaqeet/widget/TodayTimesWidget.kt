@@ -207,7 +207,8 @@ private fun TodayTimesLayout(view: TodayTimesView, rtl: Boolean) {
                 past = context.colorOf(style.accent),
                 future = context.colorOf(style.faint),
                 horizon = context.colorOf(style.divider),
-                sun = context.colorOf(if (style.shadowedText) R.color.widget_over_gold else R.color.widget_sun),
+                // "Now" in the text colour: gold is kept for the next Prayer (unslop pass, 2026-11-10).
+                sun = context.colorOf(style.text),
                 nextFill = context.colorOf(style.background),
             )
             WidgetDrawing(
@@ -240,7 +241,7 @@ private fun DateHeader(date: WidgetDate, place: String, sp: Float) {
                 }
             },
             cell {
-                Image(ImageProvider(R.drawable.ic_pin), contentDescription = null, modifier = GlanceModifier.size((sp + 1).dp), colorFilter = tint(style.accent))
+                Image(ImageProvider(R.drawable.ic_pin), contentDescription = null, modifier = GlanceModifier.size((sp + 1).dp), colorFilter = tint(style.muted))
             },
             cell { WidgetLine(place, sp, Tone.MUTED, modifier = direction.paddingStart(3.dp)) },
         ),
@@ -315,9 +316,10 @@ private fun RowScope.PrayerCell(column: PrayerColumn, sizes: CellSizes) {
     if (column.isNext) inner = inner.background(ImageProvider(R.drawable.widget_cell_next), colorFilter = tint(style.cellFill))
     column.onClick?.let { inner = inner.clickable(it) }
     column.description?.let { text -> inner = inner.semantics { contentDescription = text } }
-    val nameTone = if (column.isNext) Tone.ON_SOFT else Tone.MUTED
+    // The next Prayer: a quiet surface step, its name in the gold that means "next".
+    val nameTone = if (column.isNext) Tone.NEXT else Tone.MUTED
     val timeTone = when {
-        column.isNext -> Tone.ON_SOFT
+        column.isNext -> Tone.TEXT
         column.isPast -> Tone.MUTED
         else -> Tone.TEXT
     }

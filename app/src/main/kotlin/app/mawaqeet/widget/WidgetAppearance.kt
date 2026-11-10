@@ -66,6 +66,11 @@ data class WidgetStyle(
      * star behind it. The Next Prayer widgets draw their own.
      */
     val star: Boolean = false,
+    /**
+     * The gold of the next Prayer (unslop pass, 2026-11-10): the one place a widget uses it outside the Next Prayer
+     * widget's countdown. Its name in Today's columns.
+     */
+    @param:ColorRes val next: Int = accent,
 ) {
     companion object {
         fun of(appearance: WidgetAppearance, sdk: Int = Build.VERSION.SDK_INT, deep: Boolean = false): WidgetStyle {
@@ -77,11 +82,15 @@ data class WidgetStyle(
                 // The deep surface keeps the design's teal and gold whatever the colours choice. A Glance background
                 // tint draws opaque, so the filled cell and the week's today band get their own solid fill.
                 val fill = if (light) R.color.widget_over_accent_soft else R.color.widget_deep_fill
+                val gold = if (light) R.color.widget_over_gold else R.color.widget_deep_gold
+                val text = if (light) R.color.widget_over_text else R.color.widget_deep_text
                 return WidgetStyle(
                     background = R.color.widget_deep_background,
-                    text = if (light) R.color.widget_over_text else R.color.widget_deep_text,
+                    text = text,
                     muted = if (light) R.color.widget_over_muted else R.color.widget_deep_muted,
-                    accent = if (light) R.color.widget_over_gold else R.color.widget_deep_gold,
+                    // Gold means the next Prayer: the Next Prayer widget's countdown and ring keep it; the widgets that
+                    // only borrow the deep surface mark prayed Prayers in the light text colour instead.
+                    accent = if (deep) gold else text,
                     onAccent = R.color.widget_deep_background,
                     accentSoft = if (light) R.color.widget_over_faint else R.color.widget_deep_track,
                     faint = if (light) R.color.widget_over_faint else R.color.widget_deep_track,
@@ -91,7 +100,9 @@ data class WidgetStyle(
                     band = fill,
                     cellFill = fill,
                     deep = true,
-                    star = !deep,
+                    // The star belongs to the Next Prayer widget alone.
+                    star = false,
+                    next = gold,
                 )
             }
             return WidgetStyle(
@@ -145,6 +156,7 @@ data class WidgetStyle(
                     wallpaper -> R.color.widget_dyn_muted
                     else -> R.color.widget_ring_muted
                 },
+                next = if (light) R.color.widget_over_gold else R.color.widget_next,
             )
         }
     }

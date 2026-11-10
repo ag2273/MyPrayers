@@ -75,16 +75,19 @@ class WidgetStyleTest {
     }
 
     @Test
-    fun `the Next Prayer look puts every widget on the deep surface, with the star, and off leaves them as they were`() {
+    fun `the Next Prayer look puts every widget on the deep surface, gold only for the next Prayer, and off leaves them as they were`() {
         val on = WidgetStyle.of(WidgetAppearance(nextPrayerLook = true), android12)
         assertEquals(R.color.widget_deep_background, on.background)
-        assertEquals(R.color.widget_deep_gold, on.accent)
+        // Prayed marks are in the light text colour; gold is kept for the next Prayer, and the star for its widget.
+        assertEquals(R.color.widget_deep_text, on.accent)
+        assertEquals(R.color.widget_deep_gold, on.next)
         assertEquals(R.color.widget_deep_fill, on.cellFill)
-        assertTrue(on.deep && on.star)
+        assertTrue(on.deep && !on.star)
 
-        // The Next Prayer widgets draw their own star, so they don't get a second one.
+        // The Next Prayer widgets keep the gold countdown and draw their own star.
         val nextPrayer = WidgetStyle.of(WidgetAppearance(nextPrayerLook = true), android12, deep = true)
-        assertEquals(WidgetStyle.of(WidgetAppearance(), android12, deep = true), nextPrayer.copy(star = false))
+        assertEquals(WidgetStyle.of(WidgetAppearance(), android12, deep = true), nextPrayer)
+        assertEquals(R.color.widget_deep_gold, nextPrayer.accent)
         assertFalse(nextPrayer.star)
 
         val off = WidgetStyle.of(WidgetAppearance(), android12)

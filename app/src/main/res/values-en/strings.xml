@@ -34,7 +34,7 @@
     <string name="about_sources_title">Sources &amp; licences</string>
     <string name="about_recordings_none_short">None yet</string>
     <string name="about_version">Version %1$s</string>
-    <string name="about_summary">Prayer Times, Adhan Alerts and a Prayer Log, all on your device.</string>
+    <string name="about_summary">Prayer Times, Adhan Alerts and a Prayer Log, all on your device</string>
     <string name="about_libraries">Libraries</string>
     <string name="about_datasets">Data</string>
     <string name="about_fonts">Fonts</string>
@@ -93,9 +93,9 @@
     <string name="grant_title">Alerts need your permission</string>
     <string name="grant_intro">Without these permissions Mawaqeet can\'t alert you when a Prayer Time arrives.</string>
     <string name="grant_notifications_title">Notifications</string>
-    <string name="grant_notifications_body">To show the Adhan Alert when each Prayer Time arrives.</string>
+    <string name="grant_notifications_body">To show the Adhan Alert when each Prayer Time arrives</string>
     <string name="grant_exact_alarms_title">Exact alarms</string>
-    <string name="grant_exact_alarms_body">So the alert arrives exactly on time, even after hours of not using the phone.</string>
+    <string name="grant_exact_alarms_body">So the alert arrives exactly on time, even after hours of not using the phone</string>
     <string name="grant_button">Grant</string>
     <!-- Language & display (#17). -->
     <string name="language">Language</string>
@@ -164,7 +164,7 @@
     <string name="alerts_try_scheduled">Arriving in 10 seconds. Lock the screen now.</string>
     <string name="alerts_try_not_allowed">Allow exact alarms first, from Fix alerts.</string>
     <string name="alerts_lock_screen_permission">Allow showing on the lock screen</string>
-    <string name="alerts_lock_screen_permission_summary">Without it the alert arrives only as a notification, not an alarm screen.</string>
+    <string name="alerts_lock_screen_permission_summary">Without it the alert arrives only as a notification, not an alarm screen</string>
     <string name="adhan_alarm_label">It\'s time to pray</string>
     <string name="alerts_play_on_silent">Play adhan even on silent</string>
     <string name="alerts_play_on_silent_description">Not for reminders, nor during calls</string>
@@ -219,7 +219,7 @@
     <string name="widget_colors_wallpaper">Wallpaper colours</string>
     <string name="widget_colors_wallpaper_description">Follow your wallpaper\'s colours (Android 12 and later). Next Prayer keeps its deep colours.</string>
     <string name="widget_colors_app">App colours</string>
-    <string name="widget_colors_app_description">Mawaqeet\'s own colours.</string>
+    <string name="widget_colors_app_description">Mawaqeet\'s own colours</string>
     <string name="widget_state_not_marked">Not marked</string>
     <string name="widget_state_not_yet_due">Not yet due</string>
 
@@ -341,7 +341,7 @@
     <string name="settings_alerts_summary">Adhan Alert for %1$s of %2$s Prayers</string>
     <string name="settings_widgets_summary">Background transparency %1$s</string>
     <string name="settings_alerts_ready">Alerts are ready</string>
-    <string name="settings_alerts_ready_summary">Permissions granted. Each Adhan Alert will arrive on time.</string>
+    <string name="settings_alerts_ready_summary">Permissions granted. Each Adhan Alert will arrive on time</string>
     <string name="settings_alerts_at_risk">Alerts may be delayed</string>
     <string name="alerts_each_prayer">Each Prayer</string>
     <string name="alerts_behaviour">How alerts behave</string>
@@ -367,8 +367,6 @@
     <string name="widget_chip_off">No adhan</string>
     <string name="widget_today_log_header">Today\'s log</string>
     <string name="widget_today_log_done">All five prayed</string>
-    <string name="widget_today_log_hint">Tap a circle after praying to log it</string>
-    <string name="widget_today_log_done_hint">May Allah accept it</string>
     <string name="widget_legend_prayed">Prayed</string>
     <string name="widget_legend_missed">Missed</string>
     <string name="widget_legend_not_yet">Not yet</string>

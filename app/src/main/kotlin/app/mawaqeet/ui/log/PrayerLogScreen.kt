@@ -114,9 +114,22 @@ fun PrayerLogScreen(core: PrayerCore, logChanges: StateFlow<Int>) {
         }
         Card {
             Header()
-            shown.days.asReversed().forEachIndexed { index, day ->
-                if (index > 0) RowDivider()
-                DayRow(day, beforeFirstUse = shown.isBeforeFirstUse(day), today = weeksBack == 0 && index == 0) { prayer ->
+            val days = shown.days.asReversed()
+            days.forEachIndexed { index, day ->
+                val beforeFirstUse = shown.isBeforeFirstUse(day)
+                if (beforeFirstUse && (index == 0 || !shown.isBeforeFirstUse(days[index - 1]))) {
+                    // Said once, above the days before first use, rather than under each of them.
+                    if (index > 0) RowDivider()
+                    Text(
+                        stringResource(R.string.log_before_first_use),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 4.dp),
+                    )
+                } else if (index > 0) {
+                    RowDivider()
+                }
+                DayRow(day, today = weeksBack == 0 && index == 0) { prayer ->
                     if (day.isMarkable(prayer)) {
                         scope.launch(Dispatchers.IO) {
                             if (day.stateOf(prayer) == LogState.PRAYED) core.unmark(day.date, prayer) else core.mark(day.date, prayer)
@@ -146,7 +159,7 @@ private fun WeekButton(label: Int, mirrored: Boolean, enabled: Boolean, onClick:
 private fun Summary(week: PrayerWeek) {
     val format = LocalDisplayFormatter.current
     Card {
-        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val total = week.summary.total
             Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -172,12 +185,12 @@ private fun SummaryBar(label: String, prayed: Int, possible: Int, value: String)
     Row(
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(label, Modifier.widthIn(min = 56.dp), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-        Box(Modifier.weight(1f).height(8.dp).background(colors.surfaceContainerHigh, RoundedCornerShape(4.dp))) {
+        Text(label, Modifier.widthIn(min = 56.dp), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Box(Modifier.weight(1f).height(4.dp).background(colors.surfaceContainerHigh, RoundedCornerShape(2.dp))) {
             if (possible > 0 && prayed > 0) {
-                Box(Modifier.fillMaxWidth(prayed.toFloat() / possible).height(8.dp).background(colors.primary, RoundedCornerShape(4.dp)))
+                Box(Modifier.fillMaxWidth(prayed.toFloat() / possible).height(4.dp).background(colors.primary, RoundedCornerShape(2.dp)))
             }
         }
         Text(value, style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
@@ -202,16 +215,16 @@ private fun Header() {
 
 /** One Prayer Day: its Gregorian and Hijri date, then a mark per Prayer under the Prayer names. */
 @Composable
-private fun DayRow(day: PrayerDay, beforeFirstUse: Boolean, today: Boolean, onToggle: (Prayer) -> Unit) {
+private fun DayRow(day: PrayerDay, today: Boolean, onToggle: (Prayer) -> Unit) {
     val format = LocalDisplayFormatter.current
     val colors = MaterialTheme.colorScheme
     Column(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(if (today) colors.primaryContainer else Color.Transparent)
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+            .padding(horizontal = 4.dp, vertical = 8.dp),
     ) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 8.dp).semantics(mergeDescendants = true) {},
@@ -220,14 +233,6 @@ private fun DayRow(day: PrayerDay, beforeFirstUse: Boolean, today: Boolean, onTo
         ) {
             Text(format.shortGregorianDate(day.date), style = MaterialTheme.typography.titleSmall)
             Text(format.hijriDate(day.hijriDate), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, modifier = Modifier.weight(1f))
-        }
-        if (beforeFirstUse) {
-            Text(
-                stringResource(R.string.log_before_first_use),
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp),
-            )
         }
         Row(Modifier.fillMaxWidth()) {
             Prayer.entries.forEach { prayer -> PrayerCell(day, prayer, onToggle, Modifier.weight(1f)) }
@@ -267,11 +272,11 @@ private fun PrayerCell(day: PrayerDay, prayer: Prayer, onToggle: (Prayer) -> Uni
 private fun Mark(state: LogState) {
     val colors = MaterialTheme.colorScheme
     when (state) {
-        LogState.PRAYED -> Box(Modifier.size(28.dp).background(colors.primary, CircleShape), contentAlignment = Alignment.Center) {
+        LogState.PRAYED -> Box(Modifier.size(24.dp).background(colors.primary, CircleShape), contentAlignment = Alignment.Center) {
             // The cell's state already says "Prayed"; TalkBack shouldn't also read "check mark".
-            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(16.dp))
+            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(14.dp))
         }
-        LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.outline, CircleShape))
-        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.5.dp, colors.outline.copy(alpha = 0.5f), CircleShape))
+        LogState.NOT_MARKED -> Box(Modifier.size(24.dp).border(1.5.dp, colors.outline, CircleShape))
+        LogState.NOT_YET_DUE -> Box(Modifier.size(24.dp).border(1.5.dp, colors.outline.copy(alpha = 0.35f), CircleShape))
     }
 }

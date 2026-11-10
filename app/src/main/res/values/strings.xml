@@ -37,7 +37,7 @@
     <string name="about_sources_title">المصادر والتراخيص</string>
     <string name="about_recordings_none_short">لا توجد بعد</string>
     <string name="about_version">الإصدار %1$s</string>
-    <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك.</string>
+    <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك</string>
     <string name="about_libraries">المكتبات</string>
     <string name="about_datasets">البيانات</string>
     <string name="about_fonts">الخطوط</string>
@@ -97,9 +97,9 @@
     <string name="grant_title">التنبيهات تحتاج إلى إذنك</string>
     <string name="grant_intro">لن يستطيع مواقيت تنبيهك عند حلول وقت الصلاة دون هذه الأذونات.</string>
     <string name="grant_notifications_title">الإشعارات</string>
-    <string name="grant_notifications_body">لعرض تنبيه الأذان عند حلول وقت كل صلاة.</string>
+    <string name="grant_notifications_body">لعرض تنبيه الأذان عند حلول وقت كل صلاة</string>
     <string name="grant_exact_alarms_title">المنبّهات الدقيقة</string>
-    <string name="grant_exact_alarms_body">ليصل التنبيه في وقته تمامًا، حتى بعد ساعات من عدم استخدام الهاتف.</string>
+    <string name="grant_exact_alarms_body">ليصل التنبيه في وقته تمامًا، حتى بعد ساعات من عدم استخدام الهاتف</string>
     <string name="grant_button">منح الإذن</string>
     <!-- Language & display (#17). Language names are written in their own language in both locales. -->
     <string name="language">اللغة</string>
@@ -176,7 +176,7 @@
     <string name="alerts_try_scheduled">سيصل خلال ١٠ ثوانٍ. اقفل الشاشة الآن.</string>
     <string name="alerts_try_not_allowed">اسمح بالمنبّهات الدقيقة أولًا من «إصلاح التنبيهات».</string>
     <string name="alerts_lock_screen_permission">اسمح بالظهور على شاشة القفل</string>
-    <string name="alerts_lock_screen_permission_summary">بدونه يصل التنبيه إشعارًا فقط، لا شاشة منبّه.</string>
+    <string name="alerts_lock_screen_permission_summary">بدونه يصل التنبيه إشعارًا فقط، لا شاشة منبّه</string>
     <string name="adhan_alarm_label">حان وقت الصلاة</string>
     <string name="alerts_play_on_silent">تشغيل الأذان حتى في الوضع الصامت</string>
     <string name="alerts_play_on_silent_description">لا يشمل التذكير، ولا الأذان أثناء المكالمات</string>
@@ -237,7 +237,7 @@
     <string name="widget_colors_wallpaper">ألوان الخلفية</string>
     <string name="widget_colors_wallpaper_description">تتبع ألوان خلفية الشاشة (أندرويد ١٢ وأحدث). الصلاة القادمة تبقى بألوانها الداكنة.</string>
     <string name="widget_colors_app">ألوان التطبيق</string>
-    <string name="widget_colors_app_description">ألوان مواقيت الثابتة.</string>
+    <string name="widget_colors_app_description">ألوان مواقيت الثابتة</string>
     <string name="widget_state_not_marked">لم تُسجَّل</string>
     <string name="widget_state_not_yet_due">لم يحن وقتها</string>
 
@@ -364,7 +364,7 @@
     <string name="settings_alerts_summary">تنبيه الأذان لـ %1$s من %2$s صلوات</string>
     <string name="settings_widgets_summary">شفافية الخلفية %1$s</string>
     <string name="settings_alerts_ready">التنبيهات جاهزة</string>
-    <string name="settings_alerts_ready_summary">الأذونات ممنوحة، وسيصلك الأذان في وقته.</string>
+    <string name="settings_alerts_ready_summary">الأذونات ممنوحة، وسيصلك الأذان في وقته</string>
     <string name="settings_alerts_at_risk">قد تتأخر التنبيهات</string>
     <string name="alerts_each_prayer">لكل صلاة</string>
     <string name="alerts_behaviour">طريقة التنبيه</string>
@@ -390,8 +390,6 @@
     <string name="widget_chip_off">بلا أذان</string>
     <string name="widget_today_log_header">سجل اليوم</string>
     <string name="widget_today_log_done">تمّت الصلوات الخمس</string>
-    <string name="widget_today_log_hint">اضغط الدائرة بعد الصلاة لتسجيلها</string>
-    <string name="widget_today_log_done_hint">تقبّل الله</string>
     <string name="widget_legend_prayed">صلّيت</string>
     <string name="widget_legend_missed">فاتت</string>
     <string name="widget_legend_not_yet">لم يحن</string>

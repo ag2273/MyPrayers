@@ -1,12 +1,14 @@
 package app.mawaqeet.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -20,7 +22,7 @@ private val TealGlow = Color(0xFF7FC9BC)
 private val DawnAmber = Color(0xFFE0A246)
 private val DawnAmberDark = Color(0xFFF2B65E)
 private val DayMist = Color(0xFFF2F6F4)
-private val IshaNight = Color(0xFF0E1917)
+private val IshaNight = Color(0xFF111615)
 private val Ink = Color(0xFF142421)
 private val InkDark = Color(0xFFE4EEEB)
 // The Next Prayer card (redesign): a deep teal card that is the same in light and dark, with amber countdown.
@@ -28,9 +30,9 @@ private val HeroTeal = Color(0xFF134A44)
 private val HeroAmber = Color(0xFFF2B65E)
 // Cards, the navigation bar and segmented-control tracks sit on the DayMist / IshaNight background.
 private val CardLight = Color(0xFFFFFFFF)
-private val CardDark = Color(0xFF15221F)
+private val CardDark = Color(0xFF181E1D)
 private val TrackLight = Color(0xFFE3EBE8)
-private val TrackDark = Color(0xFF22312E)
+private val TrackDark = Color(0xFF212927)
 private val TipLight = Color(0xFFFBEBD0)
 private val OnTipLight = Color(0xFF4A3208)
 private val TipDark = Color(0xFF3A2A10)
@@ -39,7 +41,8 @@ private val OnTipDark = Color(0xFFF7DDB0)
 internal val LightColors = lightColorScheme(
     primary = NightTeal,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDCEBE8),
+    // A neutral surface step (the selected tab, today's row, the next Prayer's row): selection without colour.
+    primaryContainer = Color(0xFFE8EEEB),
     onPrimaryContainer = Ink,
     secondary = DawnAmber,
     onSecondary = Ink,
@@ -60,14 +63,14 @@ internal val LightColors = lightColorScheme(
     surfaceContainerHighest = TrackLight,
     surfaceVariant = TrackLight,
     outline = Color(0xFF6E7F7B),
-    outlineVariant = Color(0xFFDCE5E2),
+    outlineVariant = Color(0xFFE3E8E6),
     error = Color(0xFFA3261B),
 )
 
 internal val DarkColors = darkColorScheme(
     primary = TealGlow,
     onPrimary = IshaNight,
-    primaryContainer = Color(0xFF1E3632),
+    primaryContainer = Color(0xFF242C2A),
     onPrimaryContainer = InkDark,
     secondary = DawnAmberDark,
     onSecondary = IshaNight,
@@ -80,7 +83,7 @@ internal val DarkColors = darkColorScheme(
     onBackground = InkDark,
     surface = IshaNight,
     onSurface = InkDark,
-    onSurfaceVariant = Color(0xFFA8B7B3),
+    onSurfaceVariant = Color(0xFFA3B0AD),
     surfaceContainerLowest = CardDark,
     surfaceContainerLow = CardDark,
     surfaceContainer = CardDark,
@@ -88,9 +91,18 @@ internal val DarkColors = darkColorScheme(
     surfaceContainerHighest = TrackDark,
     surfaceVariant = TrackDark,
     outline = Color(0xFF8A9B97),
-    outlineVariant = Color(0xFF263733),
+    outlineVariant = Color(0xFF262E2C),
     error = Color(0xFFFFB4AB),
 )
+
+/**
+ * The gold that means "the next Prayer", and nothing else (unslop pass, 2026-11-10): its countdown, the dot on its row
+ * and its tick on the sky arc. A deeper shade on light surfaces so it still reads.
+ */
+val ColorScheme.nextPrayerGold: Color get() = if (background.luminance() > 0.5f) Color(0xFFC98A2E) else HeroAmber
+
+/** The gold on the deep Next Prayer surface, the same in light and dark. */
+val HeroGold: Color = HeroAmber
 
 private fun variableFont(resId: Int, weight: FontWeight) =
     Font(resId, weight = weight, variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)))
@@ -124,8 +136,8 @@ private val MawaqeetTypography = Typography().run {
         headlineMedium = headlineMedium.kufi(),
         headlineSmall = headlineSmall.kufi(),
         titleLarge = titleLarge.kufi(),
-        titleMedium = titleMedium.sans().copy(fontWeight = FontWeight.SemiBold),
-        titleSmall = titleSmall.sans().copy(fontWeight = FontWeight.SemiBold),
+        titleMedium = titleMedium.sans().copy(fontWeight = FontWeight.Medium),
+        titleSmall = titleSmall.sans().copy(fontWeight = FontWeight.Medium),
         bodyLarge = bodyLarge.sans(),
         bodyMedium = bodyMedium.sans(),
         bodySmall = bodySmall.sans(),

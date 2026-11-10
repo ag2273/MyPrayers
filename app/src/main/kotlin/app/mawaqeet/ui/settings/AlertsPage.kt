@@ -1,7 +1,10 @@
 package app.mawaqeet.ui.settings
 
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -216,19 +219,21 @@ private fun AdhanVolumeRows(alerts: AlertSettings, actions: SettingsActions) {
 @Composable
 private fun PrayerAlertRow(name: String, summary: String, on: Boolean, onToggle: (Boolean) -> Unit, onOpen: () -> Unit) {
     val switchLabel = stringResource(R.string.alerts_adhan_alert_of, name)
-    Row(Modifier.fillMaxWidth().padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(
             Modifier
                 .weight(1f)
                 .clickable(role = Role.Button, onClick = onOpen)
-                .heightIn(min = 60.dp)
-                .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                .heightIn(min = 64.dp)
+                .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             RowText(name, summary)
-            Icon(painterResource(R.drawable.ic_chevron), contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(16.dp))
+            Icon(painterResource(R.drawable.ic_chevron), contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
         }
+        // A hairline keeps the switch apart from the row that opens the Prayer's page, so each tap target reads as its own.
+        Box(Modifier.padding(horizontal = 12.dp).width(1.dp).height(32.dp).background(MaterialTheme.colorScheme.outlineVariant))
         Switch(
             checked = on,
             onCheckedChange = onToggle,

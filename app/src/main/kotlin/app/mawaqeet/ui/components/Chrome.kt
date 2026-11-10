@@ -3,6 +3,7 @@ package app.mawaqeet.ui.components
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
 
 /** The corner radius of cards (the redesign uses one radius everywhere). */
-val CardShape = RoundedCornerShape(22.dp)
+val CardShape = RoundedCornerShape(20.dp)
 
 /**
  * A top-level tab's page (Today, Prayer Log, Settings): its title as a heading, then [content] in a scrolling column.
@@ -53,8 +54,8 @@ fun TabPage(title: String?, modifier: Modifier = Modifier, content: @Composable 
         modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (title != null) {
             Text(
@@ -103,14 +104,14 @@ fun SubPage(
     }
 }
 
-/** A small coloured heading above a card. */
+/** A small quiet heading above a card: secondary text, sitting closer to its card than to the card above. */
 @Composable
 fun SectionTitle(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 6.dp, top = 6.dp).semantics { heading() },
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 4.dp, top = 8.dp).semantics { heading() },
     )
 }
 
@@ -121,7 +122,8 @@ fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> U
         modifier
             .fillMaxWidth()
             .clip(CardShape)
-            .background(MaterialTheme.colorScheme.surfaceContainer),
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CardShape),
         content = content,
     )
 }
@@ -130,14 +132,11 @@ fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> U
 @Composable
 fun RowDivider() = HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
-/** An icon on a soft teal tile, at the start of a navigation row. */
+/** A row's line icon in the secondary text colour, in a fixed 24dp box so every row's text starts on one line. */
 @Composable
 fun IconTile(@DrawableRes icon: Int) {
-    Box(
-        Modifier.size(38.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+    Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -159,10 +158,10 @@ fun NavRow(title: String, summary: String?, @DrawableRes icon: Int? = null, trai
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .heightIn(min = 60.dp)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .heightIn(min = 64.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (icon != null) IconTile(icon)
         RowText(title, summary)
@@ -183,10 +182,10 @@ fun SwitchRow(title: String, description: String, checked: Boolean, onChange: (B
         Modifier
             .fillMaxWidth()
             .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
-            .heightIn(min = 60.dp)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .heightIn(min = 64.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         RowText(title, description)
         Switch(checked = checked, onCheckedChange = null)
@@ -203,7 +202,7 @@ fun SegmentedChoice(segments: List<Segment>, modifier: Modifier = Modifier) {
     Row(
         modifier
             .fillMaxWidth()
-            .background(colors.surfaceContainerHigh, RoundedCornerShape(14.dp))
+            .background(colors.surfaceContainerHigh, RoundedCornerShape(12.dp))
             .padding(4.dp)
             .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -212,7 +211,7 @@ fun SegmentedChoice(segments: List<Segment>, modifier: Modifier = Modifier) {
             Box(
                 Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(if (segment.selected) colors.surfaceContainer else colors.surfaceContainerHigh)
                     .selectable(selected = segment.selected, role = Role.RadioButton, onClick = segment.onSelect)
                     .heightIn(min = 44.dp)

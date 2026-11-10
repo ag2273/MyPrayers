@@ -7,7 +7,6 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
-import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
@@ -37,7 +36,7 @@ import java.time.LocalDate
 
 /**
  * The Today with Prayer Log Widget Variant (widget design board, 2026-11-10). At 4×1 five columns (name, mark, time);
- * at 4×2 a header («سجل اليوم», how many are marked and five thin segments), the columns (name, time, mark) and a hint.
+ * at 4×2 a header («سجل اليوم», how many are marked and five thin segments), and the columns (name, time, mark).
  * The next Prayer sits on a soft fill. A Prayer whose time has come is marked, or unmarked, by tapping its column,
  * through the prayer core's rules, as on Home; the rest of the widget opens today's Prayer Times. A thin layer over
  * [TodayLogContent].
@@ -60,7 +59,6 @@ private data class TodayLogView(
     val allDone: Boolean,
     val count: String,
     val prayed: Int,
-    val hint: String,
     val date: LocalDate,
     val rows: List<Row>,
     val allNames: List<String>,
@@ -76,7 +74,6 @@ private data class TodayLogView(
                 allDone = allDone,
                 count = s.getString(R.string.widget_count, text.formatter.number(content.prayedCount), text.formatter.number(content.rows.size)),
                 prayed = content.prayedCount,
-                hint = s.getString(if (allDone) R.string.widget_today_log_done_hint else R.string.widget_today_log_hint),
                 date = content.logDate,
                 rows = content.rows.map {
                     val name = s.getString(it.nameRes)
@@ -100,10 +97,8 @@ private data class TodayLogView(
     }
 }
 
-/** The 4×2's hint under the columns, and the 4×1's marks, which sit between name and time. */
+/** The header's five thin segments, one per Prayer marked. */
 internal object TodayLogMetrics {
-    const val HINT_SP = 11f
-    const val HINT_GAP_DP = 4f
     const val SEGMENT_WIDTH_DP = 14f
     const val SEGMENT_HEIGHT_DP = 4f
 }
@@ -112,15 +107,10 @@ internal object TodayLogMetrics {
 private fun TodayLogLayout(view: TodayLogView, rtl: Boolean) {
     val style = LocalWidgetStyle.current
     val size = LocalSize.current
-    val fontScale = LocalContext.current.resources.configuration.fontScale
     val height = if (style.responsive) size.height.value else TodayTimesMetrics.MIN_HEIGHT_DP.toFloat()
     val short = height < TodayTimesMetrics.SHORT_BELOW_DP
     val sizes = CellSizes.of(view.title, view.allNames, view.rows.map { it.time }, dots = true, markFirst = short)
     val tall = sizes.showHeader
-    val left = height - 2 * TodayTimesMetrics.verticalPaddingDp(height) - 1 -
-        lineHeightDp(view.title, sizes.headerSp, fontScale, bold = true) - TodayTimesMetrics.HEADER_GAP_DP * sizes.scale -
-        TodayTimesMetrics.columnsHeight(view.allNames.first(), view.rows.first().time, sizes.scale, dots = true, fontScale)
-    val showHint = tall && left >= lineHeightDp(view.hint, TodayLogMetrics.HINT_SP, fontScale) + TodayLogMetrics.HINT_GAP_DP
     WidgetFrame(rtl, horizontal = TodayTimesMetrics.horizontalPadding, vertical = TodayTimesMetrics.verticalPaddingDp(height).dp) {
         if (tall) LogHeader(view, sizes.headerSp)
         PrayerColumns(
@@ -145,11 +135,6 @@ private fun TodayLogLayout(view: TodayLogView, rtl: Boolean) {
                 )
             },
         )
-        if (showHint) {
-            Box(GlanceModifier.fillMaxWidth().padding(top = TodayLogMetrics.HINT_GAP_DP.dp), contentAlignment = Alignment.Center) {
-                WidgetLine(view.hint, TodayLogMetrics.HINT_SP, Tone.MUTED, center = true)
-            }
-        }
     }
 }
 
@@ -194,7 +179,7 @@ private fun Mark(row: TodayLogView.Row, sizeDp: Float) {
         ) {
             Image(ImageProvider(R.drawable.widget_check), contentDescription = null, modifier = GlanceModifier.size((sizeDp * 0.5f).dp), colorFilter = tint(style.onAccent))
         }
-        LogState.NOT_MARKED -> Image(ImageProvider(R.drawable.widget_ring), null, GlanceModifier.size(sizeDp.dp), colorFilter = tint(style.accent))
+        LogState.NOT_MARKED -> Image(ImageProvider(R.drawable.widget_ring), null, GlanceModifier.size(sizeDp.dp), colorFilter = tint(style.ringMuted))
         LogState.NOT_YET_DUE -> Image(
             ImageProvider(R.drawable.widget_ring_dashed),
             null,
