@@ -370,8 +370,8 @@ internal fun textWidthDp(text: String, sp: Float, fontScale: Float = 1f, bold: B
  * The largest scale from 1 down, in 5% steps and never below [floor], at which [fits] holds: a layout drawn at the
  * design's sizes shrinks as a whole, so its proportions stay, when the launcher gives it less room than the design.
  */
-internal inline fun fitScale(floor: Float = 0.6f, fits: (Float) -> Boolean): Float {
-    var scale = 1f
+internal inline fun fitScale(floor: Float = 0.6f, start: Float = 1f, fits: (Float) -> Boolean): Float {
+    var scale = start
     while (scale > floor + 0.001f && !fits(scale)) scale -= 0.05f
     return scale
 }

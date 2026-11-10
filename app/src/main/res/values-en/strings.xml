@@ -202,7 +202,7 @@
     <string name="widget_transparency_value">%1$s%%</string>
     <string name="widget_colors">Colours</string>
     <string name="widget_colors_wallpaper">Wallpaper colours</string>
-    <string name="widget_colors_wallpaper_description">Follow your wallpaper\'s colours (Android 12 and later).</string>
+    <string name="widget_colors_wallpaper_description">Follow your wallpaper\'s colours (Android 12 and later). Next Prayer keeps its deep colours.</string>
     <string name="widget_colors_app">App colours</string>
     <string name="widget_colors_app_description">Mawaqeet\'s own colours.</string>
     <string name="widget_state_not_marked">Not marked</string>

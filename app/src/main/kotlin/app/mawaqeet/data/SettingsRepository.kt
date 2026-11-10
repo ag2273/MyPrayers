@@ -187,7 +187,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         WidgetAppearance(
             transparency = prefs[WIDGET_TRANSPARENCY]
                 ?.takeIf { it in WidgetAppearance.TRANSPARENCY_RANGE && it % WidgetAppearance.TRANSPARENCY_STEP == 0 } ?: 0,
-            colors = prefs[WIDGET_COLORS]?.let { name -> WidgetColors.entries.firstOrNull { it.name == name } } ?: WidgetColors.WALLPAPER,
+            colors = prefs[WIDGET_COLORS]?.let { name -> WidgetColors.entries.firstOrNull { it.name == name } } ?: WidgetColors.APP,
         )
     }.distinctUntilChanged()
 

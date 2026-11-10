@@ -11,7 +11,7 @@ enum class WidgetColors { WALLPAPER, APP }
  * Settings → Widgets (#32), shared by every Widget Variant: one background [transparency] (0–100%, in steps of 10,
  * default solid) and the [colors] choice.
  */
-data class WidgetAppearance(val transparency: Int = 0, val colors: WidgetColors = WidgetColors.WALLPAPER) {
+data class WidgetAppearance(val transparency: Int = 0, val colors: WidgetColors = WidgetColors.APP) {
     init {
         require(transparency in TRANSPARENCY_RANGE && transparency % TRANSPARENCY_STEP == 0) { "transparency $transparency" }
     }
@@ -62,24 +62,13 @@ data class WidgetStyle(
             val light = appearance.transparency >= WidgetAppearance.LIGHT_TEXT_FROM
             val alpha = ((100 - appearance.transparency) * 255 + 50) / 100
             if (deep) {
+                // The deep surface keeps the design's teal and gold whatever the colours choice.
                 return WidgetStyle(
-                    background = if (wallpaper) R.color.widget_dyn_deep_background else R.color.widget_deep_background,
-                    text = when {
-                        light -> R.color.widget_over_text
-                        wallpaper -> R.color.widget_dyn_deep_text
-                        else -> R.color.widget_deep_text
-                    },
-                    muted = when {
-                        light -> R.color.widget_over_muted
-                        wallpaper -> R.color.widget_dyn_deep_muted
-                        else -> R.color.widget_deep_muted
-                    },
-                    accent = when {
-                        light -> R.color.widget_over_gold
-                        wallpaper -> R.color.widget_dyn_deep_gold
-                        else -> R.color.widget_deep_gold
-                    },
-                    onAccent = if (wallpaper) R.color.widget_dyn_deep_background else R.color.widget_deep_background,
+                    background = R.color.widget_deep_background,
+                    text = if (light) R.color.widget_over_text else R.color.widget_deep_text,
+                    muted = if (light) R.color.widget_over_muted else R.color.widget_deep_muted,
+                    accent = if (light) R.color.widget_over_gold else R.color.widget_deep_gold,
+                    onAccent = R.color.widget_deep_background,
                     accentSoft = if (light) R.color.widget_over_faint else R.color.widget_deep_track,
                     faint = if (light) R.color.widget_over_faint else R.color.widget_deep_track,
                     backgroundAlpha = alpha,

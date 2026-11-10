@@ -171,17 +171,17 @@ class SettingsScreenTest {
 
     @Test
     @Config(qualifiers = "en")
-    fun `choosing app colours for the widgets stores it, and transparency reads as a percentage`() {
+    fun `choosing wallpaper colours for the widgets stores it, and transparency reads as a percentage`() {
         openSettings("Settings")
         openPage("Widgets")
         val store = (compose.activity.application as MawaqeetApplication).settings
 
         compose.onNodeWithText("Background transparency").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("0%").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("App colours").performScrollTo().performClick()
+        compose.onNodeWithText("Wallpaper colours").performScrollTo().performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
-            runBlocking { store.widgetAppearance.first() }.colors == app.mawaqeet.widget.WidgetColors.APP
+            runBlocking { store.widgetAppearance.first() }.colors == app.mawaqeet.widget.WidgetColors.WALLPAPER
         }
     }
 

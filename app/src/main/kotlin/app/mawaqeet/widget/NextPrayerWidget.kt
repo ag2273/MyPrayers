@@ -149,6 +149,14 @@ internal object NextPrayerMetrics {
     /** The ring's share of the cell's smaller side, before the countdown line is taken off. */
     const val RING_MAX_DP = 56f
 
+    /**
+     * How far the 4×2 and 2×2 grow past the board's sizes when the launcher gives them more room: phones' 4×2 cells
+     * are often half again as tall as the board's.
+     */
+    const val MAX_GROW = 1.7f
+    /** Room kept between the countdown and the progress line, so a grown widget doesn't read crammed. */
+    const val BREATH_DP = 10f
+
     /** The longest a countdown reads. */
     const val COUNTDOWN_SAMPLE = "00:00:00"
 
@@ -156,24 +164,29 @@ internal object NextPrayerMetrics {
     fun wideScale(view: NextPrayerView, widthDp: Float, heightDp: Float, fontScale: Float = 1f): Float {
         val across = widthDp - 2 * WIDE_PADDING_H.value
         val room = heightDp - 2 * WIDE_PADDING_V.value - 1
-        return fitScale(floor = 0.4f) {
-            textWidthDp(view.name, NAME_SP * it, fontScale, bold = true) + NAME_TIME_GAP_DP + textWidthDp(view.time, TIME_SP * it, fontScale, bold = true) <= across &&
+        return fitScale(floor = 0.4f, start = MAX_GROW) {
+            textWidthDp(view.label, LABEL_SP * it, fontScale, bold = true) + chipWidthDp(view, it, fontScale) + 8 <= across &&
+                textWidthDp(view.name, NAME_SP * it, fontScale, bold = true) + NAME_TIME_GAP_DP + textWidthDp(view.time, TIME_SP * it, fontScale, bold = true) <= across &&
                 lineHeightDp(view.label, LABEL_SP * it, fontScale, bold = true) + 4 * it +
                 maxOf(lineHeightDp(view.name, NAME_SP * it, fontScale, bold = true), lineHeightDp(view.time, TIME_SP * it, fontScale, bold = true)) +
                 lineHeightDp(view.countdownSample, COUNTDOWN_SP * it, fontScale, bold = true) + LINE_GAP_DP * it +
-                WidgetArt.LINE_HEIGHT_DP + 2 + lineHeightDp(view.from, ENDS_SP * it, fontScale) <= room
+                BREATH_DP * it + WidgetArt.LINE_HEIGHT_DP + 2 + lineHeightDp(view.from, ENDS_SP * it, fontScale) <= room
         }
     }
+
+    /** The alert chip's width: bell, gap, words and the pill's padding. */
+    private fun chipWidthDp(view: NextPrayerView, s: Float, fontScale: Float) =
+        (12 + 4 + 16) * s + textWidthDp(view.chip, CHIP_SP * s, fontScale, bold = true)
 
     /** The 2×2's scale: four lines and the progress line, each within the width, all within the height. */
     fun squareScale(view: NextPrayerView, widthDp: Float, heightDp: Float, fontScale: Float = 1f): Float {
         val across = widthDp - 2 * SQUARE_PADDING_H.value
         val room = heightDp - 2 * SQUARE_PADDING_V.value - 1
         val lines = listOf(view.name to SQUARE_NAME_SP, view.time to SQUARE_TIME_SP, view.countdownSample to SQUARE_COUNTDOWN_SP)
-        return fitScale(floor = 0.4f) { s ->
+        return fitScale(floor = 0.4f, start = MAX_GROW) { s ->
             lines.all { (text, sp) -> textWidthDp(text, sp * s, fontScale, bold = true) <= across } &&
                 lineHeightDp(view.shortLabel, LABEL_SP * s, fontScale, bold = true) +
-                lines.sumOf { (text, sp) -> lineHeightDp(text, sp * s, fontScale, bold = true) } + LINE_GAP_DP * s + WidgetArt.LINE_HEIGHT_DP <= room
+                lines.sumOf { (text, sp) -> lineHeightDp(text, sp * s, fontScale, bold = true) } + (LINE_GAP_DP + BREATH_DP) * s + WidgetArt.LINE_HEIGHT_DP <= room
         }
     }
 
@@ -222,7 +235,8 @@ private fun WideLayout(view: NextPrayerView, rtl: Boolean) {
         verticalAlignment = Alignment.Top,
         decoration = {
             Box(GlanceModifier.fillMaxSize(), contentAlignment = direction.topEnd) {
-                WidgetDrawing(WidgetArt.star(context, 150f, 120f, 210f, 41f, 35f, rtl, context.colorOf(R.color.widget_deep_star)), 150f, 120f)
+                val k = scale.coerceAtLeast(1f)
+                WidgetDrawing(WidgetArt.star(context, 150f * k, 120f * k, 210f * k, 41f * k, 35f * k, rtl, context.colorOf(R.color.widget_deep_star)), 150f * k, 120f * k)
             }
         },
     ) {
@@ -272,7 +286,8 @@ private fun SquareLayout(view: NextPrayerView, rtl: Boolean) {
         verticalAlignment = Alignment.Top,
         decoration = {
             Box(GlanceModifier.fillMaxSize(), contentAlignment = direction.bottomEnd) {
-                WidgetDrawing(WidgetArt.star(context, 110f, 100f, 150f, 17f, 83f, rtl, context.colorOf(R.color.widget_deep_star)), 110f, 100f)
+                val k = scale.coerceAtLeast(1f)
+                WidgetDrawing(WidgetArt.star(context, 110f * k, 100f * k, 150f * k, 17f * k, 83f * k, rtl, context.colorOf(R.color.widget_deep_star)), 110f * k, 100f * k)
             }
         },
     ) {

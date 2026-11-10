@@ -220,7 +220,7 @@
     <string name="widget_transparency_value">%1$s٪</string>
     <string name="widget_colors">الألوان</string>
     <string name="widget_colors_wallpaper">ألوان الخلفية</string>
-    <string name="widget_colors_wallpaper_description">تتبع ألوان خلفية الشاشة (أندرويد ١٢ وأحدث).</string>
+    <string name="widget_colors_wallpaper_description">تتبع ألوان خلفية الشاشة (أندرويد ١٢ وأحدث). الصلاة القادمة تبقى بألوانها الداكنة.</string>
     <string name="widget_colors_app">ألوان التطبيق</string>
     <string name="widget_colors_app_description">ألوان مواقيت الثابتة.</string>
     <string name="widget_state_not_marked">لم تُسجَّل</string>
