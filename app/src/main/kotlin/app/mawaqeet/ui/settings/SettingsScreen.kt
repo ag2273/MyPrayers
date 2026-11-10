@@ -584,7 +584,7 @@ private fun WidgetPreview(appearance: WidgetAppearance) {
         ) {
             Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.labelMedium.copy(shadow = shadow), color = colorResource(style.muted))
             Text(stringResource(R.string.prayer_asr), style = MaterialTheme.typography.headlineSmall.copy(shadow = shadow), color = text)
-            Text(stringResource(R.string.widget_countdown_format, "1:12:34"), style = MaterialTheme.typography.titleSmall.copy(shadow = shadow), color = colorResource(style.accent))
+            Text(stringResource(R.string.widget_countdown_hours, "1:12:34"), style = MaterialTheme.typography.titleSmall.copy(shadow = shadow), color = colorResource(style.accent))
         }
     }
 }

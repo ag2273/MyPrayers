@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.Duration
 
 /**
  * The Next Prayer Widget Variant on the deep surface (widget design board, 2026-11-10), in two sizes: 4×2 (a label
@@ -46,7 +47,7 @@ class NextPrayerWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { core, text -> NextPrayerView.of(NextPrayerContent.of(core.displayDay(), Clock.systemUTC().instant(), text.formatter, core.alerts()), text) },
+        build = { core, text -> NextPrayerView.of(NextPrayerContent.of(core.displayDay(), Clock.systemUTC().instant(), text.formatter, core.alerts()).also { CountdownUnitReceiver.schedule(context, it.untilNext) }, text) },
         deep = true,
         layout = { view, rtl ->
             // In Exact mode the launcher's size is known on every Android version; when it isn't, 4×2 is the default.
@@ -66,7 +67,7 @@ class NextPrayerRingWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { core, text -> NextPrayerView.of(NextPrayerContent.of(core.displayDay(), Clock.systemUTC().instant(), text.formatter, core.alerts()), text) },
+        build = { core, text -> NextPrayerView.of(NextPrayerContent.of(core.displayDay(), Clock.systemUTC().instant(), text.formatter, core.alerts()).also { CountdownUnitReceiver.schedule(context, it.untilNext) }, text) },
         deep = true,
         layout = { view, rtl -> RingLayout(view, rtl) },
     )
@@ -86,7 +87,7 @@ internal data class NextPrayerView(
     val progress: Float,
     val chip: String,
     val audible: Boolean,
-    /** `Chronometer` format, e.g. "بعد %s". */
+    /** `Chronometer` format, «بعد %s ساعة» or «بعد %s دقيقة». */
     val countdownFormat: String,
     /** `SystemClock.elapsedRealtime()` at which the countdown reaches zero. */
     val countdownBase: Long,
@@ -109,7 +110,8 @@ internal data class NextPrayerView(
                 progress = content.progress,
                 chip = s.getString(content.alertRes),
                 audible = content.audible,
-                countdownFormat = s.getString(R.string.widget_countdown_format),
+                // The launcher shows MM:SS under an hour, which reads like a clock time: the unit says which it is.
+                countdownFormat = s.getString(if (content.untilNext >= Duration.ofHours(1)) R.string.widget_countdown_hours else R.string.widget_countdown_minutes),
                 countdownBase = SystemClock.elapsedRealtime() + content.untilNext.toMillis(),
             )
         }
