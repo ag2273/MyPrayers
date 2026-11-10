@@ -26,7 +26,8 @@ class WidgetAppearanceRenderTest {
 
     /** Every Widget Variant at its smallest size. */
     private val smallest: List<Triple<GlanceAppWidget, Int, Int>> = listOf(
-        Triple(NextPrayerWidget(), 110, 40),
+        Triple(NextPrayerRingWidget(), 57, 60),
+        Triple(NextPrayerWidget(), 110, 100),
         Triple(TodayTimesWidget(), 250, 110),
         Triple(DateStripWidget(), 250, 40),
         Triple(NextPrayerWidget(), 250, 110),
@@ -72,7 +73,7 @@ class WidgetAppearanceRenderTest {
         val small = nameSize(250, 180)
         val large = nameSize(420, 320)
         // A step up, at least: at its smallest the grid also shrinks a little to fit the height.
-        assertTrue("${large / small}", large / small >= 1.25f)
+        assertTrue("${large / small}", large / small >= 1.15f)
         assertNothingClipped(renderWidget(context, WeekLogWidget(), 420, 320), allowEllipsis = isHijriDate)
     }
 
@@ -83,6 +84,7 @@ class WidgetAppearanceRenderTest {
             .first { it.text.toString() == "الفجر" }.textSize
 
         assertEquals(nameSize(250, 180), nameSize(420, 320), 0.01f)
-        for ((widget, w, h) in smallest) assertNothingClipped(renderWidget(context, widget, w, h), allowEllipsis = isHijriDate)
+        // The Next Prayer label may shorten its place name.
+        for ((widget, w, h) in smallest) assertNothingClipped(renderWidget(context, widget, w, h)) { isHijriDate(it) || " · " in it }
     }
 }

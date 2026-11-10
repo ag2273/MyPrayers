@@ -10,7 +10,9 @@ plugins {
 }
 
 /*
- * Adhan playback (#22), two build switches:
+ * Adhan playback (#22), three build switches:
+ * - -Pmawaqeet.adhanAudio=<file>: the adhan recording every build (release too) bundles as res/raw/adhan_placeholder.
+ *   It stays outside the repo, since the repo is public and the recording isn't ours to publish. Wins over devAssets.
  * - -Pmawaqeet.devAssets=<dir>: where the uncleared dev clip lives (default: <repo>/dev-assets, git-ignored).
  *   Debug builds bundle it as res/raw/adhan_placeholder when present; release builds and checkouts without it
  *   get a generated silent clip. Nothing from dev-assets is ever tracked in git.
@@ -18,11 +20,19 @@ plugins {
  *   sound and the mediaPlayback foreground service is removed from the manifest.
  */
 val devAssetsDir: File = providers.gradleProperty("mawaqeet.devAssets").orNull?.let(::file) ?: rootProject.file("dev-assets")
+val adhanAudioFile: File? = providers.gradleProperty("mawaqeet.adhanAudio").orNull?.let(::file)
 val adhanChannelSoundFallback: Boolean =
     providers.gradleProperty("mawaqeet.adhanChannelSoundFallback").orNull?.toBoolean() ?: false
 
-/** Writes res/raw/adhan_placeholder: the dev clip (short-adhan-dev.*) if [devAudio] holds it, else silence. */
+/**
+ * Writes res/raw/adhan_placeholder: the [adhanAudio] recording if given, else the dev clip (short-adhan-dev.*) if
+ * [devAudio] holds it, else silence.
+ */
 abstract class AdhanPlaceholderTask : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val adhanAudio: ConfigurableFileCollection
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val devAudio: ConfigurableFileCollection
@@ -35,7 +45,8 @@ abstract class AdhanPlaceholderTask : DefaultTask() {
         val raw = outputDir.get().dir("raw").asFile
         raw.deleteRecursively()
         raw.mkdirs()
-        val clip = devAudio.asFileTree.files.firstOrNull { it.isFile && it.name.startsWith("short-adhan-dev.") }
+        val clip = adhanAudio.files.firstOrNull { it.isFile }
+            ?: devAudio.asFileTree.files.firstOrNull { it.isFile && it.name.startsWith("short-adhan-dev.") }
         if (clip != null) {
             clip.copyTo(File(raw, "adhan_placeholder.${clip.extension}"), overwrite = true)
         } else {
@@ -56,6 +67,19 @@ abstract class AdhanPlaceholderTask : DefaultTask() {
     }
 }
 
+/*
+ * Release signing. The keystore and its passwords never live in the repo: they come from Gradle properties
+ * (~/.gradle/gradle.properties or -P) or the environment, as below. Without them the release APK is left unsigned.
+ *   mawaqeet.signing.storeFile / MAWAQEET_SIGNING_STORE_FILE        path to the .jks keystore
+ *   mawaqeet.signing.storePassword / MAWAQEET_SIGNING_STORE_PASSWORD
+ *   mawaqeet.signing.keyAlias / MAWAQEET_SIGNING_KEY_ALIAS
+ *   mawaqeet.signing.keyPassword / MAWAQEET_SIGNING_KEY_PASSWORD
+ */
+fun signingValue(name: String): String? =
+    providers.gradleProperty("mawaqeet.signing.$name").orNull
+        ?: providers.environmentVariable("MAWAQEET_SIGNING_" + name.replace(Regex("([A-Z])"), "_$1").uppercase()).orNull
+val releaseStoreFile: String? = signingValue("storeFile")
+
 android {
     namespace = "app.mawaqeet"
     compileSdk = 37
@@ -67,6 +91,23 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         buildConfigField("boolean", "ADHAN_CHANNEL_SOUND_FALLBACK", adhanChannelSoundFallback.toString())
+    }
+
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = signingValue("storePassword")
+                keyAlias = signingValue("keyAlias")
+                keyPassword = signingValue("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+        }
     }
 
     buildFeatures {
@@ -104,6 +145,7 @@ androidComponents {
     onVariants { variant ->
         val name = variant.name.replaceFirstChar { it.uppercase() }
         val placeholder = tasks.register<AdhanPlaceholderTask>("generate${name}AdhanPlaceholder") {
+            adhanAudioFile?.let { adhanAudio.from(it) }
             if (variant.buildType == "debug") devAudio.from(devAssetsDir)
         }
         variant.sources.res?.addGeneratedSourceDirectory(placeholder, AdhanPlaceholderTask::outputDir)

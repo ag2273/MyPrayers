@@ -43,6 +43,9 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
 import androidx.glance.layout.wrapContentHeight
+import androidx.glance.layout.width
+import androidx.glance.layout.height
+import app.mawaqeet.core.SavedLocation
 import androidx.glance.unit.ColorProvider
 import app.mawaqeet.MainActivity
 import app.mawaqeet.MawaqeetApplication
@@ -59,7 +62,7 @@ import kotlinx.coroutines.withContext
 import java.time.Clock
 
 /** What a widget needs to put the display day into words: the formatter, strings and direction of the app language. */
-internal class WidgetText(val formatter: DisplayFormatter, val strings: Context, val rtl: Boolean)
+internal class WidgetText(val formatter: DisplayFormatter, val strings: Context, val rtl: Boolean, val place: String = "")
 
 /**
  * The app language's reading direction, laid out in the launcher's. Glance's views (and the launcher) follow the
@@ -71,6 +74,15 @@ internal class WidgetDirection(val rtl: Boolean, hostRtl: Boolean = phoneRtl()) 
     private val flipped = rtl != hostRtl
 
     val start: Alignment.Horizontal get() = if (flipped) Alignment.End else Alignment.Start
+
+    /** A Box's content at the app language's start, vertically centred. */
+    val startAlignment: Alignment get() = if (flipped) Alignment.CenterEnd else Alignment.CenterStart
+
+    /** A Box's content in the app language's top-end corner. */
+    val topEnd: Alignment get() = if (flipped) Alignment.TopStart else Alignment.TopEnd
+
+    /** A Box's content in the app language's bottom-end corner. */
+    val bottomEnd: Alignment get() = if (flipped) Alignment.BottomStart else Alignment.BottomEnd
 
     /** A Box's content at the app language's end, vertically centred. */
     val endAlignment: Alignment get() = if (flipped) Alignment.CenterStart else Alignment.CenterEnd
@@ -139,6 +151,7 @@ internal val LocalWidgetStyle = staticCompositionLocalOf { WidgetStyle.of(Widget
 internal suspend fun <T> GlanceAppWidget.provideFromCore(
     context: Context,
     build: (PrayerCore, WidgetText) -> T,
+    deep: Boolean = false,
     layout: @Composable (T, rtl: Boolean) -> Unit,
 ) {
     val app = context.applicationContext as MawaqeetApplication
@@ -152,7 +165,9 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
             val locale = appLocale(context, language)
             val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
             val core = PrayerCore(settings, Clock.systemUTC(), app.prayerLog)
-            build(core, WidgetText(DisplayFormatter(locale, digits), localizedContext(context, locale), rtl)) to rtl
+            val strings = localizedContext(context, locale)
+            val place = widgetPlaceName(store.savedLocation.first(), strings, locale.language == "ar")
+            build(core, WidgetText(DisplayFormatter(locale, digits), strings, rtl, place)) to rtl
         }
     val initialView = view(initialSettings, initialDigits, initialLanguage)
     provideContent {
@@ -168,7 +183,7 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
             }
         }
         CompositionLocalProvider(
-            LocalWidgetStyle provides remember(appearance) { WidgetStyle.of(appearance) },
+            LocalWidgetStyle provides remember(appearance) { WidgetStyle.of(appearance, deep = deep) },
             LocalWidgetDirection provides remember(current.second) { WidgetDirection(current.second, WidgetDirection.phoneRtl(context)) },
         ) {
             layout(current.first, current.second)
@@ -178,8 +193,9 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
 
 /**
  * A widget's frame: content aligned to the app language's start ([WidgetDirection]), the background in the style's
- * colour and opacity, and a tap that opens the app on today's Prayer Times, or on the
- * Prayer Log when [opens] says so. It is the widget's only tap target: no widget changes the Prayer Log.
+ * colour and opacity, and a tap that opens the app on today's Prayer Times, or on the Prayer Log when [opens] says
+ * so. [decoration] is drawn under the content (the Next Prayer's star). The Today with Prayer Log widget's columns
+ * carry their own taps, which mark a Prayer.
  */
 @Composable
 internal fun WidgetFrame(
@@ -187,6 +203,8 @@ internal fun WidgetFrame(
     horizontal: Dp,
     vertical: Dp,
     opens: MainActivity.Opens = MainActivity.Opens.TODAY,
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    decoration: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val context = LocalContext.current
@@ -196,18 +214,54 @@ internal fun WidgetFrame(
         setInt(R.id.widget_bg, "setImageAlpha", style.backgroundAlpha)
     }
     AndroidRemoteViews(root, R.id.widget_root, GlanceModifier.fillMaxSize()) {
-        Column(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .padding(horizontal = horizontal, vertical = vertical)
-                .clickable(actionStartActivity(MainActivity.openIntent(context, opens))),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalAlignment = LocalWidgetDirection.current.start,
-        ) {
-            content()
+        val column = @Composable {
+            Column(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .padding(horizontal = horizontal, vertical = vertical)
+                    .clickable(actionStartActivity(MainActivity.openIntent(context, opens))),
+                verticalAlignment = verticalAlignment,
+                horizontalAlignment = LocalWidgetDirection.current.start,
+            ) {
+                content()
+            }
+        }
+        if (decoration == null) {
+            column()
+        } else {
+            Box(GlanceModifier.fillMaxSize()) {
+                decoration()
+                column()
+            }
         }
     }
 }
+
+/** How widgets name the location, as Home does: the city, "near <city>", coordinates, or the default. */
+internal fun widgetPlaceName(saved: SavedLocation?, strings: Context, arabic: Boolean): String {
+    val city = saved?.city
+    return when {
+        saved == null -> strings.getString(R.string.default_location_name)
+        city == null -> "%.2f, %.2f".format(java.util.Locale.ROOT, saved.location.latitude, saved.location.longitude)
+        city.isNear -> strings.getString(R.string.location_near_city, city.displayName(arabic))
+        else -> city.displayName(arabic)
+    }
+}
+
+/** One of [WidgetArt]'s drawings, at [widthDp]×[heightDp]. */
+@Composable
+internal fun WidgetDrawing(bitmap: android.graphics.Bitmap, widthDp: Float, heightDp: Float, description: String? = null, modifier: GlanceModifier = GlanceModifier) {
+    androidx.glance.Image(
+        androidx.glance.ImageProvider(bitmap),
+        contentDescription = description,
+        modifier = GlanceModifier.width(widthDp.dp).height(heightDp.dp).then(modifier),
+        contentScale = androidx.glance.layout.ContentScale.FillBounds,
+    )
+}
+
+/** A colour resource resolved for drawing a bitmap. */
+@androidx.annotation.ColorInt
+internal fun Context.colorOf(@ColorRes color: Int): Int = getColor(color)
 
 /**
  * Text grows in steps when the launcher gives a widget more room than its smallest size ([minWidth]×[minHeight] dp):
@@ -226,7 +280,7 @@ internal fun textStep(minWidth: Float, minHeight: Float): Float {
 }
 
 /** Which of the style's colours a piece of widget text takes. */
-internal enum class Tone { TEXT, MUTED, ACCENT, ON_ACCENT }
+internal enum class Tone { TEXT, MUTED, ACCENT, ON_ACCENT, ON_SOFT }
 
 @ColorRes
 internal fun WidgetStyle.colorOf(tone: Tone): Int = when (tone) {
@@ -234,6 +288,7 @@ internal fun WidgetStyle.colorOf(tone: Tone): Int = when (tone) {
     Tone.MUTED -> muted
     Tone.ACCENT -> accent
     Tone.ON_ACCENT -> onAccent
+    Tone.ON_SOFT -> onAccentSoft
 }
 
 /** The style's colour as a Glance tint, for the white shape drawables (backgrounds, marks, dots). */
@@ -315,8 +370,8 @@ internal fun textWidthDp(text: String, sp: Float, fontScale: Float = 1f, bold: B
  * The largest scale from 1 down, in 5% steps and never below [floor], at which [fits] holds: a layout drawn at the
  * design's sizes shrinks as a whole, so its proportions stay, when the launcher gives it less room than the design.
  */
-internal inline fun fitScale(floor: Float = 0.6f, fits: (Float) -> Boolean): Float {
-    var scale = 1f
+internal inline fun fitScale(floor: Float = 0.6f, start: Float = 1f, fits: (Float) -> Boolean): Float {
+    var scale = start
     while (scale > floor + 0.001f && !fits(scale)) scale -= 0.05f
     return scale
 }

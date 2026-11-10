@@ -24,29 +24,26 @@ class TodayWidgetsRenderTest {
     private fun render(widget: GlanceAppWidget, width: Int, height: Int) = renderWidget(context, widget, width, height)
 
     @Test
-    fun `Next Prayer in one cell stacks the name, its time and the countdown, with nothing clipped`() {
-        val density = context.resources.displayMetrics.scaledDensity
+    fun `Next Prayer's ring in one cell shows the name inside and the countdown under it, with nothing clipped`() {
         // The usual 1×1 cells on phones, from a narrow 57×60 to a roomy 90×100.
         for ((width, height) in listOf(70 to 80, 57 to 60, 62 to 92, 76 to 96, 90 to 100)) {
-            val root = render(NextPrayerWidget(), width, height)
-            val name = widgetTexts(root).first() // the next Prayer's name heads the cell
-            if (width >= 60 && height >= 80) assertTrue("name at ${name.textSize / density}sp at $width×$height", name.textSize / density >= 14f)
+            val root = render(NextPrayerRingWidget(), width, height)
             val texts = widgetTexts(root)
             assertTrue("no countdown at $width×$height", texts.any { it.id == app.mawaqeet.R.id.countdown })
-            assertTrue("no time at $width×$height in ${texts.map { it.text }}", texts.any { t -> t.text.length == 5 && t.text[2] == ':' })
-            assertTrue("label shown at $width×$height", texts.none { it.text.toString() == "الصلاة القادمة" })
+            assertTrue("no name at $width×$height in ${texts.map { it.text }}", texts.any { it.text.toString() == "المغرب" || it.text.length in 3..7 })
+            assertTrue("label shown at $width×$height", texts.none { it.text.toString().startsWith("الصلاة القادمة") })
             assertNothingClipped(root)
         }
     }
 
     @Test
-    fun `Today's Prayer Times shows its title and five columns in Arabic RTL with nothing clipped at 250x110`() {
+    fun `Today's Prayer Times shows the date and five columns in Arabic RTL with nothing clipped at 250x110`() {
         val root = render(TodayTimesWidget(), 250, 110)
         val words = widgetTexts(root).map { it.text.toString() }
 
-        for (name in listOf("مواقيت اليوم", "الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
+        for (name in listOf("الفجر", "العصر", "المغرب", "العشاء")) assertTrue("$name missing in $words", name in words)
         assertTrue("no Sunrise on the board", "الشروق" !in words)
-        assertTrue(words.any { "هـ" in it })
+        assertTrue("no date first in $words", words.first() !in listOf("الفجر", "الظهر", "العصر", "المغرب", "العشاء"))
         assertEquals(View.LAYOUT_DIRECTION_RTL, widgetTexts(root).first().layoutDirection)
         assertNothingClipped(root, allowEllipsis = isHijriDate)
     }
@@ -56,7 +53,7 @@ class TodayWidgetsRenderTest {
         val root = render(DateStripWidget(), 250, 40)
         val words = widgetTexts(root).map { it.text.toString() }
 
-        assertTrue("no next label in $words", "القادمة:" in words)
+        assertTrue("no next label in $words", "القادمة" in words)
         assertTrue(words.any { "هـ" in it })
         assertNothingClipped(root, allowEllipsis = isHijriDate)
     }
@@ -65,10 +62,10 @@ class TodayWidgetsRenderTest {
     fun `the Date strip keeps the board's text size when the launcher gives it a usual 4x1 size`() {
         val density = context.resources.displayMetrics.scaledDensity
         fun nextLabelSp(width: Int, height: Int) = widgetTexts(render(DateStripWidget(), width, height))
-            .first { it.text.toString() == "القادمة:" }.textSize / density
+            .first { it.text.toString() == "القادمة" }.textSize / density
 
-        assertTrue(nextLabelSp(360, 80) >= DateStripMetrics.NEXT_SP)
-        assertTrue(nextLabelSp(250, 40) >= DateStripMetrics.NEXT_SP * 0.6f)
+        assertTrue(nextLabelSp(360, 80) >= DateStripMetrics.LABEL_SP)
+        assertTrue(nextLabelSp(250, 40) >= DateStripMetrics.LABEL_SP * 0.6f)
     }
 
     @Test
@@ -81,7 +78,7 @@ class TodayWidgetsRenderTest {
         assertNothingClipped(root, allowEllipsis = isHijriDate)
 
         val strip = render(DateStripWidget(), 250, 40)
-        assertTrue(widgetTexts(strip).any { it.text.toString() == "Next:" })
+        assertTrue(widgetTexts(strip).any { it.text.toString() == "Next" })
         assertNothingClipped(strip, allowEllipsis = isHijriDate)
     }
 }

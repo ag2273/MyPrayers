@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Next Prayer alert chip on the deep surface: a translucent light pill. Not tinted, since a tint drops its alpha. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_deep_track" />
+    <corners android:radius="10dp" />
+</shape>

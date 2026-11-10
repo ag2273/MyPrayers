@@ -20,6 +20,8 @@ import app.mawaqeet.core.PrayerWeek
 data class TodayLogContent(
     val date: WidgetDate,
     val rows: List<Row>,
+    /** The Prayer Day the rows are of, which a tap on a column marks. */
+    val logDate: java.time.LocalDate = java.time.LocalDate.MIN,
 ) {
     /** How many of the five are marked prayed. */
     val prayedCount: Int get() = rows.count { it.state == LogState.PRAYED }
@@ -48,6 +50,7 @@ data class TodayLogContent(
                         isNext = nextToday && prayerTime == day.next,
                     )
                 },
+                logDate = log.date,
             )
         }
     }
@@ -65,21 +68,35 @@ data class WeekLogContent(
     val prayed: String,
     /** Out of how many, e.g. `٣٢`. */
     val possible: String,
+    /** The seven Prayer Days, oldest first; the last is today. */
+    val days: List<java.time.LocalDate> = emptyList(),
+    /** Prayed out of possible, 0–1, for the 4×3's thin bar. */
+    val share: Float = 0f,
 ) {
     enum class Cell { PRAYED, NOT_MARKED, NOT_YET_DUE, BEFORE_FIRST_USE }
 
     /** Rows are labelled Dhuhr every day: the grid spans a week, so Friday's Jumu'ah keeps Dhuhr's row. */
-    data class Row(val prayer: Prayer, @param:StringRes val nameRes: Int, val cells: List<Cell>)
+    data class Row(
+        val prayer: Prayer,
+        @param:StringRes val nameRes: Int,
+        val cells: List<Cell>,
+        /** This Prayer's count over the week, as the summary counts it. */
+        val prayed: Int = 0,
+        val possible: Int = 0,
+    )
 
     companion object {
         fun of(week: PrayerWeek, formatter: DisplayFormatter): WeekLogContent {
             val total = week.summary.total
             return WeekLogContent(
                 rows = Prayer.entries.map { prayer ->
-                    Row(prayer, prayerNameRes(prayer), week.days.map { day -> cellOf(week, day, prayer) })
+                    val count = week.summary.of(prayer)
+                    Row(prayer, prayerNameRes(prayer), week.days.map { day -> cellOf(week, day, prayer) }, count.prayed, count.possible)
                 },
                 prayed = formatter.number(total.prayed),
                 possible = formatter.number(total.possible),
+                days = week.days.map { it.date },
+                share = if (total.possible == 0) 0f else total.prayed.toFloat() / total.possible,
             )
         }
 

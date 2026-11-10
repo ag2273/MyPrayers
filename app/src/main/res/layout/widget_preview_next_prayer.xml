@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:backgroundTint="@color/widget_background"
+    android:backgroundTint="@color/widget_deep_background"
     android:gravity="center_vertical|start"
     android:orientation="vertical"
     android:paddingHorizontal="18dp"
@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:maxLines="1"
         android:text="@string/widget_next_prayer"
-        android:textColor="@color/widget_text_muted"
+        android:textColor="@color/widget_deep_muted"
         android:textSize="12sp"
         android:textStyle="bold" />
 
@@ -33,7 +33,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/prayer_asr"
-            android:textColor="@color/widget_text"
+            android:textColor="@color/widget_deep_text"
             android:textSize="30sp"
             android:textStyle="bold" />
 
@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:maxLines="1"
             android:text="@string/widget_preview_asr_time"
-            android:textColor="@color/widget_text"
+            android:textColor="@color/widget_deep_text"
             android:textSize="26sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -52,7 +52,7 @@
         android:layout_height="wrap_content"
         android:maxLines="1"
         android:text="@string/widget_preview_countdown"
-        android:textColor="@color/widget_accent"
+        android:textColor="@color/widget_deep_gold"
         android:textSize="16sp"
         android:textStyle="bold" />
 </LinearLayout>

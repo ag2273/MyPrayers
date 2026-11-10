@@ -191,8 +191,8 @@
     <!-- Widgets (#27). -->
     <string name="widget_next_prayer">Next Prayer</string>
     <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
-    <string name="widget_next_prayer_compact">Next Prayer (compact)</string>
-    <string name="widget_next_prayer_compact_description">The next Prayer, its time and the countdown in one cell</string>
+    <string name="widget_next_prayer_compact">Next Prayer (ring)</string>
+    <string name="widget_next_prayer_compact_description">A ring that fills up to the next prayer, with the countdown, in one cell</string>
     <string name="widget_countdown_format">in %s</string>
     <string name="widget_today_times">Today\'s Prayer Times</string>
     <string name="widget_today_times_description">Today\'s five Prayer Times, with the next Prayer highlighted</string>
@@ -211,7 +211,7 @@
     <string name="widget_transparency_value">%1$s%%</string>
     <string name="widget_colors">Colours</string>
     <string name="widget_colors_wallpaper">Wallpaper colours</string>
-    <string name="widget_colors_wallpaper_description">Follow your wallpaper\'s colours (Android 12 and later).</string>
+    <string name="widget_colors_wallpaper_description">Follow your wallpaper\'s colours (Android 12 and later). Next Prayer keeps its deep colours.</string>
     <string name="widget_colors_app">App colours</string>
     <string name="widget_colors_app_description">Mawaqeet\'s own colours.</string>
     <string name="widget_state_not_marked">Not marked</string>
@@ -348,4 +348,18 @@
     <string name="hijri_offset_days">%1$s days</string>
     <string name="privacy_title">Your data stays on your phone</string>
     <string name="privacy_body">No account, servers or ads. Your Prayer Log and location are never copied to cloud backup; they move only with a direct transfer to a new phone.</string>
+    <!-- Widget design board (2026-11-10). -->
+    <string name="widget_tomorrow">tomorrow</string>
+    <string name="widget_next_short">Next</string>
+    <string name="widget_chip_silent">Silent</string>
+    <string name="widget_chip_off">No adhan</string>
+    <string name="widget_today_log_header">Today\'s log</string>
+    <string name="widget_today_log_done">All five prayed</string>
+    <string name="widget_today_log_hint">Tap a circle after praying to log it</string>
+    <string name="widget_today_log_done_hint">May Allah accept it</string>
+    <string name="widget_legend_prayed">Prayed</string>
+    <string name="widget_legend_missed">Missed</string>
+    <string name="widget_legend_not_yet">Not yet</string>
+    <string name="widget_mark_hint">%1$s: %2$s. Tap to log</string>
+    <string name="widget_unmark_hint">%1$s: %2$s. Tap to undo</string>
 </resources>

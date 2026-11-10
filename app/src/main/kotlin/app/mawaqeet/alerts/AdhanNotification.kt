@@ -43,7 +43,7 @@ data class AdhanNotification(
         ensureChannels(context)
         val name = context.getString(if (isJumuah) R.string.prayer_jumuah else prayer.nameRes)
         val builder = NotificationCompat.Builder(context, channel)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // Placeholder until the app icon (#33).
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(AlertScheduler.openAppIntent(context))
             .setAutoCancel(true)
         return if (kind == AlertKind.PRAYER_REMINDER) {

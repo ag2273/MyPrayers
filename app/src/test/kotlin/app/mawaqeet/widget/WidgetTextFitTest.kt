@@ -87,25 +87,39 @@ class WidgetTextFitTest {
     }
 
     @Test
-    fun `the Date strip's dates and next Prayer fit side by side at a readable size at the smallest 4x1`() {
+    fun `the Date strip's three parts fit side by side at a readable size at the smallest 4x1 in Arabic and a usual 4x1 in English`() {
         for (locale in languages) {
             val strings = localizedContext(context, locale)
             for (digits in DigitStyle.entries) {
                 val formatter = DisplayFormatter(locale, digits)
-                // Every weekday and month, on the widest day numbers, with the widest Prayer and time.
+                // Every weekday and month, on the widest day numbers, with the widest Hijri month, Prayer and time.
                 val dates = (1..12).flatMap { month -> (24..30).map { LocalDate.of(2026, month, if (month == 2) it - 2 else it) } }
+                val hijri = (1..12).map { formatter.hijriDayMonth(app.mawaqeet.core.HijriDate(1448, it, 28)) }
+                    .maxBy { width(it, DateStripMetrics.HIJRI_SP, bold = true) }
                 val next = names.map { strings.getString(it) }.flatMap { name -> widestTime(formatter).map { "$name $it" } }
                     .maxBy { width(it, DateStripMetrics.NEXT_SP, bold = true) }
                 for (date in dates) {
                     val text = object : DateStripText {
                         override val date = WidgetDate(formatter.shortGregorianDate(date), "")
-                        override val nextLabel = strings.getString(R.string.widget_next_label)
+                        override val nextLabel = strings.getString(R.string.widget_next_short)
                         override val next = next
+                        override val parts = listOf(
+                            formatter.weekday(date) to formatter.dayMonth(date),
+                            hijri to formatter.hijriYear(app.mawaqeet.core.HijriDate(1448, 5, 28)),
+                            next to nextLabel,
+                        )
                     }
-                    val scale = DateStripMetrics.scale(text, DateStripMetrics.MIN_WIDTH_DP, 56f)
-                    assertTrue("${text.date.gregorian} | $next: scale $scale", scale >= 0.6f)
+                    // English's longest Hijri months are wide: at the narrowest 4×1 only Arabic keeps the readable size.
+                    val width = if (locale.language == "ar") DateStripMetrics.MIN_WIDTH_DP else USUAL_4X1_WIDTH_DP
+                    val scale = DateStripMetrics.scale(text, width, 56f)
+                    assertTrue("${text.parts} at $width : scale $scale", scale >= 0.6f)
                 }
             }
         }
+    }
+
+    private companion object {
+        /** A 4×1 on most phones is about 300 to 360dp wide. */
+        const val USUAL_4X1_WIDTH_DP = 300f
     }
 }

@@ -12,12 +12,12 @@ class WidgetStyleTest {
     private val android11 = 30
 
     @Test
-    fun `by default widgets are solid, with wallpaper colours on Android 12 and later`() {
+    fun `by default widgets are solid, in the design's own colours`() {
         val style = WidgetStyle.of(WidgetAppearance(), android12)
 
         assertEquals(255, style.backgroundAlpha)
-        assertEquals(R.color.widget_dyn_background, style.background)
-        assertEquals(R.color.widget_dyn_text, style.text)
+        assertEquals(R.color.widget_background, style.background)
+        assertEquals(R.color.widget_text, style.text)
         assertFalse(style.shadowedText)
         assertTrue(style.responsive)
     }
@@ -64,5 +64,13 @@ class WidgetStyleTest {
     fun `transparency comes in steps of 10 between 0 and 100`() {
         assertThrows(IllegalArgumentException::class.java) { WidgetAppearance(35) }
         assertThrows(IllegalArgumentException::class.java) { WidgetAppearance(110) }
+    }
+
+    @Test
+    fun `Next Prayer's deep surface keeps the design's teal and gold, even with wallpaper colours chosen`() {
+        val style = WidgetStyle.of(WidgetAppearance(colors = WidgetColors.WALLPAPER), android12, deep = true)
+
+        assertEquals(R.color.widget_deep_background, style.background)
+        assertEquals(R.color.widget_deep_gold, style.accent)
     }
 }

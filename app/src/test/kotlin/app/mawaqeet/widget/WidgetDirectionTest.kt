@@ -64,11 +64,10 @@ class WidgetDirectionTest {
         assertTrue("${(a as? TextView)?.text} at ${a.screenLeft()} should be right of ${(b as? TextView)?.text} at ${b.screenLeft()}", a.screenLeft() > b.screenLeft())
 
     @Test
-    fun `Today's Prayer Times puts Fajr on the right and Isha on the left, and its title before the date`() {
+    fun `Today's Prayer Times puts Fajr on the right and Isha on the left, and the date on the right`() {
         val root = render(TodayTimesWidget(), 250, 110)
         assertReadsBefore(root.textView("الفجر"), root.textView("العشاء"))
-        assertReadsBefore(root.textView("مواقيت اليوم"), hijri(root))
-        assertTrue("title on the right", root.textView("مواقيت اليوم").drawnRight() > root.width * 0.75f)
+        assertTrue("date on the right", gregorian(root).drawnRight() > root.width * 0.75f)
     }
 
     @Test
@@ -76,7 +75,7 @@ class WidgetDirectionTest {
         val root = render(TodayLogWidget(), 250, 150)
         assertReadsBefore(root.textView("الفجر"), root.textView("العشاء"))
         assertTrue("Fajr's column on the right", root.textView("الفجر").screenLeft() > root.width * 0.75f)
-        assertTrue("title on the right", root.textView("اليوم وسجل الصلاة").drawnRight() > root.width * 0.75f)
+        assertTrue("title on the right", root.textView("سجل اليوم").drawnRight() > root.width * 0.75f)
     }
 
     @Test
@@ -90,7 +89,7 @@ class WidgetDirectionTest {
 
     @Test
     fun `Next Prayer starts on the right, with its countdown`() {
-        for (height in listOf(160, 60)) {
+        for (height in listOf(160, 110)) {
             val root = render(NextPrayerWidget(), 160, height)
             val countdown = widgetTexts(root).single { it.id == app.mawaqeet.R.id.countdown }
             assertTrue("countdown shown at height $height", countdown.height > 0)
@@ -113,8 +112,9 @@ class WidgetDirectionTest {
     fun `Date strip puts the dates on the right and the next Prayer on the left`() {
         val root = render(DateStripWidget(), 300, 60)
         assertTrue(gregorian(root).drawnRight() > root.width * 0.75f)
-        assertTrue(hijri(root).drawnRight() > root.width * 0.75f)
-        assertReadsBefore(gregorian(root), root.textView("القادمة:"))
-        assertReadsBefore(root.textView("القادمة:"), widgetTexts(root).first { t -> names.any { t.text.startsWith("$it ") } })
+        // Three parts in reading order: the Gregorian date, the Hijri date, the next Prayer.
+        assertReadsBefore(gregorian(root), hijri(root))
+        assertReadsBefore(hijri(root), root.textView("القادمة"))
+        assertReadsBefore(root.textView("القادمة"), widgetTexts(root).first { t -> names.any { t.text.startsWith("$it ") } })
     }
 }

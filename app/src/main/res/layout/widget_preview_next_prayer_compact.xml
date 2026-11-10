@@ -1,55 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget picker preview of Next Prayer, compact (1×1). Sample content only; the widget itself is drawn by Glance.
-     Each line shrinks to the preview's width, so a small picker tile doesn't clip the time or countdown. -->
+<!-- Widget picker preview of Next Prayer's ring (1×1). Sample content only; the widget itself is drawn by Glance.
+     The countdown shrinks to the preview's width, so a small picker tile doesn't clip it. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:backgroundTint="@color/widget_background"
-    android:gravity="center_vertical|start"
+    android:backgroundTint="@color/widget_deep_background"
+    android:gravity="center"
     android:orientation="vertical"
-    android:paddingHorizontal="6dp"
-    android:paddingVertical="6dp">
+    android:padding="6dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/widget_ring_thin"
+            android:tint="@color/widget_deep_gold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:autoSizeMaxTextSize="13sp"
+            android:autoSizeMinTextSize="6sp"
+            android:autoSizeTextType="uniform"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingHorizontal="8dp"
+            android:text="@string/prayer_asr"
+            android:textColor="@color/widget_deep_text"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </FrameLayout>
 
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="22"
-        android:autoSizeMaxTextSize="22sp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:autoSizeMaxTextSize="11sp"
         android:autoSizeMinTextSize="6sp"
         android:autoSizeTextType="uniform"
-        android:gravity="center_vertical|start"
-        android:maxLines="1"
-        android:text="@string/prayer_asr"
-        android:textColor="@color/widget_text"
-        android:textSize="22sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="18"
-        android:autoSizeMaxTextSize="18sp"
-        android:autoSizeMinTextSize="6sp"
-        android:autoSizeTextType="uniform"
-        android:gravity="center_vertical|start"
-        android:maxLines="1"
-        android:text="@string/widget_preview_asr_time"
-        android:textColor="@color/widget_text"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="13"
-        android:autoSizeMaxTextSize="13sp"
-        android:autoSizeMinTextSize="6sp"
-        android:autoSizeTextType="uniform"
-        android:gravity="center_vertical|start"
+        android:gravity="center"
         android:maxLines="1"
         android:text="@string/widget_preview_countdown"
-        android:textColor="@color/widget_accent"
-        android:textSize="13sp"
+        android:textColor="@color/widget_deep_gold"
+        android:textSize="11sp"
         android:textStyle="bold" />
 </LinearLayout>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Prayer Log mark: not yet due, a dashed ring. Tinted per use; drawn at the layout's size. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="@android:color/transparent" />
+    <size android:width="24dp" android:height="24dp" />
+    <stroke android:width="1.5dp" android:color="@android:color/white" android:dashWidth="3dp" android:dashGap="2.5dp" />
+</shape>

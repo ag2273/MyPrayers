@@ -11,7 +11,7 @@ enum class WidgetColors { WALLPAPER, APP }
  * Settings → Widgets (#32), shared by every Widget Variant: one background [transparency] (0–100%, in steps of 10,
  * default solid) and the [colors] choice.
  */
-data class WidgetAppearance(val transparency: Int = 0, val colors: WidgetColors = WidgetColors.WALLPAPER) {
+data class WidgetAppearance(val transparency: Int = 0, val colors: WidgetColors = WidgetColors.APP) {
     init {
         require(transparency in TRANSPARENCY_RANGE && transparency % TRANSPARENCY_STEP == 0) { "transparency $transparency" }
     }
@@ -27,7 +27,9 @@ data class WidgetAppearance(val transparency: Int = 0, val colors: WidgetColors 
 
 /**
  * How a widget is drawn under a [WidgetAppearance] on this Android version: its colour resources (day and night
- * variants each), the background's opacity, and whether text carries a shadow.
+ * variants each), the background's opacity, and whether text carries a shadow. Most widgets are light; the Next Prayer
+ * widget draws on the deep surface ([deep]): deep teal with light text and a gold countdown (widget design board,
+ * 2026-11-10). In a deep style [accent] is the gold and [accentSoft] the progress track.
  */
 data class WidgetStyle(
     @param:ColorRes val background: Int,
@@ -43,12 +45,38 @@ data class WidgetStyle(
     val shadowedText: Boolean,
     /** Android 12+ only: widgets adapt across size steps; below it they keep one layout at the default size. */
     val responsive: Boolean,
+    /** Text on the next Prayer's soft fill ([accentSoft]). */
+    @param:ColorRes val onAccentSoft: Int = text,
+    /** Hairline dividers (the Date strip). */
+    @param:ColorRes val divider: Int = faint,
+    /** Today's column in the week grid. */
+    @param:ColorRes val band: Int = accentSoft,
+    /** The ring of a Prayer whose time has come and that isn't marked. */
+    @param:ColorRes val ringMuted: Int = muted,
+    val deep: Boolean = false,
 ) {
     companion object {
-        fun of(appearance: WidgetAppearance, sdk: Int = Build.VERSION.SDK_INT): WidgetStyle {
+        fun of(appearance: WidgetAppearance, sdk: Int = Build.VERSION.SDK_INT, deep: Boolean = false): WidgetStyle {
             val modern = sdk >= Build.VERSION_CODES.S
             val wallpaper = modern && appearance.colors == WidgetColors.WALLPAPER
             val light = appearance.transparency >= WidgetAppearance.LIGHT_TEXT_FROM
+            val alpha = ((100 - appearance.transparency) * 255 + 50) / 100
+            if (deep) {
+                // The deep surface keeps the design's teal and gold whatever the colours choice.
+                return WidgetStyle(
+                    background = R.color.widget_deep_background,
+                    text = if (light) R.color.widget_over_text else R.color.widget_deep_text,
+                    muted = if (light) R.color.widget_over_muted else R.color.widget_deep_muted,
+                    accent = if (light) R.color.widget_over_gold else R.color.widget_deep_gold,
+                    onAccent = R.color.widget_deep_background,
+                    accentSoft = if (light) R.color.widget_over_faint else R.color.widget_deep_track,
+                    faint = if (light) R.color.widget_over_faint else R.color.widget_deep_track,
+                    backgroundAlpha = alpha,
+                    shadowedText = light,
+                    responsive = modern,
+                    deep = true,
+                )
+            }
             return WidgetStyle(
                 background = if (wallpaper) R.color.widget_dyn_background else R.color.widget_background,
                 text = when {
@@ -77,9 +105,29 @@ data class WidgetStyle(
                     else -> R.color.widget_accent_soft
                 },
                 faint = if (light) R.color.widget_over_faint else R.color.widget_dot_upcoming,
-                backgroundAlpha = ((100 - appearance.transparency) * 255 + 50) / 100,
+                backgroundAlpha = alpha,
                 shadowedText = light,
                 responsive = modern,
+                onAccentSoft = when {
+                    light -> R.color.widget_over_text
+                    wallpaper -> R.color.widget_dyn_on_accent_soft
+                    else -> R.color.widget_on_accent_soft
+                },
+                divider = when {
+                    light -> R.color.widget_over_faint
+                    wallpaper -> R.color.widget_dyn_divider
+                    else -> R.color.widget_divider
+                },
+                band = when {
+                    light -> R.color.widget_over_accent_soft
+                    wallpaper -> R.color.widget_dyn_band
+                    else -> R.color.widget_band
+                },
+                ringMuted = when {
+                    light -> R.color.widget_over_muted
+                    wallpaper -> R.color.widget_dyn_muted
+                    else -> R.color.widget_ring_muted
+                },
             )
         }
     }
