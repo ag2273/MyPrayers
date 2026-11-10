@@ -62,6 +62,8 @@ data class PlannedAlert(
      */
     val playOnSilent: Boolean = false,
     val vibration: Boolean = true,
+    /** [AlertSettings.adhanVolume], carried for the same reason: the stream the adhan player uses. */
+    val adhanVolume: AdhanVolume = AdhanVolume.ALARM,
 )
 
 /**

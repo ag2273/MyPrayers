@@ -25,6 +25,7 @@ class AlertSettingsTest {
         assertEquals(false, defaults.alarmClockMode)
         assertEquals(false, defaults.playOnSilent)
         assertEquals(true, defaults.vibration)
+        assertEquals(AdhanVolume.ALARM, defaults.adhanVolume)
         assertEquals(defaults, PrayerSettings.Default.alerts)
     }
 

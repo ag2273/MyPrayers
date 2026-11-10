@@ -2,7 +2,7 @@ package app.mawaqeet.alerts
 
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
+import app.mawaqeet.core.AdhanVolume
 import android.media.MediaPlayer
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -58,8 +58,8 @@ object CustomAdhanFiles {
 }
 
 /**
- * Plays an adhan once from Settings so the user can hear their choice: on the alarm stream at the alarm volume,
- * like a real Adhan Alert. One at a time; call [stop] when the screen leaves.
+ * Plays an adhan once from Settings so the user can hear their choice: on the stream the Adhan Alert uses
+ * ([AdhanVolume]), at that stream's volume, like a real Adhan Alert. One at a time; call [stop] when the screen leaves.
  */
 class AdhanPreview(private val context: Context) {
     private var player: MediaPlayer? = null
@@ -67,17 +67,12 @@ class AdhanPreview(private val context: Context) {
     val isPlaying: Boolean get() = player != null
 
     /** Starts [uri], replacing any preview still playing; [onEnd] runs when it finishes or fails. */
-    fun play(uri: Uri, onEnd: () -> Unit) {
+    fun play(uri: Uri, volume: AdhanVolume, onEnd: () -> Unit) {
         stop()
         val mp = MediaPlayer()
         player = mp
         try {
-            mp.setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build(),
-            )
+            mp.setAudioAttributes(AdhanSounds.attributes(volume))
             mp.setDataSource(context, uri)
         } catch (e: Exception) {
             Log.w("AdhanPreview", "Can't open $uri", e)

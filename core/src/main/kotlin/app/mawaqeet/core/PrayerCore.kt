@@ -127,6 +127,7 @@ class PrayerCore(
             prayerTime = at,
             playOnSilent = alerts.playOnSilent,
             vibration = alerts.vibration,
+            adhanVolume = alerts.adhanVolume,
         )
         val reminder = if (prayer.reminder) {
             // Always an exact alarm: in alarm-clock mode the lock screen shows the Prayer, not the reminder before it.

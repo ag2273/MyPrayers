@@ -12,8 +12,8 @@ data class DeviceAudio(val ringer: RingerMode, val inCall: Boolean)
  * What an alert actually does on the phone right now: which sound to [play] (null = none) and whether to [vibrate].
  * The notification is always posted; this only decides sound and vibration.
  *
- * The adhan plays on the alarm stream, which Android does not mute in silent or vibrate mode, so the ringer is
- * respected here rather than by the OS.
+ * The adhan plays on the alarm or media stream ([AdhanVolume]), which Android does not mute in silent or vibrate mode,
+ * so the ringer is respected here rather than by the OS.
  */
 data class AlertPlayback(val play: AlertSound?, val vibrate: Boolean) {
     companion object {

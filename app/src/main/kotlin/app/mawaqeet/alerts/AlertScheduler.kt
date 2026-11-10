@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import app.mawaqeet.MainActivity
+import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.AlertSound
@@ -94,6 +95,7 @@ class AlertScheduler(context: Context) {
         .putExtra(AlertReceiver.EXTRA_PRAYER_TIME, alert.prayerTime.toEpochMilli())
         .putExtra(AlertReceiver.EXTRA_PLAY_ON_SILENT, alert.playOnSilent)
         .putExtra(AlertReceiver.EXTRA_VIBRATION, alert.vibration)
+        .putExtra(AlertReceiver.EXTRA_ADHAN_VOLUME, alert.adhanVolume.name)
         .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, alert.prayerDay.toString())
         .putExtra(AlertReceiver.EXTRA_FULL_SCREEN, alert.deliveryMode == DeliveryMode.ALARM_CLOCK)
 
@@ -102,7 +104,14 @@ class AlertScheduler(context: Context) {
      * current mode (in alarm-clock mode as an alarm, so the status bar's alarm icon and the lock-screen alarm show),
      * with nothing to mark. Returns false when exact alarms aren't allowed.
      */
-    fun scheduleTest(prayer: Prayer, isJumuah: Boolean, alarmClockMode: Boolean, sound: AlertSound, delaySeconds: Long = 10): Boolean {
+    fun scheduleTest(
+        prayer: Prayer,
+        isJumuah: Boolean,
+        alarmClockMode: Boolean,
+        sound: AlertSound,
+        adhanVolume: AdhanVolume = AdhanVolume.ALARM,
+        delaySeconds: Long = 10,
+    ): Boolean {
         if (!canScheduleExact(alarmManager)) return false
         val at = System.currentTimeMillis() + delaySeconds * 1000
         val intent = Intent(context, AlertReceiver::class.java)
@@ -116,6 +125,7 @@ class AlertScheduler(context: Context) {
             .putExtra(AlertReceiver.EXTRA_PRAYER_TIME, at)
             .putExtra(AlertReceiver.EXTRA_PLAY_ON_SILENT, false)
             .putExtra(AlertReceiver.EXTRA_VIBRATION, true)
+            .putExtra(AlertReceiver.EXTRA_ADHAN_VOLUME, adhanVolume.name)
             .putExtra(AlertReceiver.EXTRA_FULL_SCREEN, alarmClockMode)
         val operation = PendingIntent.getBroadcast(context, TEST_REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         if (alarmClockMode) {

@@ -8,6 +8,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
@@ -51,6 +52,7 @@ class AlertReceiverTest {
         kind: AlertKind = AlertKind.ADHAN_ALERT,
         playOnSilent: Boolean = false,
         vibration: Boolean = true,
+        adhanVolume: AdhanVolume = AdhanVolume.ALARM,
         prayer: Prayer = Prayer.ASR,
         prayerDay: LocalDate = LocalDate.parse("2026-11-08"),
     ): PlannedAlert {
@@ -66,6 +68,7 @@ class AlertReceiverTest {
             prayerTime = if (kind == AlertKind.PRAYER_REMINDER) now.plusSeconds(15 * 60) else now,
             playOnSilent = playOnSilent,
             vibration = vibration,
+            adhanVolume = adhanVolume,
         )
     }
 
@@ -86,6 +89,18 @@ class AlertReceiverTest {
         val started = app.nextStartedService
         assertEquals(AdhanPlayerService::class.java.name, started.component?.className)
         assertEquals("FULL_ADHAN", started.getStringExtra(AlertReceiver.EXTRA_SOUND))
+    }
+
+    @Test
+    fun `the adhan player gets the alert's volume choice, the alarm volume unless media was chosen`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        fire(alert(AlertSound.ShortAdhan))
+        assertEquals("ALARM", app.nextStartedService.getStringExtra(AlertReceiver.EXTRA_ADHAN_VOLUME))
+
+        fire(alert(AlertSound.ShortAdhan, adhanVolume = AdhanVolume.MEDIA))
+        val started = app.nextStartedService
+        assertEquals("MEDIA", started.getStringExtra(AlertReceiver.EXTRA_ADHAN_VOLUME))
+        assertEquals(AdhanVolume.MEDIA, AlertReceiver.adhanVolume(started))
     }
 
     @Test

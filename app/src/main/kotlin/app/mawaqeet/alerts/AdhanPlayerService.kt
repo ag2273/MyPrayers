@@ -16,13 +16,14 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import app.mawaqeet.R
+import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 
 /**
  * The adhan player: a `mediaPlayback` foreground service started by [AlertOutput] when the core says an Adhan
- * Alert should sound. It plays on the alarm stream (so it follows the alarm volume, and works under Android 17's
- * background-audio hardening with the exact-alarm permission), fades in over [FADE_IN_MS], holds transient audio
+ * Alert should sound. It plays on the alarm stream (following the alarm volume) or, when the user chose it, the media
+ * stream (following the media volume) — see [AdhanVolume] — fades in over [FADE_IN_MS], holds transient audio
  * focus so other media pauses and resumes, and shows the Adhan Alert notification with Stop.
  *
  * All decisions (silent mode, calls, lateness) are made before it starts, in the core.
@@ -32,6 +33,7 @@ class AdhanPlayerService : Service() {
     private var player: MediaPlayer? = null
     private var focus: AudioFocusRequest? = null
     private var notification: AdhanNotification? = null
+    private var attributes: AudioAttributes = AdhanSounds.attributes(AdhanVolume.ALARM)
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -54,6 +56,7 @@ class AdhanPlayerService : Service() {
             fullScreen = intent.getBooleanExtra(AlertReceiver.EXTRA_FULL_SCREEN, false),
         )
         stopPlayback() // A new alert replaces one still playing.
+        attributes = AdhanSounds.attributes(AlertReceiver.adhanVolume(intent))
         notification?.let { if (it.id != next.id) it.post(this) }
         notification = next
         playingId = next.id
@@ -71,7 +74,7 @@ class AdhanPlayerService : Service() {
     private fun play(sound: AlertSound) {
         val audio = getSystemService(AudioManager::class.java)
         val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-            .setAudioAttributes(ATTRIBUTES)
+            .setAudioAttributes(attributes)
             .setOnAudioFocusChangeListener { change -> if (change == AudioManager.AUDIOFOCUS_LOSS) finish() }
             .build()
         focus = focusRequest
@@ -89,7 +92,7 @@ class AdhanPlayerService : Service() {
         val canFallBack = source != fallback
         val mp = MediaPlayer()
         player = mp
-        mp.setAudioAttributes(ATTRIBUTES)
+        mp.setAudioAttributes(attributes)
         try {
             mp.setDataSource(this, source)
         } catch (e: Exception) {
@@ -122,7 +125,7 @@ class AdhanPlayerService : Service() {
         mp.prepareAsync()
     }
 
-    /** Raises the player's volume (relative to the alarm volume) from 0 to 1 over [FADE_IN_MS]. */
+    /** Raises the player's volume (relative to the chosen stream's volume) from 0 to 1 over [FADE_IN_MS]. */
     private fun fadeIn(mp: MediaPlayer, start: Long) {
         val fraction = ((System.currentTimeMillis() - start).toFloat() / FADE_IN_MS).coerceIn(0f, 1f)
         if (player !== mp) return
@@ -166,12 +169,7 @@ class AdhanPlayerService : Service() {
         var playingId: Int? = null
             private set
 
-        private val ATTRIBUTES: AudioAttributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ALARM)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build()
-
-        fun playIntent(context: Context, n: AdhanNotification, sound: AlertSound): Intent =
+        fun playIntent(context: Context, n: AdhanNotification, sound: AlertSound, volume: AdhanVolume = AdhanVolume.ALARM): Intent =
             Intent(context, AdhanPlayerService::class.java)
                 .setAction(ACTION_PLAY)
                 .putExtra(AlertReceiver.EXTRA_PRAYER, n.prayer.name)
@@ -180,6 +178,7 @@ class AdhanPlayerService : Service() {
                 .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(sound))
                 .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, n.prayerDay?.toString())
                 .putExtra(AlertReceiver.EXTRA_FULL_SCREEN, n.fullScreen)
+                .putExtra(AlertReceiver.EXTRA_ADHAN_VOLUME, volume.name)
 
         fun stopIntent(context: Context): PendingIntent = PendingIntent.getService(
             context,

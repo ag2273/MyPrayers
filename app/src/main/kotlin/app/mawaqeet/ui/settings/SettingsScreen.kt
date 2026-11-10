@@ -130,6 +130,9 @@ interface SettingsActions {
     fun setPlayOnSilent(on: Boolean)
     fun setVibration(on: Boolean)
 
+    /** Settings → Alerts → Adhan volume: the adhan follows the alarm volume or the media volume. */
+    fun setAdhanVolume(volume: app.mawaqeet.core.AdhanVolume)
+
     /**
      * Custom Adhan (#28): [uri] is the file the user picked with the system file picker for [recording] only, or null
      * to go back to the bundled recording.
