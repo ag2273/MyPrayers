@@ -226,6 +226,10 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setWidgetColors(colors) }
                             }
 
+                            override fun setWidgetNextPrayerLook(on: Boolean) {
+                                scope.launch { settingsStore.setWidgetNextPrayerLook(on) }
+                            }
+
                             override fun setDigitStyle(style: DigitStyle) {
                                 scope.launch { settingsStore.setDigitStyle(style) }
                             }

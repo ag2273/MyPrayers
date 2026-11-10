@@ -9,9 +9,14 @@ enum class WidgetColors { WALLPAPER, APP }
 
 /**
  * Settings → Widgets (#32), shared by every Widget Variant: one background [transparency] (0–100%, in steps of 10,
- * default solid) and the [colors] choice.
+ * default solid), the [colors] choice, and [nextPrayerLook]: every widget on the Next Prayer's deep surface, with its
+ * star (off by default, when only the Next Prayer is deep).
  */
-data class WidgetAppearance(val transparency: Int = 0, val colors: WidgetColors = WidgetColors.APP) {
+data class WidgetAppearance(
+    val transparency: Int = 0,
+    val colors: WidgetColors = WidgetColors.APP,
+    val nextPrayerLook: Boolean = false,
+) {
     init {
         require(transparency in TRANSPARENCY_RANGE && transparency % TRANSPARENCY_STEP == 0) { "transparency $transparency" }
     }
@@ -53,7 +58,14 @@ data class WidgetStyle(
     @param:ColorRes val band: Int = accentSoft,
     /** The ring of a Prayer whose time has come and that isn't marked. */
     @param:ColorRes val ringMuted: Int = muted,
+    /** The next Prayer's cell in Today times: a background tint, so it must be opaque. */
+    @param:ColorRes val cellFill: Int = accentSoft,
     val deep: Boolean = false,
+    /**
+     * A widget that is deep only because of [WidgetAppearance.nextPrayerLook]: [WidgetFrame] draws the Next Prayer's
+     * star behind it. The Next Prayer widgets draw their own.
+     */
+    val star: Boolean = false,
 ) {
     companion object {
         fun of(appearance: WidgetAppearance, sdk: Int = Build.VERSION.SDK_INT, deep: Boolean = false): WidgetStyle {
@@ -61,8 +73,10 @@ data class WidgetStyle(
             val wallpaper = modern && appearance.colors == WidgetColors.WALLPAPER
             val light = appearance.transparency >= WidgetAppearance.LIGHT_TEXT_FROM
             val alpha = ((100 - appearance.transparency) * 255 + 50) / 100
-            if (deep) {
-                // The deep surface keeps the design's teal and gold whatever the colours choice.
+            if (deep || appearance.nextPrayerLook) {
+                // The deep surface keeps the design's teal and gold whatever the colours choice. A Glance background
+                // tint draws opaque, so the filled cell and the week's today band get their own solid fill.
+                val fill = if (light) R.color.widget_over_accent_soft else R.color.widget_deep_fill
                 return WidgetStyle(
                     background = R.color.widget_deep_background,
                     text = if (light) R.color.widget_over_text else R.color.widget_deep_text,
@@ -74,7 +88,10 @@ data class WidgetStyle(
                     backgroundAlpha = alpha,
                     shadowedText = light,
                     responsive = modern,
+                    band = fill,
+                    cellFill = fill,
                     deep = true,
+                    star = !deep,
                 )
             }
             return WidgetStyle(

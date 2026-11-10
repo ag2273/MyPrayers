@@ -226,14 +226,29 @@ internal fun WidgetFrame(
                 content()
             }
         }
-        if (decoration == null) {
+        val behind = decoration ?: if (style.star) ({ BorrowedStar(rtl) }) else null
+        if (behind == null) {
             column()
         } else {
             Box(GlanceModifier.fillMaxSize()) {
-                decoration()
+                behind()
                 column()
             }
         }
+    }
+}
+
+/**
+ * The Next Prayer 4×2's star, at the top end, for a widget that wears the Next Prayer look
+ * ([WidgetAppearance.nextPrayerLook]): the same drawing, scaled to the widget's height.
+ */
+@Composable
+private fun BorrowedStar(rtl: Boolean) {
+    val context = LocalContext.current
+    val height = LocalSize.current.height.value.takeIf { it > 0f } ?: 110f
+    val k = (height / 110f).coerceIn(0.4f, 1.7f)
+    Box(GlanceModifier.fillMaxSize(), contentAlignment = LocalWidgetDirection.current.topEnd) {
+        WidgetDrawing(WidgetArt.star(context, 150f * k, 120f * k, 210f * k, 41f * k, 35f * k, rtl, context.colorOf(R.color.widget_deep_star)), 150f * k, 120f * k)
     }
 }
 

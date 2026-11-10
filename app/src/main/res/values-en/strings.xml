@@ -212,6 +212,8 @@
     <string name="widget_transparency">Background transparency</string>
     <string name="widget_transparency_hint">From 60% up, text turns light with a soft shadow so it reads over your wallpaper.</string>
     <string name="widget_transparency_value">%1$s%%</string>
+    <string name="widget_next_prayer_look">All widgets in the Next Prayer look</string>
+    <string name="widget_next_prayer_look_description">The Next Prayer\'s deep background and pattern on every widget. Turn off to give each widget its own look again.</string>
     <string name="widget_colors">Colours</string>
     <string name="widget_colors_wallpaper">Wallpaper colours</string>
     <string name="widget_colors_wallpaper_description">Follow your wallpaper\'s colours (Android 12 and later). Next Prayer keeps its deep colours.</string>

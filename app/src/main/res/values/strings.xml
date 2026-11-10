@@ -230,6 +230,8 @@
     <string name="widget_transparency">شفافية الخلفية</string>
     <string name="widget_transparency_hint">من ٦٠٪ وأكثر يصبح النص فاتحًا بظل خفيف ليُقرأ فوق الخلفية.</string>
     <string name="widget_transparency_value">%1$s٪</string>
+    <string name="widget_next_prayer_look">كل الأدوات بتصميم الصلاة القادمة</string>
+    <string name="widget_next_prayer_look_description">خلفية الصلاة القادمة الداكنة بنقشتها لكل الأدوات. أوقفه لترجع كل أداة لشكلها.</string>
     <string name="widget_colors">الألوان</string>
     <string name="widget_colors_wallpaper">ألوان الخلفية</string>
     <string name="widget_colors_wallpaper_description">تتبع ألوان خلفية الشاشة (أندرويد ١٢ وأحدث). الصلاة القادمة تبقى بألوانها الداكنة.</string>

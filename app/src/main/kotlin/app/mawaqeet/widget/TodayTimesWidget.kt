@@ -312,7 +312,7 @@ private fun RowScope.PrayerCell(column: PrayerColumn, sizes: CellSizes) {
     val style = LocalWidgetStyle.current
     val vertical = (TodayTimesMetrics.CELL_PADDING_V_DP * sizes.scale).dp
     var inner = GlanceModifier.fillMaxWidth().padding(horizontal = TodayTimesMetrics.cellPadding, vertical = vertical)
-    if (column.isNext) inner = inner.background(ImageProvider(R.drawable.widget_cell_next), colorFilter = tint(style.accentSoft))
+    if (column.isNext) inner = inner.background(ImageProvider(R.drawable.widget_cell_next), colorFilter = tint(style.cellFill))
     column.onClick?.let { inner = inner.clickable(it) }
     column.description?.let { text -> inner = inner.semantics { contentDescription = text } }
     val nameTone = if (column.isNext) Tone.ON_SOFT else Tone.MUTED

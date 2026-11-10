@@ -37,6 +37,8 @@
     <color name="widget_deep_muted">#B9CFCB</color>
     <color name="widget_deep_gold">#F2B65E</color>
     <color name="widget_deep_track">#2EF2F6F4</color>
+    <!-- The deep track over the deep background, solid: Glance background tints draw opaque. -->
+    <color name="widget_deep_fill">#2C5D57</color>
     <color name="widget_over_gold">#F7D08F</color>
     <color name="widget_dyn_on_accent_soft">@color/widget_on_accent_soft</color>
     <color name="widget_dyn_divider">@color/widget_divider</color>
