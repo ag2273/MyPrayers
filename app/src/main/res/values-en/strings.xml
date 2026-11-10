@@ -196,7 +196,8 @@
     <string name="widget_next_prayer_description">The next Prayer and its time, with a countdown</string>
     <string name="widget_next_prayer_compact">Next Prayer (ring)</string>
     <string name="widget_next_prayer_compact_description">A ring that fills up to the next prayer, with the countdown, in one cell</string>
-    <string name="widget_countdown_format">in %s</string>
+    <string name="widget_countdown_hours">in %s h</string>
+    <string name="widget_countdown_minutes">in %s min</string>
     <string name="widget_today_times">Today\'s Prayer Times</string>
     <string name="widget_today_times_description">Today\'s five Prayer Times, with the next Prayer highlighted</string>
     <string name="widget_date_strip">Date strip</string>
@@ -212,6 +213,8 @@
     <string name="widget_transparency">Background transparency</string>
     <string name="widget_transparency_hint">From 60% up, text turns light with a soft shadow so it reads over your wallpaper.</string>
     <string name="widget_transparency_value">%1$s%%</string>
+    <string name="widget_next_prayer_look">All widgets in the Next Prayer look</string>
+    <string name="widget_next_prayer_look_description">The Next Prayer\'s deep background and pattern on every widget. Turn off to give each widget its own look again.</string>
     <string name="widget_colors">Colours</string>
     <string name="widget_colors_wallpaper">Wallpaper colours</string>
     <string name="widget_colors_wallpaper_description">Follow your wallpaper\'s colours (Android 12 and later). Next Prayer keeps its deep colours.</string>
@@ -318,7 +321,7 @@
     <!-- Sample content for the widget picker's previews (widget_preview_*.xml). -->
     <string name="widget_preview_date">Monday 9 November</string>
     <string name="widget_preview_hijri">28 Jumada al-Ula 1448 AH</string>
-    <string name="widget_preview_countdown">in 1:12:34</string>
+    <string name="widget_preview_countdown">in 1:12:34 h</string>
     <string name="widget_preview_total">Total 26 of 32</string>
     <string name="widget_preview_today_count">2 of 5</string>
     <string name="widget_preview_hijri_short">28 Jumada al-Ula</string>

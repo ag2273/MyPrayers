@@ -66,6 +66,11 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- Re-renders the Next Prayer widgets when their countdown drops under an hour (its unit changes). -->
+        <receiver
+            android:name=".widget.CountdownUnitReceiver"
+            android:exported="false" />
+
         <!-- System events after which alarms must be rescheduled (all allowed as manifest receivers). -->
         <receiver
             android:name=".alerts.RescheduleReceiver"

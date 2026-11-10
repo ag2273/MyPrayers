@@ -189,6 +189,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             transparency = prefs[WIDGET_TRANSPARENCY]
                 ?.takeIf { it in WidgetAppearance.TRANSPARENCY_RANGE && it % WidgetAppearance.TRANSPARENCY_STEP == 0 } ?: 0,
             colors = prefs[WIDGET_COLORS]?.let { name -> WidgetColors.entries.firstOrNull { it.name == name } } ?: WidgetColors.APP,
+            nextPrayerLook = prefs[WIDGET_NEXT_PRAYER_LOOK] ?: false,
         )
     }.distinctUntilChanged()
 
@@ -199,6 +200,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
 
     suspend fun setWidgetColors(colors: WidgetColors) {
         store.edit { it[WIDGET_COLORS] = colors.name }
+    }
+
+    /** Settings → Widgets: every widget on the Next Prayer's deep surface, or (off) each in its own look. */
+    suspend fun setWidgetNextPrayerLook(on: Boolean) {
+        store.edit { it[WIDGET_NEXT_PRAYER_LOOK] = on }
     }
 
     suspend fun setAppLanguage(languageTags: String) {
@@ -315,6 +321,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val APP_LANGUAGE = stringPreferencesKey("app_language")
         private val WIDGET_TRANSPARENCY = intPreferencesKey("widget_transparency")
         private val WIDGET_COLORS = stringPreferencesKey("widget_colors")
+        private val WIDGET_NEXT_PRAYER_LOOK = booleanPreferencesKey("widget_next_prayer_look")
         private val ALERTS_ENABLED = booleanPreferencesKey("alerts_enabled")
         private val ALARM_CLOCK_MODE = booleanPreferencesKey("alarm_clock_mode")
         private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")

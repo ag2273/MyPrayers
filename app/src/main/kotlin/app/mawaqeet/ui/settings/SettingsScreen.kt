@@ -32,6 +32,7 @@ import app.mawaqeet.ui.components.SectionTitle
 import app.mawaqeet.ui.components.Segment
 import app.mawaqeet.ui.components.SegmentedChoice
 import app.mawaqeet.ui.components.SubPage
+import app.mawaqeet.ui.components.SwitchRow
 import app.mawaqeet.ui.components.TabPage
 import app.mawaqeet.widget.WidgetStyle
 import java.io.Serializable
@@ -104,6 +105,9 @@ interface SettingsActions {
 
     /** Settings → Widgets (#32, Android 12+): wallpaper or app colours. */
     fun setWidgetColors(colors: WidgetColors)
+
+    /** Settings → Widgets: every widget in the Next Prayer's deep look, or each in its own. */
+    fun setWidgetNextPrayerLook(on: Boolean)
     fun setHijriOffsetDays(days: Int)
 
     /** Settings → Prayer Times (#20): moves [prayer]'s adjustment by [step] minutes, within [PrayerSettings.ADJUSTMENT_RANGE]. */
@@ -505,6 +509,14 @@ private fun WidgetsPage(appearance: WidgetAppearance, actions: SettingsActions) 
     var percent by remember(appearance.transparency) { mutableFloatStateOf(appearance.transparency.toFloat()) }
     WidgetPreview(appearance.copy(transparency = percent.roundToInt()))
     Card {
+        SwitchRow(
+            title = stringResource(R.string.widget_next_prayer_look),
+            description = stringResource(R.string.widget_next_prayer_look_description),
+            checked = appearance.nextPrayerLook,
+            onChange = actions::setWidgetNextPrayerLook,
+        )
+    }
+    Card {
         Column(Modifier.padding(16.dp)) {
             val label = resources.getString(R.string.widget_transparency_value, format.number(percent.roundToInt()))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -553,7 +565,7 @@ private fun WidgetsPage(appearance: WidgetAppearance, actions: SettingsActions) 
  */
 @Composable
 private fun WidgetPreview(appearance: WidgetAppearance) {
-    val style = WidgetStyle.of(appearance)
+    val style = WidgetStyle.of(appearance, deep = appearance.nextPrayerLook)
     val text = colorResource(style.text)
     Box(
         Modifier
@@ -572,7 +584,7 @@ private fun WidgetPreview(appearance: WidgetAppearance) {
         ) {
             Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.labelMedium.copy(shadow = shadow), color = colorResource(style.muted))
             Text(stringResource(R.string.prayer_asr), style = MaterialTheme.typography.headlineSmall.copy(shadow = shadow), color = text)
-            Text(stringResource(R.string.widget_countdown_format, "1:12:34"), style = MaterialTheme.typography.titleSmall.copy(shadow = shadow), color = colorResource(style.accent))
+            Text(stringResource(R.string.widget_countdown_hours, "1:12:34"), style = MaterialTheme.typography.titleSmall.copy(shadow = shadow), color = colorResource(style.accent))
         }
     }
 }

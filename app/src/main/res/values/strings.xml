@@ -208,8 +208,9 @@
     <string name="widget_next_prayer_description">اسم الصلاة القادمة ووقتها، مع العد التنازلي</string>
     <string name="widget_next_prayer_compact">الصلاة القادمة (حلقة)</string>
     <string name="widget_next_prayer_compact_description">حلقة تمتلئ حتى الصلاة القادمة، والعدّ التنازلي، في خانة واحدة</string>
-    <!-- %s is the countdown H:MM:SS, filled by the launcher. -->
-    <string name="widget_countdown_format">بعد %s</string>
+    <!-- %s is the countdown, filled by the launcher: H:MM:SS from an hour on, MM:SS under it. The unit says which. -->
+    <string name="widget_countdown_hours">بعد %s ساعة</string>
+    <string name="widget_countdown_minutes">بعد %s دقيقة</string>
     <!-- Widgets (#30). -->
     <string name="widget_today_times">مواقيت اليوم</string>
     <string name="widget_today_times_description">مواقيت صلوات اليوم الخمس، مع إبراز الصلاة القادمة</string>
@@ -230,6 +231,8 @@
     <string name="widget_transparency">شفافية الخلفية</string>
     <string name="widget_transparency_hint">من ٦٠٪ وأكثر يصبح النص فاتحًا بظل خفيف ليُقرأ فوق الخلفية.</string>
     <string name="widget_transparency_value">%1$s٪</string>
+    <string name="widget_next_prayer_look">كل الأدوات بتصميم الصلاة القادمة</string>
+    <string name="widget_next_prayer_look_description">خلفية الصلاة القادمة الداكنة بنقشتها لكل الأدوات. أوقفه لترجع كل أداة لشكلها.</string>
     <string name="widget_colors">الألوان</string>
     <string name="widget_colors_wallpaper">ألوان الخلفية</string>
     <string name="widget_colors_wallpaper_description">تتبع ألوان خلفية الشاشة (أندرويد ١٢ وأحدث). الصلاة القادمة تبقى بألوانها الداكنة.</string>
@@ -341,7 +344,7 @@
     <!-- Sample content for the widget picker's previews (widget_preview_*.xml). -->
     <string name="widget_preview_date">الإثنين ٩ نوفمبر</string>
     <string name="widget_preview_hijri">٢٨ جمادى الأولى ١٤٤٨ هـ</string>
-    <string name="widget_preview_countdown">بعد ١:١٢:٣٤</string>
+    <string name="widget_preview_countdown">بعد ١:١٢:٣٤ ساعة</string>
     <string name="widget_preview_total">المجموع ٢٦ من ٣٢</string>
     <string name="widget_preview_today_count">٢ من ٥</string>
     <string name="widget_preview_hijri_short">٢٨ جمادى الأولى</string>
