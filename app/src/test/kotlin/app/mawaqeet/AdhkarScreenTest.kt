@@ -15,6 +15,9 @@ import app.mawaqeet.core.Adhkar
 import app.mawaqeet.core.AdhkarCatalog
 import app.mawaqeet.core.AdhkarRepository
 import app.mawaqeet.core.AdhkarSetId
+import app.mawaqeet.core.AdhkarSlot
+import androidx.compose.ui.test.hasText
+import org.junit.Assert.assertFalse
 import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.core.PrayerLogRepository
@@ -43,7 +46,9 @@ import java.time.ZoneOffset
 private val catalog = AdhkarCatalog.parse(
     "# mawaqeet-adhkar-v1\n" +
         "morning\tone\t1\tرواه مسلم\tاللَّهُمَّ بِكَ أَصْبَحْنَا\n" +
-        "morning\tthree\t3\tرواه أبو داود والترمذي\tبِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ\n",
+        "morning\tthree\t3\tرواه أبو داود والترمذي\tبِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ\n" +
+        "evening\tone\t1\tرواه مسلم\tاللَّهُمَّ بِكَ أَمْسَيْنَا\n" +
+        "after-prayer\tone\t1\tرواه مسلم\tأَسْتَغْفِرُ اللَّهَ\n",
 )
 
 private class FakeAdhkarRepository : AdhkarRepository {
@@ -135,6 +140,7 @@ class AdhkarScreenTest {
     @Config(qualifiers = "ar")
     fun `tapping the card counts with a vibration and moves to the next dhikr, in Arabic`() {
         show()
+        waitForText("أذكار الصباح")
         compose.onNodeWithText("أذكار الصباح").performClick()
         waitForText("الذكر 1 من 2")
         compose.onNodeWithText("اللَّهُمَّ بِكَ أَصْبَحْنَا").assertIsDisplayed()
@@ -161,6 +167,7 @@ class AdhkarScreenTest {
     @Config(qualifiers = "en")
     fun `TalkBack reads each card's text with what is done and left, and the count action`() {
         show()
+        waitForText("Morning adhkar")
         compose.onNodeWithText("Morning adhkar").performClick()
         waitForText("Dhikr 1 of 2")
         compose.onNodeWithText("اللَّهُمَّ بِكَ أَصْبَحْنَا").performClick()
@@ -199,6 +206,46 @@ class AdhkarScreenTest {
         compose.onNode(androidx.compose.ui.test.hasContentDescription("رجوع")).performClick()
         waitForText("تمّت اليوم")
     }
+
+    private fun waitForRow(title: String, summary: String) = compose.waitUntil(5_000) {
+        compose.onAllNodes(hasText(title) and hasText(summary)).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `the list shows the morning, the evening and each of the five after-prayer states`() {
+        adhkar.count(AdhkarSlot.afterPrayer(Prayer.FAJR))
+        show()
+
+        waitForRow("أذكار الصباح", "لم تبدأ بعد")
+        // 07:00 is before Asr: the evening adhkar can be opened, but their time is later.
+        waitForRow("أذكار المساء", "وقتها من العصر إلى الفجر")
+        waitForRow("أذكار بعد الصلاة", "بعد صلاة الفجر")
+        waitForRow("بعد صلاة الفجر", "تمّت اليوم")
+        for (prayer in listOf("الظهر", "العصر", "المغرب", "العشاء")) waitForRow("بعد صلاة $prayer", "لم يحن وقتها بعد")
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `after-prayer adhkar open on the most recent Prayer, and another Prayer can be chosen before starting`() {
+        show()
+        waitForText("After-prayer adhkar")
+        compose.onNodeWithText("After-prayer adhkar").performClick()
+        waitForText("Dhikr 1 of 1")
+        compose.onNode(hasText("Fajr") and androidx.compose.ui.test.isSelected()).assertExists()
+
+        compose.onNodeWithText("Dhuhr").performClick()
+        waitForText("Dhuhr's time hasn't come yet", substring = true)
+        compose.onNodeWithText("Fajr").performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasText("Fajr") and androidx.compose.ui.test.isSelected()).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("أَسْتَغْفِرُ اللَّهَ").performClick()
+        waitForText("Adhkar after Fajr completed for today")
+        assertTrue(adhkar.isComplete(AdhkarSlot.afterPrayer(Prayer.FAJR)))
+        assertFalse(adhkar.isComplete(AdhkarSlot.afterPrayer(Prayer.DHUHR)))
+    }
 }
 
 /** At the largest system font size, the reader shows every word of a long dhikr and big enough tap targets. */
@@ -223,7 +270,7 @@ class AdhkarAccessibilityTest {
         compose.setContent {
             MawaqeetTheme { ProvideDisplayFormatter(DigitStyle.AUTOMATIC) { AdhkarScreen(adhkar, repo.changes) } }
         }
-        compose.waitForIdle()
+        compose.waitUntil(5_000) { compose.onAllNodes(androidx.compose.ui.test.hasText("أذكار الصباح")).fetchSemanticsNodes().isNotEmpty() }
         val density = compose.density.density
         compose.assertAccessible("Adhkar", density)
         compose.onNodeWithText("أذكار الصباح").performClick()

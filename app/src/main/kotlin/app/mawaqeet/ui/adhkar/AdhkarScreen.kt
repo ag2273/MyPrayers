@@ -34,12 +34,17 @@ import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
 import app.mawaqeet.core.Adhkar
 import app.mawaqeet.core.AdhkarSetId
+import app.mawaqeet.core.AdhkarSlot
+import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.DhikrProgress
 import app.mawaqeet.core.SetProgress
 import app.mawaqeet.ui.LocalDisplayFormatter
+import app.mawaqeet.ui.settings.nameRes
 import app.mawaqeet.ui.components.Card
 import app.mawaqeet.ui.components.NavRow
 import app.mawaqeet.ui.components.RowDivider
+import app.mawaqeet.ui.components.Segment
+import app.mawaqeet.ui.components.SegmentedChoice
 import app.mawaqeet.ui.components.SubPage
 import app.mawaqeet.ui.components.TabPage
 import kotlinx.coroutines.Dispatchers
@@ -52,45 +57,99 @@ import kotlinx.coroutines.withContext
 val AdhkarSetId.nameRes: Int
     get() = when (this) {
         AdhkarSetId.MORNING -> R.string.adhkar_morning
+        AdhkarSetId.EVENING -> R.string.adhkar_evening
+        AdhkarSetId.AFTER_PRAYER -> R.string.adhkar_after_prayer
     }
 
+/** The slot's name: the set's, or «أذكار بعد صلاة الفجر» for one Prayer's after-prayer adhkar. */
+@Composable
+private fun slotName(slot: AdhkarSlot): String =
+    slot.prayer?.let { stringResource(R.string.adhkar_after_prayer_name, stringResource(it.nameRes)) }
+        ?: stringResource(slot.set.nameRes)
+
 /**
- * The «الأذكار» tab (#62): the Adhkar Sets with today's state; one opens in the reader. [adhkar] is null while the
- * bundled catalog loads. [changes] signals every write to the Adhkar repository.
+ * The «الأذكار» tab (#62, #70): the morning and evening sets and the five after-prayer slots with today's state;
+ * one opens in the reader. [adhkar] is null while the bundled catalog loads. [changes] signals every write to the
+ * Adhkar repository.
  */
 @Composable
 fun AdhkarScreen(adhkar: Adhkar?, changes: StateFlow<Int>) {
     var open by rememberSaveable { mutableStateOf<String?>(null) }
-    val openSet = open?.let(AdhkarSetId::ofKey)
-    if (adhkar != null && openSet != null) {
-        SetReader(adhkar, openSet, changes, onBack = { open = null })
+    val openSlot = open?.let(AdhkarSlot::ofKey)
+    if (adhkar != null && openSlot != null) {
+        SetReader(adhkar, openSlot, changes, onSwitch = { open = it.key }, onBack = { open = null })
     } else {
         SetList(adhkar, changes, onOpen = { open = it.key })
     }
 }
 
+/** What the list shows now: every slot's progress and the Prayer after-prayer adhkar default to. */
+private data class AdhkarToday(val slots: List<SetProgress>, val defaultPrayer: Prayer)
+
 @Composable
-private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSetId) -> Unit) {
+private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSlot) -> Unit) {
     val version by changes.collectAsState()
-    val progress by produceState<List<SetProgress>>(emptyList(), adhkar, version) {
-        value = adhkar?.let { a -> withContext(Dispatchers.IO) { a.sets.map { a.progress(it.id) } } }.orEmpty()
+    val today by produceState<AdhkarToday?>(null, adhkar, version) {
+        value = adhkar?.let { a -> withContext(Dispatchers.IO) { AdhkarToday(a.slots.map(a::progress), a.defaultAfterPrayer()) } }
     }
-    val format = LocalDisplayFormatter.current
     TabPage(stringResource(R.string.tab_adhkar)) {
-        if (progress.isEmpty()) return@TabPage
-        Card {
-            progress.forEachIndexed { index, set ->
-                if (index > 0) RowDivider()
-                val current = set.currentIndex
-                val summary = when {
-                    set.isComplete -> stringResource(R.string.adhkar_done_today)
-                    current == null || set.items.none { it.counted > 0 } -> stringResource(R.string.adhkar_not_started)
-                    else -> stringResource(R.string.adhkar_resume, format.number(current + 1), format.number(set.items.size))
+        val shown = today ?: return@TabPage
+        val (daily, afterPrayer) = shown.slots.partition { it.set != AdhkarSetId.AFTER_PRAYER }
+        if (daily.isNotEmpty()) {
+            Card {
+                daily.forEachIndexed { index, set ->
+                    if (index > 0) RowDivider()
+                    NavRow(stringResource(set.set.nameRes), summary(set), icon = R.drawable.ic_adhkar) { onOpen(set.slot) }
                 }
-                NavRow(stringResource(set.set.nameRes), summary, icon = R.drawable.ic_adhkar) { onOpen(set.set) }
+            }
+        }
+        if (afterPrayer.isNotEmpty()) {
+            Card {
+                // Opens on the most recent Prayer whose time has arrived; the reader can switch before starting.
+                NavRow(
+                    stringResource(R.string.adhkar_after_prayer),
+                    stringResource(R.string.adhkar_after_prayer_slot, stringResource(shown.defaultPrayer.nameRes)),
+                    icon = R.drawable.ic_adhkar,
+                ) { onOpen(AdhkarSlot.afterPrayer(shown.defaultPrayer)) }
+                afterPrayer.forEach { set ->
+                    val prayer = checkNotNull(set.slot.prayer)
+                    RowDivider()
+                    NavRow(stringResource(R.string.adhkar_after_prayer_slot, stringResource(prayer.nameRes)), summary(set)) {
+                        onOpen(set.slot)
+                    }
+                }
             }
         }
     }
+}
+
+/** A slot's state today, under its name in the list. */
+@Composable
+private fun summary(set: SetProgress): String {
+    val format = LocalDisplayFormatter.current
+    val current = set.currentIndex
+    val started = set.items.any { it.counted > 0 }
+    return when {
+        set.isComplete -> stringResource(R.string.adhkar_done_today)
+        current == null && started -> stringResource(R.string.adhkar_read_outside_time)
+        !started && !set.isInTime -> stringResource(
+            when (set.set) {
+                AdhkarSetId.MORNING -> R.string.adhkar_time_morning
+                AdhkarSetId.EVENING -> R.string.adhkar_time_evening
+                AdhkarSetId.AFTER_PRAYER -> R.string.adhkar_not_yet_time
+            },
+        )
+        current == null || !started -> stringResource(R.string.adhkar_not_started)
+        else -> stringResource(R.string.adhkar_resume, format.number(current + 1), format.number(set.items.size))
+    }
+}
+
+/** Why finishing [set] now won't go in the Adhkar Record; it can still be read. */
+@Composable
+private fun outsideTimeNote(set: SetProgress): String = when (set.set) {
+    AdhkarSetId.MORNING -> stringResource(R.string.adhkar_outside_morning)
+    AdhkarSetId.EVENING -> stringResource(R.string.adhkar_outside_evening)
+    AdhkarSetId.AFTER_PRAYER -> stringResource(R.string.adhkar_outside_after_prayer, stringResource(checkNotNull(set.slot.prayer).nameRes))
 }
 
 /**
@@ -98,19 +157,42 @@ private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSet
  * dhikr's count the next one shows. Progress is the core's, per Prayer Day, so leaving and returning resumes.
  */
 @Composable
-private fun SetReader(adhkar: Adhkar, set: AdhkarSetId, changes: StateFlow<Int>, onBack: () -> Unit) {
+private fun SetReader(
+    adhkar: Adhkar,
+    set: AdhkarSlot,
+    changes: StateFlow<Int>,
+    onSwitch: (AdhkarSlot) -> Unit,
+    onBack: () -> Unit,
+) {
     val version by changes.collectAsState()
     var progress by remember(adhkar, set) { mutableStateOf<SetProgress?>(null) }
     LaunchedEffect(adhkar, set, version) { progress = withContext(Dispatchers.IO) { adhkar.progress(set) } }
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
     val format = LocalDisplayFormatter.current
-    val name = stringResource(set.nameRes)
-    SubPage(name, onBack) {
+    val name = slotName(set)
+    SubPage(stringResource(set.set.nameRes), onBack) {
         val shown = progress ?: return@SubPage
         val index = shown.currentIndex
+        val prayer = set.prayer
+        // After-prayer adhkar: which Prayer they are for can change until the first count.
+        if (prayer != null && shown.items.none { it.counted > 0 }) {
+            Text(stringResource(R.string.adhkar_after_which_prayer), style = MaterialTheme.typography.titleSmall)
+            SegmentedChoice(
+                Prayer.entries.map { p ->
+                    Segment(stringResource(p.nameRes), selected = p == prayer, onSelect = { onSwitch(AdhkarSlot.afterPrayer(p)) })
+                },
+            )
+        }
+        if (!shown.isInTime && !shown.isComplete) {
+            Text(
+                outsideTimeNote(shown),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         if (index == null) {
-            Complete(name)
+            if (shown.isComplete) Complete(name) else ReadOutsideTime(name)
         } else {
             Text(
                 stringResource(R.string.adhkar_position, format.number(index + 1), format.number(shown.items.size)),
@@ -177,6 +259,18 @@ private fun DhikrCard(item: DhikrProgress, onCount: () -> Unit) {
                 color = MaterialTheme.colorScheme.primary,
             )
         }
+    }
+}
+
+/** Every dhikr said, outside the set's time: nothing is recorded, and that is said plainly. */
+@Composable
+private fun ReadOutsideTime(name: String) {
+    Card {
+        Text(
+            stringResource(R.string.adhkar_set_read, name),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
+        )
     }
 }
 
