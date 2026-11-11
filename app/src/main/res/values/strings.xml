@@ -33,6 +33,10 @@
     <string name="settings_group_widgets">أدوات الشاشة الرئيسية</string>
     <string name="settings_group_about">حول مواقيت وبياناتك</string>
     <string name="about_privacy_section">الخصوصية</string>
+    <string name="about_privacy_policy">سياسة الخصوصية</string>
+    <string name="about_contact_section">الموقع والتواصل</string>
+    <string name="about_website">موقع التطبيق</string>
+    <string name="about_contact">راسلنا</string>
     <string name="about_sources_section">المصادر</string>
     <string name="about_sources_title">المصادر والتراخيص</string>
     <string name="about_recordings_none_short">لا توجد بعد</string>

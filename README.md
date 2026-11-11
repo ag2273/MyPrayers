@@ -1,6 +1,6 @@
 # مواقيت · Mawaqeet
 
-An Arabic-first Android app and set of home-screen widgets for daily prayer times. It sounds the adhan when each prayer is due, and keeps a private log of the prayers you mark as prayed. ("MyPrayers" is only the repository's name.)
+An Arabic-first Android app (package `app.nileorbit.mawaqeet`) and set of home-screen widgets for daily prayer times. It sounds the adhan when each prayer is due, and keeps a private log of the prayers you mark as prayed. ("MyPrayers" is only the repository's name.)
 
 ## What it does
 
@@ -20,6 +20,10 @@ An Arabic-first Android app and set of home-screen widgets for daily prayer time
   - Week Prayer Log: 4×2 and 4×3.
   - Settings → Widgets sets transparency, and app or wallpaper colours. App colours are the default.
 - Arabic and English, with Arabic-Indic or Latin digits, light and dark themes, and TalkBack support.
+
+## Website
+
+[mawaqeet.nileorbit.com](https://mawaqeet.nileorbit.com) lives in [`site/`](site): a static page in Arabic (`/`) and English (`/en/`), each with its privacy policy (`/privacy`, `/en/privacy`). No build step. Cloudflare Pages deploys it from `main`: framework preset **None**, build command empty, output directory `site`, custom domain `mawaqeet.nileorbit.com`. Contact: contact@nileorbit.com.
 
 ## Decisions
 
