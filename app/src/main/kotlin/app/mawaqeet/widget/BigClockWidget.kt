@@ -20,6 +20,7 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
+import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
 import androidx.glance.layout.wrapContentHeight
@@ -37,7 +38,8 @@ import java.util.Locale
 /**
  * The Big Clock Widget Variant «ساعة كبيرة» (4×2, the reference layout): a big thin clock with the app's «ص/م»
  * marker; the previous Stop and its time, a bold countdown and the next Stop and its time; a bar from the previous Stop
- * to the next; and the date line. On the light surface, or the deep Next Prayer surface with gold and the star when
+ * to the next; and the date line. At 4×1 the clock sits beside the countdown and bar, the Stops where they fit, and the
+ * date line goes. On the light surface, or the deep Next Prayer surface with gold and the star when
  * «كل الأدوات بتصميم الصلاة القادمة» is on. A thin layer over [ClockContent]; re-rendered each minute by
  * [ClockTickReceiver]. Tapping opens Today.
  */
@@ -180,6 +182,50 @@ internal object BigClockMetrics {
             clockWidth <= across && rowWidth <= across && textWidthDp(view.dateLine, DATE_SP * s, fontScale) <= across && height <= room
         }
     }
+
+    /** Below this height (dp) the launcher gives a 4×1, laid out by [compact]. */
+    const val COMPACT_BELOW = MIN_HEIGHT
+    /** At 4×1, less padding above and below, for the room. */
+    val COMPACT_PADDING_V = 4.dp
+    /** Between the clock and the countdown's side at 4×1. */
+    const val SIDE_GAP_DP = 12f
+    /** At 4×1, the countdown's side takes at most this share of the width; the clock grows into the rest. */
+    const val COMPACT_SIDE_SHARE = 0.62f
+    /** At 4×1, the smallest scale at which the Stops are kept beside the countdown rather than dropped for room. */
+    const val KEEP_STOPS_SCALE = 0.75f
+
+    /**
+     * The 4×1 layout: the scale of the countdown's side and of the clock, whether the Stops fit beside the countdown,
+     * and the width of the countdown's side (the bar's length).
+     */
+    data class Compact(val scale: Float, val clockScale: Float, val stops: Boolean, val sideWidth: Float)
+
+    /**
+     * Big Clock at 4×1: the clock on the start side; on the other, the countdown (between the Stops where they fit)
+     * over the bar. No date line. The countdown's side is sized first, then the clock takes what is left.
+     */
+    fun compact(view: ClockView, widthDp: Float, heightDp: Float, fontScale: Float = 1f): Compact {
+        val across = widthDp - 2 * PADDING_H.value
+        val room = heightDp - 2 * COMPACT_PADDING_V.value - 1
+        fun clockWidth(s: Float) = textWidthDp(view.clockSample, CLOCK_SP * s, fontScale) +
+            if (view.marker.isEmpty()) 0f else MARKER_GAP_DP * s + textWidthDp(view.marker, MARKER_SP * s, fontScale)
+        fun countdownWidth(s: Float) = textWidthDp(view.countdown, COUNTDOWN_SP * s, fontScale, bold = true)
+        fun sideWidth(s: Float, stops: Boolean) = if (!stops) countdownWidth(s) else
+            textWidthDp(view.previous, STOP_SP * s, fontScale) + countdownWidth(s) + textWidthDp(view.next, STOP_SP * s, fontScale, bold = true) + 2 * ROW_GAP_DP * s
+        fun sideHeight(s: Float, stops: Boolean) = WidgetArt.LINE_HEIGHT_DP + 2 * LINE_GAP_DP * s + if (!stops) lineHeightDp(view.countdown, COUNTDOWN_SP * s, fontScale, bold = true) else
+            maxOf(lineHeightDp(view.previous, STOP_SP * s, fontScale), lineHeightDp(view.next, STOP_SP * s, fontScale, bold = true), lineHeightDp(view.countdown, COUNTDOWN_SP * s, fontScale, bold = true))
+        // The countdown alone never grows past its design size, so it stays smaller than the clock.
+        fun sideScale(stops: Boolean) = fitScale(floor = 0.2f, start = if (stops) MAX_GROW else 1f) { s -> sideHeight(s, stops) <= room && sideWidth(s, stops) <= across * COMPACT_SIDE_SHARE }
+        val withStops = sideScale(stops = true)
+        val stops = withStops >= KEEP_STOPS_SCALE
+        val scale = if (stops) withStops else sideScale(stops = false)
+        val side = sideWidth(scale, stops)
+        val clockScale = fitScale(floor = 0.2f, start = MAX_GROW) { c ->
+            lineHeightDp(view.clockSample, CLOCK_SP * c, fontScale) <= room && clockWidth(c) + SIDE_GAP_DP * scale + side <= across
+        }
+        // A little short of the room, so the bar never outgrows its side if the clock draws a hair wider than measured.
+        return Compact(scale, clockScale, stops, across - clockWidth(clockScale) - SIDE_GAP_DP * scale - 2)
+    }
 }
 
 /** Which style colour each of Big Clock's lines takes; Gold Clock gives its Stops and date line their own. */
@@ -193,6 +239,7 @@ internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = C
     val size = LocalSize.current
     val width = if (style.responsive) size.width.value else BigClockMetrics.MIN_WIDTH
     val height = if (style.responsive) size.height.value else BigClockMetrics.MIN_HEIGHT
+    if (height < BigClockMetrics.COMPACT_BELOW) return BigClockCompactLayout(view, rtl, tones, width, height)
     val scale = BigClockMetrics.scale(view, width, height, context.resources.configuration.fontScale)
     val across = width - 2 * BigClockMetrics.PADDING_H.value
     val gap = (BigClockMetrics.LINE_GAP_DP * scale).dp
@@ -235,6 +282,56 @@ internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = C
     }
 }
 
+/** Big Clock (and Gold Clock) at 4×1: the clock on the start side, the countdown and the bar on the other; no dates. */
+@Composable
+private fun BigClockCompactLayout(view: ClockView, rtl: Boolean, tones: ClockTones, width: Float, height: Float) {
+    val context = LocalContext.current
+    val style = LocalWidgetStyle.current
+    val direction = LocalWidgetDirection.current
+    val fit = BigClockMetrics.compact(view, width, height, context.resources.configuration.fontScale)
+    val scale = fit.scale
+    val gap = (BigClockMetrics.LINE_GAP_DP * scale).dp
+    WidgetFrame(rtl, horizontal = BigClockMetrics.PADDING_H, vertical = BigClockMetrics.COMPACT_PADDING_V, description = view.description) {
+        ReadingRow(
+            GlanceModifier.fillMaxWidth(),
+            Alignment.CenterVertically,
+            listOfNotNull(
+                cell { ClockFace(view, BigClockMetrics.CLOCK_SP * fit.clockScale) },
+                if (view.marker.isEmpty()) null else cell {
+                    WidgetLine(view.marker, BigClockMetrics.MARKER_SP * fit.clockScale, Tone.MUTED, modifier = direction.paddingStart((BigClockMetrics.MARKER_GAP_DP * fit.clockScale).dp))
+                },
+                cell {
+                    Column(GlanceModifier.defaultWeight().then(direction.paddingStart((BigClockMetrics.SIDE_GAP_DP * scale).dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                        val countdown = @Composable { WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true) }
+                        if (fit.stops) {
+                            ReadingRow(
+                                GlanceModifier.fillMaxWidth(),
+                                Alignment.CenterVertically,
+                                listOf(
+                                    cell { WidgetLine(view.previous, BigClockMetrics.STOP_SP * scale, tones.previous) },
+                                    cell {
+                                        Box(GlanceModifier.defaultWeight().padding(horizontal = (BigClockMetrics.ROW_GAP_DP * scale).dp), contentAlignment = Alignment.Center) { countdown() }
+                                    },
+                                    cell { WidgetLine(view.next, BigClockMetrics.STOP_SP * scale, tones.next, bold = true) },
+                                ),
+                            )
+                        } else {
+                            countdown()
+                        }
+                        Box(GlanceModifier.padding(top = gap * 2)) {
+                            WidgetDrawing(
+                                WidgetArt.progressLine(context, fit.sideWidth, view.elapsed, rtl, context.colorOf(style.accent), context.colorOf(style.accentSoft)),
+                                fit.sideWidth,
+                                WidgetArt.LINE_HEIGHT_DP,
+                            )
+                        }
+                    }
+                },
+            ),
+        )
+    }
+}
+
 /**
  * The big thin clock: a platform `TextClock` the launcher ticks in the phone's 12/24-hour setting. When the launcher
  * would write other digits than the user's, it shows [ClockView.clockTime] instead (a quoted pattern, so the
@@ -259,7 +356,7 @@ internal fun ClockFace(view: ClockView, sp: Float, tone: Tone = Tone.TEXT) {
     AndroidRemoteViews(clock, GlanceModifier.wrapContentWidth().wrapContentHeight())
 }
 
-/** The Big Clock entry in the widget picker (4×2). */
+/** The Big Clock entry in the widget picker (4×2, down to 4×1). */
 class BigClockWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = BigClockWidget()
 

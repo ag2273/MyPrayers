@@ -2,6 +2,7 @@ package app.mawaqeet.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -26,8 +27,8 @@ import app.mawaqeet.R
  * The Clock & Prayer Widget Variant «ساعة وصلاة» (4×2), a split layout over [ClockContent]: on the app language's start
  * side the big thin clock with «ص/م», the Hijri date and the Gregorian date; a hairline; on the other side «الصلاة
  * القادمة», the next Stop's name (large) and time, «بعد» and the countdown, the bar, and «من» the previous Stop and its
- * time. On the light surface, or the deep Next Prayer surface with gold and the star when «كل الأدوات بتصميم الصلاة
- * القادمة» is on. Re-rendered each minute by [ClockTickReceiver]; tapping opens Today.
+ * time. At 4×1 the dates go, and «الصلاة القادمة» and «من …» where they don't fit. On the light surface, or the deep
+ * Next Prayer surface with gold and the star when «كل الأدوات بتصميم الصلاة القادمة» is on. Re-rendered each minute by [ClockTickReceiver]; tapping opens Today.
  */
 class ClockPrayerWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
@@ -84,36 +85,80 @@ internal object ClockPrayerMetrics {
     const val PRAYER_SHARE = 0.44f
     const val MAX_GROW = 1.6f
 
-    /** The scale and the prayer side's width in dp (the clock side takes the rest). */
-    data class Fit(val scale: Float, val prayerWidth: Float, val dividerHeight: Float)
+    /** Below this height (dp) the launcher gives a 4×1: the dates go, and «الصلاة القادمة» and «من …» where they don't fit. */
+    const val COMPACT_BELOW = MIN_HEIGHT
+    /** At 4×1, less padding above and below, for the room. */
+    val COMPACT_PADDING_V = 4.dp
+    /** At 4×1, the prayer side's text takes at most this share of the width; the clock grows into the rest. */
+    const val COMPACT_PRAYER_SHARE = 0.62f
+    /** At 4×1, the smallest scale at which the optional lines are kept rather than dropped for room. */
+    const val KEEP_LINES_SCALE = 0.75f
+
+    /**
+     * The scales of the prayer side ([scale]) and the clock side ([clockScale], the same at 4×2), the prayer side's
+     * width in dp (the clock side takes the rest), the padding above and below, and which lines are shown: the dates
+     * under the clock, «الصلاة القادمة» above the next Stop and «من …» under the bar.
+     */
+    data class Fit(
+        val scale: Float,
+        val prayerWidth: Float,
+        val dividerHeight: Float,
+        val clockScale: Float = scale,
+        val paddingV: Dp = PADDING_V,
+        val dates: Boolean = true,
+        val label: Boolean = true,
+        val since: Boolean = true,
+    )
 
     fun fit(view: ClockPrayerView, widthDp: Float, heightDp: Float, fontScale: Float = 1f): Fit {
+        if (heightDp >= COMPACT_BELOW) return tryFit(view, widthDp, heightDp, fontScale, compact = false, label = true, since = true).fit
+        val tries = listOf(true to true, true to false, false to false).map { (label, since) ->
+            tryFit(view, widthDp, heightDp, fontScale, compact = true, label = label, since = since)
+        }
+        return (tries.firstOrNull { it.fits && it.fit.scale >= KEEP_LINES_SCALE } ?: tries.last()).fit
+    }
+
+    private class Tried(val fit: Fit, val fits: Boolean)
+
+    /** At 4×2 one scale for the whole; at 4×1 ([compact], no dates) the prayer side's scale first, then the clock's. */
+    private fun tryFit(view: ClockPrayerView, widthDp: Float, heightDp: Float, fontScale: Float, compact: Boolean, label: Boolean, since: Boolean): Tried {
         val clock = view.clock
+        val dates = !compact
+        val paddingV = if (compact) COMPACT_PADDING_V else PADDING_V
         val across = widthDp - 2 * PADDING_H.value
-        val room = heightDp - 2 * PADDING_V.value - 1
+        val room = heightDp - 2 * paddingV.value - 1
         fun w(text: String, sp: Float, bold: Boolean = false) = textWidthDp(text, sp, fontScale, bold)
         fun h(text: String, sp: Float, bold: Boolean = false) = lineHeightDp(text, sp, fontScale, bold).toFloat()
-        fun prayerWidth(s: Float) = maxOf(
-            w(view.label, LABEL_SP * s),
+        fun prayerText(s: Float) = maxOf(
+            if (label) w(view.label, LABEL_SP * s) else 0f,
             w(clock.nextName, NAME_SP * s, bold = true) + WORD_GAP_DP * s + w(clock.nextTime, TIME_SP * s),
             w(view.before, BEFORE_SP * s) + WORD_GAP_DP * s + w(clock.countdown, COUNTDOWN_SP * s, bold = true),
-            w(view.since, SINCE_SP * s),
-            (across - 2 * DIVIDER_GAP_DP * s - 1) * PRAYER_SHARE,
+            if (since) w(view.since, SINCE_SP * s) else 0f,
         )
+        fun prayerWidth(s: Float) = maxOf(prayerText(s), (across - 2 * DIVIDER_GAP_DP * s - 1) * PRAYER_SHARE)
         fun clockSide(s: Float) = maxOf(
             w(clock.clockSample, CLOCK_SP * s) + if (clock.marker.isEmpty()) 0f else MARKER_GAP_DP * s + w(clock.marker, MARKER_SP * s),
-            w(clock.gregorianDate, DATE_SP * s),
+            if (dates) w(clock.gregorianDate, DATE_SP * s) else 0f,
         )
-        fun clockHeight(s: Float) = h(clock.clockSample, CLOCK_SP * s) + 2 * LINE_GAP_DP * s + h(clock.hijriDate, DATE_SP * s) + h(clock.gregorianDate, DATE_SP * s)
-        fun prayerHeight(s: Float) = h(view.label, LABEL_SP * s) + 2 * LINE_GAP_DP * s +
+        fun clockHeight(s: Float) = h(clock.clockSample, CLOCK_SP * s) +
+            if (dates) 2 * LINE_GAP_DP * s + h(clock.hijriDate, DATE_SP * s) + h(clock.gregorianDate, DATE_SP * s) else 0f
+        fun prayerHeight(s: Float) = (if (label) h(view.label, LABEL_SP * s) + LINE_GAP_DP * s else 0f) + LINE_GAP_DP * s +
             maxOf(h(clock.nextName, NAME_SP * s, bold = true), h(clock.nextTime, TIME_SP * s)) +
             maxOf(h(view.before, BEFORE_SP * s), h(clock.countdown, COUNTDOWN_SP * s, bold = true)) +
-            2 * BAR_GAP_DP * s + WidgetArt.LINE_HEIGHT_DP + h(view.since, SINCE_SP * s)
-        val scale = fitScale(floor = 0.4f, start = MAX_GROW) { s ->
-            clockSide(s) + 2 * DIVIDER_GAP_DP * s + 1 + prayerWidth(s) <= across &&
-                clockHeight(s) <= room && prayerHeight(s) <= room
+            (if (since) 2 * BAR_GAP_DP * s + h(view.since, SINCE_SP * s) else BAR_GAP_DP * s) + WidgetArt.LINE_HEIGHT_DP
+        fun fits(clockS: Float, s: Float) = clockSide(clockS) + 2 * DIVIDER_GAP_DP * s + 1 + prayerWidth(s) <= across &&
+            clockHeight(clockS) <= room && prayerHeight(s) <= room
+        val scale: Float
+        val clockScale: Float
+        if (compact) {
+            scale = fitScale(floor = 0.2f, start = MAX_GROW) { s -> prayerHeight(s) <= room && prayerText(s) <= across * COMPACT_PRAYER_SHARE - 2 * DIVIDER_GAP_DP * s - 1 }
+            clockScale = fitScale(floor = 0.2f, start = MAX_GROW) { fits(it, scale) }
+        } else {
+            scale = fitScale(floor = 0.4f, start = MAX_GROW) { fits(it, it) }
+            clockScale = scale
         }
-        return Fit(scale, prayerWidth(scale), maxOf(clockHeight(scale), prayerHeight(scale)).coerceAtMost(room))
+        val divider = maxOf(clockHeight(clockScale), prayerHeight(scale)).coerceAtMost(room)
+        return Tried(Fit(scale, prayerWidth(scale), divider, clockScale, paddingV, dates, label, since), fits(clockScale, scale))
     }
 }
 
@@ -130,7 +175,7 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
     val clock = view.clock
     val line = (ClockPrayerMetrics.LINE_GAP_DP * s).dp
     val word = (ClockPrayerMetrics.WORD_GAP_DP * s).dp
-    WidgetFrame(rtl, horizontal = ClockPrayerMetrics.PADDING_H, vertical = ClockPrayerMetrics.PADDING_V, description = clock.description) {
+    WidgetFrame(rtl, horizontal = ClockPrayerMetrics.PADDING_H, vertical = fit.paddingV, description = clock.description) {
         ReadingRow(
             GlanceModifier.fillMaxSize(),
             Alignment.CenterVertically,
@@ -140,14 +185,16 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
                         ReadingRow(
                             verticalAlignment = Alignment.CenterVertically,
                             children = listOfNotNull(
-                                cell { ClockFace(clock, ClockPrayerMetrics.CLOCK_SP * s) },
+                                cell { ClockFace(clock, ClockPrayerMetrics.CLOCK_SP * fit.clockScale) },
                                 if (clock.marker.isEmpty()) null else cell {
-                                    WidgetLine(clock.marker, ClockPrayerMetrics.MARKER_SP * s, Tone.MUTED, modifier = direction.paddingStart((ClockPrayerMetrics.MARKER_GAP_DP * s).dp))
+                                    WidgetLine(clock.marker, ClockPrayerMetrics.MARKER_SP * fit.clockScale, Tone.MUTED, modifier = direction.paddingStart((ClockPrayerMetrics.MARKER_GAP_DP * fit.clockScale).dp))
                                 },
                             ),
                         )
-                        WidgetLine(clock.hijriDate, ClockPrayerMetrics.DATE_SP * s, Tone.MUTED, center = true, modifier = GlanceModifier.padding(top = line))
-                        WidgetLine(clock.gregorianDate, ClockPrayerMetrics.DATE_SP * s, Tone.MUTED, center = true, modifier = GlanceModifier.padding(top = line))
+                        if (fit.dates) {
+                            WidgetLine(clock.hijriDate, ClockPrayerMetrics.DATE_SP * s, Tone.MUTED, center = true, modifier = GlanceModifier.padding(top = line))
+                            WidgetLine(clock.gregorianDate, ClockPrayerMetrics.DATE_SP * s, Tone.MUTED, center = true, modifier = GlanceModifier.padding(top = line))
+                        }
                     }
                 },
                 cell {
@@ -162,9 +209,9 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
                 },
                 cell {
                     Column(GlanceModifier.width(fit.prayerWidth.dp), horizontalAlignment = direction.start) {
-                        WidgetLine(view.label, ClockPrayerMetrics.LABEL_SP * s, Tone.MUTED)
+                        if (fit.label) WidgetLine(view.label, ClockPrayerMetrics.LABEL_SP * s, Tone.MUTED)
                         ReadingRow(
-                            GlanceModifier.padding(top = line),
+                            GlanceModifier.padding(top = if (fit.label) line else 0.dp),
                             Alignment.CenterVertically,
                             listOf(
                                 cell { WidgetLine(clock.nextName, ClockPrayerMetrics.NAME_SP * s, Tone.TEXT, bold = true) },
@@ -179,14 +226,15 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
                                 cell { WidgetLine(clock.countdown, ClockPrayerMetrics.COUNTDOWN_SP * s, Tone.ACCENT, bold = true, modifier = direction.paddingStart(word)) },
                             ),
                         )
-                        Box(GlanceModifier.padding(vertical = (ClockPrayerMetrics.BAR_GAP_DP * s).dp)) {
+                        val bar = (ClockPrayerMetrics.BAR_GAP_DP * s).dp
+                        Box(GlanceModifier.padding(top = bar, bottom = if (fit.since) bar else 0.dp)) {
                             WidgetDrawing(
                                 WidgetArt.progressLine(context, fit.prayerWidth, clock.elapsed, rtl, context.colorOf(style.accent), context.colorOf(style.accentSoft)),
                                 fit.prayerWidth,
                                 WidgetArt.LINE_HEIGHT_DP,
                             )
                         }
-                        WidgetLine(view.since, ClockPrayerMetrics.SINCE_SP * s, Tone.MUTED)
+                        if (fit.since) WidgetLine(view.since, ClockPrayerMetrics.SINCE_SP * s, Tone.MUTED)
                     }
                 },
             ),
@@ -194,7 +242,7 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
     }
 }
 
-/** The Clock & Prayer entry in the widget picker (4×2). */
+/** The Clock & Prayer entry in the widget picker (4×2, down to 4×1). */
 class ClockPrayerWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = ClockPrayerWidget()
 

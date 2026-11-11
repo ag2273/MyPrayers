@@ -405,6 +405,19 @@
     <!-- The Adhkar tab (#62). The adhkar themselves are always Arabic. -->
     <string name="tab_adhkar">Adhkar</string>
     <string name="adhkar_morning">Morning adhkar</string>
+    <string name="adhkar_evening">Evening adhkar</string>
+    <string name="adhkar_after_prayer">After-prayer adhkar</string>
+    <string name="adhkar_after_prayer_slot">After %1$s</string>
+    <string name="adhkar_after_prayer_name">Adhkar after %1$s</string>
+    <string name="adhkar_after_which_prayer">After which Prayer?</string>
+    <string name="adhkar_time_morning">Their time is from Fajr to Dhuhr</string>
+    <string name="adhkar_time_evening">Their time is from Asr to Fajr</string>
+    <string name="adhkar_not_yet_time">Not time yet</string>
+    <string name="adhkar_read_outside_time">Read outside their time</string>
+    <string name="adhkar_outside_morning">The morning adhkar are from Fajr to Dhuhr. You can read them now, but they won\'t be recorded for today.</string>
+    <string name="adhkar_outside_evening">The evening adhkar are from Asr to Fajr. You can read them now, but they won\'t be recorded for today.</string>
+    <string name="adhkar_outside_after_prayer">%1$s\'s time hasn\'t come yet. You can read them, but they won\'t be recorded.</string>
+    <string name="adhkar_set_read">%1$s read in full</string>
     <string name="adhkar_not_started">Not started</string>
     <string name="adhkar_resume">At dhikr %1$s of %2$s</string>
     <string name="adhkar_done_today">Done today</string>
