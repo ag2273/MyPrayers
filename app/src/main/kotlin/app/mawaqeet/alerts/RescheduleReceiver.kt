@@ -7,6 +7,7 @@ import androidx.core.os.UserManagerCompat
 import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.widget.Widgets
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 /**
  * System broadcasts that invalidate the scheduled alarms: boot (alarms don't survive it), locked boot (before
@@ -18,7 +19,10 @@ class RescheduleReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) markLocationMaybeStale(context)
         when (intent.action) {
             // The widgets' times and countdown follow the clock, zone and plan; refreshAll skips a locked boot.
-            in ACTIONS -> AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true)
+            // A Silence Window caught by a reboot or a clock change: restored at once if its end has passed.
+            in ACTIONS -> AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true) {
+                PrayerSilencer.inAppStyle(context).catchUp(Instant.now())
+            }
             // The system language changed: widgets following it re-render (the alarms don't depend on it).
             Intent.ACTION_LOCALE_CHANGED -> Widgets.refreshAllAsync(this, context)
         }

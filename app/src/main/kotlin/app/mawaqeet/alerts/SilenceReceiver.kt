@@ -16,7 +16,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * Receives a Silence Window's two alarms (direct-boot aware): [ACTION_START] silences the phone, [ACTION_END] restores
+ * Receives a Silence Window's two alarms (direct-boot aware): [ACTION_START] (set only when no Adhan Alert opens the
+ * window; otherwise [AlertReceiver] starts it once the adhan stops) silences the phone, [ACTION_END] restores
  * it, and [ACTION_RESTORE] («استعادة الصوت» on the notification) restores it early, all through [PrayerSilencer]. The
  * window travels in the intent, since settings can't be read before the first
  * unlock. Nothing is rescheduled here: the plan moves on with the Adhan Alerts and the display alarm.

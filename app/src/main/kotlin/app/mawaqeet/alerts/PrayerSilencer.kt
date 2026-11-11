@@ -7,9 +7,15 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
 import androidx.core.content.ContextCompat
+import androidx.core.os.UserManagerCompat
+import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.SilenceWindow
+import java.time.Instant
+import java.time.LocalDate
+import kotlinx.coroutines.flow.first
 
 /**
  * Prayer Silence's thin adapter over the ringer. At a Silence Window's [start] it puts the phone on the window's mode
@@ -22,7 +28,13 @@ import app.mawaqeet.core.SilenceWindow
  * calls [restore]. A ringer change by the user ([ringerChanged], via [watchRinger]) hands the window to them: the
  * notification goes and nothing is restored at the end.
  *
- * The record lives in device-protected storage, so a window that ends before the first unlock still restores the sound.
+ * A window whose Prayer has an adhan playing waits for it ([awaitAdhan]) and starts when the player stops
+ * ([adhanStopped]), so the silence never cuts the adhan off; its end stays at the planned end. After a reboot
+ * [catchUp] starts a window still waiting for its adhan (the adhan never replays), re-posts the notification of one in
+ * progress and restores the sound at once for one whose planned end has passed.
+ *
+ * The record (the window, the mode it replaced, the mode it set, and a window waiting for its adhan) lives in
+ * device-protected storage, so a window that ends before the first unlock still restores the sound.
  */
 class PrayerSilencer(
     private val context: Context,
@@ -44,7 +56,7 @@ class PrayerSilencer(
         val changed = runCatching { audio.ringerMode = applied }.isSuccess
         if (!changed) return
         record.edit()
-            .putString(KEY_WINDOW, window.id)
+            .putString(KEY_WINDOW, encode(window))
             .putInt(KEY_PREVIOUS, previous)
             .putInt(KEY_APPLIED, applied)
             .apply()
@@ -53,8 +65,9 @@ class PrayerSilencer(
 
     /** The window's planned end: the recorded mode comes back if the ringer is still the one the app set. */
     fun end(window: SilenceWindow) {
+        if (awaiting()?.id == window.id) record.edit().remove(KEY_AWAITING).apply()
         SilenceNotification.cancel(context)
-        if (record.getString(KEY_WINDOW, null) != window.id) return
+        if (active()?.id != window.id) return
         val previous = record.getInt(KEY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)
         val applied = record.getInt(KEY_APPLIED, -1)
         forget()
@@ -72,14 +85,44 @@ class PrayerSilencer(
      * now, so its end restores nothing and the notification goes.
      */
     fun ringerChanged() {
-        if (record.getString(KEY_WINDOW, null) == null) return
+        if (!record.contains(KEY_WINDOW)) return
         if (audio.ringerMode == record.getInt(KEY_APPLIED, -1)) return
         forget()
         SilenceNotification.cancel(context)
     }
 
+    /**
+     * [window]'s adhan is about to play: the window starts when it stops ([adhanStopped]), not now. A window still
+     * waiting for an earlier adhan (replaced by this one) starts at once.
+     */
+    fun awaitAdhan(window: SilenceWindow, now: Instant = Instant.now()) {
+        adhanStopped(now)
+        record.edit().putString(KEY_AWAITING, encode(window)).apply()
+    }
+
+    /** The adhan stopped (finished, Stop, or replaced): the window waiting for it starts, unless its end has passed. */
+    fun adhanStopped(now: Instant = Instant.now()) {
+        val waiting = awaiting() ?: return
+        record.edit().remove(KEY_AWAITING).apply()
+        if (waiting.end.isAfter(now)) start(waiting)
+    }
+
+    /**
+     * After a reboot (or a clock change): a window still waiting for its adhan starts now, since the adhan never
+     * replays; the window in progress gets its notification back, or, if its planned end has passed, its sound back.
+     */
+    fun catchUp(now: Instant) {
+        adhanStopped(now)
+        val window = active() ?: return
+        if (window.end.isAfter(now)) SilenceNotification.post(context, window, digits, language) else end(window)
+    }
+
+    private fun active(): SilenceWindow? = record.getString(KEY_WINDOW, null)?.let(::decode)
+
+    private fun awaiting(): SilenceWindow? = record.getString(KEY_AWAITING, null)?.let(::decode)
+
     private fun forget() {
-        record.edit().clear().apply()
+        record.edit().remove(KEY_WINDOW).remove(KEY_PREVIOUS).remove(KEY_APPLIED).apply()
     }
 
     private fun ringerMode(mode: SilenceMode): Int = when (mode) {
@@ -92,8 +135,35 @@ class PrayerSilencer(
         private const val KEY_WINDOW = "window"
         private const val KEY_PREVIOUS = "previous_ringer_mode"
         private const val KEY_APPLIED = "applied_ringer_mode"
+        private const val KEY_AWAITING = "awaiting_adhan"
 
         private val SilenceWindow.id: String get() = "$prayerDay/${prayer.name}"
+
+        private fun encode(w: SilenceWindow): String =
+            listOf(w.prayer.name, w.prayerDay, w.start.toEpochMilli(), w.end.toEpochMilli(), w.mode.name, w.isJumuah).joinToString("\t")
+
+        /** Null for an unreadable record. */
+        private fun decode(text: String): SilenceWindow? = runCatching {
+            val f = text.split('\t')
+            SilenceWindow(
+                prayer = Prayer.valueOf(f[0]),
+                prayerDay = LocalDate.parse(f[1]),
+                start = Instant.ofEpochMilli(f[2].toLong()),
+                end = Instant.ofEpochMilli(f[3].toLong()),
+                mode = SilenceMode.valueOf(f[4]),
+                isJumuah = f[5].toBooleanStrict(),
+            )
+        }.getOrNull()
+
+        /**
+         * A silencer whose notification is in the app's digits and language, read from settings once the phone is
+         * unlocked; before the first unlock settings are unreadable, so it uses the defaults.
+         */
+        suspend fun inAppStyle(context: Context): PrayerSilencer {
+            val app = context.applicationContext as? MawaqeetApplication
+            if (app == null || !UserManagerCompat.isUserUnlocked(context)) return PrayerSilencer(context)
+            return PrayerSilencer(context, app.settings.digitStyle.first(), app.settings.appLanguage.first())
+        }
 
         /**
          * Listens for ringer changes for as long as the process lives ([ringerChanged]). Called from the Application, so

@@ -230,4 +230,36 @@ class AlertSchedulerTest {
 
         assertEquals(listOf(SilenceReceiver.ACTION_END to asrSilence.end), silenceAlarms())
     }
+
+    @Test
+    fun `a Silence Window with an Adhan Alert is opened by that alert, with no start alarm of its own`() {
+        AlertScheduler(context).apply(AlertPlan(listOf(dhuhr, asr), midnight, silenceWindows = listOf(dhuhrSilence)), early)
+
+        assertEquals(listOf(SilenceReceiver.ACTION_END to dhuhrSilence.end), silenceAlarms())
+        val intents = alarms.scheduledAlarms.map { shadowOf(it.operation).savedIntent }.filter { it.action == AlertReceiver.ACTION_ALERT }
+        val dhuhrAlarm = intents.single { it.getStringExtra(AlertReceiver.EXTRA_PRAYER) == "DHUHR" }
+        val asrAlarm = intents.single { it.getStringExtra(AlertReceiver.EXTRA_PRAYER) == "ASR" }
+        assertEquals(dhuhrSilence.end.toEpochMilli(), dhuhrAlarm.getLongExtra(AlertReceiver.EXTRA_SILENCE_END, 0))
+        assertEquals(false, asrAlarm.hasExtra(AlertReceiver.EXTRA_SILENCE_END))
+    }
+
+    @Test
+    fun `a Silence Window whose Prayer has no Adhan Alert still starts at the Prayer Time`() {
+        AlertScheduler(context).apply(AlertPlan(listOf(asr), midnight, silenceWindows = listOf(dhuhrSilence)), early)
+
+        assertEquals(
+            listOf(SilenceReceiver.ACTION_START to dhuhrSilence.start, SilenceReceiver.ACTION_END to dhuhrSilence.end),
+            silenceAlarms(),
+        )
+    }
+
+    @Test
+    fun `turning the Adhan Alert on drops the start alarm set while it was off`() {
+        val scheduler = AlertScheduler(context)
+        scheduler.apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(dhuhrSilence)), early)
+
+        scheduler.apply(AlertPlan(listOf(dhuhr), midnight, silenceWindows = listOf(dhuhrSilence)), early)
+
+        assertEquals(listOf(SilenceReceiver.ACTION_END to dhuhrSilence.end), silenceAlarms())
+    }
 }
