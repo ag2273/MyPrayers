@@ -267,6 +267,18 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setPrayerSilenceEnabled(on) }
                             }
 
+                            override fun setPrayerSilenceMode(mode: app.mawaqeet.core.SilenceMode) {
+                                scope.launch { settingsStore.setPrayerSilenceMode(mode) }
+                            }
+
+                            override fun setPrayerSilencePrayer(prayer: app.mawaqeet.core.Prayer, on: Boolean) {
+                                scope.launch { settingsStore.setPrayerSilencePrayer(prayer, on) }
+                            }
+
+                            override fun stepPrayerSilenceMinutes(jumuah: Boolean, step: Int) {
+                                scope.launch { settingsStore.stepPrayerSilenceMinutes(jumuah, step) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {

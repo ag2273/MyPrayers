@@ -97,7 +97,7 @@ class PrayerCore(
      * next [AlertPlan.WINDOW]. Sunrise never alerts. Each Prayer follows its [PrayerAlertSettings]; its sound is
      * the chosen recording's Custom Adhan when one is set ([AlertSettings.customAdhans]). With the master switch off
      * ([AlertSettings.enabled]) the plan holds no alerts at all; the display alarm still moves at every Prayer Time.
-     * With Prayer Silence on ([AlertSettings.prayerSilence]) it also holds a Silence Window per Prayer, master switch or not.
+     * With Prayer Silence on ([AlertSettings.prayerSilence]) it also holds a Silence Window per chosen Prayer, master switch or not.
      */
     fun alertPlan(): AlertPlan {
         val now = clock.instant()
@@ -123,13 +123,13 @@ class PrayerCore(
         val silence = settings.alerts.prayerSilence
         if (!silence.enabled) return emptyList()
         return days.flatMap { (date, day) ->
-            day.prayerTimes.map { time ->
+            day.prayerTimes.filter { silence.isOn(it.prayer) }.map { time ->
                 val start = time.time.toInstant()
                 SilenceWindow(
                     prayer = time.prayer,
                     prayerDay = date,
                     start = start,
-                    end = start.plus(silence.duration(time.prayer, time.isJumuah)),
+                    end = start.plus(silence.duration(time.isJumuah)),
                     mode = silence.mode,
                     isJumuah = time.isJumuah,
                 )

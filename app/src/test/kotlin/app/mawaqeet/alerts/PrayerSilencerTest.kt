@@ -53,6 +53,41 @@ class PrayerSilencerTest {
     }
 
     @Test
+    fun `with vibrate chosen, a phone on normal vibrates during the window and gets its sound back at the end`() {
+        val vibrate = window.copy(mode = SilenceMode.VIBRATE)
+
+        context.sendBroadcast(SilenceReceiver.intent(context, vibrate, start = true))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+
+        context.sendBroadcast(SilenceReceiver.intent(context, vibrate, start = false))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+    }
+
+    @Test
+    fun `with vibrate chosen, a phone already on vibrate is left alone and not turned up at the end`() {
+        val vibrate = window.copy(mode = SilenceMode.VIBRATE)
+        audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+
+        PrayerSilencer(context).start(vibrate)
+        assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+        PrayerSilencer(context).end(vibrate)
+        assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+    }
+
+    @Test
+    fun `with vibrate chosen, a phone already silent stays silent and is not made to vibrate`() {
+        val vibrate = window.copy(mode = SilenceMode.VIBRATE)
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+
+        PrayerSilencer(context).start(vibrate)
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        PrayerSilencer(context).end(vibrate)
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
     fun `the Silence Window's start and end alarms silence the phone and restore it`() {
         context.sendBroadcast(SilenceReceiver.intent(context, window, start = true))
         shadowOf(Looper.getMainLooper()).idle()

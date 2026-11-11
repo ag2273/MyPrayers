@@ -4,24 +4,47 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 
-/** What a Silence Window does to the ringer. Stored by name; vibrate is added with #68. */
-enum class SilenceMode { SILENT }
+/** What a Silence Window does to the ringer: «صامت» or «اهتزاز». Stored by name. */
+enum class SilenceMode { SILENT, VIBRATE }
 
 /**
- * Settings → Alerts → «الصامت وقت الصلاة»: Prayer Silence puts the phone on [mode] for a while at each Prayer, then
- * restores the previous ringer mode. Off by default. Independent of [AlertSettings.enabled]: it works with every app
- * alert off. Per-Prayer choices and adjustable durations (20 minutes, 45 for Jumu'ah) come with #68.
+ * Settings → Alerts → «الصامت وقت الصلاة»: Prayer Silence puts the phone on [mode] for a while at each chosen Prayer,
+ * then restores the previous ringer mode. Off by default. Independent of [AlertSettings.enabled]: it works with every
+ * app alert off. Each window lasts [minutes], except Friday Dhuhr (Jumu'ah), which lasts [jumuahMinutes].
  */
 data class PrayerSilence(
     val enabled: Boolean = false,
     val mode: SilenceMode = SilenceMode.SILENT,
+    /** The Prayers that get a Silence Window: every Prayer unless the user turns some off. */
+    val prayers: Set<Prayer> = Prayer.entries.toSet(),
+    /** How long a Silence Window lasts, within [MINUTES_RANGE]. */
+    val minutes: Int = DEFAULT_MINUTES,
+    /** How long Friday Dhuhr's Silence Window lasts, within [JUMUAH_MINUTES_RANGE], so the khutbah is covered. */
+    val jumuahMinutes: Int = DEFAULT_JUMUAH_MINUTES,
 ) {
-    /** How long [prayer]'s Silence Window lasts. */
-    @Suppress("UNUSED_PARAMETER")
-    fun duration(prayer: Prayer, isJumuah: Boolean): Duration = Duration.ofMinutes(DEFAULT_MINUTES)
+    init {
+        require(minutes in MINUTES_RANGE) { "A Silence Window lasts $MINUTES_RANGE minutes, not $minutes" }
+        require(jumuahMinutes in JUMUAH_MINUTES_RANGE) {
+            "Jumu'ah's Silence Window lasts $JUMUAH_MINUTES_RANGE minutes, not $jumuahMinutes"
+        }
+    }
+
+    fun isOn(prayer: Prayer): Boolean = prayer in prayers
+
+    /** Turns Prayer Silence on or off for [prayer] alone. */
+    fun with(prayer: Prayer, on: Boolean): PrayerSilence = copy(prayers = if (on) prayers + prayer else prayers - prayer)
+
+    /** How long a Silence Window lasts: [jumuahMinutes] for Jumu'ah, else [minutes]. */
+    fun duration(isJumuah: Boolean): Duration = Duration.ofMinutes((if (isJumuah) jumuahMinutes else minutes).toLong())
 
     companion object {
-        const val DEFAULT_MINUTES = 20L
+        const val DEFAULT_MINUTES = 20
+        const val DEFAULT_JUMUAH_MINUTES = 45
+        val MINUTES_RANGE = 5..60
+        val JUMUAH_MINUTES_RANGE = 15..120
+
+        /** One tap of the − or + button in Settings. */
+        const val MINUTES_STEP = 5
     }
 }
 

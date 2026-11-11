@@ -7,10 +7,11 @@ import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.SilenceWindow
 
 /**
- * Prayer Silence's thin adapter over the ringer. At a Silence Window's [start] it silences the phone only if the phone
- * is on normal sound with Do Not Disturb off, and records the mode it replaced; at the [end] it restores that mode only
- * if the ringer is still the one the app set (so the user's own change during the window wins). A phone already silent,
- * on vibrate or on Do Not Disturb is left alone and nothing is restored. Without Do Not Disturb (notification policy)
+ * Prayer Silence's thin adapter over the ringer. At a Silence Window's [start] it puts the phone on the window's mode
+ * (silent or vibrate) only if the phone is on normal sound with Do Not Disturb off, and records the mode it replaced; at
+ * the [end] it restores that mode only if the ringer is still the one the app set (so the user's own change during the
+ * window wins). A phone already silent, on vibrate or on Do Not Disturb is left alone and nothing is restored, whichever
+ * mode is chosen. Without Do Not Disturb (notification policy)
  * access Android forbids silencing, so nothing happens.
  *
  * The record lives in device-protected storage, so a window that ends before the first unlock still restores the sound.
@@ -47,6 +48,7 @@ class PrayerSilencer(context: Context) {
 
     private fun ringerMode(mode: SilenceMode): Int = when (mode) {
         SilenceMode.SILENT -> AudioManager.RINGER_MODE_SILENT
+        SilenceMode.VIBRATE -> AudioManager.RINGER_MODE_VIBRATE
     }
 
     companion object {
