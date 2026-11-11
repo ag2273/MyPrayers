@@ -42,4 +42,15 @@ class RoomAdhkarRepository(db: PrayerLogDatabase) : AdhkarRepository {
         dao.insertRecord(AdhkarRecordEntry(prayerDay.toString(), slot))
         version.update { it + 1 }
     }
+
+    override fun firstUseDate(): LocalDate? = dao.firstUse()?.let(LocalDate::parse)
+
+    override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {
+        dao.insertFirstUse(AdhkarFirstUse(prayerDay = prayerDay.toString()))
+    }
+
+    override fun deleteRecord(firstUseFrom: LocalDate) {
+        dao.deleteRecord(firstUseFrom.toString())
+        version.update { it + 1 }
+    }
 }

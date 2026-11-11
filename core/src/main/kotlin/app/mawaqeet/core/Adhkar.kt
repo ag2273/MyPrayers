@@ -117,7 +117,48 @@ interface AdhkarRepository {
     fun completedOn(prayerDay: LocalDate): Set<String>
 
     fun recordCompleted(prayerDay: LocalDate, slot: String)
+
+    /** The Prayer Day of the first count: the Adhkar Record counts from it. Null before anything is counted. */
+    fun firstUseDate(): LocalDate?
+
+    fun recordFirstUseIfAbsent(prayerDay: LocalDate)
+
+    /**
+     * Removes the whole Adhkar Record and every count, and records [firstUseFrom] as the first-use date, replacing
+     * any recorded one (Settings → Prayer Log → Delete Adhkar Record).
+     */
+    fun deleteRecord(firstUseFrom: LocalDate)
 }
+
+/** One slot of a Prayer Day in the Adhkar Record week grid. */
+enum class AdhkarMark {
+    /** Every dhikr said its full count, in the set's time. */
+    COMPLETED,
+
+    /** Its time arrived (or the day is past) and it was not completed. */
+    NOT_COMPLETED,
+
+    /** Today, before its time: the evening before Asr, an after-prayer slot before its Prayer. */
+    NOT_YET_DUE,
+
+    /** A Prayer Day before the first count: never shown as missed. */
+    BEFORE_FIRST_USE,
+}
+
+/** One row of the Adhkar Record week: a Prayer Day with a mark per [AdhkarSlot]. */
+data class AdhkarRecordDay(val date: LocalDate, val hijriDate: HijriDate, val marks: Map<AdhkarSlot, AdhkarMark>) {
+    fun of(slot: AdhkarSlot): AdhkarMark = marks.getValue(slot)
+}
+
+/**
+ * Seven consecutive Prayer Days of the Adhkar Record, oldest first, as the Adhkar tab's week grid shows them. Only
+ * marks: no streaks, badges or scores.
+ */
+data class AdhkarWeek(
+    val days: List<AdhkarRecordDay>,
+    /** The first-use date (or the current Prayer Day if nothing was counted yet); earlier days are never missed. */
+    val countedFrom: LocalDate,
+)
 
 /** One dhikr in a set being read, with how many times it has been said on this Prayer Day. */
 data class DhikrProgress(val dhikr: Dhikr, val counted: Int) {
@@ -170,6 +211,7 @@ class Adhkar(
         repo.clearCountsBefore(day.date)
         val before = progressOn(day, slot)
         val current = before.current ?: return before
+        repo.recordFirstUseIfAbsent(day.date)
         repo.setCount(day.date, slot.key, current.dhikr.id, current.counted + 1)
         val after = progressOn(day, slot)
         if (after.currentIndex == null && !after.isComplete && after.isInTime) {
@@ -207,6 +249,34 @@ class Adhkar(
         day.prayerTimes.last { day.hasArrived(it.prayer) }.prayer
     }
 
+    /**
+     * The Adhkar Record of the seven Prayer Days ending with [lastDay] (the current Prayer Day by default), oldest
+     * first. Browse older weeks with `lastDay = <previous lastDay>.minusDays(7)`.
+     */
+    fun week(lastDay: LocalDate? = null): AdhkarWeek {
+        val today = prayers.currentPrayerDay()
+        val end = lastDay ?: today.date
+        val countedFrom = repo.firstUseDate() ?: today.date
+        val days = (PrayerCore.WEEK_DAYS - 1 downTo 0L).map { back ->
+            val date = end.minusDays(back)
+            val day = if (date == today.date) today else prayers.prayerDay(date)
+            val completed = repo.completedOn(date)
+            val marks = AdhkarSlot.all.associateWith { slot ->
+                when {
+                    slot.key in completed -> AdhkarMark.COMPLETED
+                    date < countedFrom -> AdhkarMark.BEFORE_FIRST_USE
+                    !day.isDue(slot) -> AdhkarMark.NOT_YET_DUE
+                    else -> AdhkarMark.NOT_COMPLETED
+                }
+            }
+            AdhkarRecordDay(date, day.hijriDate, marks)
+        }
+        return AdhkarWeek(days, countedFrom)
+    }
+
+    /** Permanently deletes the Adhkar Record (after the user confirms); it then counts from the current Prayer Day. */
+    fun deleteRecord() = synchronized(repo) { repo.deleteRecord(firstUseFrom = today()) }
+
     private fun today(): LocalDate = prayers.currentPrayerDay().date
 
     private fun progressOn(day: PrayerDay, slot: AdhkarSlot): SetProgress {
@@ -220,6 +290,13 @@ class Adhkar(
         AdhkarSetId.MORNING -> !day.hasArrived(Prayer.DHUHR)
         AdhkarSetId.EVENING -> day.hasArrived(Prayer.ASR)
         AdhkarSetId.AFTER_PRAYER -> day.hasArrived(checkNotNull(slot.prayer))
+    }
+
+    /** Whether [slot]'s time has arrived on this Prayer Day (the morning's at Fajr, so always). */
+    private fun PrayerDay.isDue(slot: AdhkarSlot): Boolean = when (slot.set) {
+        AdhkarSetId.MORNING -> true
+        AdhkarSetId.EVENING -> hasArrived(Prayer.ASR)
+        AdhkarSetId.AFTER_PRAYER -> hasArrived(checkNotNull(slot.prayer))
     }
 
     private fun PrayerDay.hasArrived(prayer: Prayer): Boolean = stateOf(prayer) != LogState.NOT_YET_DUE

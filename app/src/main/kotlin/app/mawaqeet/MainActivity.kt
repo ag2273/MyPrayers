@@ -357,6 +357,13 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
+                            override fun deleteAdhkarRecord() {
+                                scope.launch(Dispatchers.IO) {
+                                    val prayers = PrayerCore(settingsStore.settings.first(), clock, prayerLog)
+                                    Adhkar(app.adhkarCatalog, prayers, app.adhkar).deleteRecord()
+                                }
+                            }
+
                             override fun setCustomAdhan(recording: AdhanRecording, uri: Uri?) {
                                 // Keep read access before storing, so the alert can open the file after a reboot.
                                 if (uri != null) CustomAdhanFiles.keep(this@MainActivity, uri)

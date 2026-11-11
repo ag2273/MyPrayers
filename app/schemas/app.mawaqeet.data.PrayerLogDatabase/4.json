@@ -1,0 +1,185 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "5a3a3282470361478a1e8aae74084ca3",
+    "entities": [
+      {
+        "tableName": "prayer_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`prayer_day` TEXT NOT NULL, `prayer` TEXT NOT NULL, PRIMARY KEY(`prayer_day`, `prayer`))",
+        "fields": [
+          {
+            "fieldPath": "prayerDay",
+            "columnName": "prayer_day",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prayer",
+            "columnName": "prayer",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "prayer_day",
+            "prayer"
+          ]
+        }
+      },
+      {
+        "tableName": "first_use",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `prayer_day` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prayerDay",
+            "columnName": "prayer_day",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "past_place",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`until` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `zone` TEXT NOT NULL, PRIMARY KEY(`until`))",
+        "fields": [
+          {
+            "fieldPath": "until",
+            "columnName": "until",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zone",
+            "columnName": "zone",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "until"
+          ]
+        }
+      },
+      {
+        "tableName": "adhkar_progress",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`prayer_day` TEXT NOT NULL, `slot` TEXT NOT NULL, `dhikr_id` TEXT NOT NULL, `count` INTEGER NOT NULL, PRIMARY KEY(`prayer_day`, `slot`, `dhikr_id`))",
+        "fields": [
+          {
+            "fieldPath": "prayerDay",
+            "columnName": "prayer_day",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slot",
+            "columnName": "slot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dhikrId",
+            "columnName": "dhikr_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "count",
+            "columnName": "count",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "prayer_day",
+            "slot",
+            "dhikr_id"
+          ]
+        }
+      },
+      {
+        "tableName": "adhkar_record",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`prayer_day` TEXT NOT NULL, `slot` TEXT NOT NULL, PRIMARY KEY(`prayer_day`, `slot`))",
+        "fields": [
+          {
+            "fieldPath": "prayerDay",
+            "columnName": "prayer_day",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slot",
+            "columnName": "slot",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "prayer_day",
+            "slot"
+          ]
+        }
+      },
+      {
+        "tableName": "adhkar_first_use",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `prayer_day` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prayerDay",
+            "columnName": "prayer_day",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5a3a3282470361478a1e8aae74084ca3')"
+    ]
+  }
+}

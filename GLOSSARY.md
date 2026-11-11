@@ -81,7 +81,7 @@ An optional setting, off by default, that puts the phone on silent («صامت»
 _Avoid_: Auto-silent, mute mode, prayer mode
 
 **Silence Window**:
-One planned stretch of Prayer Silence: from a Prayer's Prayer Time to a fixed end (20 minutes later by default, 45 for Jumu'ah; both adjustable), carrying the chosen silent or vibrate mode, identified by its Prayer Day and Prayer.
+One planned stretch of Prayer Silence: from a Prayer's Prayer Time to a fixed end (20 minutes later by default, 45 for Jumu'ah; both adjustable), carrying the chosen silent or vibrate mode, identified by its Prayer Day and Prayer. The phone is silenced once that Prayer's adhan stops (finished, stopped or not played), or at the Prayer Time when there is no Adhan Alert; the end stays fixed, and a restart during the window still restores the sound at the end (at once if the end has passed).
 _Avoid_: Silent period, mute window
 
 **Jumu'ah**:
@@ -101,7 +101,7 @@ An ordered list of adhkar read together from Hisn al-Muslim: the morning adhkar,
 _Avoid_: Adhkar list, wird, routine
 
 **Adhkar Record**:
-Which Adhkar Sets the user completed (every dhikr said its full count) on each Prayer Day. It is not the Prayer Log, and a restart never removes a completed day. A set counts only when finished in its time: the morning adhkar from Fajr to Dhuhr, the evening adhkar from Asr to the next Fajr, the after-prayer adhkar once their Prayer's time has arrived. The after-prayer adhkar are recorded per Prayer, against the most recent Prayer whose time has arrived unless the user picks another before starting. Any set can be read at any time.
+Which Adhkar Sets the user completed (every dhikr said its full count) on each Prayer Day. It is not the Prayer Log, and a restart never removes a completed day. A set counts only when finished in its time: the morning adhkar from Fajr to Dhuhr, the evening adhkar from Asr to the next Fajr, the after-prayer adhkar once their Prayer's time has arrived. The after-prayer adhkar are recorded per Prayer, against the most recent Prayer whose time has arrived unless the user picks another before starting. Any set can be read at any time. It is shown as a week grid (a row per Prayer Day, a mark for the morning, the evening and after each Prayer) that counts only from the Adhkar first-use date, the Prayer Day of the first count; days before it are never shown as missed. It shares the Prayer Log's backup rules and is deleted separately («حذف سجل الأذكار»).
 _Avoid_: Adhkar log, streak, score
 
 **Clock Widget**:

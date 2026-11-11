@@ -229,11 +229,11 @@ class PrayerCore(
     private fun settingsOn(date: LocalDate, places: List<PastPlace>): PrayerSettings =
         places.firstOrNull { date < it.until }?.let { settings.copy(location = it.location) } ?: settings
 
-    private companion object {
+    internal companion object {
         /** Today plus the 6 previous Prayer Days. */
-        const val EDIT_WINDOW_DAYS = 7L
+        private const val EDIT_WINDOW_DAYS = 7L
 
-        /** A Prayer Week's length. */
+        /** A Prayer Week's length (the Adhkar Record week's too). */
         const val WEEK_DAYS = 7L
     }
 }

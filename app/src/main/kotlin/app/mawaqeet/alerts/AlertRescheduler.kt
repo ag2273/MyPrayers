@@ -39,12 +39,19 @@ object AlertRescheduler {
 
     /**
      * For receivers: reschedules off the main thread, keeping the broadcast alive until done. With [refreshWidgets]
-     * it then refreshes every widget ([Widgets.refreshAll]; a broadcast can `goAsync` only once).
+     * it then refreshes every widget ([Widgets.refreshAll]; a broadcast can `goAsync` only once). [first] runs before
+     * the reschedule, in the same background work.
      */
-    fun rescheduleAsync(receiver: BroadcastReceiver, context: Context, refreshWidgets: Boolean = false) {
+    fun rescheduleAsync(
+        receiver: BroadcastReceiver,
+        context: Context,
+        refreshWidgets: Boolean = false,
+        first: suspend () -> Unit = {},
+    ) {
         val pending = receiver.goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
+                first()
                 reschedule(context)
                 if (refreshWidgets) Widgets.refreshAll(context)
             } finally {
