@@ -28,6 +28,7 @@
         <a class="brand" href="/en/"><img src="/icon.svg" alt=""><span lang="ar">مواقيت</span></a>
         <span class="nav-links">
           <a href="#features">Features</a>
+          <a href="#screens">Screens</a>
           <a href="#widgets">Widgets</a>
           <a href="/en/privacy">Privacy</a>
           <a href="/" lang="ar" hreflang="ar">العربية</a>
@@ -46,25 +47,9 @@
           </div>
           <p class="note">Mawaqeet is in testing now. Want to try it early? Write to <a href="mailto:contact@nileorbit.com" style="color:#f2b65e">contact@nileorbit.com</a></p>
         </div>
-        <div class="phone" role="img" aria-label="Mawaqeet's home screen: next prayer Asr in 1 hour 12 minutes, and today's prayer times">
-          <div class="screen" aria-hidden="true">
-            <div class="top"><span>Wednesday</span><span>Cairo</span></div>
-            <div class="next">
-              <span class="label">Next prayer</span>
-              <span class="name">Asr</span>
-              <span class="count">in 1:12:34 hours</span>
-              <span class="bar"><span></span></span>
-            </div>
-            <div class="times">
-              <div class="done"><span>Fajr</span><span>4:52 AM</span></div>
-              <div><span>Sunrise</span><span>6:18 AM</span></div>
-              <div class="done"><span>Dhuhr</span><span>11:42 AM</span></div>
-              <div class="on"><span>Asr</span><span>2:41 PM</span></div>
-              <div><span>Maghrib</span><span>5:04 PM</span></div>
-              <div><span>Isha</span><span>6:22 PM</span></div>
-            </div>
-          </div>
-        </div>
+        <figure class="phone">
+          <img src="/img/en-home.webp" width="600" height="1290" alt="Mawaqeet's home screen: the next prayer, Dhuhr, with its countdown, and today's prayer times" fetchpriority="high">
+        </figure>
       </div>
     </div>
   </header>
@@ -109,18 +94,58 @@
       </div>
     </section>
 
+    <section id="screens">
+      <div class="wrap">
+        <h2>Inside the app</h2>
+        <p class="sub">Real screens from Mawaqeet, as they look on the phone.</p>
+        <div class="shots">
+          <figure class="shot">
+            <div class="phone"><img src="/img/en-log.webp" width="600" height="1290" alt="" loading="lazy"></div>
+            <figcaption><strong>Prayer log</strong>Your week prayer by prayer, and how many you've prayed.</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="phone"><img src="/img/en-alerts.webp" width="600" height="1290" alt="" loading="lazy"></div>
+            <figcaption><strong>Alerts</strong>A sound for each prayer: a short takbir, the full adhan, or silent, with a reminder beforehand.</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="phone"><img src="/img/en-settings.webp" width="600" height="1290" alt="" loading="lazy"></div>
+            <figcaption><strong>Settings</strong>Calculation method, Asr convention, city, appearance and widgets in one place.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
     <section id="widgets">
       <div class="wrap">
         <h2>Home-screen widgets</h2>
         <p class="sub">Each widget is designed for each size, in the app's colours or your wallpaper's, with the transparency you choose.</p>
-        <div class="grid">
-          <article class="card"><h3>Next prayer</h3><p>4×2 and 2×2 on a deep teal surface with a gold countdown, and a small ring at 1×1.</p></article>
-          <article class="card"><h3>Today's times</h3><p>A 4×1 strip, or 4×2 with the day's path from Fajr to Isha.</p></article>
-          <article class="card"><h3>Date strip</h3><p>The Hijri and Gregorian date on one line, 4×1.</p></article>
-          <article class="card"><h3>Today with prayer log</h3><p>4×1 and 4×2. Tap a prayer that's due to mark it, and tap again to unmark it.</p></article>
-          <article class="card"><h3>Week log</h3><p>Your whole week at 4×2 and 4×3.</p></article>
-          <article class="card"><h3>One look</h3><p>One switch in Settings puts every widget in the Next Prayer design.</p></article>
+        <div class="widgets">
+          <figure class="widget">
+            <div class="wall"><img src="/img/en-w-next-4x2.webp" width="720" height="405" alt="" loading="lazy" class="w-4x2"></div>
+            <figcaption><strong>Next prayer 4×2</strong>A deep teal surface with a gold countdown that names its unit, and today's times below.</figcaption>
+          </figure>
+          <figure class="widget">
+            <div class="wall"><img src="/img/en-w-next-2x2.webp" width="480" height="510" alt="" loading="lazy" class="w-2x2"><img src="/img/en-w-next-1x1.webp" width="210" height="210" alt="" loading="lazy" class="w-1x1"></div>
+            <figcaption><strong>Next prayer 2×2 and 1×1</strong>The countdown in a square, and a small ring in a single cell.</figcaption>
+          </figure>
+          <figure class="widget">
+            <div class="wall"><img src="/img/en-w-today-4x2.webp" width="720" height="405" alt="" loading="lazy" class="w-4x2"></div>
+            <figcaption><strong>Today's times 4×2</strong>The day's path from Fajr to Isha, and where you are on it now.</figcaption>
+          </figure>
+          <figure class="widget">
+            <div class="wall"><img src="/img/en-w-today-4x1.webp" width="720" height="202" alt="" loading="lazy" class="w-4x1"><img src="/img/en-w-date-4x1.webp" width="720" height="135" alt="" loading="lazy" class="w-4x1"></div>
+            <figcaption><strong>Today's times 4×1 and date strip</strong>The times on one line, and the Hijri and Gregorian date on another.</figcaption>
+          </figure>
+          <figure class="widget">
+            <div class="wall"><img src="/img/en-w-todaylog-4x2.webp" width="720" height="405" alt="" loading="lazy" class="w-4x2"></div>
+            <figcaption><strong>Today with prayer log</strong>Tap a prayer that's due to mark it, and tap again to unmark it.</figcaption>
+          </figure>
+          <figure class="widget">
+            <div class="wall"><img src="/img/en-w-week-4x3.webp" width="720" height="585" alt="" loading="lazy" class="w-4x3"></div>
+            <figcaption><strong>Week log</strong>Your whole week at a glance, at 4×2 and 4×3.</figcaption>
+          </figure>
         </div>
+        <p class="sub one">One switch in Settings puts every widget in the Next Prayer design.</p>
       </div>
     </section>
 
