@@ -353,8 +353,23 @@
     <string name="alerts_all_on_description">Adhan Alerts and reminders follow each Prayer\'s settings</string>
     <string name="alerts_all_off_description">Off: no adhan, no reminder and no notification from the app until you turn them back on</string>
     <string name="prayer_silence">Silent during Prayer</string>
-    <string name="prayer_silence_description">Puts the phone on silent for 20 minutes at each Prayer, then restores its sound. A phone that is already silent is left alone.</string>
+    <string name="prayer_silence_description">Puts the phone on silent or vibrate at the Prayers you choose, then restores its sound. A phone that is already silent or on vibrate is left alone.</string>
     <string name="prayer_silence_access">Allow Do Not Disturb access</string>
+    <string name="prayer_silence_mode_silent">Silent</string>
+    <string name="prayer_silence_mode_vibrate">Vibrate</string>
+    <string name="prayer_silence_prayers">At these Prayers</string>
+    <string name="prayer_silence_duration">Duration</string>
+    <string name="prayer_silence_duration_summary">From the Prayer Time</string>
+    <string name="prayer_silence_jumuah">Jumu\'ah</string>
+    <string name="prayer_silence_jumuah_summary">Friday Dhuhr, to cover the khutbah</string>
+    <string name="prayer_silence_shorter">Silence %1$s minutes shorter</string>
+    <string name="prayer_silence_longer">Silence %1$s minutes longer</string>
+    <string name="prayer_silence_jumuah_shorter">Jumu\'ah silence %1$s minutes shorter</string>
+    <string name="prayer_silence_jumuah_longer">Jumu\'ah silence %1$s minutes longer</string>
+    <plurals name="prayer_silence_minutes">
+        <item quantity="one">%1$s minute</item>
+        <item quantity="other">%1$s minutes</item>
+    </plurals>
     <string name="prayer_silence_access_summary">The app needs it to silence the phone; Silent during Prayer can\'t work without it.</string>
     <string name="settings_alerts_summary_off">All turned off</string>
     <string name="settings_alerts_off">Alerts are off</string>
@@ -412,6 +427,14 @@
     <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
     <string name="widget_big_clock">Big Clock</string>
     <string name="widget_big_clock_description">A big clock, with a countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <!-- Gold Clock widget (#65). -->
+    <string name="widget_gold_clock">Gold Clock</string>
+    <string name="widget_gold_clock_description">A big clock on black, with a gold countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <!-- Clock & Prayer widget (#66). -->
+    <string name="widget_clock_prayer">Clock &amp; Prayer</string>
+    <string name="widget_clock_prayer_description">A big clock with the Hijri and Gregorian dates, beside the next prayer, its time, a countdown and a bar from the previous prayer</string>
+    <string name="clock_prayer_in">in</string>
+    <string name="clock_prayer_since">from %1$s</string>
     <string name="clock_am">AM</string>
     <string name="clock_pm">PM</string>
     <string name="clock_description">%1$s. %2$s in %3$s. %4$s.</string>
@@ -429,4 +452,7 @@
     <string name="widget_preview_sunrise">Sunrise 06:27</string>
     <string name="widget_preview_dhuhr">Dhuhr 12:04</string>
     <string name="widget_preview_clock_date">28 Jumada al-Ula 1448 AH · Sun 8 Nov</string>
+    <string name="widget_preview_clock_hijri">28 Jumada al-Ula 1448 AH</string>
+    <string name="widget_preview_clock_gregorian">Sun 8 Nov</string>
+    <string name="widget_preview_clock_since">from Sunrise 06:27</string>
 </resources>

@@ -212,6 +212,38 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `Prayer Silence's mode, Prayers and durations survive an app restart`() {
+        withRepository { repo, _ ->
+            repo.setPrayerSilenceMode(app.mawaqeet.core.SilenceMode.VIBRATE)
+            repo.setPrayerSilencePrayer(Prayer.FAJR, false)
+            repo.stepPrayerSilenceMinutes(jumuah = false, step = +2)
+            repo.stepPrayerSilenceMinutes(jumuah = true, step = -1)
+        }
+
+        val silence = withRepository { repo, _ -> repo.settings.first() }.alerts.prayerSilence
+
+        assertEquals(app.mawaqeet.core.SilenceMode.VIBRATE, silence.mode)
+        assertEquals(Prayer.entries.toSet() - Prayer.FAJR, silence.prayers)
+        // One step is five minutes: 20 + 10 and 45 - 5.
+        assertEquals(30, silence.minutes)
+        assertEquals(40, silence.jumuahMinutes)
+    }
+
+    @Test
+    fun `Prayer Silence durations stop at the ends of their ranges, and a stored one out of range reads as the default`() {
+        withRepository { repo, _ ->
+            repo.stepPrayerSilenceMinutes(jumuah = false, step = -100)
+            repo.stepPrayerSilenceMinutes(jumuah = true, step = +100)
+        }
+        val silence = withRepository { repo, _ -> repo.settings.first() }.alerts.prayerSilence
+        assertEquals(app.mawaqeet.core.PrayerSilence.MINUTES_RANGE.first, silence.minutes)
+        assertEquals(app.mawaqeet.core.PrayerSilence.JUMUAH_MINUTES_RANGE.last, silence.jumuahMinutes)
+
+        withRepository { _, store -> store.edit { it[intPreferencesKey("prayer_silence_minutes")] = 1 } }
+        assertEquals(20, withRepository { repo, _ -> repo.settings.first() }.alerts.prayerSilence.minutes)
+    }
+
+    @Test
     fun `a stored reminder lead time below the minimum reads as the default instead of failing`() {
         withRepository { _, store -> store.edit { it[intPreferencesKey("alert_dhuhr_reminder_minutes")] = 5 } }
 

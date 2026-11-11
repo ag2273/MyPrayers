@@ -7,6 +7,10 @@ import android.provider.Settings
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
 import androidx.lifecycle.Lifecycle
 import org.robolectric.Shadows.shadowOf
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -197,6 +201,75 @@ class SettingsScreenTest {
         } finally {
             runBlocking { store.setPrayerSilenceEnabled(false) }
         }
+    }
+
+    private fun shown(text: String) = compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+
+    /** Opens Settings → Alerts with Do Not Disturb access granted and Prayer Silence turned on, then runs [block]. */
+    private fun withPrayerSilenceOn(block: (alerts: () -> app.mawaqeet.core.AlertSettings) -> Unit) {
+        shadowOf(compose.activity.getSystemService(NotificationManager::class.java)).setNotificationPolicyAccessGranted(true)
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun alerts() = runBlocking { store.settings.first() }.alerts
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            // Its choices only show once it is on.
+            assertEquals(0, compose.onAllNodesWithText("Vibrate").fetchSemanticsNodes().size)
+            compose.onNodeWithText("Silent during Prayer").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.enabled && shown("Vibrate") }
+            block(::alerts)
+        } finally {
+            runBlocking {
+                store.setPrayerSilenceEnabled(false)
+                store.setPrayerSilenceMode(app.mawaqeet.core.SilenceMode.SILENT)
+                Prayer.entries.forEach { store.setPrayerSilencePrayer(it, true) }
+                store.stepPrayerSilenceMinutes(jumuah = false, step = -100)
+                store.stepPrayerSilenceMinutes(jumuah = false, step = +3)
+                store.stepPrayerSilenceMinutes(jumuah = true, step = -100)
+                store.stepPrayerSilenceMinutes(jumuah = true, step = +6)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `Prayer Silence silences by default and choosing Vibrate stores it`() = withPrayerSilenceOn { alerts ->
+        compose.onNodeWithText("Silent").performScrollTo().assertIsSelected()
+
+        compose.onNodeWithText("Vibrate").performScrollTo().performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.mode == app.mawaqeet.core.SilenceMode.VIBRATE }
+        compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Vibrate").assertIsSelected() }.isSuccess }
+        compose.onNodeWithText("Silent").assertIsNotSelected()
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `every Prayer is silenced once Prayer Silence is on, and turning one off stores it`() = withPrayerSilenceOn { alerts ->
+        val asr = compose.onNode(hasText("Asr") and isToggleable())
+        asr.performScrollTo().assertIsOn()
+
+        asr.performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { Prayer.ASR !in alerts().prayerSilence.prayers }
+        assertEquals(Prayer.entries.toSet() - Prayer.ASR, alerts().prayerSilence.prayers)
+        compose.waitUntil(timeoutMillis = 5_000) { runCatching { asr.assertIsOff() }.isSuccess }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `the minus and plus buttons change the Silence Window and Jumu'ah durations five minutes at a time`() = withPrayerSilenceOn { alerts ->
+        compose.onNodeWithText("20 minutes").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("45 minutes").performScrollTo().assertIsDisplayed()
+
+        compose.onNodeWithContentDescription("Silence 5 minutes longer").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Silence 5 minutes longer").performClick()
+        compose.onNodeWithContentDescription("Jumu'ah silence 5 minutes shorter").performScrollTo().performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.let { it.minutes == 30 && it.jumuahMinutes == 40 } }
+        compose.waitUntil(timeoutMillis = 5_000) { shown("30 minutes") && shown("40 minutes") }
+        compose.onNodeWithText("30 minutes").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("40 minutes").performScrollTo().assertIsDisplayed()
     }
 
     @Test

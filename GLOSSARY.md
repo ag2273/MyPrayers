@@ -73,12 +73,16 @@ An audio file the user picks from their own phone to play as the Short Adhan, th
 _Avoid_: Imported sound, user ringtone
 
 **Prayer Silence**:
-An optional setting, off by default, that puts the phone on silent at each Prayer and restores its previous sound mode afterwards. It needs Do Not Disturb access, works even with every app alert off, and leaves a phone that is already silent, on vibrate or on Do Not Disturb alone.
+An optional setting, off by default, that puts the phone on silent («صامت») or vibrate («اهتزاز») at each Prayer the user keeps on (all five once enabled) and restores its previous sound mode afterwards. It needs Do Not Disturb access, works even with every app alert off, and leaves a phone that is already silent, on vibrate or on Do Not Disturb alone.
 _Avoid_: Auto-silent, mute mode, prayer mode
 
 **Silence Window**:
-One planned stretch of Prayer Silence: from a Prayer's Prayer Time to a fixed end (20 minutes later by default), identified by its Prayer Day and Prayer.
+One planned stretch of Prayer Silence: from a Prayer's Prayer Time to a fixed end (20 minutes later by default, 45 for Jumu'ah; both adjustable), carrying the chosen silent or vibrate mode, identified by its Prayer Day and Prayer.
 _Avoid_: Silent period, mute window
+
+**Jumu'ah**:
+Dhuhr on a Friday. It is announced as Jumu'ah, and its Silence Window has its own duration, long enough for the khutbah.
+_Avoid_: Friday prayer (in code), Friday Dhuhr (as a separate Prayer)
 
 **Widget Variant**:
 One of the distinct home-screen widget designs the app offers, each with its own layout and content.

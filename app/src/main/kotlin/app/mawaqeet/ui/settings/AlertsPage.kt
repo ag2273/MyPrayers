@@ -62,6 +62,13 @@ import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
+import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.SilenceMode
+import app.mawaqeet.ui.components.Segment
+import app.mawaqeet.ui.components.SegmentedChoice
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.text.style.TextAlign
 import app.mawaqeet.ui.LocalDisplayFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -164,6 +171,80 @@ private fun PrayerSilenceRows(alerts: AlertSettings, actions: SettingsActions) {
                 onClick = actions::openDoNotDisturbAccess,
             )
         }
+        if (wanted && access) {
+            RowDivider()
+            val mode = alerts.prayerSilence.mode
+            SegmentedChoice(
+                listOf(
+                    Segment(stringResource(R.string.prayer_silence_mode_silent), mode == SilenceMode.SILENT) {
+                        actions.setPrayerSilenceMode(SilenceMode.SILENT)
+                    },
+                    Segment(stringResource(R.string.prayer_silence_mode_vibrate), mode == SilenceMode.VIBRATE) {
+                        actions.setPrayerSilenceMode(SilenceMode.VIBRATE)
+                    },
+                ),
+                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+    }
+    if (!wanted || !access) return
+    val silence = alerts.prayerSilence
+    SectionTitle(stringResource(R.string.prayer_silence_prayers))
+    Card {
+        Prayer.entries.forEachIndexed { index, prayer ->
+            if (index > 0) RowDivider()
+            SwitchRow(stringResource(prayer.nameRes), "", silence.isOn(prayer)) { on -> actions.setPrayerSilencePrayer(prayer, on) }
+        }
+    }
+    Card {
+        SilenceDurationRow(
+            title = stringResource(R.string.prayer_silence_duration),
+            summary = stringResource(R.string.prayer_silence_duration_summary),
+            minutes = silence.minutes,
+            range = PrayerSilence.MINUTES_RANGE,
+            shorter = R.string.prayer_silence_shorter,
+            longer = R.string.prayer_silence_longer,
+        ) { step -> actions.stepPrayerSilenceMinutes(jumuah = false, step = step) }
+        RowDivider()
+        SilenceDurationRow(
+            title = stringResource(R.string.prayer_silence_jumuah),
+            summary = stringResource(R.string.prayer_silence_jumuah_summary),
+            minutes = silence.jumuahMinutes,
+            range = PrayerSilence.JUMUAH_MINUTES_RANGE,
+            shorter = R.string.prayer_silence_jumuah_shorter,
+            longer = R.string.prayer_silence_jumuah_longer,
+        ) { step -> actions.stepPrayerSilenceMinutes(jumuah = true, step = step) }
+    }
+}
+
+/** A Silence Window's duration: its title and summary, then −, the minutes and +, [PrayerSilence.MINUTES_STEP] per tap. */
+@Composable
+private fun SilenceDurationRow(
+    title: String,
+    summary: String,
+    minutes: Int,
+    range: IntRange,
+    @StringRes shorter: Int,
+    @StringRes longer: Int,
+    onStep: (Int) -> Unit,
+) {
+    val format = LocalDisplayFormatter.current
+    val step = format.number(PrayerSilence.MINUTES_STEP)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        RowText(title, summary)
+        StepButton(R.drawable.ic_minus, stringResource(shorter, step), enabled = minutes > range.first) { onStep(-1) }
+        Text(
+            pluralStringResource(R.plurals.prayer_silence_minutes, minutes, format.number(minutes)),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(min = 80.dp),
+        )
+        StepButton(R.drawable.ic_plus, stringResource(longer, step), enabled = minutes < range.last) { onStep(+1) }
     }
 }
 

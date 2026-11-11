@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AdhanVolume
@@ -23,6 +24,7 @@ import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.widget.WidgetAppearance
 import app.mawaqeet.widget.WidgetColors
@@ -243,6 +245,36 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[PRAYER_SILENCE_ENABLED] = on }
     }
 
+    /** «صامت» or «اهتزاز» (#68). */
+    suspend fun setPrayerSilenceMode(mode: SilenceMode) {
+        store.edit { it[PRAYER_SILENCE_MODE] = mode.name }
+    }
+
+    /** Turns Prayer Silence on or off for [prayer] alone (#68); every Prayer is on until turned off. */
+    suspend fun setPrayerSilencePrayer(prayer: Prayer, on: Boolean) {
+        store.edit {
+            val off = it[PRAYER_SILENCE_OFF].orEmpty()
+            it[PRAYER_SILENCE_OFF] = if (on) off - prayer.name else off + prayer.name
+        }
+    }
+
+    /**
+     * Moves the Silence Window's duration ([jumuah] true: Jumu'ah's) by [step] times [PrayerSilence.MINUTES_STEP]
+     * minutes, kept within its range. Reads and writes in one edit, so quick taps each count.
+     */
+    suspend fun stepPrayerSilenceMinutes(jumuah: Boolean, step: Int) {
+        store.edit {
+            val current = it.alertSettings().prayerSilence
+            if (jumuah) {
+                val range = PrayerSilence.JUMUAH_MINUTES_RANGE
+                it[PRAYER_SILENCE_JUMUAH_MINUTES] = (current.jumuahMinutes + step * PrayerSilence.MINUTES_STEP).coerceIn(range.first, range.last)
+            } else {
+                val range = PrayerSilence.MINUTES_RANGE
+                it[PRAYER_SILENCE_MINUTES] = (current.minutes + step * PrayerSilence.MINUTES_STEP).coerceIn(range.first, range.last)
+            }
+        }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -300,6 +332,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             prayerSilence = PrayerSilence(
                 enabled = this[PRAYER_SILENCE_ENABLED] ?: default.prayerSilence.enabled,
                 mode = this[PRAYER_SILENCE_MODE].toEnum(default.prayerSilence.mode),
+                prayers = this[PRAYER_SILENCE_OFF].orEmpty().let { off -> Prayer.entries.filterNot { it.name in off }.toSet() },
+                minutes = this[PRAYER_SILENCE_MINUTES]?.takeIf { it in PrayerSilence.MINUTES_RANGE }
+                    ?: default.prayerSilence.minutes,
+                jumuahMinutes = this[PRAYER_SILENCE_JUMUAH_MINUTES]?.takeIf { it in PrayerSilence.JUMUAH_MINUTES_RANGE }
+                    ?: default.prayerSilence.jumuahMinutes,
             ),
         )
     }
@@ -342,8 +379,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val ADHAN_VOLUME = stringPreferencesKey("adhan_volume")
         private val PRAYER_SILENCE_ENABLED = booleanPreferencesKey("prayer_silence_enabled")
 
-        /** [app.mawaqeet.core.SilenceMode] name; only silent until #68 adds vibrate and a setter. */
+        /** [SilenceMode] name. */
         private val PRAYER_SILENCE_MODE = stringPreferencesKey("prayer_silence_mode")
+
+        /** Names of the Prayers turned off for Prayer Silence; a Prayer not listed is on. */
+        private val PRAYER_SILENCE_OFF = stringSetPreferencesKey("prayer_silence_off")
+        private val PRAYER_SILENCE_MINUTES = intPreferencesKey("prayer_silence_minutes")
+        private val PRAYER_SILENCE_JUMUAH_MINUTES = intPreferencesKey("prayer_silence_jumuah_minutes")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

@@ -377,8 +377,28 @@
     <string name="alerts_all_off_description">متوقفة: لن يصلك أذان ولا تذكير ولا أي إشعار من التطبيق حتى تشغّلها</string>
     <!-- Prayer Silence (#61). -->
     <string name="prayer_silence">الصامت وقت الصلاة</string>
-    <string name="prayer_silence_description">يضع الهاتف على الصامت عشرين دقيقة عند كل صلاة، ثم يعيد الصوت كما كان. إن كان الهاتف صامتًا من قبل فلا يغيّره.</string>
+    <string name="prayer_silence_description">يضع الهاتف على الصامت أو الاهتزاز عند الصلوات التي تختارها، ثم يعيد الصوت كما كان. إن كان الهاتف صامتًا أو على الاهتزاز من قبل فلا يغيّره.</string>
     <string name="prayer_silence_access">اسمح بالوصول إلى «عدم الإزعاج»</string>
+    <!-- Prayer Silence choices (#68). -->
+    <string name="prayer_silence_mode_silent">صامت</string>
+    <string name="prayer_silence_mode_vibrate">اهتزاز</string>
+    <string name="prayer_silence_prayers">عند هذه الصلوات</string>
+    <string name="prayer_silence_duration">المدة</string>
+    <string name="prayer_silence_duration_summary">من دخول وقت الصلاة</string>
+    <string name="prayer_silence_jumuah">الجمعة</string>
+    <string name="prayer_silence_jumuah_summary">ظهر يوم الجمعة، لتشمل الخطبة</string>
+    <string name="prayer_silence_shorter">تقصير مدة الصامت %1$s دقائق</string>
+    <string name="prayer_silence_longer">إطالة مدة الصامت %1$s دقائق</string>
+    <string name="prayer_silence_jumuah_shorter">تقصير صامت الجمعة %1$s دقائق</string>
+    <string name="prayer_silence_jumuah_longer">إطالة صامت الجمعة %1$s دقائق</string>
+    <plurals name="prayer_silence_minutes">
+        <item quantity="zero">%1$s دقيقة</item>
+        <item quantity="one">دقيقة واحدة</item>
+        <item quantity="two">دقيقتان</item>
+        <item quantity="few">%1$s دقائق</item>
+        <item quantity="many">%1$s دقيقة</item>
+        <item quantity="other">%1$s دقيقة</item>
+    </plurals>
     <string name="prayer_silence_access_summary">يحتاجه التطبيق ليضع الهاتف على الصامت، ولا يعمل الصامت وقت الصلاة بدونه.</string>
     <string name="settings_alerts_summary_off">كلها موقوفة</string>
     <string name="settings_alerts_off">التنبيهات متوقفة</string>
@@ -440,6 +460,16 @@
     <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
     <string name="widget_big_clock">ساعة كبيرة</string>
     <string name="widget_big_clock_description">ساعة كبيرة، والعدّ التنازلي وشريط من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
+    <!-- Gold Clock widget (#65): Big Clock's layout, always black and gold. -->
+    <string name="widget_gold_clock">ساعة ذهبية</string>
+    <string name="widget_gold_clock_description">ساعة كبيرة على خلفية سوداء، والعدّ التنازلي وشريط ذهبيان من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
+    <!-- Clock & Prayer widget (#66): the split layout, clock and dates beside the next Prayer. -->
+    <string name="widget_clock_prayer">ساعة وصلاة</string>
+    <string name="widget_clock_prayer_description">ساعة كبيرة والتاريخان الهجري والميلادي، وبجانبها الصلاة القادمة ووقتها والعدّ التنازلي وشريط من الصلاة السابقة</string>
+    <!-- Before the countdown: "بعد ١ س ١٠ د". -->
+    <string name="clock_prayer_in">بعد</string>
+    <!-- The previous Stop and its time: "من الشروق ٠٦:٢٧". -->
+    <string name="clock_prayer_since">من %1$s</string>
     <!-- The Clock's own marker beside the time in 12-hour time: morning and evening. -->
     <string name="clock_am">ص</string>
     <string name="clock_pm">م</string>
@@ -469,4 +499,8 @@
     <string name="widget_preview_sunrise">الشروق ٠٦:٢٧</string>
     <string name="widget_preview_dhuhr">الظهر ١٢:٠٤</string>
     <string name="widget_preview_clock_date">٢٨ جمادى الأولى ١٤٤٨ هـ · الأحد ٨ نوفمبر</string>
+    <!-- Sample content for the Clock & Prayer picker preview. -->
+    <string name="widget_preview_clock_hijri">٢٨ جمادى الأولى ١٤٤٨ هـ</string>
+    <string name="widget_preview_clock_gregorian">الأحد ٨ نوفمبر</string>
+    <string name="widget_preview_clock_since">من الشروق ٠٦:٢٧</string>
 </resources>

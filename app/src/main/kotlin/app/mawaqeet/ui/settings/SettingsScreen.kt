@@ -129,6 +129,15 @@ interface SettingsActions {
     /** Settings → Alerts → «الصامت وقت الصلاة» (#61): stores the choice, independent of the master switch. */
     fun setPrayerSilenceEnabled(on: Boolean)
 
+    /** «صامت» or «اهتزاز» (#68). */
+    fun setPrayerSilenceMode(mode: app.mawaqeet.core.SilenceMode)
+
+    /** Prayer Silence on or off for one Prayer (#68). */
+    fun setPrayerSilencePrayer(prayer: Prayer, on: Boolean)
+
+    /** The − and + buttons of the Silence Window's duration ([jumuah]: Jumu'ah's), one [app.mawaqeet.core.PrayerSilence.MINUTES_STEP] per step. */
+    fun stepPrayerSilenceMinutes(jumuah: Boolean, step: Int)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 
@@ -486,7 +495,7 @@ private fun AdjustmentRow(prayer: Prayer, minutes: Int, onStep: (Int) -> Unit) {
 /** A round − or + button; [description] is what TalkBack reads (e.g. "Fajr one minute later"). An icon, not a "−"
  * glyph, so it keeps its size when the text is enlarged. */
 @Composable
-private fun StepButton(@DrawableRes icon: Int, description: String, enabled: Boolean, onClick: () -> Unit) {
+internal fun StepButton(@DrawableRes icon: Int, description: String, enabled: Boolean, onClick: () -> Unit) {
     OutlinedIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp)) {
         Icon(painterResource(icon), contentDescription = description, modifier = Modifier.size(20.dp))
     }
