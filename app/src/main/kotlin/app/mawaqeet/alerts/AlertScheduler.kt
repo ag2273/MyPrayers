@@ -12,6 +12,7 @@ import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.PlannedAlert
+import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.SilenceWindow
 import java.time.Instant
@@ -20,7 +21,8 @@ import java.time.Instant
  * Turns the core's [AlertPlan] into alarms: one per planned alert (`setExactAndAllowWhileIdle`, or
  * `setAlarmClock` in alarm-clock mode) plus one display alarm ([AlertPlan.nextDisplayChange]: local midnight, or a Prayer
  * Time with no Adhan Alert), plus a start and an end alarm per Silence Window ([SilenceReceiver]; the start only while
- * it is still ahead, so re-planning during a window never silences twice). Applying a plan reconciles: alarms of the previously applied plan that the new one lacks
+ * it is still ahead, so re-planning during a window never silences twice), plus one exact alarm per Worship Reminder
+ * ([WorshipReminderReceiver]). Applying a plan reconciles: alarms of the previously applied plan that the new one lacks
  * are cancelled, the rest are (re)set. The applied plan is stored in device-protected storage ([AlertPlanStore]) for
  * [rearmStoredPlan] after a locked boot; the stored copy keeps only midnight, so its display alarm is midnight.
  *
@@ -41,9 +43,14 @@ class AlertScheduler(context: Context) {
             cancel(silenceIntent(it, start = true, PendingIntent.FLAG_NO_CREATE))
             cancel(silenceIntent(it, start = false, PendingIntent.FLAG_NO_CREATE))
         }
+        val keepWorship = plan.worshipReminders.map { it.requestCode }.toSet()
+        previous?.worshipReminders?.filter { it.requestCode !in keepWorship }?.forEach {
+            cancel(worshipIntent(it, PendingIntent.FLAG_NO_CREATE))
+        }
         store.write(plan)
         arm(plan)
         armSilence(plan.silenceWindows, now)
+        armWorship(plan.worshipReminders, now)
     }
 
     /** Re-arms the stored plan's alerts and Silence Windows still after [now], with no recalculation (works before the first unlock). */
@@ -51,7 +58,25 @@ class AlertScheduler(context: Context) {
         val stored = store.read() ?: return
         arm(stored.copy(alerts = stored.alerts.filter { it.instant.isAfter(now) }), now)
         armSilence(stored.silenceWindows, now)
+        armWorship(stored.worshipReminders, now)
     }
+
+    /** Each Worship Reminder still after [now], as an exact alarm (never an alarm clock: it is not an alarm). */
+    private fun armWorship(reminders: List<PlannedWorshipReminder>, now: Instant) {
+        if (!canScheduleExact(alarmManager)) return
+        for (reminder in reminders) {
+            if (!reminder.instant.isAfter(now)) continue
+            val operation = worshipIntent(reminder, PendingIntent.FLAG_UPDATE_CURRENT)!!
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminder.instant.toEpochMilli(), operation)
+        }
+    }
+
+    private fun worshipIntent(reminder: PlannedWorshipReminder, flag: Int): PendingIntent? = PendingIntent.getBroadcast(
+        context,
+        reminder.requestCode,
+        WorshipReminderReceiver.intent(context, reminder),
+        flag or PendingIntent.FLAG_IMMUTABLE,
+    )
 
     /** Drops [window]'s end alarm (it was ended early with «استعادة الصوت»). */
     fun cancelSilenceEnd(window: SilenceWindow) = cancel(silenceIntent(window, start = false, PendingIntent.FLAG_NO_CREATE))
@@ -192,6 +217,14 @@ class AlertScheduler(context: Context) {
 
         internal val SilenceWindow.startRequestCode: Int
             get() = SILENCE_REQUEST_CODE_BASE + (prayerDay.toEpochDay().mod(100_000L)).toInt() * 16 + prayer.ordinal * 2
+
+        /** Worship Reminders' request codes sit above every Silence Window's. */
+        private const val WORSHIP_REQUEST_CODE_BASE = 4_000_000
+
+        /** Stable and distinct per (Prayer Day, kind, slot): 128 codes a day, [PlannedWorshipReminder.MAX_SLOTS] per kind. */
+        internal val PlannedWorshipReminder.requestCode: Int
+            get() = WORSHIP_REQUEST_CODE_BASE + (prayerDay.toEpochDay().mod(100_000L)).toInt() * 128 +
+                kind.ordinal * PlannedWorshipReminder.MAX_SLOTS + slot
 
         /** Exact alarms are always allowed before Android 12; from 12 the user can revoke them (14+: off by default). */
         fun canScheduleExact(alarmManager: AlarmManager): Boolean =

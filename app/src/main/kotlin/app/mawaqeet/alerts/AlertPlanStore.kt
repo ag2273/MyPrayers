@@ -9,9 +9,11 @@ import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.PlannedAlert
+import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.SilenceWindow
+import app.mawaqeet.core.WorshipReminderKind
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.Instant
@@ -21,7 +23,7 @@ import java.time.LocalDate
  * The last alert plan the scheduler applied, kept in **device-protected storage** (file `files/alert_plan.txt`
  * under `createDeviceProtectedStorageContext()`) so a locked boot can re-arm alarms before the first unlock,
  * when settings in credential-encrypted DataStore are unreadable. One tab-separated line per alert, then one per
- * Silence Window, whose first field is `silence`.
+ * Silence Window, whose first field is `silence`, then one per Worship Reminder, whose first field is `worship`.
  */
 internal class AlertPlanStore(context: Context) {
     private val file = AtomicFile(File(context.createDeviceProtectedStorageContext().filesDir, FILE_NAME))
@@ -63,13 +65,27 @@ internal class AlertPlanStore(context: Context) {
                     .joinToString("\t"),
             )
         }
+        for (r in plan.worshipReminders) {
+            appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot).joinToString("\t"))
+        }
     }
 
     private fun decode(text: String): AlertPlan {
         val lines = text.lines().filter { it.isNotEmpty() }
         require(lines.firstOrNull() == VERSION)
         val midnight = Instant.ofEpochMilli(lines[1].toLong())
-        val (silenceLines, alertLines) = lines.drop(2).partition { it.startsWith(SILENCE + "\t") }
+        val (worshipLines, otherLines) = lines.drop(2).partition { it.startsWith(WORSHIP + "\t") }
+        val (silenceLines, alertLines) = otherLines.partition { it.startsWith(SILENCE + "\t") }
+        val worshipReminders = worshipLines.map { line ->
+            val f = line.split('\t')
+            require(f.size == 5)
+            PlannedWorshipReminder(
+                kind = WorshipReminderKind.valueOf(f[1]),
+                prayerDay = LocalDate.parse(f[2]),
+                instant = Instant.ofEpochMilli(f[3].toLong()),
+                slot = f[4].toInt(),
+            )
+        }
         val silenceWindows = silenceLines.map { line ->
             val f = line.split('\t')
             require(f.size == 7)
@@ -99,15 +115,18 @@ internal class AlertPlanStore(context: Context) {
                 adhanVolume = AdhanVolume.valueOf(f[10]),
             )
         }
-        return AlertPlan(alerts, midnight, silenceWindows = silenceWindows)
+        return AlertPlan(alerts, midnight, silenceWindows = silenceWindows, worshipReminders = worshipReminders)
     }
 
     companion object {
         const val FILE_NAME = "alert_plan.txt"
-        private const val VERSION = "alert-plan-v5"
+        private const val VERSION = "alert-plan-v6"
 
         /** First field of a Silence Window's line (#61). */
         private const val SILENCE = "silence"
+
+        /** First field of a Worship Reminder's line (#63): `worship kind prayerDay instant slot`. */
+        private const val WORSHIP = "worship"
     }
 }
 

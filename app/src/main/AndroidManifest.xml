@@ -62,6 +62,12 @@
             android:directBootAware="true"
             android:exported="false" />
 
+        <!-- Worship Reminders' alarms (#63). Direct-boot aware so a reminder still comes before the first unlock. -->
+        <receiver
+            android:name=".alerts.WorshipReminderReceiver"
+            android:directBootAware="true"
+            android:exported="false" />
+
         <!-- "Mark as prayed" on the Adhan Alert (#26). Not direct-boot aware: the Prayer Log needs an unlocked phone. -->
         <receiver
             android:name=".alerts.MarkPrayedReceiver"

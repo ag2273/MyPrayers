@@ -205,6 +205,36 @@ class SettingsScreenTest {
 
     private fun shown(text: String) = compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
+    @Test
+    @Config(qualifiers = "en")
+    fun `salawat reminders are off under Worship reminders, and switching them on every 3 hours stores it`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun salawat() = runBlocking { store.settings.first() }.alerts.worshipReminders.salawat
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Worship reminders").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Salawat on the Prophet ﷺ").performScrollTo().assertIsOff()
+            // The interval only shows once it is on.
+            assertEquals(false, shown("Every 2 hours"))
+
+            compose.onNodeWithText("Salawat on the Prophet ﷺ").performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { salawat().enabled && shown("Every 2 hours") }
+            compose.onNodeWithText("Every 2 hours").performScrollTo().assertIsSelected()
+            compose.onNodeWithText("Every 3 hours").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { salawat().intervalHours == 3 }
+            compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Every 3 hours").assertIsSelected() }.isSuccess }
+            compose.onNodeWithText("Every 2 hours").assertIsNotSelected()
+            compose.onNodeWithText("Salawat on the Prophet ﷺ").performScrollTo().assertIsOn()
+        } finally {
+            runBlocking {
+                store.setSalawatReminder(false)
+                store.setSalawatInterval(2)
+            }
+        }
+    }
+
     /** Opens Settings → Alerts with Do Not Disturb access granted and Prayer Silence turned on, then runs [block]. */
     private fun withPrayerSilenceOn(block: (alerts: () -> app.mawaqeet.core.AlertSettings) -> Unit) {
         shadowOf(compose.activity.getSystemService(NotificationManager::class.java)).setNotificationPolicyAccessGranted(true)
