@@ -77,7 +77,7 @@ An optional setting, off by default, that puts the phone on silent («صامت»
 _Avoid_: Auto-silent, mute mode, prayer mode
 
 **Silence Window**:
-One planned stretch of Prayer Silence: from a Prayer's Prayer Time to a fixed end (20 minutes later by default, 45 for Jumu'ah; both adjustable), carrying the chosen silent or vibrate mode, identified by its Prayer Day and Prayer.
+One planned stretch of Prayer Silence: from a Prayer's Prayer Time to a fixed end (20 minutes later by default, 45 for Jumu'ah; both adjustable), carrying the chosen silent or vibrate mode, identified by its Prayer Day and Prayer. The phone is silenced once that Prayer's adhan stops (finished, stopped or not played), or at the Prayer Time when there is no Adhan Alert; the end stays fixed, and a restart during the window still restores the sound at the end (at once if the end has passed).
 _Avoid_: Silent period, mute window
 
 **Jumu'ah**:

@@ -8,19 +8,24 @@ import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlayback
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.SilenceMode
+import app.mawaqeet.core.SilenceWindow
+import java.time.Instant
 import java.time.Duration
 import java.time.LocalDate
 
 /**
  * Receives the scheduler's alarms (direct-boot aware, so it also fires before the first unlock):
  * - [ACTION_ALERT] at each Prayer Time and Prayer Reminder: asks the core what to play ([AlertPlayback.decide]), hands that to
- *   [AlertOutput] (vibration, then the adhan player or a plain notification), then reschedules.
+ *   [AlertOutput] (vibration, then the adhan player or a plain notification), then reschedules. An Adhan Alert also
+ *   opens its Prayer's Silence Window, if one is planned: once the adhan stops, or at once when none plays.
  * - [ACTION_MIDNIGHT], the display alarm ([app.mawaqeet.core.AlertPlan.nextDisplayChange]): at local midnight, or at a
  *   Prayer Time with no Adhan Alert. Reschedules only.
  * Both then refresh every widget ([app.mawaqeet.widget.Widgets.refreshAll]).
  */
 class AlertReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        var silence: SilenceWindow? = null
         when (intent.action) {
             ACTION_ALERT -> {
                 val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { name -> Prayer.entries.firstOrNull { it.name == name } }
@@ -48,7 +53,14 @@ class AlertReceiver : BroadcastReceiver() {
                         playOnSilent = intent.getBooleanExtra(EXTRA_PLAY_ON_SILENT, false),
                         vibration = intent.getBooleanExtra(EXTRA_VIBRATION, true),
                     )
-                    AlertOutput.deliver(context, notification, sound, playback, adhanVolume(intent))
+                    val adhanPlaying = AlertOutput.deliver(context, notification, sound, playback, adhanVolume(intent))
+                    val window = if (kind == AlertKind.ADHAN_ALERT) silenceWindow(intent, prayer, notification.prayerDay) else null
+                    when {
+                        window == null -> Unit
+                        // Recorded at once, before the player can stop.
+                        adhanPlaying -> PrayerSilencer(context).awaitAdhan(window)
+                        else -> silence = window
+                    }
                 }
             }
             ACTION_MIDNIGHT -> Unit
@@ -56,7 +68,27 @@ class AlertReceiver : BroadcastReceiver() {
         }
         // Both mark a display change (a Prayer Time or local midnight), so the widgets move on. Before the first unlock
         // Widgets.refreshAll does nothing; BOOT_COMPLETED refreshes them.
-        AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true)
+        val startSilence = silence
+        AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true) {
+            startSilence?.let { PrayerSilencer.inAppStyle(context).start(it) }
+        }
+    }
+
+    /**
+     * The Silence Window this Adhan Alert's Prayer opens ([EXTRA_SILENCE_END]; the scheduler set no start alarm for it):
+     * it starts when the adhan stops, or now when no adhan plays.
+     */
+    private fun silenceWindow(intent: Intent, prayer: Prayer, prayerDay: LocalDate?): SilenceWindow? {
+        if (prayerDay == null || !intent.hasExtra(EXTRA_SILENCE_END)) return null
+        val mode = SilenceMode.entries.firstOrNull { it.name == intent.getStringExtra(EXTRA_SILENCE_MODE) } ?: return null
+        return SilenceWindow(
+            prayer = prayer,
+            prayerDay = prayerDay,
+            start = Instant.ofEpochMilli(intent.getLongExtra(EXTRA_SILENCE_START, 0)),
+            end = Instant.ofEpochMilli(intent.getLongExtra(EXTRA_SILENCE_END, 0)),
+            mode = mode,
+            isJumuah = intent.getBooleanExtra(EXTRA_JUMUAH, false),
+        )
     }
 
     companion object {
@@ -98,5 +130,13 @@ class AlertReceiver : BroadcastReceiver() {
 
         /** Alarm-clock mode: show the alert over the lock screen ([AdhanAlarmActivity]). */
         const val EXTRA_FULL_SCREEN = "full_screen"
+
+        /**
+         * The Silence Window this Adhan Alert opens, if Prayer Silence is on for its Prayer: start and planned end (epoch
+         * millis) and [SilenceMode] name. Absent when there is none.
+         */
+        const val EXTRA_SILENCE_START = "silence_start"
+        const val EXTRA_SILENCE_END = "silence_end"
+        const val EXTRA_SILENCE_MODE = "silence_mode"
     }
 }

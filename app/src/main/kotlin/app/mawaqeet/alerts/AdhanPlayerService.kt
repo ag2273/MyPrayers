@@ -26,7 +26,8 @@ import app.mawaqeet.core.Prayer
  * stream (following the media volume) — see [AdhanVolume] — fades in over [FADE_IN_MS], holds transient audio
  * focus so other media pauses and resumes, and shows the Adhan Alert notification with Stop.
  *
- * All decisions (silent mode, calls, lateness) are made before it starts, in the core.
+ * All decisions (silent mode, calls, lateness) are made before it starts, in the core. When it stops, a Silence Window
+ * waiting for the adhan starts ([PrayerSilencer.adhanStopped]).
  */
 class AdhanPlayerService : Service() {
     private val handler = Handler(Looper.getMainLooper())
@@ -148,12 +149,14 @@ class AdhanPlayerService : Service() {
         notification?.post(this)
         notification = null
         playingId = null
+        PrayerSilencer(this).adhanStopped()
         stopSelf()
     }
 
     override fun onDestroy() {
         stopPlayback()
         playingId = null
+        PrayerSilencer(this).adhanStopped()
         super.onDestroy()
     }
 
