@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Prayer beads in the redesign's line style (24dp, 2dp stroke): a loop of beads with a tassel; tinted by the composable that draws it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12,16a6,6 0,1 1,0 -12a6,6 0,1 1,0 12zM12,16v2.5M9.5,21l2.5,-2.5 2.5,2.5"
+        android:strokeWidth="2"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M12,3a1.5,1.5 0,1 1,0 3a1.5,1.5 0,1 1,0 -3zM6.5,8.5a1.5,1.5 0,1 1,0 3a1.5,1.5 0,1 1,0 -3zM17.5,8.5a1.5,1.5 0,1 1,0 3a1.5,1.5 0,1 1,0 -3z"
+        android:fillColor="#FF000000" />
+</vector>

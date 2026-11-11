@@ -74,17 +74,66 @@ internal interface PrayerLogDao {
 }
 
 /**
- * The local database holding the Prayer Log, the first-use date and the past places of Prayer Days. Every schema
- * change bumps [version] with a migration (version 2 added `past_place`, an auto-migration).
+ * How many times one dhikr of an Adhkar Set was counted on a Prayer Day (ISO date). [slot] names the set (core
+ * `AdhkarRepository`). Rows of past Prayer Days are deleted: progress lasts only for its Prayer Day.
+ */
+@Entity(tableName = "adhkar_progress", primaryKeys = ["prayer_day", "slot", "dhikr_id"])
+internal data class AdhkarProgressEntry(
+    @ColumnInfo(name = "prayer_day") val prayerDay: String,
+    val slot: String,
+    @ColumnInfo(name = "dhikr_id") val dhikrId: String,
+    val count: Int,
+)
+
+/** The Adhkar Record: one Adhkar Set slot completed on a Prayer Day (ISO date). Not completed has no row. */
+@Entity(tableName = "adhkar_record", primaryKeys = ["prayer_day", "slot"])
+internal data class AdhkarRecordEntry(
+    @ColumnInfo(name = "prayer_day") val prayerDay: String,
+    val slot: String,
+)
+
+/** Blocking queries: call them off the main thread (the core's repository interface is synchronous). */
+@Dao
+internal interface AdhkarDao {
+    @Query("SELECT * FROM adhkar_progress WHERE prayer_day = :prayerDay AND slot = :slot")
+    fun counts(prayerDay: String, slot: String): List<AdhkarProgressEntry>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun putCount(entry: AdhkarProgressEntry)
+
+    @Query("DELETE FROM adhkar_progress WHERE prayer_day = :prayerDay AND slot = :slot")
+    fun clearCounts(prayerDay: String, slot: String)
+
+    /** ISO dates sort as text. Returns how many rows went. */
+    @Query("DELETE FROM adhkar_progress WHERE prayer_day < :prayerDay")
+    fun clearCountsBefore(prayerDay: String): Int
+
+    @Query("SELECT slot FROM adhkar_record WHERE prayer_day = :prayerDay")
+    fun completedOn(prayerDay: String): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertRecord(entry: AdhkarRecordEntry)
+}
+
+/**
+ * The local database holding the Prayer Log, the first-use date, the past places of Prayer Days, and the Adhkar
+ * progress and Adhkar Record (in this same file, so they share the Prayer Log's backup and device-transfer rules).
+ * Every schema change bumps [version] with a migration (version 2 added `past_place`, version 3 the adhkar
+ * tables; both auto-migrations).
  */
 @Database(
-    entities = [PrayerLogEntry::class, FirstUse::class, PastPlaceEntry::class],
-    version = 2,
+    entities = [
+        PrayerLogEntry::class, FirstUse::class, PastPlaceEntry::class,
+        AdhkarProgressEntry::class, AdhkarRecordEntry::class,
+    ],
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class PrayerLogDatabase : RoomDatabase() {
     internal abstract fun dao(): PrayerLogDao
+
+    internal abstract fun adhkarDao(): AdhkarDao
 
     companion object {
         const val FILE_NAME = "prayer_log.db"

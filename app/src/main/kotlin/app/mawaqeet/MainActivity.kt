@@ -57,6 +57,9 @@ import app.mawaqeet.ui.location.LocationScreen
 import app.mawaqeet.ui.onboarding.OnboardingActions
 import app.mawaqeet.ui.onboarding.OnboardingScreen
 import app.mawaqeet.ui.log.PrayerLogScreen
+import app.mawaqeet.ui.adhkar.AdhkarScreen
+import app.mawaqeet.core.Adhkar
+import app.mawaqeet.core.AdhkarCatalog
 import app.mawaqeet.ui.location.locationName
 import app.mawaqeet.ui.permissions.GrantScreen
 import app.mawaqeet.ui.settings.SettingsActions
@@ -121,6 +124,8 @@ class MainActivity : AppCompatActivity() {
                 val savedLocation = (storedLocation ?: return@MawaqeetTheme).firstOrNull()
                 // A new core whenever the settings change: Home re-queries it, so times and next Prayer follow.
                 val core = remember(current) { PrayerCore(current, clock, prayerLog) }
+                val adhkarCatalog by produceState<AdhkarCatalog?>(null) { value = withContext(Dispatchers.IO) { app.adhkarCatalog } }
+                val adhkar = remember(core, adhkarCatalog) { adhkarCatalog?.let { Adhkar(it, core, app.adhkar) } }
                 var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
                 // The open Settings page, over the tabs (no bottom bar); null shows the tabs.
                 var settingsRoute by rememberSaveable { mutableStateOf<SettingsRoute?>(null) }
@@ -424,6 +429,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     }
                     Tab.LOG -> PrayerLogScreen(core, prayerLog.changes)
+                    Tab.ADHKAR -> AdhkarScreen(adhkar, app.adhkar.changes)
                     Tab.TODAY -> HomeScreen(
                         core, clock, prayerLog.changes, locationName(savedLocation),
                         alerts = current.alerts,

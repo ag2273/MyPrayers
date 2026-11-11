@@ -402,4 +402,19 @@
     <!-- TalkBack on a Prayer's column in the Today with Prayer Log widget: "الظهر: لم تُسجَّل. اضغط للتسجيل". -->
     <string name="widget_mark_hint">%1$s: %2$s. اضغط للتسجيل</string>
     <string name="widget_unmark_hint">%1$s: %2$s. اضغط للإلغاء</string>
+
+    <!-- The Adhkar tab (#62). The adhkar themselves are always Arabic (asset adhkar.tsv); only this copy is translated. -->
+    <string name="tab_adhkar">الأذكار</string>
+    <string name="adhkar_morning">أذكار الصباح</string>
+    <string name="adhkar_not_started">لم تبدأ بعد</string>
+    <string name="adhkar_resume">وصلت إلى الذكر %1$s من %2$s</string>
+    <string name="adhkar_done_today">تمّت اليوم</string>
+    <string name="adhkar_position">الذكر %1$s من %2$s</string>
+    <!-- On the dhikr card, under the text: "١ / ٣". TalkBack reads adhkar_card_state instead. -->
+    <string name="adhkar_card_state">قيل %1$s من %2$s، وبقي %3$s</string>
+    <string name="adhkar_count_one">عُدّ مرة</string>
+    <string name="adhkar_tap_hint">اضغط في أي مكان على البطاقة للعدّ</string>
+    <string name="adhkar_restart">ابدأ من جديد</string>
+    <string name="adhkar_set_complete">اكتملت %1$s لهذا اليوم</string>
+    <string name="adhkar_set_complete_body">تقبّل الله منا ومنك.</string>
 </resources>

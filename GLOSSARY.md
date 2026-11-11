@@ -75,3 +75,15 @@ _Avoid_: Imported sound, user ringtone
 **Widget Variant**:
 One of the distinct home-screen widget designs the app offers, each with its own layout and content.
 _Avoid_: Widget size, widget type, skin
+
+**Dhikr**:
+One remembrance of an Adhkar Set: its Arabic text, how many times it is said, and a short source line (e.g. «رواه مسلم»). Always shown in Arabic. Plural: adhkar.
+_Avoid_: Zikr, prayer (a dhikr is never a Prayer), dua (in code)
+
+**Adhkar Set**:
+An ordered list of adhkar read together from Hisn al-Muslim: the morning adhkar, the evening adhkar, the after-prayer adhkar. Read one dhikr at a time with a counter; its progress lasts until the end of the Prayer Day, and a restart begins it again.
+_Avoid_: Adhkar list, wird, routine
+
+**Adhkar Record**:
+Which Adhkar Sets the user completed (every dhikr said its full count) on each Prayer Day. It is not the Prayer Log, and a restart never removes a completed day.
+_Avoid_: Adhkar log, streak, score
