@@ -97,6 +97,7 @@ class PrayerCore(
      * next [AlertPlan.WINDOW]. Sunrise never alerts. Each Prayer follows its [PrayerAlertSettings]; its sound is
      * the chosen recording's Custom Adhan when one is set ([AlertSettings.customAdhans]). With the master switch off
      * ([AlertSettings.enabled]) the plan holds no alerts at all; the display alarm still moves at every Prayer Time.
+     * With Prayer Silence on ([AlertSettings.prayerSilence]) it also holds a Silence Window per Prayer, master switch or not.
      */
     fun alertPlan(): AlertPlan {
         val now = clock.instant()
@@ -115,7 +116,25 @@ class PrayerCore(
             .filter { !alertsOn || !settings.alerts.of(it.prayer).adhanAlert }
             .map { it.time.toInstant() }
             .filter { it.isAfter(now) && it.isBefore(midnight) }
-        return AlertPlan(alerts, midnight, unannounced.minOrNull() ?: midnight)
+        return AlertPlan(alerts, midnight, unannounced.minOrNull() ?: midnight, silenceWindows(days, now, end))
+    }
+
+    private fun silenceWindows(days: List<Pair<LocalDate, CalculatedDay>>, now: Instant, end: Instant): List<SilenceWindow> {
+        val silence = settings.alerts.prayerSilence
+        if (!silence.enabled) return emptyList()
+        return days.flatMap { (date, day) ->
+            day.prayerTimes.map { time ->
+                val start = time.time.toInstant()
+                SilenceWindow(
+                    prayer = time.prayer,
+                    prayerDay = date,
+                    start = start,
+                    end = start.plus(silence.duration(time.prayer, time.isJumuah)),
+                    mode = silence.mode,
+                    isJumuah = time.isJumuah,
+                )
+            }
+        }.filter { it.end.isAfter(now) && !it.start.isAfter(end) }.sortedBy { it.start }
     }
 
     private fun plannedAlerts(time: PrayerTime, prayerDay: LocalDate, alerts: AlertSettings): List<PlannedAlert> {

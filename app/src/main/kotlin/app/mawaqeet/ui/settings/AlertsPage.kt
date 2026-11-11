@@ -85,6 +85,7 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
             onChange = actions::setAlertsEnabled,
         )
     }
+    PrayerSilenceRows(alerts, actions)
     if (!alerts.enabled) return
     SectionTitle(stringResource(R.string.alerts_each_prayer))
     Card {
@@ -128,6 +129,42 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
     }
     AdhanVolumeRows(alerts, actions)
     CustomAdhanRows(alerts, actions)
+}
+
+/**
+ * «الصامت وقت الصلاة» (#61), shown whatever the master switch says. The switch reads on only while Prayer Silence is
+ * turned on AND Do Not Disturb access is granted (checked on every resume). Turning it on without access stores the
+ * choice and opens the system page; until access is given (or after it is revoked) a Grant row explains why.
+ */
+@Composable
+private fun PrayerSilenceRows(alerts: AlertSettings, actions: SettingsActions) {
+    var access by remember { mutableStateOf(actions.hasDoNotDisturbAccess()) }
+    LifecycleResumeEffect(Unit) {
+        access = actions.hasDoNotDisturbAccess()
+        onPauseOrDispose { }
+    }
+    val wanted = alerts.prayerSilence.enabled
+    Card {
+        SwitchRow(
+            title = stringResource(R.string.prayer_silence),
+            description = stringResource(R.string.prayer_silence_description),
+            checked = wanted && access,
+            onChange = { on ->
+                actions.setPrayerSilenceEnabled(on)
+                if (on && !access) actions.openDoNotDisturbAccess()
+            },
+        )
+        if (wanted && !access) {
+            RowDivider()
+            NavRow(
+                stringResource(R.string.prayer_silence_access),
+                stringResource(R.string.prayer_silence_access_summary),
+                icon = R.drawable.ic_warning,
+                trailing = { Text(stringResource(R.string.grant_button), color = MaterialTheme.colorScheme.primary) },
+                onClick = actions::openDoNotDisturbAccess,
+            )
+        }
+    }
 }
 
 /**

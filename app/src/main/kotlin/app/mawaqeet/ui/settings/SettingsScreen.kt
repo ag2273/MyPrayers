@@ -125,6 +125,15 @@ interface SettingsActions {
 
     /** Settings → Alerts → All alerts: the master switch; off silences every Adhan Alert and Prayer Reminder. */
     fun setAlertsEnabled(on: Boolean)
+
+    /** Settings → Alerts → «الصامت وقت الصلاة» (#61): stores the choice, independent of the master switch. */
+    fun setPrayerSilenceEnabled(on: Boolean)
+
+    /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
+    fun hasDoNotDisturbAccess(): Boolean
+
+    /** The system page where the user grants Do Not Disturb access. */
+    fun openDoNotDisturbAccess()
     fun setAlarmClockMode(on: Boolean)
 
     /** Settings → Alerts → Try it: an Adhan Alert for the next Prayer in 10 seconds, in the current mode. False if it can't be scheduled. */

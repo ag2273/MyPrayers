@@ -1,0 +1,128 @@
+package app.mawaqeet.alerts
+
+import android.app.Application
+import android.app.NotificationManager
+import android.content.Context
+import android.media.AudioManager
+import android.os.Looper
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.SilenceMode
+import app.mawaqeet.core.SilenceWindow
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import java.time.Instant
+import java.time.LocalDate
+
+/** Prayer Silence's ringer adapter (#61): what the phone's ringer does at a Silence Window's start and end. */
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [36], application = Application::class)
+class PrayerSilencerTest {
+    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val audio = context.getSystemService(AudioManager::class.java)
+    private val notifications = context.getSystemService(NotificationManager::class.java)
+
+    private val window = SilenceWindow(
+        prayer = Prayer.DHUHR,
+        prayerDay = LocalDate.parse("2026-11-08"),
+        start = Instant.parse("2026-11-08T09:04:00Z"),
+        end = Instant.parse("2026-11-08T09:24:00Z"),
+        mode = SilenceMode.SILENT,
+        isJumuah = false,
+    )
+
+    @Before
+    fun grantDoNotDisturbAccess() {
+        shadowOf(notifications).setNotificationPolicyAccessGranted(true)
+        notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+    }
+
+    @Test
+    fun `a phone on normal goes silent at the start and gets its sound back at the end`() {
+        PrayerSilencer(context).start(window)
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+
+        PrayerSilencer(context).end(window)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+    }
+
+    @Test
+    fun `the Silence Window's start and end alarms silence the phone and restore it`() {
+        context.sendBroadcast(SilenceReceiver.intent(context, window, start = true))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+
+        context.sendBroadcast(SilenceReceiver.intent(context, window, start = false))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+    }
+
+    @Test
+    fun `a phone already on vibrate is left alone and not turned up at the end`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+
+        PrayerSilencer(context).start(window)
+        assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+        PrayerSilencer(context).end(window)
+        assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+    }
+
+    @Test
+    fun `a phone already silent stays silent after the window`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+
+        PrayerSilencer(context).start(window)
+        PrayerSilencer(context).end(window)
+
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
+    fun `a phone on Do Not Disturb is left alone, and its ringer is not touched at the end`() {
+        notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+
+        PrayerSilencer(context).start(window)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        // Even if the user then silences it themselves, the window's end restores nothing.
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        PrayerSilencer(context).end(window)
+
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, notifications.currentInterruptionFilter)
+    }
+
+    @Test
+    fun `without Do Not Disturb access nothing changes`() {
+        shadowOf(notifications).setNotificationPolicyAccessGranted(false)
+
+        PrayerSilencer(context).start(window)
+        PrayerSilencer(context).end(window)
+
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+    }
+
+    @Test
+    fun `an end with no start before it changes nothing`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+
+        PrayerSilencer(context).end(window)
+
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
+    fun `if the user turns the sound back on during the window, the end leaves their choice alone`() {
+        PrayerSilencer(context).start(window)
+        audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+
+        PrayerSilencer(context).end(window)
+
+        assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+    }
+}

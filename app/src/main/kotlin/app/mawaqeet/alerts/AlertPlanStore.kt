@@ -10,6 +10,8 @@ import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.PlannedAlert
 import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.SilenceMode
+import app.mawaqeet.core.SilenceWindow
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.Instant
@@ -18,7 +20,8 @@ import java.time.LocalDate
 /**
  * The last alert plan the scheduler applied, kept in **device-protected storage** (file `files/alert_plan.txt`
  * under `createDeviceProtectedStorageContext()`) so a locked boot can re-arm alarms before the first unlock,
- * when settings in credential-encrypted DataStore are unreadable. One tab-separated line per alert.
+ * when settings in credential-encrypted DataStore are unreadable. One tab-separated line per alert, then one per
+ * Silence Window, whose first field is `silence`.
  */
 internal class AlertPlanStore(context: Context) {
     private val file = AtomicFile(File(context.createDeviceProtectedStorageContext().filesDir, FILE_NAME))
@@ -54,13 +57,32 @@ internal class AlertPlanStore(context: Context) {
                 ).joinToString("\t"),
             )
         }
+        for (w in plan.silenceWindows) {
+            appendLine(
+                listOf(SILENCE, w.prayer.name, w.prayerDay, w.start.toEpochMilli(), w.end.toEpochMilli(), w.mode.name, w.isJumuah)
+                    .joinToString("\t"),
+            )
+        }
     }
 
     private fun decode(text: String): AlertPlan {
         val lines = text.lines().filter { it.isNotEmpty() }
         require(lines.firstOrNull() == VERSION)
         val midnight = Instant.ofEpochMilli(lines[1].toLong())
-        val alerts = lines.drop(2).map { line ->
+        val (silenceLines, alertLines) = lines.drop(2).partition { it.startsWith(SILENCE + "\t") }
+        val silenceWindows = silenceLines.map { line ->
+            val f = line.split('\t')
+            require(f.size == 7)
+            SilenceWindow(
+                prayer = Prayer.valueOf(f[1]),
+                prayerDay = LocalDate.parse(f[2]),
+                start = Instant.ofEpochMilli(f[3].toLong()),
+                end = Instant.ofEpochMilli(f[4].toLong()),
+                mode = SilenceMode.valueOf(f[5]),
+                isJumuah = f[6].toBooleanStrict(),
+            )
+        }
+        val alerts = alertLines.map { line ->
             val f = line.split('\t')
             require(f.size == 11)
             PlannedAlert(
@@ -77,12 +99,15 @@ internal class AlertPlanStore(context: Context) {
                 adhanVolume = AdhanVolume.valueOf(f[10]),
             )
         }
-        return AlertPlan(alerts, midnight)
+        return AlertPlan(alerts, midnight, silenceWindows = silenceWindows)
     }
 
     companion object {
         const val FILE_NAME = "alert_plan.txt"
-        private const val VERSION = "alert-plan-v4"
+        private const val VERSION = "alert-plan-v5"
+
+        /** First field of a Silence Window's line (#61). */
+        private const val SILENCE = "silence"
     }
 }
 
