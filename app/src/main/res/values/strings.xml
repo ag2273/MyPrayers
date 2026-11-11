@@ -410,6 +410,9 @@
     <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
     <string name="widget_big_clock">ساعة كبيرة</string>
     <string name="widget_big_clock_description">ساعة كبيرة، والعدّ التنازلي وشريط من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
+    <!-- Gold Clock widget (#65): Big Clock's layout, always black and gold. -->
+    <string name="widget_gold_clock">ساعة ذهبية</string>
+    <string name="widget_gold_clock_description">ساعة كبيرة على خلفية سوداء، والعدّ التنازلي وشريط ذهبيان من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
     <!-- The Clock's own marker beside the time in 12-hour time: morning and evening. -->
     <string name="clock_am">ص</string>
     <string name="clock_pm">م</string>

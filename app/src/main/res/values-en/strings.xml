@@ -385,6 +385,9 @@
     <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
     <string name="widget_big_clock">Big Clock</string>
     <string name="widget_big_clock_description">A big clock, with a countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <!-- Gold Clock widget (#65). -->
+    <string name="widget_gold_clock">Gold Clock</string>
+    <string name="widget_gold_clock_description">A big clock on black, with a gold countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
     <string name="clock_am">AM</string>
     <string name="clock_pm">PM</string>
     <string name="clock_description">%1$s. %2$s in %3$s. %4$s.</string>

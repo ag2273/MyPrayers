@@ -32,6 +32,7 @@ class WidgetPickerTest {
         TodayLogWidgetReceiver::class.java to R.xml.today_log_widget_info,
         WeekLogWidgetReceiver::class.java to R.xml.week_log_widget_info,
         BigClockWidgetReceiver::class.java to R.xml.big_clock_widget_info,
+        GoldClockWidgetReceiver::class.java to R.xml.gold_clock_widget_info,
     )
 
     /** The `android:previewLayout` of a widget's provider info, or 0. */
@@ -74,6 +75,30 @@ class WidgetPickerTest {
         val label = context.packageManager.getReceiverInfo(ComponentName(context, BigClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
             .loadLabel(context.packageManager).toString()
         assertEquals("Big Clock", label)
+    }
+
+    @Test
+    fun `Gold Clock is listed as «ساعة ذهبية», 4×2 by default, with a black preview`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, GoldClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("ساعة ذهبية", label)
+        val parser = context.resources.getXml(R.xml.gold_clock_widget_info)
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "appwidget-provider") {
+                assertEquals("4", parser.getAttributeValue(ANDROID, "targetCellWidth"))
+                assertEquals("2", parser.getAttributeValue(ANDROID, "targetCellHeight"))
+            }
+        }
+        val preview = RemoteViews(context.packageName, previewLayout(R.xml.gold_clock_widget_info)).apply(context, FrameLayout(context))
+        assertEquals(android.graphics.Color.BLACK, preview.backgroundTintList?.defaultColor)
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `in English Gold Clock is listed as Gold Clock`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, GoldClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("Gold Clock", label)
     }
 
     @Test
