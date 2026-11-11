@@ -30,6 +30,10 @@
     <string name="settings_group_widgets">Widgets</string>
     <string name="settings_group_about">About &amp; your data</string>
     <string name="about_privacy_section">Privacy</string>
+    <string name="about_privacy_policy">Privacy policy</string>
+    <string name="about_contact_section">Website &amp; contact</string>
+    <string name="about_website">Website</string>
+    <string name="about_contact">Contact us</string>
     <string name="about_sources_section">Sources</string>
     <string name="about_sources_title">Sources &amp; licences</string>
     <string name="about_recordings_none_short">None yet</string>

@@ -101,7 +101,8 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "app.mawaqeet"
+        // The Play package name (fixed by the first upload). The code namespace stays app.mawaqeet.
+        applicationId = "app.nileorbit.mawaqeet"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

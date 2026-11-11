@@ -85,6 +85,7 @@ import app.mawaqeet.ui.LocalDisplayFormatter
 import app.mawaqeet.widget.WidgetAppearance
 import app.mawaqeet.widget.WidgetColors
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.text.BidiFormatter
 import androidx.core.text.TextDirectionHeuristicsCompat
@@ -656,6 +657,12 @@ private fun DisplayPage(settings: PrayerSettings, digitStyle: DigitStyle, today:
  */
 @Composable
 private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () -> Unit) {
+    val uriHandler = LocalUriHandler.current
+    val open = { url: String -> runCatching { uriHandler.openUri(url) }; Unit }
+    // The website has an Arabic home at / and an English one at /en/, each with its privacy page.
+    val english = LocalConfiguration.current.locales[0].language == "en"
+    val sitePath = { if (english) "/en/" else "/" }
+    val privacyPath = { if (english) "/en/privacy" else "/privacy" }
     Column(
         Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -681,6 +688,14 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
             Text(stringResource(R.string.privacy_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.privacy_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        RowDivider()
+        NavRow(stringResource(R.string.about_privacy_policy), WEBSITE_HOST + privacyPath(), onClick = { open(WEBSITE + privacyPath()) })
+    }
+    SectionTitle(stringResource(R.string.about_contact_section))
+    Card {
+        NavRow(stringResource(R.string.about_website), WEBSITE_HOST + sitePath(), onClick = { open(WEBSITE + sitePath()) })
+        RowDivider()
+        NavRow(stringResource(R.string.about_contact), CONTACT_EMAIL, onClick = { open("mailto:$CONTACT_EMAIL") })
     }
     SectionTitle(stringResource(R.string.about_sources_section))
     Card {
@@ -860,3 +875,8 @@ internal val AsrConvention.description: Int
         AsrConvention.STANDARD -> R.string.asr_standard_description
         AsrConvention.HANAFI -> R.string.asr_hanafi_description
     }
+
+/** The app's website and public contact address (About page, store listing and privacy policy use the same ones). */
+private const val WEBSITE_HOST = "mawaqeet.nileorbit.com"
+private const val WEBSITE = "https://$WEBSITE_HOST"
+private const val CONTACT_EMAIL = "contact@nileorbit.com"
