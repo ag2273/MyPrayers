@@ -19,10 +19,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import app.mawaqeet.R
 
-/** The three top-level destinations, in the bottom bar's order (start to end). */
+/** The top-level destinations, in the bottom bar's order (start to end). */
 enum class Tab(@StringRes val label: Int, @DrawableRes val icon: Int) {
     TODAY(R.string.tab_today, R.drawable.ic_today),
     LOG(R.string.prayer_log, R.drawable.ic_log),
+    ADHKAR(R.string.tab_adhkar, R.drawable.ic_adhkar),
     SETTINGS(R.string.settings, R.drawable.ic_settings),
 }
 

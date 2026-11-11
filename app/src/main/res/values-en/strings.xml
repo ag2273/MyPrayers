@@ -397,4 +397,38 @@
     <string name="widget_legend_not_yet">Not yet</string>
     <string name="widget_mark_hint">%1$s: %2$s. Tap to log</string>
     <string name="widget_unmark_hint">%1$s: %2$s. Tap to undo</string>
+
+    <!-- The Adhkar tab (#62). The adhkar themselves are always Arabic. -->
+    <string name="tab_adhkar">Adhkar</string>
+    <string name="adhkar_morning">Morning adhkar</string>
+    <string name="adhkar_not_started">Not started</string>
+    <string name="adhkar_resume">At dhikr %1$s of %2$s</string>
+    <string name="adhkar_done_today">Done today</string>
+    <string name="adhkar_position">Dhikr %1$s of %2$s</string>
+    <string name="adhkar_card_state">%1$s of %2$s done, %3$s left</string>
+    <string name="adhkar_count_one">Count one</string>
+    <string name="adhkar_tap_hint">Tap anywhere on the card to count</string>
+    <string name="adhkar_restart">Start again</string>
+    <string name="adhkar_set_complete">%1$s completed for today</string>
+    <string name="adhkar_set_complete_body">May Allah accept it from us and from you.</string>
+    <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
+    <string name="widget_big_clock">Big Clock</string>
+    <string name="widget_big_clock_description">A big clock, with a countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <string name="clock_am">AM</string>
+    <string name="clock_pm">PM</string>
+    <string name="clock_description">%1$s. %2$s in %3$s. %4$s.</string>
+    <plurals name="clock_spoken_hours">
+        <item quantity="one">%s hour</item>
+        <item quantity="other">%s hours</item>
+    </plurals>
+    <plurals name="clock_spoken_minutes">
+        <item quantity="one">%s minute</item>
+        <item quantity="other">%s minutes</item>
+    </plurals>
+    <string name="clock_spoken_hours_minutes">%1$s %2$s</string>
+    <string name="widget_preview_clock">10:30</string>
+    <string name="widget_preview_clock_countdown">1h 34m</string>
+    <string name="widget_preview_sunrise">Sunrise 06:27</string>
+    <string name="widget_preview_dhuhr">Dhuhr 12:04</string>
+    <string name="widget_preview_clock_date">28 Jumada al-Ula 1448 AH · Sun 8 Nov</string>
 </resources>

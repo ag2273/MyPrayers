@@ -22,6 +22,7 @@ import org.xmlpull.v1.XmlPullParser
 @Config(sdk = [36], qualifiers = "ar")
 class WidgetPickerTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val ANDROID = "http://schemas.android.com/apk/res/android"
 
     private val providers = mapOf(
         NextPrayerWidgetReceiver::class.java to R.xml.next_prayer_widget_info,
@@ -30,6 +31,7 @@ class WidgetPickerTest {
         DateStripWidgetReceiver::class.java to R.xml.date_strip_widget_info,
         TodayLogWidgetReceiver::class.java to R.xml.today_log_widget_info,
         WeekLogWidgetReceiver::class.java to R.xml.week_log_widget_info,
+        BigClockWidgetReceiver::class.java to R.xml.big_clock_widget_info,
     )
 
     /** The `android:previewLayout` of a widget's provider info, or 0. */
@@ -37,7 +39,7 @@ class WidgetPickerTest {
         val parser = context.resources.getXml(info)
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.eventType == XmlPullParser.START_TAG && parser.name == "appwidget-provider") {
-                return parser.getAttributeResourceValue("http://schemas.android.com/apk/res/android", "previewLayout", 0)
+                return parser.getAttributeResourceValue(ANDROID, "previewLayout", 0)
             }
         }
         return 0
@@ -50,6 +52,28 @@ class WidgetPickerTest {
                 .loadLabel(context.packageManager).toString()
         }
         assertEquals(labels.toString(), labels.size, labels.toSet().size)
+    }
+
+    @Test
+    fun `Big Clock is listed as «ساعة كبيرة», 4×2 by default`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, BigClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("ساعة كبيرة", label)
+        val parser = context.resources.getXml(R.xml.big_clock_widget_info)
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "appwidget-provider") {
+                assertEquals("4", parser.getAttributeValue(ANDROID, "targetCellWidth"))
+                assertEquals("2", parser.getAttributeValue(ANDROID, "targetCellHeight"))
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `in English Big Clock is listed as Big Clock`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, BigClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("Big Clock", label)
     }
 
     @Test

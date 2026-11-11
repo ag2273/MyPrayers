@@ -31,6 +31,8 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.currentState
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.wrapContentWidth
 import androidx.glance.layout.Box
@@ -205,6 +207,8 @@ internal fun WidgetFrame(
     opens: MainActivity.Opens = MainActivity.Opens.TODAY,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     decoration: (@Composable () -> Unit)? = null,
+    /** What TalkBack reads for the whole widget, when given (the Clock widgets' one sentence). */
+    description: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val context = LocalContext.current
@@ -219,7 +223,8 @@ internal fun WidgetFrame(
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .padding(horizontal = horizontal, vertical = vertical)
-                    .clickable(actionStartActivity(MainActivity.openIntent(context, opens))),
+                    .clickable(actionStartActivity(MainActivity.openIntent(context, opens)))
+                    .let { m -> description?.let { text -> m.semantics { contentDescription = text } } ?: m },
                 verticalAlignment = verticalAlignment,
                 horizontalAlignment = LocalWidgetDirection.current.start,
             ) {
