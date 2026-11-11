@@ -78,6 +78,9 @@ internal data class ClockView(
     val countdown: String,
     val elapsed: Float,
     val dateLine: String,
+    /** The date line's two halves, for layouts that put them on lines of their own (Clock & Prayer). */
+    val hijriDate: String,
+    val gregorianDate: String,
     /** TalkBack's one sentence: the time, the next Stop and the time left, the dates. */
     val description: String,
 ) {
@@ -108,6 +111,8 @@ internal data class ClockView(
                 countdown = content.countdown,
                 elapsed = content.elapsed,
                 dateLine = content.dateLine,
+                hijriDate = content.hijriDate,
+                gregorianDate = content.gregorianDate,
                 description = s.getString(R.string.clock_description, time, nextName, spoken(content, text), dates),
             )
         }

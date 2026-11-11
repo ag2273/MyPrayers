@@ -198,6 +198,18 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/gold_clock_widget_info" />
         </receiver>
+        <!-- Clock & Prayer widget (#66), 4×2, the split layout. -->
+        <receiver
+            android:name=".widget.ClockPrayerWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_clock_prayer">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/clock_prayer_widget_info" />
+        </receiver>
         <!-- Re-renders the Clock widgets each minute (non-wakeup), only while one exists. -->
         <receiver
             android:name=".widget.ClockTickReceiver"

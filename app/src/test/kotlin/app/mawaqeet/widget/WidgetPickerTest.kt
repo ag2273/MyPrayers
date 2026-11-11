@@ -33,6 +33,7 @@ class WidgetPickerTest {
         WeekLogWidgetReceiver::class.java to R.xml.week_log_widget_info,
         BigClockWidgetReceiver::class.java to R.xml.big_clock_widget_info,
         GoldClockWidgetReceiver::class.java to R.xml.gold_clock_widget_info,
+        ClockPrayerWidgetReceiver::class.java to R.xml.clock_prayer_widget_info,
     )
 
     /** The `android:previewLayout` of a widget's provider info, or 0. */
@@ -99,6 +100,31 @@ class WidgetPickerTest {
         val label = context.packageManager.getReceiverInfo(ComponentName(context, GoldClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
             .loadLabel(context.packageManager).toString()
         assertEquals("Gold Clock", label)
+    }
+
+    @Test
+    fun `Clock and Prayer is listed as «ساعة وصلاة», 4×2 by default, with a preview of the split layout`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, ClockPrayerWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("ساعة وصلاة", label)
+        val parser = context.resources.getXml(R.xml.clock_prayer_widget_info)
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "appwidget-provider") {
+                assertEquals("4", parser.getAttributeValue(ANDROID, "targetCellWidth"))
+                assertEquals("2", parser.getAttributeValue(ANDROID, "targetCellHeight"))
+            }
+        }
+        val preview = RemoteViews(context.packageName, previewLayout(R.xml.clock_prayer_widget_info)).apply(context, FrameLayout(context))
+        val texts = widgetTexts(preview).map { it.text.toString() }
+        assertTrue(texts.toString(), "الصلاة القادمة" in texts && "بعد" in texts)
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `in English Clock and Prayer is listed as Clock & Prayer`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, ClockPrayerWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("Clock & Prayer", label)
     }
 
     @Test
