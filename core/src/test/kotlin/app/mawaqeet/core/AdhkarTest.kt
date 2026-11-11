@@ -144,6 +144,8 @@ class AdhkarTest {
     }
 }
 
+private val TASBEEH = setOf("سُبْحَانَ اللَّهِ", "الْحَمْدُ لِلَّهِ", "اللَّهُ أَكْبَرُ")
+
 class AdhkarCatalogTest {
     @Test
     fun `the catalog keeps each set's adhkar in order with their counts, sources and line breaks`() {
@@ -167,5 +169,23 @@ class AdhkarCatalogTest {
         val subhanallah = morning.adhkar.single { it.text == "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ" }
         assertEquals(100, subhanallah.count)
         assertEquals("رواه مسلم", subhanallah.source)
+    }
+
+    @Test
+    fun `the bundled evening and after-prayer sets have real adhkar with counts and sources`() {
+        val bundled = java.io.File("../app/src/main/assets/adhkar.tsv").inputStream().use(AdhkarCatalog::read)
+
+        for (id in listOf(AdhkarSetId.EVENING, AdhkarSetId.AFTER_PRAYER)) {
+            val set = bundled.set(id)
+            assertTrue(set.adhkar.size >= 4, "${id.key} has ${set.adhkar.size}")
+            assertEquals(set.adhkar.size, set.adhkar.map { it.id }.toSet().size)
+            assertTrue(set.adhkar.all { it.count >= 1 && it.source.isNotBlank() && it.text.isNotBlank() })
+        }
+        // The evening's own opening, «أمسينا وأمسى الملك لله» (Muslim).
+        assertTrue(bundled.set(AdhkarSetId.EVENING).adhkar.first().text.startsWith("أَمْسَيْنَا"))
+        // After the Prayer: «أستغفر الله» three times (Muslim), then the tasbeeh thirty-three times each.
+        val afterPrayer = bundled.set(AdhkarSetId.AFTER_PRAYER).adhkar
+        assertEquals(3, afterPrayer.first().count)
+        assertEquals(listOf(33, 33, 33), afterPrayer.filter { it.text in TASBEEH }.map { it.count })
     }
 }

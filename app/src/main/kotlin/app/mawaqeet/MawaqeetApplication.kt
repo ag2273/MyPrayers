@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.core.os.UserManagerCompat
 import androidx.datastore.preferences.preferencesDataStore
 import app.mawaqeet.alerts.AlertRescheduler
+import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.core.AdhkarCatalog
 import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.Location
@@ -59,6 +60,8 @@ class MawaqeetApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // A user's own sound change during a Silence Window ends it (works before the first unlock too).
+        PrayerSilencer.watchRinger(this)
         // Every settings value (the first on process start, then each change) reschedules the alerts. Before the
         // first unlock DataStore is unreadable; RescheduleReceiver re-arms the device-protected plan copy instead
         // and BOOT_COMPLETED restarts the process' work after unlock.

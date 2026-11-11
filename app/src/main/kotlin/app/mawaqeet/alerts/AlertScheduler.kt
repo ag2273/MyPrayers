@@ -53,6 +53,9 @@ class AlertScheduler(context: Context) {
         armSilence(stored.silenceWindows, now)
     }
 
+    /** Drops [window]'s end alarm (it was ended early with «استعادة الصوت»). */
+    fun cancelSilenceEnd(window: SilenceWindow) = cancel(silenceIntent(window, start = false, PendingIntent.FLAG_NO_CREATE))
+
     /** Each Silence Window's start alarm while the start is still after [now], and its end alarm while the end is. */
     private fun armSilence(windows: List<SilenceWindow>, now: Instant) {
         if (!canScheduleExact(alarmManager)) return
