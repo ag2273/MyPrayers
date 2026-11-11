@@ -436,6 +436,21 @@
     <!-- The Adhkar tab (#62). The adhkar themselves are always Arabic (asset adhkar.tsv); only this copy is translated. -->
     <string name="tab_adhkar">الأذكار</string>
     <string name="adhkar_morning">أذكار الصباح</string>
+    <!-- #70: the evening and after-prayer sets, and when each counts in the Adhkar Record. -->
+    <string name="adhkar_evening">أذكار المساء</string>
+    <string name="adhkar_after_prayer">أذكار بعد الصلاة</string>
+    <!-- %1$s is a Prayer's name: «بعد صلاة الفجر». -->
+    <string name="adhkar_after_prayer_slot">بعد صلاة %1$s</string>
+    <string name="adhkar_after_prayer_name">أذكار بعد صلاة %1$s</string>
+    <string name="adhkar_after_which_prayer">بعد أيّ صلاة؟</string>
+    <string name="adhkar_time_morning">وقتها من الفجر إلى الظهر</string>
+    <string name="adhkar_time_evening">وقتها من العصر إلى الفجر</string>
+    <string name="adhkar_not_yet_time">لم يحن وقتها بعد</string>
+    <string name="adhkar_read_outside_time">قُرئت في غير وقتها</string>
+    <string name="adhkar_outside_morning">وقت أذكار الصباح من الفجر إلى الظهر. يمكنك قراءتها الآن، لكنها لا تُسجَّل لهذا اليوم.</string>
+    <string name="adhkar_outside_evening">وقت أذكار المساء من العصر إلى الفجر. يمكنك قراءتها الآن، لكنها لا تُسجَّل لهذا اليوم.</string>
+    <string name="adhkar_outside_after_prayer">لم يحن وقت صلاة %1$s بعد. يمكنك القراءة، لكنها لا تُسجَّل.</string>
+    <string name="adhkar_set_read">أتممت قراءة %1$s</string>
     <string name="adhkar_not_started">لم تبدأ بعد</string>
     <string name="adhkar_resume">وصلت إلى الذكر %1$s من %2$s</string>
     <string name="adhkar_done_today">تمّت اليوم</string>

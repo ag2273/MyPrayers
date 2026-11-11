@@ -10,16 +10,47 @@ data class Dhikr(val id: String, val text: String, val count: Int, val source: S
     }
 }
 
-/**
- * Which Adhkar Set. [key] names it in the catalog file and in storage, so it never changes once shipped.
- * The evening and after-prayer sets join here.
- */
+/** Which Adhkar Set. [key] names it in the catalog file and in storage, so it never changes once shipped. */
 enum class AdhkarSetId(val key: String) {
     MORNING("morning"),
+    EVENING("evening"),
+
+    /** Read after each Prayer, and recorded per Prayer: see [AdhkarSlot]. */
+    AFTER_PRAYER("after-prayer"),
     ;
 
     companion object {
         fun ofKey(key: String): AdhkarSetId? = entries.firstOrNull { it.key == key }
+    }
+}
+
+/**
+ * One Adhkar Set as it is read and recorded on a Prayer Day: the morning, the evening, or the after-prayer adhkar
+ * after one [prayer] (five slots a day). [key] names it in storage, so it never changes once shipped.
+ */
+data class AdhkarSlot(val set: AdhkarSetId, val prayer: Prayer? = null) {
+    init {
+        require((set == AdhkarSetId.AFTER_PRAYER) == (prayer != null)) { "Only after-prayer adhkar have a Prayer" }
+    }
+
+    val key: String get() = if (prayer == null) set.key else "${set.key}:${prayer.name.lowercase()}"
+
+    companion object {
+        val MORNING = AdhkarSlot(AdhkarSetId.MORNING)
+        val EVENING = AdhkarSlot(AdhkarSetId.EVENING)
+
+        fun afterPrayer(prayer: Prayer) = AdhkarSlot(AdhkarSetId.AFTER_PRAYER, prayer)
+
+        /** Every slot of a Prayer Day, in list order: morning, evening, then after each Prayer. */
+        val all: List<AdhkarSlot> = listOf(MORNING, EVENING) + Prayer.entries.map(::afterPrayer)
+
+        fun ofKey(key: String): AdhkarSlot? = all.firstOrNull { it.key == key }
+
+        /** The one slot of a morning or evening set. After-prayer adhkar have five: name the Prayer instead. */
+        fun of(set: AdhkarSetId): AdhkarSlot {
+            require(set != AdhkarSetId.AFTER_PRAYER) { "After-prayer adhkar need a Prayer: use afterPrayer(prayer)" }
+            return AdhkarSlot(set)
+        }
     }
 }
 
@@ -66,9 +97,9 @@ class AdhkarCatalog(sets: List<AdhkarSet>) {
 
 /**
  * Where Adhkar progress and the Adhkar Record live. The Android app implements it with the local database (the
- * Prayer Log's); tests use an in-memory one. A set is named by its slot: today the [AdhkarSetId.key]; after-prayer
- * adhkar, recorded per Prayer, will use one slot per Prayer. Implementations store what they are told; every rule
- * lives in [Adhkar].
+ * Prayer Log's); tests use an in-memory one. A set is named by its [AdhkarSlot.key]: one for the morning, one for the
+ * evening, one per Prayer for the after-prayer adhkar. Implementations store what they are told; every rule lives
+ * in [Adhkar].
  */
 interface AdhkarRepository {
     /** How many times each dhikr (by id) of [slot] was counted on [prayerDay]. Uncounted adhkar are absent. */
@@ -94,14 +125,21 @@ data class DhikrProgress(val dhikr: Dhikr, val counted: Int) {
     val isDone: Boolean get() = counted >= dhikr.count
 }
 
-/** A set as read on [prayerDay]: each dhikr's count so far, the dhikr to say now, and the day's record. */
+/** A slot as read on [prayerDay]: each dhikr's count so far, the dhikr to say now, and the day's record. */
 data class SetProgress(
-    val set: AdhkarSetId,
+    val slot: AdhkarSlot,
     val prayerDay: LocalDate,
     val items: List<DhikrProgress>,
     /** The Adhkar Record: every dhikr reached its count on this Prayer Day (a later restart keeps it). */
     val isComplete: Boolean,
+    /**
+     * Whether finishing the set now goes in the Adhkar Record: morning from Fajr to Dhuhr, evening from Asr to the
+     * next Fajr, after-prayer once its Prayer's time has arrived. Outside it the set can still be read.
+     */
+    val isInTime: Boolean,
 ) {
+    val set: AdhkarSetId get() = slot.set
+
     /** The first dhikr not yet said its full count ("dhikr N of M" is this plus one), or null when all are. */
     val currentIndex: Int? = items.indexOfFirst { !it.isDone }.takeIf { it >= 0 }
 
@@ -120,39 +158,69 @@ class Adhkar(
 ) {
     val sets: List<AdhkarSet> get() = catalog.sets
 
-    /** [set] as read on the current Prayer Day. */
-    fun progress(set: AdhkarSetId): SetProgress = progressOn(today(), set)
+    /** The slots of the bundled sets, in list order: morning, evening, then after each of the five Prayers. */
+    val slots: List<AdhkarSlot> get() = catalog.sets.map { it.id }.let { ids -> AdhkarSlot.all.filter { it.set in ids } }
+
+    /** [slot] as read on the current Prayer Day. */
+    fun progress(slot: AdhkarSlot): SetProgress = progressOn(prayers.currentPrayerDay(), slot)
 
     /** Counts one repetition of the current dhikr; at its count the next dhikr becomes current. */
-    fun count(set: AdhkarSetId): SetProgress = synchronized(repo) {
-        val day = today()
-        repo.clearCountsBefore(day)
-        val before = progressOn(day, set)
+    fun count(slot: AdhkarSlot): SetProgress = synchronized(repo) {
+        val day = prayers.currentPrayerDay()
+        repo.clearCountsBefore(day.date)
+        val before = progressOn(day, slot)
         val current = before.current ?: return before
-        repo.setCount(day, set.key, current.dhikr.id, current.counted + 1)
-        val after = progressOn(day, set)
-        if (after.currentIndex == null && !after.isComplete) {
-            repo.recordCompleted(day, set.key)
+        repo.setCount(day.date, slot.key, current.dhikr.id, current.counted + 1)
+        val after = progressOn(day, slot)
+        if (after.currentIndex == null && !after.isComplete && after.isInTime) {
+            repo.recordCompleted(day.date, slot.key)
             return after.copy(isComplete = true)
         }
         after
     }
 
-    /** Starts [set] again from its first dhikr; a completed day stays completed. */
-    fun restart(set: AdhkarSetId): SetProgress = synchronized(repo) {
-        val day = today()
-        repo.clearCounts(day, set.key)
-        progressOn(day, set)
+    /** Starts [slot] again from its first dhikr; a completed day stays completed. */
+    fun restart(slot: AdhkarSlot): SetProgress = synchronized(repo) {
+        val day = prayers.currentPrayerDay()
+        repo.clearCounts(day.date, slot.key)
+        progressOn(day, slot)
     }
 
-    /** Whether [set] was completed on [prayerDay] (default: the current Prayer Day). */
-    fun isComplete(set: AdhkarSetId, prayerDay: LocalDate = today()): Boolean = set.key in repo.completedOn(prayerDay)
+    /** Whether [slot] was completed on [prayerDay] (default: the current Prayer Day). */
+    fun isComplete(slot: AdhkarSlot, prayerDay: LocalDate = today()): Boolean = slot.key in repo.completedOn(prayerDay)
+
+    /** The morning or evening [set] (see [AdhkarSlot.of]). */
+    fun progress(set: AdhkarSetId): SetProgress = progress(AdhkarSlot.of(set))
+
+    fun count(set: AdhkarSetId): SetProgress = count(AdhkarSlot.of(set))
+
+    fun restart(set: AdhkarSetId): SetProgress = restart(AdhkarSlot.of(set))
+
+    /** Whether the morning or evening [set] was completed on [prayerDay]: what a Worship Reminder checks. */
+    fun isComplete(set: AdhkarSetId, prayerDay: LocalDate = today()): Boolean = isComplete(AdhkarSlot.of(set), prayerDay)
+
+    /**
+     * The Prayer the after-prayer adhkar are recorded against unless the user picks another: the most recent
+     * Prayer whose time has arrived on the current Prayer Day (Isha after midnight, Fajr from Fajr).
+     */
+    fun defaultAfterPrayer(): Prayer = prayers.currentPrayerDay().let { day ->
+        day.prayerTimes.last { day.hasArrived(it.prayer) }.prayer
+    }
 
     private fun today(): LocalDate = prayers.currentPrayerDay().date
 
-    private fun progressOn(day: LocalDate, set: AdhkarSetId): SetProgress {
-        val counts = repo.counts(day, set.key)
-        val items = catalog.set(set).adhkar.map { DhikrProgress(it, (counts[it.id] ?: 0).coerceIn(0, it.count)) }
-        return SetProgress(set, day, items, isComplete(set, day))
+    private fun progressOn(day: PrayerDay, slot: AdhkarSlot): SetProgress {
+        val counts = repo.counts(day.date, slot.key)
+        val items = catalog.set(slot.set).adhkar.map { DhikrProgress(it, (counts[it.id] ?: 0).coerceIn(0, it.count)) }
+        return SetProgress(slot, day.date, items, isComplete(slot, day.date), isInTime(day, slot))
     }
+
+    /** The current Prayer Day runs from its Fajr, so only the far end of each window needs checking. */
+    private fun isInTime(day: PrayerDay, slot: AdhkarSlot): Boolean = when (slot.set) {
+        AdhkarSetId.MORNING -> !day.hasArrived(Prayer.DHUHR)
+        AdhkarSetId.EVENING -> day.hasArrived(Prayer.ASR)
+        AdhkarSetId.AFTER_PRAYER -> day.hasArrived(checkNotNull(slot.prayer))
+    }
+
+    private fun PrayerDay.hasArrived(prayer: Prayer): Boolean = stateOf(prayer) != LogState.NOT_YET_DUE
 }
