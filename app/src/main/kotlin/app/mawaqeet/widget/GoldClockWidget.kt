@@ -42,7 +42,7 @@ internal fun goldClockStyle(sdk: Int = Build.VERSION.SDK_INT) = WidgetStyle(
     onAccentSoft = R.color.widget_gold_date,
 )
 
-/** The Gold Clock entry in the widget picker (4×2). */
+/** The Gold Clock entry in the widget picker (4×2, down to 4×1). */
 class GoldClockWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = GoldClockWidget()
 
