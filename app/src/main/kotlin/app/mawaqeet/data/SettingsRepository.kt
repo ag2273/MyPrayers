@@ -22,6 +22,7 @@ import app.mawaqeet.core.LocationSource
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
+import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.widget.WidgetAppearance
 import app.mawaqeet.widget.WidgetColors
@@ -234,6 +235,14 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[ALERTS_ENABLED] = on }
     }
 
+    /**
+     * Settings → Alerts → «الصامت وقت الصلاة» (#61). Independent of the master switch. The screen shows it on only while
+     * Do Not Disturb access is granted too; without access the Silence Windows are planned but change nothing.
+     */
+    suspend fun setPrayerSilenceEnabled(on: Boolean) {
+        store.edit { it[PRAYER_SILENCE_ENABLED] = on }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -288,6 +297,10 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             customAdhans = AdhanRecording.entries
                 .mapNotNull { recording -> this[customAdhanKey(recording)]?.takeIf { it.isNotEmpty() }?.let { recording to it } }
                 .toMap(),
+            prayerSilence = PrayerSilence(
+                enabled = this[PRAYER_SILENCE_ENABLED] ?: default.prayerSilence.enabled,
+                mode = this[PRAYER_SILENCE_MODE].toEnum(default.prayerSilence.mode),
+            ),
         )
     }
 
@@ -327,6 +340,10 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")
         private val VIBRATION = booleanPreferencesKey("vibration")
         private val ADHAN_VOLUME = stringPreferencesKey("adhan_volume")
+        private val PRAYER_SILENCE_ENABLED = booleanPreferencesKey("prayer_silence_enabled")
+
+        /** [app.mawaqeet.core.SilenceMode] name; only silent until #68 adds vibrate and a setter. */
+        private val PRAYER_SILENCE_MODE = stringPreferencesKey("prayer_silence_mode")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

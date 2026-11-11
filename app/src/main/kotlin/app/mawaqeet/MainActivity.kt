@@ -36,6 +36,7 @@ import app.mawaqeet.alerts.AlertScheduler
 import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.alerts.CustomAdhanFiles
+import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityDirectory
@@ -265,6 +266,18 @@ class MainActivity : AppCompatActivity() {
 
                             override fun setAlertsEnabled(on: Boolean) {
                                 scope.launch { settingsStore.setAlertsEnabled(on) }
+                            }
+
+                            override fun setPrayerSilenceEnabled(on: Boolean) {
+                                scope.launch { settingsStore.setPrayerSilenceEnabled(on) }
+                            }
+
+                            override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
+
+                            override fun openDoNotDisturbAccess() {
+                                runCatching {
+                                    startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                                }
                             }
 
                             override fun setAlarmClockMode(on: Boolean) {

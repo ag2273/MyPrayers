@@ -31,6 +31,8 @@ class NextPrayerLookRenderTest {
         Triple(TodayLogWidget(), 320, 180),
         Triple(WeekLogWidget(), 250, 180),
         Triple(WeekLogWidget(), 320, 260),
+        Triple(BigClockWidget(), 250, 110),
+        Triple(BigClockWidget(), 320, 180),
     )
 
     @After

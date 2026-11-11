@@ -2,7 +2,13 @@ package app.mawaqeet
 
 
 import android.view.View
+import android.app.NotificationManager
+import android.provider.Settings
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.lifecycle.Lifecycle
+import org.robolectric.Shadows.shadowOf
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -144,11 +150,52 @@ class SettingsScreenTest {
             compose.onNodeWithText("All app alerts").performClick()
             compose.waitUntil(timeoutMillis = 5_000) { !alerts().enabled }
             compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText("Vibration").fetchSemanticsNodes().isEmpty() }
+            // Prayer Silence doesn't depend on the master switch.
+            compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsDisplayed()
             compose.onNodeWithContentDescription("Back").performClick()
             compose.waitForIdle()
             compose.onNodeWithText("Alerts are off").assertIsDisplayed()
         } finally {
             runBlocking { store.setAlertsEnabled(true) }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `turning on Silent during Prayer asks for Do Not Disturb access, stays off without it and offers Grant until it is given`() {
+        val policy = shadowOf(compose.activity.getSystemService(NotificationManager::class.java))
+        policy.setNotificationPolicyAccessGranted(false)
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun alerts() = runBlocking { store.settings.first() }.alerts
+        fun grantShown() = compose.onAllNodesWithText("Grant").fetchSemanticsNodes().isNotEmpty()
+        try {
+            compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsOff()
+            assertEquals(false, grantShown())
+
+            compose.onNodeWithText("Silent during Prayer").performClick()
+
+            assertEquals(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS, shadowOf(compose.activity).nextStartedActivity?.action)
+            compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.enabled && grantShown() }
+            compose.onNodeWithText("Silent during Prayer").assertIsOff()
+
+            // The user allows access in system settings and comes back.
+            policy.setNotificationPolicyAccessGranted(true)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+
+            compose.waitUntil(timeoutMillis = 5_000) { !grantShown() }
+            compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsOn()
+
+            // Revoked later: the switch reads off again and Grant comes back.
+            policy.setNotificationPolicyAccessGranted(false)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            compose.waitUntil(timeoutMillis = 5_000) { grantShown() }
+            compose.onNodeWithText("Silent during Prayer").assertIsOff()
+        } finally {
+            runBlocking { store.setPrayerSilenceEnabled(false) }
         }
     }
 

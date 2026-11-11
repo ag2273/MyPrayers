@@ -352,6 +352,10 @@
     <string name="alerts_all">All app alerts</string>
     <string name="alerts_all_on_description">Adhan Alerts and reminders follow each Prayer\'s settings</string>
     <string name="alerts_all_off_description">Off: no adhan, no reminder and no notification from the app until you turn them back on</string>
+    <string name="prayer_silence">Silent during Prayer</string>
+    <string name="prayer_silence_description">Puts the phone on silent for 20 minutes at each Prayer, then restores its sound. A phone that is already silent is left alone.</string>
+    <string name="prayer_silence_access">Allow Do Not Disturb access</string>
+    <string name="prayer_silence_access_summary">The app needs it to silence the phone; Silent during Prayer can\'t work without it.</string>
     <string name="settings_alerts_summary_off">All turned off</string>
     <string name="settings_alerts_off">Alerts are off</string>
     <string name="settings_alerts_off_summary">You turned off every app alert. Tap to turn them back on.</string>
@@ -392,4 +396,24 @@
     <string name="adhkar_restart">Start again</string>
     <string name="adhkar_set_complete">%1$s completed for today</string>
     <string name="adhkar_set_complete_body">May Allah accept it from us and from you.</string>
+    <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
+    <string name="widget_big_clock">Big Clock</string>
+    <string name="widget_big_clock_description">A big clock, with a countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <string name="clock_am">AM</string>
+    <string name="clock_pm">PM</string>
+    <string name="clock_description">%1$s. %2$s in %3$s. %4$s.</string>
+    <plurals name="clock_spoken_hours">
+        <item quantity="one">%s hour</item>
+        <item quantity="other">%s hours</item>
+    </plurals>
+    <plurals name="clock_spoken_minutes">
+        <item quantity="one">%s minute</item>
+        <item quantity="other">%s minutes</item>
+    </plurals>
+    <string name="clock_spoken_hours_minutes">%1$s %2$s</string>
+    <string name="widget_preview_clock">10:30</string>
+    <string name="widget_preview_clock_countdown">1h 34m</string>
+    <string name="widget_preview_sunrise">Sunrise 06:27</string>
+    <string name="widget_preview_dhuhr">Dhuhr 12:04</string>
+    <string name="widget_preview_clock_date">28 Jumada al-Ula 1448 AH · Sun 8 Nov</string>
 </resources>
