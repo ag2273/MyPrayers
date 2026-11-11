@@ -154,6 +154,8 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
     context: Context,
     build: (PrayerCore, WidgetText) -> T,
     deep: Boolean = false,
+    /** A look of the widget's own that Settings → Widgets doesn't change (Gold Clock). */
+    fixedStyle: WidgetStyle? = null,
     layout: @Composable (T, rtl: Boolean) -> Unit,
 ) {
     val app = context.applicationContext as MawaqeetApplication
@@ -185,7 +187,7 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
             }
         }
         CompositionLocalProvider(
-            LocalWidgetStyle provides remember(appearance) { WidgetStyle.of(appearance, deep = deep) },
+            LocalWidgetStyle provides remember(appearance) { fixedStyle ?: WidgetStyle.of(appearance, deep = deep) },
             LocalWidgetDirection provides remember(current.second) { WidgetDirection(current.second, WidgetDirection.phoneRtl(context)) },
         ) {
             layout(current.first, current.second)

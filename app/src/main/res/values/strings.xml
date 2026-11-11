@@ -450,6 +450,16 @@
     <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
     <string name="widget_big_clock">ساعة كبيرة</string>
     <string name="widget_big_clock_description">ساعة كبيرة، والعدّ التنازلي وشريط من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
+    <!-- Gold Clock widget (#65): Big Clock's layout, always black and gold. -->
+    <string name="widget_gold_clock">ساعة ذهبية</string>
+    <string name="widget_gold_clock_description">ساعة كبيرة على خلفية سوداء، والعدّ التنازلي وشريط ذهبيان من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
+    <!-- Clock & Prayer widget (#66): the split layout, clock and dates beside the next Prayer. -->
+    <string name="widget_clock_prayer">ساعة وصلاة</string>
+    <string name="widget_clock_prayer_description">ساعة كبيرة والتاريخان الهجري والميلادي، وبجانبها الصلاة القادمة ووقتها والعدّ التنازلي وشريط من الصلاة السابقة</string>
+    <!-- Before the countdown: "بعد ١ س ١٠ د". -->
+    <string name="clock_prayer_in">بعد</string>
+    <!-- The previous Stop and its time: "من الشروق ٠٦:٢٧". -->
+    <string name="clock_prayer_since">من %1$s</string>
     <!-- The Clock's own marker beside the time in 12-hour time: morning and evening. -->
     <string name="clock_am">ص</string>
     <string name="clock_pm">م</string>
@@ -479,4 +489,8 @@
     <string name="widget_preview_sunrise">الشروق ٠٦:٢٧</string>
     <string name="widget_preview_dhuhr">الظهر ١٢:٠٤</string>
     <string name="widget_preview_clock_date">٢٨ جمادى الأولى ١٤٤٨ هـ · الأحد ٨ نوفمبر</string>
+    <!-- Sample content for the Clock & Prayer picker preview. -->
+    <string name="widget_preview_clock_hijri">٢٨ جمادى الأولى ١٤٤٨ هـ</string>
+    <string name="widget_preview_clock_gregorian">الأحد ٨ نوفمبر</string>
+    <string name="widget_preview_clock_since">من الشروق ٠٦:٢٧</string>
 </resources>

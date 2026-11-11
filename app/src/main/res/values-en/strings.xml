@@ -418,6 +418,14 @@
     <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
     <string name="widget_big_clock">Big Clock</string>
     <string name="widget_big_clock_description">A big clock, with a countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <!-- Gold Clock widget (#65). -->
+    <string name="widget_gold_clock">Gold Clock</string>
+    <string name="widget_gold_clock_description">A big clock on black, with a gold countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <!-- Clock & Prayer widget (#66). -->
+    <string name="widget_clock_prayer">Clock &amp; Prayer</string>
+    <string name="widget_clock_prayer_description">A big clock with the Hijri and Gregorian dates, beside the next prayer, its time, a countdown and a bar from the previous prayer</string>
+    <string name="clock_prayer_in">in</string>
+    <string name="clock_prayer_since">from %1$s</string>
     <string name="clock_am">AM</string>
     <string name="clock_pm">PM</string>
     <string name="clock_description">%1$s. %2$s in %3$s. %4$s.</string>
@@ -435,4 +443,7 @@
     <string name="widget_preview_sunrise">Sunrise 06:27</string>
     <string name="widget_preview_dhuhr">Dhuhr 12:04</string>
     <string name="widget_preview_clock_date">28 Jumada al-Ula 1448 AH · Sun 8 Nov</string>
+    <string name="widget_preview_clock_hijri">28 Jumada al-Ula 1448 AH</string>
+    <string name="widget_preview_clock_gregorian">Sun 8 Nov</string>
+    <string name="widget_preview_clock_since">from Sunrise 06:27</string>
 </resources>
