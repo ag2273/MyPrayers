@@ -46,4 +46,12 @@
     <!-- The sun on the day path, and the eight-point star's hairline (with its own soft alpha). -->
     <color name="widget_sun">#E0A23F</color>
     <color name="widget_deep_star">#21F2F6F4</color>
+    <!-- Gold Clock (#65): one fixed look, no night or wallpaper variants. Black, a white clock, a gold countdown and
+         bar, muted gold Stops, a light grey date line. -->
+    <color name="widget_gold_background">#000000</color>
+    <color name="widget_gold_text">#FFFFFF</color>
+    <color name="widget_gold">#E0B860</color>
+    <color name="widget_gold_muted">#B39A62</color>
+    <color name="widget_gold_track">#40E0B860</color>
+    <color name="widget_gold_date">#C8C8C8</color>
 </resources>

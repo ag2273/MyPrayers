@@ -177,8 +177,12 @@ internal object BigClockMetrics {
     }
 }
 
+/** Which style colour each of Big Clock's lines takes; Gold Clock gives its Stops and date line their own. */
+internal data class ClockTones(val previous: Tone = Tone.MUTED, val next: Tone = Tone.TEXT, val date: Tone = Tone.MUTED)
+
+/** Big Clock's layout, which Gold Clock shares in its own [ClockTones]. */
 @Composable
-private fun BigClockLayout(view: ClockView, rtl: Boolean) {
+internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = ClockTones()) {
     val context = LocalContext.current
     val style = LocalWidgetStyle.current
     val size = LocalSize.current
@@ -204,13 +208,13 @@ private fun BigClockLayout(view: ClockView, rtl: Boolean) {
             GlanceModifier.fillMaxWidth().padding(top = gap),
             Alignment.CenterVertically,
             listOf(
-                cell { WidgetLine(view.previous, BigClockMetrics.STOP_SP * scale, Tone.MUTED) },
+                cell { WidgetLine(view.previous, BigClockMetrics.STOP_SP * scale, tones.previous) },
                 cell {
                     Box(GlanceModifier.defaultWeight().padding(horizontal = (BigClockMetrics.ROW_GAP_DP * scale).dp), contentAlignment = Alignment.Center) {
                         WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true)
                     }
                 },
-                cell { WidgetLine(view.next, BigClockMetrics.STOP_SP * scale, Tone.TEXT, bold = true) },
+                cell { WidgetLine(view.next, BigClockMetrics.STOP_SP * scale, tones.next, bold = true) },
             ),
         )
         Box(GlanceModifier.padding(top = gap * 2)) {
@@ -221,7 +225,7 @@ private fun BigClockLayout(view: ClockView, rtl: Boolean) {
             )
         }
         Box(GlanceModifier.fillMaxWidth().padding(top = gap), contentAlignment = Alignment.Center) {
-            WidgetLine(view.dateLine, BigClockMetrics.DATE_SP * scale, Tone.MUTED)
+            WidgetLine(view.dateLine, BigClockMetrics.DATE_SP * scale, tones.date)
         }
     }
 }

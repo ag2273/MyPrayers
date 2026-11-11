@@ -23,7 +23,7 @@ object Widgets {
     private val all: List<() -> GlanceAppWidget> get() = listOf(::NextPrayerWidget, ::NextPrayerRingWidget, ::TodayTimesWidget, ::DateStripWidget, ::TodayLogWidget, ::WeekLogWidget) + clocks
 
     /** The Clock Widgets, re-rendered each minute by [ClockTickReceiver]; each new Clock variant adds itself here. */
-    val clocks: List<() -> GlanceAppWidget> = listOf(::BigClockWidget)
+    val clocks: List<() -> GlanceAppWidget> = listOf(::BigClockWidget, ::GoldClockWidget)
 
     /**
      * Bumped on every refresh, in each widget's Glance state. A widget reads it with `currentState(REFRESHED_AT)` and
