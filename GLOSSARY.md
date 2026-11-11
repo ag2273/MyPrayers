@@ -72,6 +72,14 @@ _Avoid_: Long adhan, adhan audio
 An audio file the user picks from their own phone to play as the Short Adhan, the Full Adhan or Fajr's Full Adhan instead of the bundled recording. Each is chosen separately: a Custom Adhan for the Full Adhan never changes Fajr, which keeps its own adhan with «الصلاة خير من النوم» unless the user picks a Custom Adhan for Fajr's Full Adhan.
 _Avoid_: Imported sound, user ringtone
 
+**Prayer Silence**:
+An optional setting, off by default, that puts the phone on silent at each Prayer and restores its previous sound mode afterwards. It needs Do Not Disturb access, works even with every app alert off, and leaves a phone that is already silent, on vibrate or on Do Not Disturb alone.
+_Avoid_: Auto-silent, mute mode, prayer mode
+
+**Silence Window**:
+One planned stretch of Prayer Silence: from a Prayer's Prayer Time to a fixed end (20 minutes later by default), identified by its Prayer Day and Prayer.
+_Avoid_: Silent period, mute window
+
 **Widget Variant**:
 One of the distinct home-screen widget designs the app offers, each with its own layout and content.
 _Avoid_: Widget size, widget type, skin

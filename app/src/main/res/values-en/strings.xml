@@ -352,6 +352,10 @@
     <string name="alerts_all">All app alerts</string>
     <string name="alerts_all_on_description">Adhan Alerts and reminders follow each Prayer\'s settings</string>
     <string name="alerts_all_off_description">Off: no adhan, no reminder and no notification from the app until you turn them back on</string>
+    <string name="prayer_silence">Silent during Prayer</string>
+    <string name="prayer_silence_description">Puts the phone on silent for 20 minutes at each Prayer, then restores its sound. A phone that is already silent is left alone.</string>
+    <string name="prayer_silence_access">Allow Do Not Disturb access</string>
+    <string name="prayer_silence_access_summary">The app needs it to silence the phone; Silent during Prayer can\'t work without it.</string>
     <string name="settings_alerts_summary_off">All turned off</string>
     <string name="settings_alerts_off">Alerts are off</string>
     <string name="settings_alerts_off_summary">You turned off every app alert. Tap to turn them back on.</string>

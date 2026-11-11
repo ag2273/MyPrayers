@@ -13,6 +13,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Prayer Silence (#61): lists the app under Do Not Disturb access, which changing the ringer to silent needs. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
     <!-- Automatic location (#24): approximate only, read only while the app is open. Never FINE or BACKGROUND. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -51,6 +53,12 @@
         <!-- The scheduler's own alarms. Direct-boot aware so alerts fire before the first unlock. -->
         <receiver
             android:name=".alerts.AlertReceiver"
+            android:directBootAware="true"
+            android:exported="false" />
+
+        <!-- Prayer Silence's start and end alarms (#61). Direct-boot aware so the sound comes back before the first unlock. -->
+        <receiver
+            android:name=".alerts.SilenceReceiver"
             android:directBootAware="true"
             android:exported="false" />
 

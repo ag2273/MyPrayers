@@ -198,6 +198,20 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `Prayer Silence is off by default, and turning it on survives an app restart with the other alert settings`() {
+        assertEquals(false, withRepository { repo, _ -> repo.settings.first() }.alerts.prayerSilence.enabled)
+        withRepository { repo, _ ->
+            repo.setAlertsEnabled(false)
+            repo.setPrayerSilenceEnabled(true)
+        }
+
+        val alerts = withRepository { repo, _ -> repo.settings.first() }.alerts
+
+        assertEquals(app.mawaqeet.core.PrayerSilence(enabled = true), alerts.prayerSilence)
+        assertEquals(false, alerts.enabled)
+    }
+
+    @Test
     fun `a stored reminder lead time below the minimum reads as the default instead of failing`() {
         withRepository { _, store -> store.edit { it[intPreferencesKey("alert_dhuhr_reminder_minutes")] = 5 } }
 

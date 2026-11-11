@@ -31,7 +31,7 @@ object AlertRescheduler {
         val scheduler = AlertScheduler(app)
         if (UserManagerCompat.isUserUnlocked(app)) {
             val current = settings ?: app.settings.settings.first()
-            scheduler.apply(PrayerCore(current, clock, app.prayerLog).alertPlan())
+            scheduler.apply(PrayerCore(current, clock, app.prayerLog).alertPlan(), clock.instant())
         } else {
             scheduler.rearmStoredPlan(clock.instant())
         }

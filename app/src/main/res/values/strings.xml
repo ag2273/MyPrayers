@@ -375,6 +375,11 @@
     <string name="alerts_all">كل تنبيهات التطبيق</string>
     <string name="alerts_all_on_description">الأذان والتذكير يعملان حسب إعداد كل صلاة</string>
     <string name="alerts_all_off_description">متوقفة: لن يصلك أذان ولا تذكير ولا أي إشعار من التطبيق حتى تشغّلها</string>
+    <!-- Prayer Silence (#61). -->
+    <string name="prayer_silence">الصامت وقت الصلاة</string>
+    <string name="prayer_silence_description">يضع الهاتف على الصامت عشرين دقيقة عند كل صلاة، ثم يعيد الصوت كما كان. إن كان الهاتف صامتًا من قبل فلا يغيّره.</string>
+    <string name="prayer_silence_access">اسمح بالوصول إلى «عدم الإزعاج»</string>
+    <string name="prayer_silence_access_summary">يحتاجه التطبيق ليضع الهاتف على الصامت، ولا يعمل الصامت وقت الصلاة بدونه.</string>
     <string name="settings_alerts_summary_off">كلها موقوفة</string>
     <string name="settings_alerts_off">التنبيهات متوقفة</string>
     <string name="settings_alerts_off_summary">أوقفت كل تنبيهات التطبيق. اضغط لتشغيلها من جديد.</string>

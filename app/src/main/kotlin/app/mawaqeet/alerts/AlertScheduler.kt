@@ -13,12 +13,14 @@ import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.PlannedAlert
 import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.SilenceWindow
 import java.time.Instant
 
 /**
  * Turns the core's [AlertPlan] into alarms: one per planned alert (`setExactAndAllowWhileIdle`, or
  * `setAlarmClock` in alarm-clock mode) plus one display alarm ([AlertPlan.nextDisplayChange]: local midnight, or a Prayer
- * Time with no Adhan Alert). Applying a plan reconciles: alarms of the previously applied plan that the new one lacks
+ * Time with no Adhan Alert), plus a start and an end alarm per Silence Window ([SilenceReceiver]; the start only while
+ * it is still ahead, so re-planning during a window never silences twice). Applying a plan reconciles: alarms of the previously applied plan that the new one lacks
  * are cancelled, the rest are (re)set. The applied plan is stored in device-protected storage ([AlertPlanStore]) for
  * [rearmStoredPlan] after a locked boot; the stored copy keeps only midnight, so its display alarm is midnight.
  *
@@ -30,19 +32,45 @@ class AlertScheduler(context: Context) {
     private val store = AlertPlanStore(context)
 
     /** Schedules [plan] and stores it. Without the exact-alarm permission nothing is set (the Grant screen shows). */
-    fun apply(plan: AlertPlan) {
+    fun apply(plan: AlertPlan, now: Instant = Instant.now()) {
         val previous = store.read()
         val keep = plan.alerts.map { it.requestCode }.toSet()
         previous?.alerts?.filter { it.requestCode !in keep }?.forEach { cancel(alertIntent(it, PendingIntent.FLAG_NO_CREATE)) }
+        val keepSilence = plan.silenceWindows.map { it.startRequestCode }.toSet()
+        previous?.silenceWindows?.filter { it.startRequestCode !in keepSilence }?.forEach {
+            cancel(silenceIntent(it, start = true, PendingIntent.FLAG_NO_CREATE))
+            cancel(silenceIntent(it, start = false, PendingIntent.FLAG_NO_CREATE))
+        }
         store.write(plan)
         arm(plan)
+        armSilence(plan.silenceWindows, now)
     }
 
-    /** Re-arms the stored plan's alerts still after [now], with no recalculation (works before the first unlock). */
+    /** Re-arms the stored plan's alerts and Silence Windows still after [now], with no recalculation (works before the first unlock). */
     fun rearmStoredPlan(now: Instant) {
         val stored = store.read() ?: return
         arm(stored.copy(alerts = stored.alerts.filter { it.instant.isAfter(now) }), now)
+        armSilence(stored.silenceWindows, now)
     }
+
+    /** Each Silence Window's start alarm while the start is still after [now], and its end alarm while the end is. */
+    private fun armSilence(windows: List<SilenceWindow>, now: Instant) {
+        if (!canScheduleExact(alarmManager)) return
+        for (window in windows) {
+            for ((start, at) in listOf(true to window.start, false to window.end)) {
+                if (!at.isAfter(now)) continue
+                val operation = silenceIntent(window, start, PendingIntent.FLAG_UPDATE_CURRENT)!!
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at.toEpochMilli(), operation)
+            }
+        }
+    }
+
+    private fun silenceIntent(window: SilenceWindow, start: Boolean, flag: Int): PendingIntent? = PendingIntent.getBroadcast(
+        context,
+        if (start) window.startRequestCode else window.startRequestCode + 1,
+        SilenceReceiver.intent(context, window, start),
+        flag or PendingIntent.FLAG_IMMUTABLE,
+    )
 
     private fun arm(plan: AlertPlan, now: Instant? = null) {
         if (!canScheduleExact(alarmManager)) return
@@ -155,6 +183,12 @@ class AlertScheduler(context: Context) {
          */
         internal val PlannedAlert.requestCode: Int
             get() = 1 + (prayerDay.toEpochDay().mod(100_000L)).toInt() * 16 + prayer.ordinal * 2 + kind.ordinal
+
+        /** Silence Windows' request codes sit above every alert's: [startRequestCode] for the start, one more for the end. */
+        private const val SILENCE_REQUEST_CODE_BASE = 2_000_000
+
+        internal val SilenceWindow.startRequestCode: Int
+            get() = SILENCE_REQUEST_CODE_BASE + (prayerDay.toEpochDay().mod(100_000L)).toInt() * 16 + prayer.ordinal * 2
 
         /** Exact alarms are always allowed before Android 12; from 12 the user can revoke them (14+: off by default). */
         fun canScheduleExact(alarmManager: AlarmManager): Boolean =
