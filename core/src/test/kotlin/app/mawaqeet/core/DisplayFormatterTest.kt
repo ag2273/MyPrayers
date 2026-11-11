@@ -106,4 +106,31 @@ class DisplayFormatterTest {
         assertEquals("٠", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).signedNumber(0))
         assertEquals("31", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).number(31))
     }
+    @Test
+    fun `the Clock's countdown is hours and minutes with short units, in the chosen digits`() {
+        val left = Duration.ofMinutes(70)
+
+        assertEquals("١ س ١٠ د", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).hoursMinutes(left))
+        assertEquals("1 س 10 د", DisplayFormatter(ARABIC, DigitStyle.WESTERN).hoursMinutes(left))
+        assertEquals("1h 10m", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).hoursMinutes(left))
+    }
+
+    @Test
+    fun `under an hour the Clock's countdown is minutes only, and whole hours drop the minutes`() {
+        assertEquals("٩ د", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).hoursMinutes(Duration.ofMinutes(9)))
+        assertEquals("0m", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).hoursMinutes(Duration.ofSeconds(-5)))
+        assertEquals("2h", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).hoursMinutes(Duration.ofHours(2)))
+        assertEquals("١٢ س", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).hoursMinutes(Duration.ofHours(12)))
+    }
+
+    @Test
+    fun `the Clock's time follows the 12 or 24-hour choice in the chosen digits, with no marker`() {
+        val afternoon = ZonedDateTime.of(2026, 11, 8, 15, 5, 30, 0, ZoneId.of("Asia/Riyadh"))
+        val midnight = afternoon.withHour(0)
+
+        assertEquals("٣:٠٥", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).clockTime(afternoon, twentyFourHour = false))
+        assertEquals("15:05", DisplayFormatter(ARABIC, DigitStyle.WESTERN).clockTime(afternoon, twentyFourHour = true))
+        assertEquals("12:05", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).clockTime(midnight, twentyFourHour = false))
+        assertEquals("00:05", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).clockTime(midnight, twentyFourHour = true))
+    }
 }

@@ -42,6 +42,7 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
     private val zero = decimalStyle.zeroDigit
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT).withDecimalStyle(decimalStyle)
+    private val clock12Formatter = DateTimeFormatter.ofPattern("h:mm", Locale.ROOT).withDecimalStyle(decimalStyle)
     private val gregorianFormatter = DateTimeFormatter
         .ofPattern(if (arabic) "EEEE، d MMMM y" else "EEEE, d MMMM y", locale)
         .withDecimalStyle(decimalStyle)
@@ -65,7 +66,31 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
         return digits("%d:%02d:%02d".format(Locale.ROOT, seconds / 3600, seconds % 3600 / 60, seconds % 60))
     }
 
-    /** Weekday, day, month and year: `الأحد، ٨ نوفمبر ٢٠٢٦` / `Sunday, 8 November 2026`. */
+    /**
+     * The Clock Widget's countdown: whole hours and minutes with short units, no seconds: `١ س ١٠ د` / `1h 10m`,
+     * `٩ د` under an hour, `2h` on the hour. Seconds are dropped (callers round up first); negative reads as zero.
+     */
+    fun hoursMinutes(remaining: Duration): String {
+        val minutes = remaining.toMinutes().coerceAtLeast(0)
+        val hours = (minutes / 60).toInt()
+        val rest = (minutes % 60).toInt()
+        val h = if (arabic) "${number(hours)} س" else "${number(hours)}h"
+        val m = if (arabic) "${number(rest)} د" else "${number(rest)}m"
+        return when {
+            hours == 0 -> m
+            rest == 0 -> h
+            else -> "$h $m"
+        }
+    }
+
+    /**
+     * A clock face's time, with no ص/م marker (the Clock Widget draws its own): `٣:٠٥` in 12-hour time,
+     * `15:05` in 24-hour time.
+     */
+    fun clockTime(time: ZonedDateTime, twentyFourHour: Boolean): String =
+        (if (twentyFourHour) timeFormatter else clock12Formatter).format(time)
+
+    /** Weekday, day, month and year:`الأحد، ٨ نوفمبر ٢٠٢٦` / `Sunday, 8 November 2026`. */
     fun gregorianDate(date: LocalDate): String = gregorianFormatter.format(date)
 
     /** A Prayer Log day label's Gregorian part: `الأحد ٨ نوفمبر` / `Sun 8 Nov`. */

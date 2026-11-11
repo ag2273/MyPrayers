@@ -15,12 +15,15 @@ import kotlinx.coroutines.launch
 /**
  * The one entry point that re-renders every home-screen widget. Called from the display alarms
  * (`AlertReceiver`: each Prayer Time and local midnight), from `RescheduleReceiver` (boot, time, zone, locale) and
- * on every settings, digit or language change (`MawaqeetApplication`). The only period is the Next Prayer widgets'
- * half-hourly update, which moves their progress line and ring.
+ * on every settings, digit or language change (`MawaqeetApplication`). The periods are the Next Prayer widgets'
+ * half-hourly update, which moves their progress line and ring, and the Clock widgets' minute ([ClockTickReceiver]).
  */
 object Widgets {
     /** Every Widget Variant's [GlanceAppWidget] class; each new variant adds itself here. */
-    private val all: List<() -> GlanceAppWidget> = listOf(::NextPrayerWidget, ::NextPrayerRingWidget, ::TodayTimesWidget, ::DateStripWidget, ::TodayLogWidget, ::WeekLogWidget)
+    private val all: List<() -> GlanceAppWidget> get() = listOf(::NextPrayerWidget, ::NextPrayerRingWidget, ::TodayTimesWidget, ::DateStripWidget, ::TodayLogWidget, ::WeekLogWidget) + clocks
+
+    /** The Clock Widgets, re-rendered each minute by [ClockTickReceiver]; each new Clock variant adds itself here. */
+    val clocks: List<() -> GlanceAppWidget> = listOf(::BigClockWidget)
 
     /**
      * Bumped on every refresh, in each widget's Glance state. A widget reads it with `currentState(REFRESHED_AT)` and

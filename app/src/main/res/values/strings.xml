@@ -402,4 +402,36 @@
     <!-- TalkBack on a Prayer's column in the Today with Prayer Log widget: "الظهر: لم تُسجَّل. اضغط للتسجيل". -->
     <string name="widget_mark_hint">%1$s: %2$s. اضغط للتسجيل</string>
     <string name="widget_unmark_hint">%1$s: %2$s. اضغط للإلغاء</string>
+    <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
+    <string name="widget_big_clock">ساعة كبيرة</string>
+    <string name="widget_big_clock_description">ساعة كبيرة، والعدّ التنازلي وشريط من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
+    <!-- The Clock's own marker beside the time in 12-hour time: morning and evening. -->
+    <string name="clock_am">ص</string>
+    <string name="clock_pm">م</string>
+    <!-- TalkBack reads a Clock widget as one sentence: the time, the next Stop and the time left, the dates. -->
+    <string name="clock_description">الساعة %1$s. %2$s بعد %3$s. %4$s.</string>
+    <plurals name="clock_spoken_hours">
+        <item quantity="zero">%s ساعة</item>
+        <item quantity="one">ساعة واحدة</item>
+        <item quantity="two">ساعتين</item>
+        <item quantity="few">%s ساعات</item>
+        <item quantity="many">%s ساعة</item>
+        <item quantity="other">%s ساعة</item>
+    </plurals>
+    <plurals name="clock_spoken_minutes">
+        <item quantity="zero">%s دقيقة</item>
+        <item quantity="one">دقيقة واحدة</item>
+        <item quantity="two">دقيقتين</item>
+        <item quantity="few">%s دقائق</item>
+        <item quantity="many">%s دقيقة</item>
+        <item quantity="other">%s دقيقة</item>
+    </plurals>
+    <!-- Hours and minutes spoken together: "ساعة و١٠ دقائق". -->
+    <string name="clock_spoken_hours_minutes">%1$s و%2$s</string>
+    <!-- Sample content for the Big Clock's picker preview. -->
+    <string name="widget_preview_clock">١٠:٣٠</string>
+    <string name="widget_preview_clock_countdown">١ س ٣٤ د</string>
+    <string name="widget_preview_sunrise">الشروق ٠٦:٢٧</string>
+    <string name="widget_preview_dhuhr">الظهر ١٢:٠٤</string>
+    <string name="widget_preview_clock_date">٢٨ جمادى الأولى ١٤٤٨ هـ · الأحد ٨ نوفمبر</string>
 </resources>
