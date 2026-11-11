@@ -92,6 +92,36 @@ class RoomAdhkarRepositoryTest {
     }
 
     @Test
+    fun `the first-use date is kept once recorded and survives reopening`() {
+        withAdhkar(ctx) { adhkar, _ ->
+            assertEquals(null, adhkar.firstUseDate())
+            adhkar.recordFirstUseIfAbsent(day)
+            adhkar.recordFirstUseIfAbsent(day.plusDays(1))
+        }
+
+        withAdhkar(ctx) { adhkar, _ -> assertEquals(day, adhkar.firstUseDate()) }
+    }
+
+    @Test
+    fun `deleting the Adhkar Record wipes records and counts, keeps the Prayer Log, and restarts first use`() {
+        withAdhkar(ctx) { adhkar, log ->
+            log.setPrayed(day, Prayer.FAJR, true)
+            adhkar.recordFirstUseIfAbsent(day.minusDays(5))
+            adhkar.recordCompleted(day.minusDays(1), "morning")
+            adhkar.setCount(day, "evening", "a", 1)
+            val before = adhkar.changes.value
+
+            adhkar.deleteRecord(firstUseFrom = day)
+
+            assertEquals(emptySet<String>(), adhkar.completedOn(day.minusDays(1)))
+            assertEquals(emptyMap<String, Int>(), adhkar.counts(day, "evening"))
+            assertEquals(day, adhkar.firstUseDate())
+            assertEquals(setOf(Prayer.FAJR), log.prayedOn(day))
+            assertNotEquals(before, adhkar.changes.value)
+        }
+    }
+
+    @Test
     fun `every write bumps the change signal`() {
         withAdhkar(ctx) { adhkar, _ ->
             val before = adhkar.changes.value
@@ -113,6 +143,29 @@ class RoomAdhkarRepositoryTest {
             db.rawQuery("SELECT slot FROM adhkar_record", null).use { it.count }
         }
         assertEquals(1, rows)
+    }
+
+    @Test
+    fun `a version 3 database keeps its Adhkar Record after the upgrade and has no first use yet`() {
+        // The version 3 schema, as exported in app/schemas/.../3.json.
+        val file = ctx.getDatabasePath(PrayerLogDatabase.FILE_NAME).apply { parentFile?.mkdirs() }
+        SQLiteDatabase.openOrCreateDatabase(file, null).apply {
+            execSQL("CREATE TABLE prayer_log (prayer_day TEXT NOT NULL, prayer TEXT NOT NULL, PRIMARY KEY(prayer_day, prayer))")
+            execSQL("CREATE TABLE first_use (id INTEGER NOT NULL, prayer_day TEXT NOT NULL, PRIMARY KEY(id))")
+            execSQL("CREATE TABLE past_place (until TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL, zone TEXT NOT NULL, PRIMARY KEY(until))")
+            execSQL("CREATE TABLE adhkar_progress (prayer_day TEXT NOT NULL, slot TEXT NOT NULL, dhikr_id TEXT NOT NULL, count INTEGER NOT NULL, PRIMARY KEY(prayer_day, slot, dhikr_id))")
+            execSQL("CREATE TABLE adhkar_record (prayer_day TEXT NOT NULL, slot TEXT NOT NULL, PRIMARY KEY(prayer_day, slot))")
+            execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
+            execSQL("INSERT INTO room_master_table (id,identity_hash) VALUES(42, '9c421220d9c56257ed135096ab6a8e02')")
+            execSQL("INSERT INTO adhkar_record VALUES ('2026-11-09', 'morning')")
+            version = 3
+            close()
+        }
+
+        withAdhkar(ctx) { adhkar, _ ->
+            assertEquals(setOf("morning"), adhkar.completedOn(day))
+            assertEquals(null, adhkar.firstUseDate())
+        }
     }
 
     @Test

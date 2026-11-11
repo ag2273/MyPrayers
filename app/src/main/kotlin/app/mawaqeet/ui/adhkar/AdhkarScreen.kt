@@ -68,18 +68,20 @@ private fun slotName(slot: AdhkarSlot): String =
         ?: stringResource(slot.set.nameRes)
 
 /**
- * The «الأذكار» tab (#62, #70): the morning and evening sets and the five after-prayer slots with today's state;
- * one opens in the reader. [adhkar] is null while the bundled catalog loads. [changes] signals every write to the
+ * The «الأذكار» tab (#62, #70, #74): the morning and evening sets and the five after-prayer slots with today's
+ * state; one opens in the reader. The Adhkar Record's week grid opens from the end of the list. [adhkar] is null while the bundled catalog loads. [changes] signals every write to the
  * Adhkar repository.
  */
 @Composable
 fun AdhkarScreen(adhkar: Adhkar?, changes: StateFlow<Int>) {
     var open by rememberSaveable { mutableStateOf<String?>(null) }
+    var record by rememberSaveable { mutableStateOf(false) }
     val openSlot = open?.let(AdhkarSlot::ofKey)
-    if (adhkar != null && openSlot != null) {
-        SetReader(adhkar, openSlot, changes, onSwitch = { open = it.key }, onBack = { open = null })
-    } else {
-        SetList(adhkar, changes, onOpen = { open = it.key })
+    when {
+        adhkar != null && openSlot != null ->
+            SetReader(adhkar, openSlot, changes, onSwitch = { open = it.key }, onBack = { open = null })
+        adhkar != null && record -> AdhkarRecordPage(adhkar, changes, onBack = { record = false })
+        else -> SetList(adhkar, changes, onOpen = { open = it.key }, onOpenRecord = { record = true })
     }
 }
 
@@ -87,7 +89,7 @@ fun AdhkarScreen(adhkar: Adhkar?, changes: StateFlow<Int>) {
 private data class AdhkarToday(val slots: List<SetProgress>, val defaultPrayer: Prayer)
 
 @Composable
-private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSlot) -> Unit) {
+private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSlot) -> Unit, onOpenRecord: () -> Unit) {
     val version by changes.collectAsState()
     val today by produceState<AdhkarToday?>(null, adhkar, version) {
         value = adhkar?.let { a -> withContext(Dispatchers.IO) { AdhkarToday(a.slots.map(a::progress), a.defaultAfterPrayer()) } }
@@ -119,6 +121,9 @@ private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSlo
                     }
                 }
             }
+        }
+        Card {
+            NavRow(stringResource(R.string.adhkar_record), stringResource(R.string.adhkar_record_summary), icon = R.drawable.ic_log, onClick = onOpenRecord)
         }
     }
 }

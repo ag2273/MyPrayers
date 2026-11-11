@@ -11,7 +11,10 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.xmlpull.v1.XmlPullParser
 
-/** The Prayer Log and the location stay off cloud backup but move with a device-to-device transfer (#25). */
+/**
+ * The Prayer Log, the Adhkar Record (#74) and the location stay off cloud backup but move with a device-to-device
+ * transfer (#25).
+ */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36])
 class BackupRulesTest {
@@ -37,6 +40,35 @@ class BackupRulesTest {
             }
         }
         return rules
+    }
+
+    @Test
+    fun `the Adhkar Record and its first-use date are in the database file the rules cover`() {
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        try {
+            executor.submit {
+                val db = PrayerLogDatabase.open(ctx)
+                try {
+                    RoomAdhkarRepository(db).apply {
+                        recordFirstUseIfAbsent(java.time.LocalDate.of(2026, 11, 9))
+                        recordCompleted(java.time.LocalDate.of(2026, 11, 9), "morning")
+                    }
+                } finally {
+                    db.close()
+                }
+            }.get()
+        } finally {
+            executor.shutdown()
+        }
+
+        val file = ctx.getDatabasePath(database)
+        val rows = android.database.sqlite.SQLiteDatabase.openDatabase(file.path, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY).use { db ->
+            listOf("adhkar_record", "adhkar_first_use").map { table -> db.rawQuery("SELECT * FROM $table", null).use { it.count } }
+        }
+        ctx.deleteDatabase(database)
+        assertEquals(listOf(1, 1), rows)
+        assertTrue(listOf("cloud-backup", "exclude", "database", database, null) in rules(R.xml.data_extraction_rules))
+        assertTrue(listOf(null, "include", "database", database, "deviceToDeviceTransfer") in rules(R.xml.backup_rules))
     }
 
     @Test

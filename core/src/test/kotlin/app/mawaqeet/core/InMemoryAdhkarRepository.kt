@@ -6,6 +6,7 @@ import java.time.LocalDate
 class InMemoryAdhkarRepository : AdhkarRepository {
     private val counts = mutableMapOf<Triple<LocalDate, String, String>, Int>()
     private val completed = mutableSetOf<Pair<LocalDate, String>>()
+    private var firstUse: LocalDate? = null
 
     override fun counts(prayerDay: LocalDate, slot: String): Map<String, Int> =
         counts.filterKeys { it.first == prayerDay && it.second == slot }.mapKeys { it.key.third }
@@ -27,5 +28,17 @@ class InMemoryAdhkarRepository : AdhkarRepository {
 
     override fun recordCompleted(prayerDay: LocalDate, slot: String) {
         completed += prayerDay to slot
+    }
+
+    override fun firstUseDate(): LocalDate? = firstUse
+
+    override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {
+        if (firstUse == null) firstUse = prayerDay
+    }
+
+    override fun deleteRecord(firstUseFrom: LocalDate) {
+        counts.clear()
+        completed.clear()
+        firstUse = firstUseFrom
     }
 }

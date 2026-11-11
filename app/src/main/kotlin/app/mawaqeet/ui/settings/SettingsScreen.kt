@@ -169,6 +169,9 @@ interface SettingsActions {
     fun openFixAlerts()
     /** Settings → Prayer Log (#25): permanently deletes every Prayer Log entry. Called only after confirmation. */
     fun deletePrayerLog()
+
+    /** Settings → your data (#74): permanently deletes the Adhkar Record. Called only after confirmation. */
+    fun deleteAdhkarRecord()
 }
 
 /** The Settings sections, each its own page, plus the pages opened from them. */
@@ -725,7 +728,15 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
     }
     SectionTitle(stringResource(R.string.settings_section_your_data))
     Card {
-        DeletePrayerLogRow(actions)
+        DeleteDataRow(
+            R.string.delete_prayer_log, R.string.delete_prayer_log_summary, R.string.delete_prayer_log_done,
+            R.string.delete_prayer_log_title, R.string.delete_prayer_log_body, actions::deletePrayerLog,
+        )
+        RowDivider()
+        DeleteDataRow(
+            R.string.delete_adhkar_record, R.string.delete_adhkar_record_summary, R.string.delete_adhkar_record_done,
+            R.string.delete_adhkar_record_title, R.string.delete_adhkar_record_body, actions::deleteAdhkarRecord,
+        )
     }
 }
 
@@ -750,9 +761,16 @@ private fun ColumnScope.CreditsPage() {
     }
 }
 
-/** Prayer Log (#25): Delete Prayer Log, behind an in-app confirmation. */
+/** Delete Prayer Log (#25) or Delete Adhkar Record (#74), behind an in-app confirmation. */
 @Composable
-private fun DeletePrayerLogRow(actions: SettingsActions) {
+private fun DeleteDataRow(
+    @StringRes title: Int,
+    @StringRes summary: Int,
+    @StringRes done: Int,
+    @StringRes dialogTitle: Int,
+    @StringRes body: Int,
+    onDelete: () -> Unit,
+) {
     var confirming by rememberSaveable { mutableStateOf(false) }
     var deleted by rememberSaveable { mutableStateOf(false) }
     val error = MaterialTheme.colorScheme.error
@@ -767,9 +785,9 @@ private fun DeletePrayerLogRow(actions: SettingsActions) {
     ) {
         Icon(painterResource(R.drawable.ic_trash), contentDescription = null, tint = error, modifier = Modifier.size(22.dp))
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.delete_prayer_log), style = MaterialTheme.typography.titleMedium, color = error)
+            Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = error)
             Text(
-                stringResource(if (deleted) R.string.delete_prayer_log_done else R.string.delete_prayer_log_summary),
+                stringResource(if (deleted) done else summary),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -778,13 +796,13 @@ private fun DeletePrayerLogRow(actions: SettingsActions) {
     if (confirming) {
         AlertDialog(
             onDismissRequest = { confirming = false },
-            title = { Text(stringResource(R.string.delete_prayer_log_title)) },
-            text = { Text(stringResource(R.string.delete_prayer_log_body)) },
+            title = { Text(stringResource(dialogTitle)) },
+            text = { Text(stringResource(body)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirming = false
                     deleted = true
-                    actions.deletePrayerLog()
+                    onDelete()
                 }) {
                     Text(stringResource(R.string.delete_prayer_log_confirm), color = error)
                 }

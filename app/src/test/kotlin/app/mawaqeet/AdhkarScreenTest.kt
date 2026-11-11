@@ -51,7 +51,7 @@ private val catalog = AdhkarCatalog.parse(
         "after-prayer\tone\t1\tرواه مسلم\tأَسْتَغْفِرُ اللَّهَ\n",
 )
 
-private class FakeAdhkarRepository : AdhkarRepository {
+internal class FakeAdhkarRepository : AdhkarRepository {
     val changes = MutableStateFlow(0)
     private val counts = mutableMapOf<Triple<LocalDate, String, String>, Int>()
     private val record = mutableSetOf<Pair<LocalDate, String>>()
@@ -80,9 +80,24 @@ private class FakeAdhkarRepository : AdhkarRepository {
         record += prayerDay to slot
         changes.update { it + 1 }
     }
+
+    private var firstUse: LocalDate? = null
+
+    @Synchronized override fun firstUseDate() = firstUse
+
+    @Synchronized override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {
+        if (firstUse == null) firstUse = prayerDay
+    }
+
+    @Synchronized override fun deleteRecord(firstUseFrom: LocalDate) {
+        counts.clear()
+        record.clear()
+        firstUse = firstUseFrom
+        changes.update { it + 1 }
+    }
 }
 
-private object EmptyLog : PrayerLogRepository {
+internal object EmptyLog : PrayerLogRepository {
     override fun prayedOn(prayerDay: LocalDate) = emptySet<Prayer>()
     override fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean) = Unit
     override fun firstUseDate(): LocalDate? = null

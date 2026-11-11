@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 
 /**
  * One Prayer marked as prayed. A Prayer Day is stored as its ISO date (`2026-11-08`), a Prayer as its enum name.
@@ -92,6 +93,13 @@ internal data class AdhkarRecordEntry(
     val slot: String,
 )
 
+/** Single-row table holding the Adhkar first-use Prayer Day (the first count): the Adhkar Record counts from it. */
+@Entity(tableName = "adhkar_first_use")
+internal data class AdhkarFirstUse(
+    @PrimaryKey val id: Int = 0,
+    @ColumnInfo(name = "prayer_day") val prayerDay: String,
+)
+
 /** Blocking queries: call them off the main thread (the core's repository interface is synchronous). */
 @Dao
 internal interface AdhkarDao {
@@ -113,22 +121,45 @@ internal interface AdhkarDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertRecord(entry: AdhkarRecordEntry)
+
+    @Query("SELECT prayer_day FROM adhkar_first_use WHERE id = 0")
+    fun firstUse(): String?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertFirstUse(firstUse: AdhkarFirstUse)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun replaceFirstUse(firstUse: AdhkarFirstUse)
+
+    @Query("DELETE FROM adhkar_record")
+    fun deleteRecord()
+
+    @Query("DELETE FROM adhkar_progress")
+    fun deleteAllCounts()
+
+    /** Settings: Delete Adhkar Record, all at once so no screen sees half of it. */
+    @Transaction
+    fun deleteRecord(firstUseFrom: String) {
+        deleteRecord()
+        deleteAllCounts()
+        replaceFirstUse(AdhkarFirstUse(prayerDay = firstUseFrom))
+    }
 }
 
 /**
  * The local database holding the Prayer Log, the first-use date, the past places of Prayer Days, and the Adhkar
  * progress and Adhkar Record (in this same file, so they share the Prayer Log's backup and device-transfer rules).
  * Every schema change bumps [version] with a migration (version 2 added `past_place`, version 3 the adhkar
- * tables; both auto-migrations).
+ * tables, version 4 `adhkar_first_use`; all auto-migrations).
  */
 @Database(
     entities = [
         PrayerLogEntry::class, FirstUse::class, PastPlaceEntry::class,
-        AdhkarProgressEntry::class, AdhkarRecordEntry::class,
+        AdhkarProgressEntry::class, AdhkarRecordEntry::class, AdhkarFirstUse::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
 )
 abstract class PrayerLogDatabase : RoomDatabase() {
     internal abstract fun dao(): PrayerLogDao

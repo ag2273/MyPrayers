@@ -128,9 +128,9 @@ fun PrayerLogScreen(core: PrayerCore, logChanges: StateFlow<Int>) {
     }
 }
 
-/** An outlined round arrow button for the previous or next week; [label] is read by TalkBack. */
+/** An outlined round arrow button for the previous or next week; [label] is read by TalkBack. Also the Adhkar Record's. */
 @Composable
-private fun WeekButton(label: Int, mirrored: Boolean, enabled: Boolean, onClick: () -> Unit) {
+internal fun WeekButton(label: Int, mirrored: Boolean, enabled: Boolean, onClick: () -> Unit) {
     OutlinedIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp)) {
         // ic_back points to the start (right in Arabic): the previous week; turned around, the next one.
         Icon(
@@ -264,14 +264,14 @@ private fun PrayerCell(day: PrayerDay, prayer: Prayer, onToggle: (Prayer) -> Uni
 
 /** The same marks as Home: prayed is a filled circle with a tick, not marked an outline, not yet due a faint one. */
 @Composable
-private fun Mark(state: LogState) {
+internal fun Mark(state: LogState, size: androidx.compose.ui.unit.Dp = 28.dp) {
     val colors = MaterialTheme.colorScheme
     when (state) {
-        LogState.PRAYED -> Box(Modifier.size(28.dp).background(colors.primary, CircleShape), contentAlignment = Alignment.Center) {
+        LogState.PRAYED -> Box(Modifier.size(size).background(colors.primary, CircleShape), contentAlignment = Alignment.Center) {
             // The cell's state already says "Prayed"; TalkBack shouldn't also read "check mark".
-            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(16.dp))
+            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(size * 4 / 7))
         }
-        LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.outline, CircleShape))
-        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.5.dp, colors.outline.copy(alpha = 0.5f), CircleShape))
+        LogState.NOT_MARKED -> Box(Modifier.size(size).border(2.dp, colors.outline, CircleShape))
+        LogState.NOT_YET_DUE -> Box(Modifier.size(size).border(1.5.dp, colors.outline.copy(alpha = 0.5f), CircleShape))
     }
 }

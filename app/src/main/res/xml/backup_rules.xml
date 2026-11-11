@@ -3,6 +3,7 @@
   Android 8-11 backup rules (#25), the same choice as data_extraction_rules.xml: an <include> with
   requireFlags="deviceToDeviceTransfer" is copied only in a direct transfer to a new phone, never to the cloud.
   Once any <include> is listed only included files are backed up, so the rest of the app's files are listed too.
+  prayer_log.db holds the Prayer Log and the Adhkar Record (#74).
 -->
 <full-backup-content>
     <include domain="database" path="prayer_log.db" requireFlags="deviceToDeviceTransfer" />

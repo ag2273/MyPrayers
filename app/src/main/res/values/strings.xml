@@ -317,6 +317,11 @@
     <string name="delete_prayer_log_title">حذف سجل الصلاة؟</string>
     <string name="delete_prayer_log_body">سيُمحى كل ما سجّلته من صلوات نهائيًا من هذا الهاتف، ولا يمكن التراجع عن ذلك.</string>
     <string name="delete_prayer_log_confirm">حذف</string>
+    <string name="delete_adhkar_record">حذف سجل الأذكار</string>
+    <string name="delete_adhkar_record_summary">يمحو نهائيًا سجل ما أتممته من الأذكار</string>
+    <string name="delete_adhkar_record_done">حُذف سجل الأذكار</string>
+    <string name="delete_adhkar_record_title">حذف سجل الأذكار؟</string>
+    <string name="delete_adhkar_record_body">سيُمحى سجل ما أتممته من الأذكار نهائيًا من هذا الهاتف، ولا يمكن التراجع عن ذلك.</string>
     <!-- Prayer Time adjustments (#20). -->
     <string name="adjustments">تعديل المواقيت</string>
     <string name="adjustments_none">بلا تعديل</string>
@@ -462,6 +467,16 @@
     <string name="adhkar_restart">ابدأ من جديد</string>
     <string name="adhkar_set_complete">اكتملت %1$s لهذا اليوم</string>
     <string name="adhkar_set_complete_body">تقبّل الله منا ومنك.</string>
+    <!-- The Adhkar Record week grid (#74): marks only, no streaks or scores. -->
+    <string name="adhkar_record">سجل الأذكار</string>
+    <string name="adhkar_record_summary">الأيام التي أتممت فيها الأذكار</string>
+    <string name="adhkar_record_morning">الصباح</string>
+    <string name="adhkar_record_evening">المساء</string>
+    <string name="adhkar_record_after_prayers">بعد الصلوات</string>
+    <string name="adhkar_record_completed">اكتملت</string>
+    <string name="adhkar_record_not_completed">لم تكتمل</string>
+    <string name="adhkar_record_not_yet_due">لم يحن وقتها بعد</string>
+    <string name="adhkar_record_before_first_use">قبل بدء استخدامك للأذكار</string>
     <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
     <string name="widget_big_clock">ساعة كبيرة</string>
     <string name="widget_big_clock_description">ساعة كبيرة، والعدّ التنازلي وشريط من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>

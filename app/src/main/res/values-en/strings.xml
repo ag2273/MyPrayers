@@ -298,6 +298,11 @@
     <string name="delete_prayer_log_title">Delete Prayer Log?</string>
     <string name="delete_prayer_log_body">Everything you logged will be erased from this phone for good. This can\'t be undone.</string>
     <string name="delete_prayer_log_confirm">Delete</string>
+    <string name="delete_adhkar_record">Delete Adhkar Record</string>
+    <string name="delete_adhkar_record_summary">Permanently erases the record of the adhkar you completed</string>
+    <string name="delete_adhkar_record_done">Adhkar Record deleted</string>
+    <string name="delete_adhkar_record_title">Delete Adhkar Record?</string>
+    <string name="delete_adhkar_record_body">The record of the adhkar you completed will be erased from this phone for good. This can\'t be undone.</string>
     <!-- Prayer Time adjustments (#20). -->
     <string name="adjustments">Prayer Time adjustments</string>
     <string name="adjustments_none">No adjustments</string>
@@ -428,6 +433,15 @@
     <string name="adhkar_restart">Start again</string>
     <string name="adhkar_set_complete">%1$s completed for today</string>
     <string name="adhkar_set_complete_body">May Allah accept it from us and from you.</string>
+    <string name="adhkar_record">Adhkar Record</string>
+    <string name="adhkar_record_summary">The days you completed the adhkar</string>
+    <string name="adhkar_record_morning">Morning</string>
+    <string name="adhkar_record_evening">Evening</string>
+    <string name="adhkar_record_after_prayers">After prayers</string>
+    <string name="adhkar_record_completed">Completed</string>
+    <string name="adhkar_record_not_completed">Not completed</string>
+    <string name="adhkar_record_not_yet_due">Not time yet</string>
+    <string name="adhkar_record_before_first_use">Before you started the adhkar</string>
     <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
     <string name="widget_big_clock">Big Clock</string>
     <string name="widget_big_clock_description">A big clock, with a countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>

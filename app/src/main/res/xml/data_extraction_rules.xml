@@ -2,7 +2,8 @@
 <!--
   Android 12+ backup rules (#25). The Prayer Log is "religious beliefs" data and the location is personal: neither
   goes to cloud backup, but both move with a direct device-to-device transfer to a new phone.
-  - prayer_log.db: the Prayer Log, the first-use date and past places (with their coordinates).
+  - prayer_log.db: the Prayer Log, the first-use date and past places (with their coordinates), and the Adhkar
+    Record with its progress and first-use date (#74).
   - datastore/settings.preferences_pb: every setting, including the location. DataStore keeps one file, so the
     location can't be excluded on its own; the other settings are re-chosen in onboarding after a cloud restore.
   - alert_plan.txt (device-protected): Prayer Times from which the location could be worked out; rebuilt anyway.
@@ -16,6 +17,6 @@
         <exclude domain="file" path="datastore/settings.preferences_pb" />
         <exclude domain="device_file" path="alert_plan.txt" />
     </cloud-backup>
-    <!-- No rules: device-to-device transfer carries everything, the Prayer Log and location included. -->
+    <!-- No rules: device-to-device transfer carries everything, the Prayer Log, Adhkar Record and location included. -->
     <device-transfer />
 </data-extraction-rules>

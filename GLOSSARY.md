@@ -97,7 +97,7 @@ An ordered list of adhkar read together from Hisn al-Muslim: the morning adhkar,
 _Avoid_: Adhkar list, wird, routine
 
 **Adhkar Record**:
-Which Adhkar Sets the user completed (every dhikr said its full count) on each Prayer Day. It is not the Prayer Log, and a restart never removes a completed day. A set counts only when finished in its time: the morning adhkar from Fajr to Dhuhr, the evening adhkar from Asr to the next Fajr, the after-prayer adhkar once their Prayer's time has arrived. The after-prayer adhkar are recorded per Prayer, against the most recent Prayer whose time has arrived unless the user picks another before starting. Any set can be read at any time.
+Which Adhkar Sets the user completed (every dhikr said its full count) on each Prayer Day. It is not the Prayer Log, and a restart never removes a completed day. A set counts only when finished in its time: the morning adhkar from Fajr to Dhuhr, the evening adhkar from Asr to the next Fajr, the after-prayer adhkar once their Prayer's time has arrived. The after-prayer adhkar are recorded per Prayer, against the most recent Prayer whose time has arrived unless the user picks another before starting. Any set can be read at any time. It is shown as a week grid (a row per Prayer Day, a mark for the morning, the evening and after each Prayer) that counts only from the Adhkar first-use date, the Prayer Day of the first count; days before it are never shown as missed. It shares the Prayer Log's backup rules and is deleted separately («حذف سجل الأذكار»).
 _Avoid_: Adhkar log, streak, score
 
 **Clock Widget**:
