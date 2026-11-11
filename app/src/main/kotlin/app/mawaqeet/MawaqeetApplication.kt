@@ -5,10 +5,12 @@ import android.content.Context
 import androidx.core.os.UserManagerCompat
 import androidx.datastore.preferences.preferencesDataStore
 import app.mawaqeet.alerts.AlertRescheduler
+import app.mawaqeet.core.AdhkarCatalog
 import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.Location
 import app.mawaqeet.data.LocationUpdater
 import app.mawaqeet.data.PrayerLogDatabase
+import app.mawaqeet.data.RoomAdhkarRepository
 import app.mawaqeet.data.RoomPrayerLogRepository
 import app.mawaqeet.data.SettingsRepository
 import app.mawaqeet.widget.Widgets
@@ -26,7 +28,15 @@ private val Context.settingsDataStore by preferencesDataStore(name = SettingsRep
 /** Holds the app-wide singletons that screens, widgets and alarm receivers share. */
 class MawaqeetApplication : Application() {
     /** The one Prayer Log repository in the process, so its [RoomPrayerLogRepository.changes] reaches every observer. */
-    val prayerLog: RoomPrayerLogRepository by lazy { RoomPrayerLogRepository(PrayerLogDatabase.open(this)) }
+    val prayerLog: RoomPrayerLogRepository by lazy { RoomPrayerLogRepository(database) }
+
+    /** The one Adhkar repository in the process (same database file as the Prayer Log, same backup rules). */
+    val adhkar: RoomAdhkarRepository by lazy { RoomAdhkarRepository(database) }
+
+    /** The bundled adhkar (asset `adhkar.tsv`). Small, but first touch it off the main thread. */
+    val adhkarCatalog: AdhkarCatalog by lazy { assets.open(ADHKAR_ASSET).use(AdhkarCatalog::read) }
+
+    private val database: PrayerLogDatabase by lazy { PrayerLogDatabase.open(this) }
 
     /** The one settings store in the process; observe [SettingsRepository.settings] and rebuild the core on change. */
     val settings: SettingsRepository by lazy { SettingsRepository(settingsDataStore) }
@@ -72,3 +82,6 @@ class MawaqeetApplication : Application() {
 
 /** The city list asset written by tools/cities/generate_cities.py. */
 const val CITIES_ASSET = "cities.tsv"
+
+/** The Adhkar Sets' texts, counts and sources (format: core `AdhkarCatalog`). */
+const val ADHKAR_ASSET = "adhkar.tsv"
