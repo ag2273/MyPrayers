@@ -371,6 +371,10 @@
         <item quantity="other">%1$s minutes</item>
     </plurals>
     <string name="prayer_silence_access_summary">The app needs it to silence the phone; Silent during Prayer can\'t work without it.</string>
+    <string name="prayer_silence_notification">Phone silenced until %1$s</string>
+    <string name="prayer_silence_restore">Restore sound</string>
+    <string name="prayer_silence_channel_name">Silent during Prayer</string>
+    <string name="prayer_silence_channel_description">A quiet notification while the phone is silenced for Prayer</string>
     <string name="settings_alerts_summary_off">All turned off</string>
     <string name="settings_alerts_off">Alerts are off</string>
     <string name="settings_alerts_off_summary">You turned off every app alert. Tap to turn them back on.</string>

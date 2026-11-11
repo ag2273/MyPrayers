@@ -400,6 +400,11 @@
         <item quantity="other">%1$s دقيقة</item>
     </plurals>
     <string name="prayer_silence_access_summary">يحتاجه التطبيق ليضع الهاتف على الصامت، ولا يعمل الصامت وقت الصلاة بدونه.</string>
+    <!-- Prayer Silence notification (#67). -->
+    <string name="prayer_silence_notification">الهاتف صامت حتى %1$s</string>
+    <string name="prayer_silence_restore">استعادة الصوت</string>
+    <string name="prayer_silence_channel_name">الصامت وقت الصلاة</string>
+    <string name="prayer_silence_channel_description">إشعار هادئ ما دام الهاتف صامتًا للصلاة</string>
     <string name="settings_alerts_summary_off">كلها موقوفة</string>
     <string name="settings_alerts_off">التنبيهات متوقفة</string>
     <string name="settings_alerts_off_summary">أوقفت كل تنبيهات التطبيق. اضغط لتشغيلها من جديد.</string>
