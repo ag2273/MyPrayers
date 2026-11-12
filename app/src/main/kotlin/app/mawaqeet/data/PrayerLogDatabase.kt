@@ -49,6 +49,9 @@ internal interface PrayerLogDao {
     @Query("SELECT prayer FROM prayer_log WHERE prayer_day = :prayerDay")
     fun prayedOn(prayerDay: String): List<String>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM prayer_log)")
+    fun hasAnyEntry(): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(entry: PrayerLogEntry)
 

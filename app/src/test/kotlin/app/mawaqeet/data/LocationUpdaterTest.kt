@@ -39,6 +39,7 @@ private class FakeLog : PrayerLogRepository {
     val places = mutableListOf<PastPlace>()
     override fun prayedOn(prayerDay: LocalDate): Set<Prayer> = emptySet()
     override fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean) = Unit
+    override fun hasAnyEntry() = false
     override fun firstUseDate(): LocalDate? = null
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) = Unit
     override fun deleteAllEntries(firstUseFrom: LocalDate) = Unit

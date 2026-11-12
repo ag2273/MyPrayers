@@ -36,6 +36,8 @@ class RoomPrayerLogRepository(private val db: PrayerLogDatabase) : PrayerLogRepo
         version.update { it + 1 }
     }
 
+    override fun hasAnyEntry(): Boolean = dao.hasAnyEntry()
+
     override fun firstUseDate(): LocalDate? = dao.firstUse()?.let(LocalDate::parse)
 
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {

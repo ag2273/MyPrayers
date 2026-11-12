@@ -22,9 +22,11 @@ private fun ComposeTestRule.allNodes(): List<SemanticsNode> {
 /**
  * Problems a person with large text or a motor impairment would meet on the screen as shown: text cut off or
  * ellipsized (by its own width or by a parent's fixed size), and tap targets under 48×48dp. Off-screen nodes (scrolled
- * away) are skipped, so render with a tall window to check a whole screen.
+ * away) are skipped, so render with a tall window to check a whole screen. On a scrolled page, [parentClips] = false
+ * skips the parent check, since a node half under the scroll edge would count as cut off; text that overflows its own
+ * box still does.
  */
-internal fun ComposeTestRule.accessibilityProblems(density: Float): List<String> {
+internal fun ComposeTestRule.accessibilityProblems(density: Float, parentClips: Boolean = true): List<String> {
     val problems = mutableListOf<String>()
     val root = onRoot(useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
     for (node in allNodes()) {
@@ -44,11 +46,11 @@ internal fun ComposeTestRule.accessibilityProblems(density: Float): List<String>
         val tooWide = lines.any { layout.getLineRight(it) - layout.getLineLeft(it) > layout.size.width + 1 }
         val ellipsized = lines.any { layout.isLineEllipsized(it) }
         // Clipped by a parent: less of it shows than it needs, though it isn't at the window's edge.
-        val cutByParent = bounds.height < node.size.height - 1 && bounds.top > root.top && bounds.bottom < root.bottom
+        val cutByParent = parentClips && bounds.height < node.size.height - 1 && bounds.top > root.top && bounds.bottom < root.bottom
         if (layout.didOverflowHeight || tooWide || ellipsized || cutByParent) problems += "«$name» is cut off"
     }
     return problems
 }
 
-internal fun ComposeTestRule.assertAccessible(screen: String, density: Float) =
-    assertEquals("$screen:", emptyList<String>(), accessibilityProblems(density))
+internal fun ComposeTestRule.assertAccessible(screen: String, density: Float, parentClips: Boolean = true) =
+    assertEquals("$screen:", emptyList<String>(), accessibilityProblems(density, parentClips))

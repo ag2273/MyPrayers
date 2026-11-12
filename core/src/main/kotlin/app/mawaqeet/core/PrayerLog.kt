@@ -16,6 +16,9 @@ interface PrayerLogRepository {
 
     fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean)
 
+    /** Whether any Prayer Day has a Prayer marked as prayed. */
+    fun hasAnyEntry(): Boolean
+
     /** The Prayer Day the app was first used on, or null before it is recorded. */
     fun firstUseDate(): LocalDate?
 

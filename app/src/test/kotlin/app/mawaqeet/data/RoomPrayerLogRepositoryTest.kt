@@ -9,6 +9,8 @@ import app.mawaqeet.core.PastPlace
 import app.mawaqeet.core.Prayer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,6 +67,19 @@ class RoomPrayerLogRepositoryTest {
             assertEquals(emptySet<Prayer>(), log.prayedOn(day.minusDays(3)))
             assertEquals(day, log.firstUseDate())
             assertEquals(listOf(place), log.pastPlaces())
+        }
+    }
+
+    @Test
+    fun `the log has an entry once any Prayer Day has a mark, and none after it is unmarked`() {
+        withLog(ctx) { log ->
+            assertFalse(log.hasAnyEntry())
+            log.setPrayed(day.minusDays(5), Prayer.MAGHRIB, true)
+        }
+        withLog(ctx) { log ->
+            assertTrue(log.hasAnyEntry())
+            log.setPrayed(day.minusDays(5), Prayer.MAGHRIB, false)
+            assertFalse(log.hasAnyEntry())
         }
     }
 
