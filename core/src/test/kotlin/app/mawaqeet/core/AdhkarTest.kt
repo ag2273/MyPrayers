@@ -74,6 +74,36 @@ class AdhkarTest {
     }
 
     @Test
+    fun `a dhikr skipped with Next can be counted later, and the set completes once every dhikr is said`() {
+        val adhkar = adhkarAt("2026-11-09T07:00", repo)
+        val slot = AdhkarSlot.of(AdhkarSetId.MORNING)
+
+        // Skip the first dhikr and say the second and third.
+        repeat(3) { adhkar.count(slot, index = 1) }
+        val afterSecond = adhkar.progress(slot)
+        assertEquals(listOf(0, 3, 0), afterSecond.items.map { it.counted })
+        assertEquals(2, afterSecond.nextUndone(1))
+        val afterThird = adhkar.count(slot, index = 2)
+        assertFalse(afterThird.isComplete)
+        assertEquals(0, afterThird.nextUndone(2))
+
+        val done = adhkar.count(slot, index = 0)
+        assertTrue(done.isComplete)
+        assertNull(done.nextUndone(0))
+    }
+
+    @Test
+    fun `a dhikr already said in full is not counted again`() {
+        val adhkar = adhkarAt("2026-11-09T07:00", repo)
+        val slot = AdhkarSlot.of(AdhkarSetId.MORNING)
+        adhkar.count(slot)
+
+        val again = adhkar.count(slot, index = 0)
+
+        assertEquals(listOf(1, 0, 0), again.items.map { it.counted })
+    }
+
+    @Test
     fun `counting every dhikr completes the set for the Prayer Day`() {
         val adhkar = adhkarAt("2026-11-09T07:00", repo)
 

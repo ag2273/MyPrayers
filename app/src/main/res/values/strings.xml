@@ -471,6 +471,8 @@
     <string name="adhkar_count_one">عُدّ مرة</string>
     <string name="adhkar_tap_hint">اضغط في أي مكان على البطاقة للعدّ</string>
     <string name="adhkar_restart">ابدأ من جديد</string>
+    <string name="adhkar_previous">الذكر السابق</string>
+    <string name="adhkar_next">الذكر التالي</string>
     <string name="adhkar_set_complete">اكتملت %1$s لهذا اليوم</string>
     <string name="adhkar_set_complete_body">تقبّل الله منا ومنك.</string>
     <!-- The Adhkar Record week grid (#74): marks only, no streaks or scores. -->

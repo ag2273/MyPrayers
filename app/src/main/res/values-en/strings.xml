@@ -437,6 +437,8 @@
     <string name="adhkar_count_one">Count one</string>
     <string name="adhkar_tap_hint">Tap anywhere on the card to count</string>
     <string name="adhkar_restart">Start again</string>
+    <string name="adhkar_previous">Previous dhikr</string>
+    <string name="adhkar_next">Next dhikr</string>
     <string name="adhkar_set_complete">%1$s completed for today</string>
     <string name="adhkar_set_complete_body">May Allah accept it from us and from you.</string>
     <string name="adhkar_record">Adhkar Record</string>
