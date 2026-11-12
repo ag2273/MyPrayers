@@ -511,4 +511,36 @@
     <string name="kahf_reminder_title">Read Surat Al-Kahf</string>
     <string name="kahf_reminder_text">Reading Surat Al-Kahf is a Sunnah of Friday</string>
     <string name="kahf_reminder_read">I read it</string>
+    <!-- Tools Row on Today (#88) -->
+    <string name="tool_qibla">Qibla</string>
+    <string name="tool_calendar">Calendar</string>
+    <string name="tool_mosques">Mosques</string>
+    <!-- Qibla screen (#88) -->
+    <string name="qibla_waiting">Reading the compass…</string>
+    <string name="qibla_turn_right">Turn %1$s° right</string>
+    <string name="qibla_turn_left">Turn %1$s° left</string>
+    <string name="qibla_on_target">You are facing the Qibla</string>
+    <string name="qibla_bearing">Qibla %1$s° from true north</string>
+    <string name="qibla_distance">%1$s km to Makkah</string>
+    <string name="qibla_dial_description">Qibla compass</string>
+    <string name="qibla_kaaba">Kaaba</string>
+    <string name="qibla_dial_north">N</string>
+    <string name="qibla_dial_east">E</string>
+    <string name="qibla_dial_south">S</string>
+    <string name="qibla_dial_west">W</string>
+    <string name="qibla_calibrate_title">The compass needs calibrating</string>
+    <string name="qibla_calibrate">Move your phone through the air in a figure 8 a few times, away from metal and electronics, until the reading settles.</string>
+    <string name="qibla_no_sensor_title">This phone has no compass</string>
+    <string name="qibla_no_sensor">The Qibla is %1$s° from true north, to the %2$s. Use the sun or another compass to find north.</string>
+    <string name="qibla_no_location_title">No location set yet</string>
+    <string name="qibla_no_location">Set your location to find the Qibla from it.</string>
+    <string name="qibla_set_location">Set location</string>
+    <string name="compass_north">north</string>
+    <string name="compass_north_east">north-east</string>
+    <string name="compass_east">east</string>
+    <string name="compass_south_east">south-east</string>
+    <string name="compass_south">south</string>
+    <string name="compass_south_west">south-west</string>
+    <string name="compass_west">west</string>
+    <string name="compass_north_west">north-west</string>
 </resources>

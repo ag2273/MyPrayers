@@ -2,14 +2,13 @@ package app.mawaqeet
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -29,6 +28,7 @@ import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.components.MainScaffold
 import app.mawaqeet.ui.components.Tab
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.home.ToolsRow
 import app.mawaqeet.ui.theme.MawaqeetTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -47,6 +47,7 @@ import java.time.ZoneOffset
 
 private const val HINT = "اضغط الصلاة بعد أدائها لتسجيلها. الجرس يبيّن نوع التنبيه."
 private const val ISHA = "العشاء"
+private const val QIBLA = "القبلة"
 
 /** A Prayer Log in memory that tells the screen when it changes, as the Room one does. */
 private class WatchedLog : PrayerLogRepository {
@@ -69,8 +70,8 @@ private class WatchedLog : PrayerLogRepository {
 }
 
 /**
- * Today fits its screen exactly at the default font size (#87): no scroll on a 360×740dp phone, even with room kept for
- * the 48dp tools row, and no blank area under the last row on a 412×915dp one. A larger font scrolls instead of
+ * Today fits its screen exactly at the default font size (#87): no scroll on a 360×740dp phone, even with the 48dp
+ * Tools Row (#88), and no blank area under the last row on a 412×915dp one. A larger font scrolls instead of
  * clipping. The page is shown in the real tab frame, with 24dp stand-ins for the status and gesture bars.
  */
 @RunWith(AndroidJUnit4::class)
@@ -96,7 +97,7 @@ class HomeFitTest {
                         MainScaffold(Tab.TODAY, onSelect = {}) {
                             HomeScreen(
                                 core, clock, log.changes, "مكة المكرمة",
-                                tools = if (withToolsRow) { { Box(Modifier.fillMaxWidth().height(48.dp)) } } else null,
+                                tools = if (withToolsRow) { { ToolsRow(onQibla = {}) } } else null,
                             )
                         }
                     }
@@ -123,11 +124,13 @@ class HomeFitTest {
 
     @Test
     @Config(qualifiers = "ar-w360dp-h740dp")
-    fun `on a 360x740dp phone Today fits without scrolling, with room for the tools row`() {
+    fun `on a 360x740dp phone Today fits without scrolling, with the tools row`() {
         log.setPrayed(LocalDate.of(2026, 11, 9), Prayer.FAJR, true)
         show(withToolsRow = true)
 
         assertEquals("scroll range", 0f, scrollRange())
+        val qibla = compose.onNode(hasText(QIBLA) and hasClickAction()).fetchSemanticsNode()
+        assertEquals("the Qibla button is 48dp tall", 48f, dp(qibla.touchBoundsInRoot.height), 0.5f)
         for (prayer in listOf("الفجر", "الظهر", "العصر", "المغرب", ISHA)) {
             assertTrue("$prayer row is a 48dp tap target", dp(rowOf(prayer).touchBoundsInRoot.height) >= 47.5f)
         }
@@ -137,7 +140,7 @@ class HomeFitTest {
     @Config(qualifiers = "ar-w412dp-h915dp")
     fun `on a 412x915dp phone the rows grow so nothing is blank below the last one`() {
         log.setPrayed(LocalDate.of(2026, 11, 9), Prayer.FAJR, true)
-        show()
+        show(withToolsRow = true)
 
         assertEquals("scroll range", 0f, scrollRange())
         val gap = dp(page().boundsInRoot.bottom - rowOf(ISHA).boundsInRoot.bottom)
