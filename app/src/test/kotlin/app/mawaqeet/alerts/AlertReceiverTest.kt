@@ -10,6 +10,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertKind
+import app.mawaqeet.core.AlertPlan
+import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.PlannedAlert
@@ -29,6 +31,7 @@ import java.time.LocalDate
 import java.time.Clock
 import java.util.concurrent.Executors
 import app.mawaqeet.MawaqeetApplication
+import app.mawaqeet.R
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.core.PrayerSettings
 
@@ -110,6 +113,35 @@ class AlertReceiverTest {
 
         assertNull(app.nextStartedService)
         assertTrue(notifications.isNotEmpty())
+    }
+
+    @Test
+    fun `with the phone in English and the app in Arabic, the Adhan Alert reads in Arabic`() {
+        // An earlier test's reschedule, still running, would store the plan again with the phone's language.
+        kotlinx.coroutines.runBlocking { ReceiverWork.idle() }
+        // No per-app language known to AppCompat (as in a receiver process): the stored one decides.
+        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(androidx.core.os.LocaleListCompat.getEmptyLocaleList())
+        // The app's language as MainActivity stores it; the reschedule after the alert keeps it with the plan.
+        val settings = (context.applicationContext as MawaqeetApplication).settings
+        kotlinx.coroutines.runBlocking { settings.setAppLanguage("ar") }
+        try {
+            AlertPlanStore(context).write(
+                AlertPlan(emptyList(), Instant.now().plusSeconds(3600)),
+                NotificationStyle(DigitStyle.AUTOMATIC, "ar"),
+            )
+            audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+            fire(alert(AlertSound.ShortAdhan))
+
+            val notification = notifications.single()
+            val title = notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString()
+            assertTrue(title, title.contains("العصر"))
+            assertEquals(listOf("تمّت الصلاة"), notification.actions.map { it.title.toString() })
+        } finally {
+            kotlinx.coroutines.runBlocking {
+                ReceiverWork.idle()
+                settings.setAppLanguage("")
+            }
+        }
     }
 
     @Test

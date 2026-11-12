@@ -77,6 +77,21 @@ class KahfReminderNotificationTest {
     }
 
     @Test
+    fun `with the phone in English and the app in Arabic, the reminder and its channel are in Arabic`() {
+        AlertScheduler(context).apply(
+            AlertPlan(emptyList(), midnight, worshipReminders = listOf(salawat)),
+            early,
+            NotificationStyle(app.mawaqeet.core.DigitStyle.AUTOMATIC, "ar"),
+        )
+
+        fire(salawat)
+
+        val notification = shadowOf(notificationManager).allNotifications.single()
+        assertEquals("صلِّ على النبي ﷺ", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("تذكيرات العبادة", notificationManager.getNotificationChannel(WorshipReminderNotification.CHANNEL).name.toString())
+    }
+
+    @Test
     fun `I read it dismisses the Kahf reminder and leaves a salawat reminder alone`() {
         AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(kahf, salawat)), early)
         fire(kahf)
