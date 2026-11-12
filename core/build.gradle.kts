@@ -11,6 +11,8 @@ dependencies {
     // adhan-kotlin is an implementation detail of the core: its types never appear in the public interface.
     implementation(libs.adhan)
     implementation(libs.kotlinx.datetime)
+    // The Backup File's JSON, through the JsonElement tree only (no serialization compiler plugin).
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(kotlin("test"))
     testImplementation(libs.junit)
 }

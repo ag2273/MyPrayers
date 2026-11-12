@@ -525,4 +525,21 @@
     <string name="ramadan_imsak_summary">Before Fajr, shown on Today in Ramadan</string>
     <string name="ramadan_imsak_closer">Imsak %1$s minutes closer to Fajr</string>
     <string name="ramadan_imsak_earlier">Imsak %1$s minutes earlier</string>
+    <string name="about_use_serialization">The backup file</string>
+
+    <!-- Settings → Backup (#98) -->
+    <string name="backup_title">Backup</string>
+    <string name="backup_summary">Keep your settings and records in a file</string>
+    <string name="backup_contents_section">What the file holds</string>
+    <string name="backup_contents_body">Every setting (alerts, reminders, display and widgets), your location and Calculation Method, the Prayer Log and the Adhkar Record.</string>
+    <string name="backup_contents_not_included">Custom Adhan files aren\'t included: choose them again after restoring.</string>
+    <string name="backup_privacy_title">Keep it private</string>
+    <string name="backup_privacy_body">The file holds your location and your worship record. The app never sends it anywhere and it never passes through us: it is saved only where you choose.</string>
+    <string name="backup_file_section">The file</string>
+    <string name="backup_last_export">Last export: %1$s</string>
+    <string name="backup_never_exported">No backup exported yet</string>
+    <string name="backup_export">Export a backup</string>
+    <string name="backup_export_failed">The file couldn\'t be saved. Nothing changed.</string>
+    <string name="backup_restore">Restore from a file</string>
+    <string name="backup_restore_soon">Restoring comes in an upcoming version.</string>
 </resources>

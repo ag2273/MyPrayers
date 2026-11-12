@@ -577,4 +577,21 @@
     <string name="ramadan_imsak_summary">قبل الفجر، يظهر على بطاقة اليوم في رمضان</string>
     <string name="ramadan_imsak_closer">تقريب الإمساك من الفجر %1$s دقائق</string>
     <string name="ramadan_imsak_earlier">تبكير الإمساك %1$s دقائق</string>
+    <string name="about_use_serialization">ملف النسخة الاحتياطية</string>
+
+    <!-- Settings → Backup (#98) -->
+    <string name="backup_title">النسخة الاحتياطية</string>
+    <string name="backup_summary">احفظ إعداداتك وسجلّاتك في ملف</string>
+    <string name="backup_contents_section">ما يحتويه الملف</string>
+    <string name="backup_contents_body">كل الإعدادات (التنبيهات والتذكيرات والعرض والأدوات)، والموقع وطريقة الحساب، وسجل الصلاة، وسجل الأذكار.</string>
+    <string name="backup_contents_not_included">لا يشمل ملفات الأذان المخصص، فاخترها مرة أخرى بعد الاستعادة.</string>
+    <string name="backup_privacy_title">احفظه في مكان خاص</string>
+    <string name="backup_privacy_body">يحتوي الملف على موقعك وسجل عبادتك. لا يرسله التطبيق إلى أي مكان، ولا يمر بنا؛ يُحفظ حيث تختار فقط.</string>
+    <string name="backup_file_section">الملف</string>
+    <string name="backup_last_export">آخر تصدير: %1$s</string>
+    <string name="backup_never_exported">لم تُصدَّر نسخة احتياطية بعد</string>
+    <string name="backup_export">تصدير نسخة احتياطية</string>
+    <string name="backup_export_failed">تعذّر حفظ الملف، ولم يتغير شيء.</string>
+    <string name="backup_restore">استعادة من ملف</string>
+    <string name="backup_restore_soon">الاستعادة قادمة في إصدار قريب.</string>
 </resources>

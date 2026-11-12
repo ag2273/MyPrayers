@@ -89,6 +89,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.text.BidiFormatter
 import androidx.core.text.TextDirectionHeuristicsCompat
+import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -190,6 +191,12 @@ interface SettingsActions {
 
     /** Settings → your data (#74): permanently deletes the Adhkar Record. Called only after confirmation. */
     fun deleteAdhkarRecord()
+
+    /**
+     * Settings → Backup (#98): writes a Backup File to [uri], the document the user just created with the system
+     * picker; [onResult] gets false when it couldn't be written (nothing changes then).
+     */
+    fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit)
 }
 
 /** The Settings sections, each its own page, plus the pages opened from them. */
@@ -201,6 +208,7 @@ enum class SettingsPage(@StringRes val title: Int) {
     DISPLAY(R.string.settings_group_language_display),
     WIDGETS(R.string.settings_group_widgets),
     ABOUT(R.string.settings_group_about),
+    BACKUP(R.string.backup_title),
     CREDITS(R.string.about_sources_title),
 }
 
@@ -279,6 +287,10 @@ fun SettingsHub(
                 },
                 icon = R.drawable.ic_widgets,
             ) { onOpen(SettingsRoute(SettingsPage.WIDGETS)) }
+            RowDivider()
+            NavRow(stringResource(R.string.backup_title), stringResource(R.string.backup_summary), icon = R.drawable.ic_log) {
+                onOpen(SettingsRoute(SettingsPage.BACKUP))
+            }
         }
         SectionTitle(stringResource(R.string.settings_section_help))
         Card {
@@ -362,6 +374,8 @@ fun SettingsPageScreen(
     actions: SettingsActions,
     widgetAppearance: WidgetAppearance,
     onNavigate: (SettingsRoute?) -> Unit,
+    /** Settings → Backup: when a Backup File was last exported; null before the first. */
+    lastBackupExport: Instant? = null,
 ) {
     val prayer = route.prayer ?: Prayer.FAJR
     val title = if (route.page == SettingsPage.PRAYER_ALERT) {
@@ -384,6 +398,7 @@ fun SettingsPageScreen(
             SettingsPage.WIDGETS -> WidgetsPage(widgetAppearance, actions)
             SettingsPage.ABOUT -> AboutPage(actions) { onNavigate(SettingsRoute(SettingsPage.CREDITS)) }
             SettingsPage.CREDITS -> CreditsPage()
+            SettingsPage.BACKUP -> BackupPage(lastBackupExport, actions)
         }
     }
 }
