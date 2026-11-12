@@ -229,13 +229,7 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
                             ),
                         )
                         val bar = (ClockPrayerMetrics.BAR_GAP_DP * s).dp
-                        Box(GlanceModifier.padding(top = bar, bottom = if (fit.since) bar else 0.dp)) {
-                            WidgetDrawing(
-                                WidgetArt.progressLine(context, fit.prayerWidth, clock.elapsed, rtl, context.colorOf(style.accent), context.colorOf(style.accentSoft)),
-                                fit.prayerWidth,
-                                WidgetArt.LINE_HEIGHT_DP,
-                            )
-                        }
+                        ClockBar(clock, fit.prayerWidth, rtl, GlanceModifier.padding(top = bar, bottom = if (fit.since) bar else 0.dp))
                         if (fit.since) WidgetLine(view.since, ClockPrayerMetrics.SINCE_SP * s, Tone.MUTED)
                     }
                 },

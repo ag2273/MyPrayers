@@ -260,26 +260,10 @@ internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = C
                 ),
             )
         }
-        ReadingRow(
-            GlanceModifier.fillMaxWidth().padding(top = gap),
-            Alignment.CenterVertically,
-            listOf(
-                cell { WidgetLine(view.previous, BigClockMetrics.STOP_SP * scale, tones.previous) },
-                cell {
-                    Box(GlanceModifier.defaultWeight().padding(horizontal = (BigClockMetrics.ROW_GAP_DP * scale).dp), contentAlignment = Alignment.Center) {
-                        WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true)
-                    }
-                },
-                cell { WidgetLine(view.next, BigClockMetrics.STOP_SP * scale, tones.next, bold = true) },
-            ),
-        )
-        Box(GlanceModifier.padding(top = gap * 2)) {
-            WidgetDrawing(
-                WidgetArt.progressLine(context, across, view.elapsed, rtl, context.colorOf(style.accent), context.colorOf(style.accentSoft)),
-                across,
-                WidgetArt.LINE_HEIGHT_DP,
-            )
+        StopsRow(view, scale, tones, GlanceModifier.fillMaxWidth().padding(top = gap)) {
+            WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true)
         }
+        ClockBar(view, across, rtl, GlanceModifier.padding(top = gap * 2))
         Box(GlanceModifier.fillMaxWidth().padding(top = gap), contentAlignment = Alignment.Center) {
             WidgetLine(view.dateLine, BigClockMetrics.DATE_SP * scale, tones.date)
         }
@@ -290,7 +274,6 @@ internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = C
 @Composable
 private fun BigClockCompactLayout(view: ClockView, rtl: Boolean, tones: ClockTones, width: Float, height: Float) {
     val context = LocalContext.current
-    val style = LocalWidgetStyle.current
     val direction = LocalWidgetDirection.current
     val fit = BigClockMetrics.compact(view, width, height, context.resources.configuration.fontScale)
     val scale = fit.scale
@@ -307,31 +290,43 @@ private fun BigClockCompactLayout(view: ClockView, rtl: Boolean, tones: ClockTon
                 cell {
                     Column(GlanceModifier.defaultWeight().then(direction.paddingStart((BigClockMetrics.SIDE_GAP_DP * scale).dp)), horizontalAlignment = Alignment.CenterHorizontally) {
                         val countdown = @Composable { WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true) }
-                        if (fit.stops) {
-                            ReadingRow(
-                                GlanceModifier.fillMaxWidth(),
-                                Alignment.CenterVertically,
-                                listOf(
-                                    cell { WidgetLine(view.previous, BigClockMetrics.STOP_SP * scale, tones.previous) },
-                                    cell {
-                                        Box(GlanceModifier.defaultWeight().padding(horizontal = (BigClockMetrics.ROW_GAP_DP * scale).dp), contentAlignment = Alignment.Center) { countdown() }
-                                    },
-                                    cell { WidgetLine(view.next, BigClockMetrics.STOP_SP * scale, tones.next, bold = true) },
-                                ),
-                            )
-                        } else {
-                            countdown()
-                        }
-                        Box(GlanceModifier.padding(top = gap * 2)) {
-                            WidgetDrawing(
-                                WidgetArt.progressLine(context, fit.sideWidth, view.elapsed, rtl, context.colorOf(style.accent), context.colorOf(style.accentSoft)),
-                                fit.sideWidth,
-                                WidgetArt.LINE_HEIGHT_DP,
-                            )
-                        }
+                        if (fit.stops) StopsRow(view, scale, tones, GlanceModifier.fillMaxWidth(), countdown) else countdown()
+                        ClockBar(view, fit.sideWidth, rtl, GlanceModifier.padding(top = gap * 2))
                     }
                 },
             ),
+        )
+    }
+}
+
+/** The previous Stop, [countdown] centred between, and the next Stop (bold): Big Clock's middle line. */
+@Composable
+private fun StopsRow(view: ClockView, scale: Float, tones: ClockTones, modifier: GlanceModifier, countdown: @Composable () -> Unit) {
+    ReadingRow(
+        modifier,
+        Alignment.CenterVertically,
+        listOf(
+            cell { WidgetLine(view.previous, BigClockMetrics.STOP_SP * scale, tones.previous) },
+            cell {
+                Box(GlanceModifier.defaultWeight().padding(horizontal = (BigClockMetrics.ROW_GAP_DP * scale).dp), contentAlignment = Alignment.Center) {
+                    countdown()
+                }
+            },
+            cell { WidgetLine(view.next, BigClockMetrics.STOP_SP * scale, tones.next, bold = true) },
+        ),
+    )
+}
+
+/** The bar from the previous Stop to the next, [width] dp wide, in the style's accent; every Clock layout draws it. */
+@Composable
+internal fun ClockBar(view: ClockView, width: Float, rtl: Boolean, modifier: GlanceModifier = GlanceModifier) {
+    val context = LocalContext.current
+    val style = LocalWidgetStyle.current
+    Box(modifier) {
+        WidgetDrawing(
+            WidgetArt.progressLine(context, width, view.elapsed, rtl, context.colorOf(style.accent), context.colorOf(style.accentSoft)),
+            width,
+            WidgetArt.LINE_HEIGHT_DP,
         )
     }
 }
