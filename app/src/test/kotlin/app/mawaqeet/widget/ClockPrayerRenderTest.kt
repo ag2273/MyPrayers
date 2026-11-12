@@ -28,6 +28,8 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 /**
@@ -43,6 +45,9 @@ class ClockPrayerRenderTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val settings get() = (context as MawaqeetApplication).settings
 
+    /** One fixed instant for the widget and the expected values alike, so no minute turns between them. */
+    private val clock: Clock = Clock.fixed(Instant.parse("2026-11-12T06:30:20Z"), ZoneId.systemDefault())
+
     @After
     fun reset() = runBlocking {
         settings.setAppLanguage("")
@@ -55,8 +60,8 @@ class ClockPrayerRenderTest {
     private fun shown(): Shown = runBlocking {
         val app = context as MawaqeetApplication
         val locale = appLocale(context, settings.appLanguage.first())
-        val core = PrayerCore(settings.settings.first(), Clock.systemUTC(), app.prayerLog)
-        val content = ClockContent.of(core.displayDay(), ZonedDateTime.now(), DisplayFormatter(locale, settings.digitStyle.first()), true)
+        val core = PrayerCore(settings.settings.first(), clock, app.prayerLog)
+        val content = ClockContent.of(core.displayDay(), ZonedDateTime.now(clock), DisplayFormatter(locale, settings.digitStyle.first()), true)
         val strings = localizedContext(context, locale)
         Shown(
             nextName = strings.getString(content.next.nameRes),
@@ -87,7 +92,7 @@ class ClockPrayerRenderTest {
 
     private fun description(root: View): String = views(root).mapNotNull { it.contentDescription?.toString() }.single { "." in it }
 
-    private fun render(w: Int = 250, h: Int = 110) = renderWidget(context, ClockPrayerWidget(), w, h)
+    private fun render(w: Int = 250, h: Int = 110) = renderWidget(context, ClockPrayerWidget(clock), w, h)
 
     /** Every part of the split layout is there, and the clock's side is the app language's start. */
     private fun assertSplit(root: View, name: String, rtl: Boolean, label: String, before: String, from: String) {

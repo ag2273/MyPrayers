@@ -7,18 +7,20 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import app.mawaqeet.R
+import java.time.Clock
 
 /**
  * The Gold Clock Widget Variant «ساعة ذهبية» (4×2): Big Clock's layout and content in one fixed look, a black surface,
  * a white thin clock, a gold countdown and bar, muted gold Stops and a light grey date line. Settings → Widgets
  * (transparency, colours, «كل الأدوات بتصميم الصلاة القادمة») never changes it.
  */
-class GoldClockWidget : GlanceAppWidget() {
+class GoldClockWidget(private val clock: Clock = Clock.systemDefaultZone()) : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { core, text -> ClockView.of(clockContent(context, core.displayDay(), text), text, context) },
+        clock = clock,
+        build = { core, text -> ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context) },
         fixedStyle = goldClockStyle(),
         layout = { view, rtl -> BigClockLayout(view, rtl, GOLD_TONES) },
     )

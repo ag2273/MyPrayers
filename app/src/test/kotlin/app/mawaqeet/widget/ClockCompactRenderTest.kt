@@ -26,6 +26,8 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.xmlpull.v1.XmlPullParser
 import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 /**
@@ -38,12 +40,15 @@ import java.time.ZonedDateTime
 class ClockCompactRenderTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val settings get() = (context as MawaqeetApplication).settings
+
+    /** One fixed instant for the widget and the expected values alike, so no minute turns between them. */
+    private val clock: Clock = Clock.fixed(Instant.parse("2026-11-12T06:30:20Z"), ZoneId.systemDefault())
     private val ANDROID = "http://schemas.android.com/apk/res/android"
 
     private val variants: List<Pair<String, () -> GlanceAppWidget>> = listOf(
-        "Gold Clock" to ::GoldClockWidget,
-        "Big Clock" to ::BigClockWidget,
-        "Clock & Prayer" to ::ClockPrayerWidget,
+        "Gold Clock" to { GoldClockWidget(clock) },
+        "Big Clock" to { BigClockWidget(clock) },
+        "Clock & Prayer" to { ClockPrayerWidget(clock) },
     )
 
     /** 4×1 at the smallest the launcher may give, and a roomier 4×1. */
@@ -60,8 +65,8 @@ class ClockCompactRenderTest {
     private fun shown(): Shown = runBlocking {
         val app = context as MawaqeetApplication
         val locale = appLocale(context, settings.appLanguage.first())
-        val core = PrayerCore(settings.settings.first(), Clock.systemUTC(), app.prayerLog)
-        val content = ClockContent.of(core.displayDay(), ZonedDateTime.now(), DisplayFormatter(locale, settings.digitStyle.first()), true)
+        val core = PrayerCore(settings.settings.first(), clock, app.prayerLog)
+        val content = ClockContent.of(core.displayDay(), ZonedDateTime.now(clock), DisplayFormatter(locale, settings.digitStyle.first()), true)
         Shown(content.countdown, content.hijriDate, content.gregorianDate)
     }
 
@@ -70,14 +75,13 @@ class ClockCompactRenderTest {
     private fun View.screenLeft(): Int = generateSequence(this) { it.parent as? View }.sumOf { it.left }
     private fun View.screenTop(): Int = generateSequence(this) { it.parent as? View }.sumOf { it.top }
 
-    /** Renders [widget] and checks it; the countdown may be read either side of a minute's turn. */
+    /** Renders [widget] and checks it. */
     private fun assertCompact(widget: GlanceAppWidget, w: Int, h: Int, name: String, rtl: Boolean) {
-        val before = shown()
         val root = renderWidget(context, widget, w, h)
         val s = shown()
         val texts = widgetTexts(root)
         val clock = views(root).filterIsInstance<TextClock>().single { it.visibility == View.VISIBLE }
-        val countdown: TextView = texts.firstOrNull { it.text.toString() == s.countdown || it.text.toString() == before.countdown }
+        val countdown: TextView = texts.firstOrNull { it.text.toString() == s.countdown }
             ?: throw AssertionError("$name: countdown «${s.countdown}» not in ${texts.map { it.text }}")
         val density = context.resources.displayMetrics.density
         val bar = views(root).filterIsInstance<ImageView>().filter { it.visibility == View.VISIBLE }

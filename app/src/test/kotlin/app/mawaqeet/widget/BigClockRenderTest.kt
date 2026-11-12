@@ -29,6 +29,8 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 /**
@@ -43,6 +45,9 @@ class BigClockRenderTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val settings get() = (context as MawaqeetApplication).settings
 
+    /** One fixed instant for the widget and the expected values alike, so no minute turns between them. */
+    private val clock: Clock = Clock.fixed(Instant.parse("2026-11-12T06:30:20Z"), ZoneId.systemDefault())
+
     @After
     fun reset() = runBlocking {
         settings.setAppLanguage("")
@@ -53,8 +58,8 @@ class BigClockRenderTest {
     private fun stops(): Pair<String, String> = runBlocking {
         val app = context as MawaqeetApplication
         val locale = appLocale(context, settings.appLanguage.first())
-        val core = PrayerCore(settings.settings.first(), Clock.systemUTC(), app.prayerLog)
-        val content = ClockContent.of(core.displayDay(), ZonedDateTime.now(), DisplayFormatter(locale, settings.digitStyle.first()), true)
+        val core = PrayerCore(settings.settings.first(), clock, app.prayerLog)
+        val content = ClockContent.of(core.displayDay(), ZonedDateTime.now(clock), DisplayFormatter(locale, settings.digitStyle.first()), true)
         val strings = localizedContext(context, locale)
         "${strings.getString(content.previous.nameRes)} ${content.previous.time}" to "${strings.getString(content.next.nameRes)} ${content.next.time}"
     }
@@ -86,14 +91,14 @@ class BigClockRenderTest {
         runBlocking { settings.setAppLanguage("ar") }
         val (previous, next) = stops()
         for ((w, h) in listOf(250 to 110, 320 to 180)) {
-            val root = renderWidget(context, BigClockWidget(), w, h)
+            val root = renderWidget(context, BigClockWidget(clock), w, h)
             val name = "$w×$h"
             assertTrue(name, root.text(previous).left() > root.text(next).left())
             assertTrue("$name clock", views(root).any { it is TextClock && it.visibility == View.VISIBLE })
             assertTrue("$name dates", widgetTexts(root).any { "هـ" in it.text })
             try { assertNothingClipped(root, allowEllipsis = isHijriDate) } catch (e: AssertionError) { throw AssertionError("$name: ${e.message}") }
         }
-        val sentence = description(renderWidget(context, BigClockWidget(), 250, 110))
+        val sentence = description(renderWidget(context, BigClockWidget(clock), 250, 110))
         assertTrue(sentence, sentence.startsWith("الساعة "))
         assertTrue(sentence, next.substringBefore(' ') in sentence && "هـ" in sentence)
     }
@@ -102,14 +107,14 @@ class BigClockRenderTest {
     fun `in English it reads left to right with English names, nothing clipped`() {
         val (previous, next) = stops()
         for ((w, h) in listOf(250 to 110, 320 to 180)) {
-            val root = renderWidget(context, BigClockWidget(), w, h)
+            val root = renderWidget(context, BigClockWidget(clock), w, h)
             assertTrue("$w×$h", root.text(previous).left() < root.text(next).left())
             val clock = views(root).filterIsInstance<TextClock>().single()
             assertTrue("«${clock.text}»", Regex("\\d{1,2}:\\d\\d").matches(clock.text))
             assertTrue("dates", widgetTexts(root).any { " AH · " in it.text })
             assertNothingClipped(root, allowEllipsis = isHijriDate)
         }
-        val sentence = description(renderWidget(context, BigClockWidget(), 250, 110))
+        val sentence = description(renderWidget(context, BigClockWidget(clock), 250, 110))
         assertTrue(sentence, "${next.substringBefore(' ')} in " in sentence && " AH" in sentence)
     }
 
@@ -119,22 +124,22 @@ class BigClockRenderTest {
         fun images(root: View) = views(root).count { it is ImageView && it.visibility == View.VISIBLE }
         val deep = context.getColor(R.color.widget_deep_background)
 
-        val light = renderWidget(context, BigClockWidget(), 250, 110)
+        val light = renderWidget(context, BigClockWidget(clock), 250, 110)
         assertEquals(context.getColor(R.color.widget_background), tint(light))
 
         runBlocking { settings.setWidgetNextPrayerLook(true) }
-        val on = renderWidget(context, BigClockWidget(), 250, 110)
+        val on = renderWidget(context, BigClockWidget(clock), 250, 110)
         assertEquals(deep, tint(on))
         assertTrue("the star", images(on) > images(light))
         assertNothingClipped(on, allowEllipsis = isHijriDate)
 
         runBlocking { settings.setWidgetNextPrayerLook(false) }
-        assertNotEquals(deep, tint(renderWidget(context, BigClockWidget(), 250, 110)))
+        assertNotEquals(deep, tint(renderWidget(context, BigClockWidget(clock), 250, 110)))
     }
 
     @Test
     fun `a tap anywhere opens Today`() {
-        assertEquals(MainActivity.Opens.TODAY, tapOpens(renderWidget(context, BigClockWidget(), 250, 110)))
+        assertEquals(MainActivity.Opens.TODAY, tapOpens(renderWidget(context, BigClockWidget(clock), 250, 110)))
     }
 
     @Test
@@ -144,7 +149,7 @@ class BigClockRenderTest {
             settings.setDigitStyle(DigitStyle.ARABIC_INDIC)
         }
         try {
-            val clock = views(renderWidget(context, BigClockWidget(), 250, 110)).filterIsInstance<TextClock>().single()
+            val clock = views(renderWidget(context, BigClockWidget(clock), 250, 110)).filterIsInstance<TextClock>().single()
             assertTrue("«${clock.text}»", clock.text.any { it in '٠'..'٩' } && clock.text.none { it in '0'..'9' })
         } finally {
             runBlocking { settings.setDigitStyle(DigitStyle.AUTOMATIC) }

@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
+import java.time.Clock
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.Locale
@@ -43,22 +44,28 @@ import java.util.Locale
  * «كل الأدوات بتصميم الصلاة القادمة» is on. A thin layer over [ClockContent]; re-rendered each minute by
  * [ClockTickReceiver]. Tapping opens Today.
  */
-class BigClockWidget : GlanceAppWidget() {
+class BigClockWidget(private val clock: Clock = Clock.systemDefaultZone()) : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { core, text -> ClockView.of(clockContent(context, core.displayDay(), text), text, context) },
+        clock = clock,
+        build = { core, text -> ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context) },
         layout = { view, rtl -> BigClockLayout(view, rtl) },
     )
 }
 
 /**
- * The Clock content for now, in the phone's time zone and 12/24-hour setting, arming the next minute's re-render.
- * Every Clock Widget's `build` goes through here.
+ * The Clock content for [clock]'s now (the system clock outside tests), in the phone's time zone and 12/24-hour
+ * setting, arming the next minute's re-render. Every Clock Widget's `build` goes through here.
  */
-internal fun clockContent(context: Context, day: app.mawaqeet.core.DisplayDay, text: WidgetText): ClockContent {
-    val now = ZonedDateTime.now(ZoneId.systemDefault())
+internal fun clockContent(
+    context: Context,
+    day: app.mawaqeet.core.DisplayDay,
+    text: WidgetText,
+    clock: Clock = Clock.systemDefaultZone(),
+): ClockContent {
+    val now = ZonedDateTime.now(clock.withZone(ZoneId.systemDefault()))
     return ClockContent.of(day, now, text.formatter, DateFormat.is24HourFormat(context))
         .also { ClockTickReceiver.schedule(context, it.nextChange(now.toInstant())) }
 }

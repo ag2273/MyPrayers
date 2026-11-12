@@ -338,13 +338,16 @@ class AdhkarAccessibilityTest {
 
     private val repo = FakeAdhkarRepository()
 
+    /** A fixed morning (Makkah, 09:30), not the wall clock. */
+    private val morning: Clock = Clock.fixed(LocalDateTime.of(2026, 11, 12, 9, 30).toInstant(ZoneOffset.ofHours(3)), ZoneOffset.UTC)
+
     @Test
     @Config(qualifiers = "ar-w360dp-h12000dp")
     fun `in Arabic at 200% text a long dhikr reflows and nothing is cut off`() {
         val bundled = java.io.File("src/main/assets/adhkar.tsv").inputStream().use(AdhkarCatalog::read)
         val adhkar = Adhkar(
             bundled,
-            PrayerCore(PrayerSettings.Default, Clock.systemUTC(), EmptyLog),
+            PrayerCore(PrayerSettings.Default, morning, EmptyLog),
             repo,
         )
         compose.setContent {
@@ -367,7 +370,7 @@ class AdhkarAccessibilityTest {
         val longest = bundled.sets.flatMap { it.adhkar }.maxBy { it.text.length }
         val adhkar = Adhkar(
             AdhkarCatalog(listOf(AdhkarSet(AdhkarSetId.MORNING, listOf(longest)))),
-            PrayerCore(PrayerSettings.Default, Clock.systemUTC(), EmptyLog),
+            PrayerCore(PrayerSettings.Default, morning, EmptyLog),
             repo,
         )
         compose.setContent {

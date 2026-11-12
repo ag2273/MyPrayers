@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
+import java.time.Clock
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
@@ -30,12 +31,13 @@ import app.mawaqeet.R
  * time. At 4×1 the dates go, and «الصلاة القادمة» and «من …» where they don't fit. On the light surface, or the deep
  * Next Prayer surface with gold and the star when «كل الأدوات بتصميم الصلاة القادمة» is on. Re-rendered each minute by [ClockTickReceiver]; tapping opens Today.
  */
-class ClockPrayerWidget : GlanceAppWidget() {
+class ClockPrayerWidget(private val clock: Clock = Clock.systemDefaultZone()) : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { core, text -> ClockPrayerView(ClockView.of(clockContent(context, core.displayDay(), text), text, context), text) },
+        clock = clock,
+        build = { core, text -> ClockPrayerView(ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context), text) },
         layout = { view, rtl -> ClockPrayerLayout(view, rtl) },
     )
 }

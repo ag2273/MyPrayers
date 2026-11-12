@@ -156,6 +156,8 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
     deep: Boolean = false,
     /** A look of the widget's own that Settings → Widgets doesn't change (Gold Clock). */
     fixedStyle: WidgetStyle? = null,
+    /** The core's clock: the system clock, or a fixed one in tests. */
+    clock: Clock = Clock.systemUTC(),
     layout: @Composable (T, rtl: Boolean) -> Unit,
 ) {
     val app = context.applicationContext as MawaqeetApplication
@@ -168,7 +170,7 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
         withContext(Dispatchers.IO) {
             val locale = appLocale(context, language)
             val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
-            val core = PrayerCore(settings, Clock.systemUTC(), app.prayerLog)
+            val core = PrayerCore(settings, clock, app.prayerLog)
             val strings = localizedContext(context, locale)
             val place = widgetPlaceName(store.savedLocation.first(), strings, locale.language == "ar")
             build(core, WidgetText(DisplayFormatter(locale, digits), strings, rtl, place)) to rtl

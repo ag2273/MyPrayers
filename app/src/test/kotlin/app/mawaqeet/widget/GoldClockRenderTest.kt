@@ -25,6 +25,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 /**
@@ -38,6 +40,9 @@ class GoldClockRenderTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val settings get() = (context as MawaqeetApplication).settings
 
+    /** One fixed instant for the widget and the expected values alike, so no minute turns between them. */
+    private val clock: Clock = Clock.fixed(Instant.parse("2026-11-12T06:30:20Z"), ZoneId.systemDefault())
+
     @After
     fun reset() = runBlocking {
         settings.setAppLanguage("")
@@ -50,8 +55,8 @@ class GoldClockRenderTest {
     private fun shown(): Triple<String, String, String> = runBlocking {
         val app = context as MawaqeetApplication
         val locale = appLocale(context, settings.appLanguage.first())
-        val core = PrayerCore(settings.settings.first(), Clock.systemUTC(), app.prayerLog)
-        val content = ClockContent.of(core.displayDay(), ZonedDateTime.now(), DisplayFormatter(locale, settings.digitStyle.first()), true)
+        val core = PrayerCore(settings.settings.first(), clock, app.prayerLog)
+        val content = ClockContent.of(core.displayDay(), ZonedDateTime.now(clock), DisplayFormatter(locale, settings.digitStyle.first()), true)
         val strings = localizedContext(context, locale)
         Triple("${strings.getString(content.previous.nameRes)} ${content.previous.time}", "${strings.getString(content.next.nameRes)} ${content.next.time}", content.countdown)
     }
@@ -77,14 +82,14 @@ class GoldClockRenderTest {
 
     private fun clock(root: View) = views(root).filterIsInstance<TextClock>().single()
 
-    private fun render() = renderWidget(context, GoldClockWidget(), 250, 110)
+    private fun render() = renderWidget(context, GoldClockWidget(clock), 250, 110)
 
     @Test
     fun `in Arabic on an English phone it reads right to left on black, nothing clipped`() {
         runBlocking { settings.setAppLanguage("ar") }
         val (previous, next) = stops()
         for ((w, h) in listOf(250 to 110, 320 to 180)) {
-            val root = renderWidget(context, GoldClockWidget(), w, h)
+            val root = renderWidget(context, GoldClockWidget(clock), w, h)
             val name = "$w×$h"
             assertEquals(name, Color.BLACK, background(root).imageTintList?.defaultColor)
             assertTrue(name, root.text(previous).left() > root.text(next).left())
@@ -98,7 +103,7 @@ class GoldClockRenderTest {
     fun `in English it reads left to right with English names on black, nothing clipped`() {
         val (previous, next) = stops()
         for ((w, h) in listOf(250 to 110, 320 to 180)) {
-            val root = renderWidget(context, GoldClockWidget(), w, h)
+            val root = renderWidget(context, GoldClockWidget(clock), w, h)
             assertEquals("$w×$h", Color.BLACK, background(root).imageTintList?.defaultColor)
             assertTrue("$w×$h", root.text(previous).left() < root.text(next).left())
             assertTrue("«${clock(root).text}»", Regex("\\d{1,2}:\\d\\d").matches(clock(root).text))
