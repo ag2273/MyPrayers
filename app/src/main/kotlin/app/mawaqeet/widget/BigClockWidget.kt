@@ -1,6 +1,8 @@
 package app.mawaqeet.widget
 
 import android.app.LocaleManager
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.res.Resources
 import android.os.Build
@@ -15,7 +17,6 @@ import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.layout.Alignment
@@ -26,10 +27,6 @@ import androidx.glance.layout.padding
 import androidx.glance.layout.wrapContentHeight
 import androidx.glance.layout.wrapContentWidth
 import app.mawaqeet.R
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
 import java.time.Clock
 import java.time.ZoneId
@@ -373,11 +370,12 @@ class BigClockWidgetReceiver : GlanceAppWidgetReceiver() {
     }
 }
 
-/** Every Clock Widget's receiver calls this from `onDisabled`: the minute re-render stops with the last Clock widget. */
+/**
+ * Every Clock Widget's receiver calls this from `onDisabled`: the minute re-render stops with the last Clock widget.
+ * Synchronous (the system's widget list, no coroutine), so it is done before the broadcast ends.
+ */
 internal fun stopClockTicksIfNoneLeft(context: Context) {
-    val app = context.applicationContext
-    CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-        val manager = GlanceAppWidgetManager(app)
-        if (Widgets.clocks.all { manager.getGlanceIds(it().javaClass).isEmpty() }) ClockTickReceiver.cancel(app)
-    }
+    val manager = AppWidgetManager.getInstance(context) ?: return
+    val placed = Widgets.clockReceivers.any { manager.getAppWidgetIds(ComponentName(context, it)).isNotEmpty() }
+    if (!placed) ClockTickReceiver.cancel(context)
 }

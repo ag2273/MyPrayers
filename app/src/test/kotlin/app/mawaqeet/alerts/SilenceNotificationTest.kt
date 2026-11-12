@@ -109,7 +109,7 @@ class SilenceNotificationTest {
         PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window)
 
         posted.single().actions.single().actionIntent.send()
-        shadowOf(Looper.getMainLooper()).idle()
+        idle()
 
         assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
         assertTrue(posted.isEmpty())
@@ -123,7 +123,7 @@ class SilenceNotificationTest {
 
         audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
         context.sendBroadcast(Intent(AudioManager.RINGER_MODE_CHANGED_ACTION))
-        shadowOf(Looper.getMainLooper()).idle()
+        idle()
         assertTrue(posted.isEmpty())
 
         // Even back on silent, the window is theirs now: its end does not turn the sound on over them.
@@ -138,7 +138,7 @@ class SilenceNotificationTest {
         PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window)
 
         context.sendBroadcast(Intent(AudioManager.RINGER_MODE_CHANGED_ACTION))
-        shadowOf(Looper.getMainLooper()).idle()
+        idle()
 
         assertEquals(1, posted.size)
         PrayerSilencer(context).end(window)
@@ -159,7 +159,7 @@ class SilenceNotificationTest {
         PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window)
 
         context.sendBroadcast(SilenceReceiver.intent(context, window, start = false))
-        shadowOf(Looper.getMainLooper()).idle()
+        idle()
 
         assertTrue(posted.isEmpty())
         assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
@@ -198,4 +198,11 @@ class SilenceNotificationTest {
     private fun silenceAlarmActions() = shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms
         .map { shadowOf(it.operation).savedIntent.action }
         .filter { it == SilenceReceiver.ACTION_START || it == SilenceReceiver.ACTION_END }
+
+    /** Runs the main looper, then waits for the receivers' background work. */
+    private fun idle() {
+        shadowOf(Looper.getMainLooper()).idle()
+        kotlinx.coroutines.runBlocking { ReceiverWork.idle() }
+        shadowOf(Looper.getMainLooper()).idle()
+    }
 }

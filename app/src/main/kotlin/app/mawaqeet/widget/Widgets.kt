@@ -25,6 +25,9 @@ object Widgets {
     /** The Clock Widgets, re-rendered each minute by [ClockTickReceiver]; each new Clock variant adds itself here. */
     val clocks: List<() -> GlanceAppWidget> = listOf({ BigClockWidget() }, { GoldClockWidget() }, { ClockPrayerWidget() })
 
+    /** The Clock Widgets' receivers, in [clocks]' order: the minute re-render stops when none is placed. */
+    val clockReceivers = listOf(BigClockWidgetReceiver::class.java, GoldClockWidgetReceiver::class.java, ClockPrayerWidgetReceiver::class.java)
+
     /**
      * Bumped on every refresh, in each widget's Glance state. A widget reads it with `currentState(REFRESHED_AT)` and
      * recomputes its content when it changes, since a running Glance session recomposes instead of calling

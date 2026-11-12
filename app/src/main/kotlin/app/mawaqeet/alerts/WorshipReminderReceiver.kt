@@ -10,19 +10,14 @@ import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.core.WorshipReminderKind
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 
 /**
- * Receives a Worship Reminder's alarm (#63, direct-boot aware) and posts [WorshipReminderNotification]. The reminder
- * travels in the intent. Nothing is rescheduled here: the plan moves on with the Adhan Alerts and the display alarm.
+ * Receives a Worship Reminder's alarm (#63, direct-boot aware) and posts [WorshipReminderNotification], off the main
+ * thread. The reminder travels in the intent. Nothing is rescheduled here: the plan moves on with the Adhan Alerts and the display alarm.
  * An adhkar reminder (#75) first asks the Adhkar core, off the main thread, whether its set is already complete for
  * the reminder's Prayer Day, and is dropped if so; when that cannot be read (before the first unlock) it is posted.
  * Also receives «قرأتها» ([ACTION_DISMISS], #64), which only dismisses the reminder.
@@ -35,19 +30,13 @@ class WorshipReminderReceiver : BroadcastReceiver() {
         }
         if (intent.action != ACTION_REMIND) return
         val reminder = reminder(intent) ?: return
-        // Inside a Silence Window the reminder must not break the silence (#76).
-        val silent = PrayerSilencer(context).isActive()
-        val set = reminder.kind.adhkarSet
-        if (set == null) {
-            WorshipReminderNotification.post(context, reminder, silent = silent)
-            return
-        }
-        val pending = goAsync()
-        lastCheck = scope.launch {
-            try {
-                if (!isComplete(context, set, reminder.prayerDay)) WorshipReminderNotification.post(context, reminder, silent = silent)
-            } finally {
-                pending.finish()
+        // Preferences (the silence record) and the database: off the main thread.
+        ReceiverWork.run(this) {
+            // Inside a Silence Window the reminder must not break the silence (#76).
+            val silent = PrayerSilencer(context).isActive()
+            val set = reminder.kind.adhkarSet
+            if (set == null || !isComplete(context, set, reminder.prayerDay)) {
+                WorshipReminderNotification.post(context, reminder, silent = silent)
             }
         }
     }
@@ -63,15 +52,8 @@ class WorshipReminderReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_REMIND = "app.mawaqeet.action.WORSHIP_REMINDER"
 
-        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-        @Volatile
-        private var lastCheck: Job? = null
-
-        /** Waits for the last adhkar reminder's completeness check (tests). */
-        internal suspend fun idle() {
-            lastCheck?.join()
-        }
+        /** Waits for the last reminder to be checked and posted (tests). */
+        internal suspend fun idle() = ReceiverWork.idle()
 
         private const val EXTRA_KIND = "kind"
         private const val EXTRA_PRAYER_DAY = "prayer_day"

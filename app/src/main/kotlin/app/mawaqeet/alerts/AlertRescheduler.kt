@@ -7,11 +7,7 @@ import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.widget.Widgets
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.core.PrayerSettings
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Clock
@@ -49,15 +45,10 @@ object AlertRescheduler {
         refreshWidgets: Boolean = false,
         first: suspend () -> Unit = {},
     ) {
-        val pending = receiver.goAsync()
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            try {
-                first()
-                reschedule(context)
-                if (refreshWidgets) Widgets.refreshAll(context)
-            } finally {
-                pending.finish()
-            }
+        ReceiverWork.run(receiver) {
+            first()
+            reschedule(context)
+            if (refreshWidgets) Widgets.refreshAll(context)
         }
     }
 }

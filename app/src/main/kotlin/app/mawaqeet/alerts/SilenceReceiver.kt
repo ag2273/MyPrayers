@@ -22,10 +22,14 @@ import java.time.LocalDate
 class SilenceReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val window = window(intent) ?: return
-        when (intent.action) {
-            ACTION_START -> PrayerSilencer(context).start(window)
-            ACTION_END -> PrayerSilencer(context).end(window)
-            ACTION_RESTORE -> PrayerSilencer(context).restore(window)
+        val action = intent.action
+        // Preferences, the stored plan and AudioManager: off the main thread.
+        ReceiverWork.run(this) {
+            when (action) {
+                ACTION_START -> PrayerSilencer(context).start(window)
+                ACTION_END -> PrayerSilencer(context).end(window)
+                ACTION_RESTORE -> PrayerSilencer(context).restore(window)
+            }
         }
     }
 

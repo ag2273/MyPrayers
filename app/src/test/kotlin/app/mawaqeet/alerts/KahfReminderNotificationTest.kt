@@ -45,6 +45,7 @@ class KahfReminderNotificationTest {
     private fun fire(reminder: PlannedWorshipReminder) {
         val alarm = alarms.scheduledAlarms.first { Instant.ofEpochMilli(it.triggerAtTime) == reminder.instant }
         WorshipReminderReceiver().onReceive(context, shadowOf(alarm.operation).savedIntent)
+        kotlinx.coroutines.runBlocking { WorshipReminderReceiver.idle() }
     }
 
     private fun kahfNotification(): Notification = shadowOf(notificationManager).allNotifications

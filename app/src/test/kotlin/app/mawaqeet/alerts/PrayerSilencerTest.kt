@@ -57,11 +57,11 @@ class PrayerSilencerTest {
         val vibrate = window.copy(mode = SilenceMode.VIBRATE)
 
         context.sendBroadcast(SilenceReceiver.intent(context, vibrate, start = true))
-        shadowOf(Looper.getMainLooper()).idle()
+        idle()
         assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
 
         context.sendBroadcast(SilenceReceiver.intent(context, vibrate, start = false))
-        shadowOf(Looper.getMainLooper()).idle()
+        idle()
         assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
     }
 
@@ -90,11 +90,11 @@ class PrayerSilencerTest {
     @Test
     fun `the Silence Window's start and end alarms silence the phone and restore it`() {
         context.sendBroadcast(SilenceReceiver.intent(context, window, start = true))
-        shadowOf(Looper.getMainLooper()).idle()
+        idle()
         assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
 
         context.sendBroadcast(SilenceReceiver.intent(context, window, start = false))
-        shadowOf(Looper.getMainLooper()).idle()
+        idle()
         assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
     }
 
@@ -170,5 +170,12 @@ class PrayerSilencerTest {
 
         assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
         assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, notifications.currentInterruptionFilter)
+    }
+
+    /** Runs the main looper, then waits for the receivers' background work. */
+    private fun idle() {
+        shadowOf(Looper.getMainLooper()).idle()
+        kotlinx.coroutines.runBlocking { ReceiverWork.idle() }
+        shadowOf(Looper.getMainLooper()).idle()
     }
 }

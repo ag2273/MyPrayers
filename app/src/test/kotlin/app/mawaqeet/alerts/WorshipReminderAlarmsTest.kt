@@ -83,6 +83,7 @@ class WorshipReminderAlarmsTest {
         val alarm = alarms.scheduledAlarms.first { Instant.ofEpochMilli(it.triggerAtTime) == reminder.instant }
         val intent: Intent = shadowOf(alarm.operation).savedIntent
         WorshipReminderReceiver().onReceive(context, intent)
+        kotlinx.coroutines.runBlocking { WorshipReminderReceiver.idle() }
     }
 
     @Test
