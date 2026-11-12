@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.mawaqeet.R
 import app.mawaqeet.alerts.AdhanPreview
+import app.mawaqeet.alerts.AdhanLevel
 import app.mawaqeet.alerts.AdhanSounds
 import app.mawaqeet.alerts.CustomAdhanFiles
 import app.mawaqeet.core.AdhanRecording
@@ -351,7 +352,8 @@ private fun SilenceDurationRow(
 
 /**
  * Adhan volume: whether the adhan follows the alarm volume or the media volume, a slider that sets that volume right
- * here (it is the phone's own volume, so it also changes alarms or media), and a button to hear the Short Adhan at it.
+ * here (it is the phone's own volume, so it also changes alarms or media) and records it as the adhan's level
+ * ([AdhanLevel]: the adhan plays at it even if the phone's volume moves later), and a button to hear the Short Adhan.
  */
 @Composable
 private fun AdhanVolumeRows(alerts: AlertSettings, actions: SettingsActions) {
@@ -361,10 +363,12 @@ private fun AdhanVolumeRows(alerts: AlertSettings, actions: SettingsActions) {
     val stream = AdhanSounds.stream(volume)
     val max = remember(stream) { audio.getStreamMaxVolume(stream).coerceAtLeast(1) }
     val min = remember(stream) { if (android.os.Build.VERSION.SDK_INT >= 28) audio.getStreamMinVolume(stream) else 0 }
-    var level by remember(stream) { mutableStateOf(audio.getStreamVolume(stream).toFloat()) }
-    // The volume keys or another app may change it meanwhile.
+    val adhanLevel = remember { AdhanLevel(context) }
+    // The adhan's own level once chosen (the player applies it while it plays), else the phone's volume now.
+    fun current() = (adhanLevel.index(audio, volume) ?: audio.getStreamVolume(stream)).toFloat()
+    var level by remember(stream) { mutableStateOf(current()) }
     LifecycleResumeEffect(stream) {
-        level = audio.getStreamVolume(stream).toFloat()
+        level = current()
         onPauseOrDispose { }
     }
     val preview = remember { AdhanPreview(context) }
@@ -408,10 +412,18 @@ private fun AdhanVolumeRows(alerts: AlertSettings, actions: SettingsActions) {
                     // Do Not Disturb can forbid changing a stream's volume: keep what the phone allows.
                     runCatching { audio.setStreamVolume(stream, level.toInt(), 0) }
                 },
-                onValueChangeFinished = { level = audio.getStreamVolume(stream).toFloat() },
+                onValueChangeFinished = {
+                    level = audio.getStreamVolume(stream).toFloat()
+                    adhanLevel.setIndex(audio, volume, level.toInt())
+                },
                 valueRange = min.toFloat()..max.toFloat(),
                 steps = (max - min - 1).coerceAtLeast(0),
                 modifier = Modifier.semantics { stateDescription = label },
+            )
+            Text(
+                stringResource(R.string.alerts_volume_level_kept),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             TextButton(
                 onClick = {

@@ -182,6 +182,7 @@
     <string name="alerts_volume_media_description">As loud as your music and video volume</string>
     <string name="alerts_volume_level_alarm">Alarm volume</string>
     <string name="alerts_volume_level_media">Media volume</string>
+    <string name="alerts_volume_level_kept">The adhan always plays at this level, even if the phone volume changes later; then the phone volume goes back as it was</string>
     <string name="alerts_volume_level_value">%1$s%%</string>
     <string name="alerts_volume_test">Hear the short adhan</string>
     <string name="alerts_custom_adhan">Custom Adhan</string>
