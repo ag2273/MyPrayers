@@ -37,10 +37,10 @@ data class NextPrayerContent(
         fun of(day: DisplayDay, now: Instant, formatter: DisplayFormatter, alerts: AlertSettings = AlertSettings()): NextPrayerContent {
             val next = day.next
             val index = day.prayerTimes.indexOf(next)
-            // Before Fajr the previous Prayer is yesterday's Isha: today's, a day earlier, to within minutes.
+            // Before Fajr the previous Prayer is yesterday's Isha, from yesterday's own Prayer Times (the core's).
             val previous: PrayerTime = when {
                 index > 0 -> day.prayerTimes[index - 1]
-                index == 0 -> day.prayerTimes.last().let { it.copy(time = it.time.minusDays(1)) }
+                index == 0 -> day.previousIsha
                 else -> day.prayerTimes.last()
             }
             val span = Duration.between(previous.time.toInstant(), next.time.toInstant()).toMillis().coerceAtLeast(1)

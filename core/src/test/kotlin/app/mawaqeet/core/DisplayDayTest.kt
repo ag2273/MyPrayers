@@ -21,6 +21,30 @@ private fun displayDayAt(dateTime: String): DisplayDay =
 class DisplayDayTest {
 
     @Test
+    fun `the previous day's Isha comes from the previous day's own Prayer Times, across a clock change too`() {
+        // London leaves BST (UTC+1) for GMT at 01:00 UTC on Sunday 2026-10-25.
+        val london = ZoneId.of("Europe/London")
+        val settings = PrayerSettings.Default.copy(
+            location = Location(51.5074, -0.1278, london),
+            method = CalculationMethod.MUSLIM_WORLD_LEAGUE,
+        )
+        fun dayAt(dateTime: String) = PrayerCore(
+            settings,
+            Clock.fixed(LocalDateTime.parse(dateTime).atZone(london).toInstant(), ZoneOffset.UTC),
+            InMemoryPrayerLog(),
+        ).displayDay()
+
+        val beforeFajr = dayAt("2026-10-25T03:00")
+        val saturday = dayAt("2026-10-24T12:00")
+
+        assertEquals(saturday.timeOf(Prayer.ISHA).toInstant(), beforeFajr.previousIsha.time.toInstant())
+        assertEquals(Prayer.ISHA, beforeFajr.previousIsha.prayer)
+        // Saturday's Isha was in the evening on Saturday's (summer) clock: after 19:00 BST.
+        assertEquals(LocalDate.of(2026, 10, 24), beforeFajr.previousIsha.time.toLocalDate())
+        kotlin.test.assertTrue(beforeFajr.previousIsha.time.toLocalTime().isAfter(LocalTime.of(19, 0)))
+    }
+
+    @Test
     fun `default location shows today's Makkah Prayer Times and Sunrise under Umm al-Qura`() {
         val day = displayDayAt("2026-11-08T10:00")
 

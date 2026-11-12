@@ -86,13 +86,13 @@ data class ClockContent(
         /** Yesterday's Isha, the day's Prayers with Sunrise after Fajr, and the core's next Prayer when it's tomorrow. */
         private fun stopsAround(day: DisplayDay): List<Stop> {
             fun stop(time: PrayerTime) = Stop(prayerNameRes(time), "", time.time, time.prayer)
-            // Yesterday's Isha is today's, a day earlier: within a minute or two, as the Next Prayer widget does.
             val isha = day.prayerTimes.last()
             val today = day.prayerTimes.flatMap { time ->
                 if (time.prayer == Prayer.FAJR) listOf(stop(time), Stop(R.string.sunrise, "", day.sunrise, null)) else listOf(stop(time))
             }
             val tomorrow = day.next.takeIf { it.time.isAfter(isha.time) }?.let(::stop)
-            return listOf(stop(isha.copy(time = isha.time.minusDays(1)))) + today + listOfNotNull(tomorrow)
+            // Before Fajr the previous Stop is yesterday's Isha, from yesterday's own Prayer Times (the core's).
+            return listOf(stop(day.previousIsha)) + today + listOfNotNull(tomorrow)
         }
     }
 }

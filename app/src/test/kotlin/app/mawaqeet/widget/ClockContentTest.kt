@@ -55,6 +55,20 @@ class ClockContentTest {
     }
 
     @Test
+    fun `before Fajr the previous Stop is the previous day's own Isha, not today's a day earlier`() {
+        val now = at(sunday, "03:00")
+        // Saturday's Isha, as the core gives it: a minute later than Sunday's.
+        val saturdayIsha = PrayerTime(Prayer.ISHA, at(sunday.minusDays(1), "19:12"))
+        val day = makkahDay(sunday, now).copy(previousIsha = saturdayIsha)
+
+        val c = ClockContent.of(day, now, english, twentyFourHour = true)
+
+        assertEquals(R.string.prayer_isha, c.previous.nameRes)
+        assertEquals("19:12", c.previous.time)
+        assertEquals(saturdayIsha.time, c.previous.at)
+    }
+
+    @Test
     fun `between Fajr and Sunrise the next Stop is Sunrise, which is not a Prayer`() {
         val c = content(at(sunday, "06:00"))
 

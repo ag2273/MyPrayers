@@ -32,6 +32,7 @@ class PrayerCore(
             date = date, prayerTimes = day.prayerTimes, sunrise = day.sunrise, next = next,
             hijriDate = HijriDate.of(date, settings.hijriOffsetDays),
             highLatitude = day.highLatitude,
+            previousIsha = calculateDay(settings, date.minusDays(1)).prayerTimes.last(),
         )
     }
 
