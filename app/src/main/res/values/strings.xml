@@ -44,6 +44,8 @@
     <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك.</string>
     <string name="about_libraries">المكتبات</string>
     <string name="about_datasets">البيانات</string>
+    <string name="about_texts">النصوص</string>
+    <string name="about_use_hisn">نصوص أذكار الصباح والمساء وأذكار ما بعد الصلاة وأعدادها، مأخوذة من مصادرها في كتب الحديث</string>
     <string name="about_fonts">الخطوط</string>
     <string name="about_recordings">تسجيلات الأذان</string>
     <string name="about_recordings_none">لا يضم التطبيق تسجيلات أذان بعد. يمكنك اختيار أذان من ملفاتك في إعدادات التنبيهات.</string>
@@ -470,6 +472,12 @@
     <!-- The Adhkar Record week grid (#74): marks only, no streaks or scores. -->
     <string name="adhkar_record">سجل الأذكار</string>
     <string name="adhkar_record_summary">الأيام التي أتممت فيها الأذكار</string>
+    <!-- The free Tasbeeh at the top of the Adhkar tab (#71): today's total, not in the Adhkar Record. -->
+    <string name="tasbeeh">التسبيح</string>
+    <string name="tasbeeh_tap_hint">اضغط للتسبيح</string>
+    <!-- What TalkBack reads for the Tasbeeh counter. -->
+    <string name="tasbeeh_total">مجموع اليوم: %1$s</string>
+    <string name="tasbeeh_reset">تصفير</string>
     <string name="adhkar_record_morning">الصباح</string>
     <string name="adhkar_record_evening">المساء</string>
     <string name="adhkar_record_after_prayers">بعد الصلوات</string>

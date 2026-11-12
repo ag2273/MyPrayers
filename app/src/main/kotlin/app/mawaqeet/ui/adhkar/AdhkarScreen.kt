@@ -2,7 +2,10 @@ package app.mawaqeet.ui.adhkar
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -27,6 +30,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -68,7 +72,7 @@ private fun slotName(slot: AdhkarSlot): String =
         ?: stringResource(slot.set.nameRes)
 
 /**
- * The «الأذكار» tab (#62, #70, #74): the morning and evening sets and the five after-prayer slots with today's
+ * The «الأذكار» tab (#62, #70, #71, #74): the free Tasbeeh at the top, then the morning and evening sets and the five after-prayer slots with today's
  * state; one opens in the reader. The Adhkar Record's week grid opens from the end of the list. [adhkar] is null while the bundled catalog loads. [changes] signals every write to the
  * Adhkar repository. [openSlot] (an adhkar reminder's tap, #75) opens that set in the reader, then [onOpened] is called.
  */
@@ -91,17 +95,32 @@ fun AdhkarScreen(adhkar: Adhkar?, changes: StateFlow<Int>, openSlot: AdhkarSlot?
     }
 }
 
-/** What the list shows now: every slot's progress and the Prayer after-prayer adhkar default to. */
-private data class AdhkarToday(val slots: List<SetProgress>, val defaultPrayer: Prayer)
+/** What the list shows now: every slot's progress, the Prayer after-prayer adhkar default to, and the Tasbeeh total. */
+private data class AdhkarToday(val slots: List<SetProgress>, val defaultPrayer: Prayer, val tasbeeh: Int)
 
 @Composable
 private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSlot) -> Unit, onOpenRecord: () -> Unit) {
     val version by changes.collectAsState()
     val today by produceState<AdhkarToday?>(null, adhkar, version) {
-        value = adhkar?.let { a -> withContext(Dispatchers.IO) { AdhkarToday(a.slots.map(a::progress), a.defaultAfterPrayer()) } }
+        value = adhkar?.let { a ->
+            withContext(Dispatchers.IO) { AdhkarToday(a.slots.map(a::progress), a.defaultAfterPrayer(), a.tasbeeh()) }
+        }
     }
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
     TabPage(stringResource(R.string.tab_adhkar)) {
         val shown = today ?: return@TabPage
+        if (adhkar != null) {
+            // Each write changes the repository, which re-reads [today]: the total shown is always the stored one.
+            Tasbeeh(
+                total = shown.tasbeeh,
+                onCount = {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    scope.launch(Dispatchers.IO) { adhkar.countTasbeeh() }
+                },
+                onReset = { scope.launch(Dispatchers.IO) { adhkar.resetTasbeeh() } },
+            )
+        }
         val (daily, afterPrayer) = shown.slots.partition { it.set != AdhkarSetId.AFTER_PRAYER }
         if (daily.isNotEmpty()) {
             Card {
@@ -130,6 +149,44 @@ private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSlo
         }
         Card {
             NavRow(stringResource(R.string.adhkar_record), stringResource(R.string.adhkar_record_summary), icon = R.drawable.ic_log, onClick = onOpenRecord)
+        }
+    }
+}
+
+/**
+ * The free Tasbeeh (#71): a large tap target that counts one with a light vibration, today's total for the Prayer
+ * Day, and a reset. The tap target is one TalkBack item that reads the total; the reset is its own button.
+ */
+@Composable
+private fun Tasbeeh(total: Int, onCount: () -> Unit, onReset: () -> Unit) {
+    val format = LocalDisplayFormatter.current
+    val state = stringResource(R.string.tasbeeh_total, format.number(total))
+    Card {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 160.dp)
+                .clickable(onClickLabel = stringResource(R.string.adhkar_count_one), onClick = onCount)
+                .semantics(mergeDescendants = true) { stateDescription = state }
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(stringResource(R.string.tasbeeh), style = MaterialTheme.typography.titleMedium)
+            Text(format.number(total), style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.tasbeeh_tap_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        RowDivider()
+        OutlinedButton(
+            onClick = onReset,
+            enabled = total > 0,
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 8.dp).heightIn(min = 48.dp),
+        ) {
+            Text(stringResource(R.string.tasbeeh_reset))
         }
     }
 }
@@ -257,7 +314,11 @@ private fun DhikrCard(item: DhikrProgress, onCount: () -> Unit) {
         ) {
             // Always Arabic, right to left, even in the English UI.
             val arabic = TextStyle(textDirection = TextDirection.Rtl, textAlign = TextAlign.Center)
-            Text(item.dhikr.text, style = MaterialTheme.typography.headlineSmall.merge(arabic), modifier = Modifier.fillMaxWidth())
+            // A long dhikr at a large font scrolls inside the card, so its source and count stay in view (#72).
+            val textHeight = (LocalConfiguration.current.screenHeightDp * 0.4f).dp
+            Box(Modifier.fillMaxWidth().heightIn(max = textHeight).verticalScroll(rememberScrollState())) {
+                Text(item.dhikr.text, style = MaterialTheme.typography.headlineSmall.merge(arabic), modifier = Modifier.fillMaxWidth())
+            }
             Text(
                 item.dhikr.source,
                 style = MaterialTheme.typography.bodyMedium.merge(arabic),

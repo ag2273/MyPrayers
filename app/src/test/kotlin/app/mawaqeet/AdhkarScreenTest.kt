@@ -10,6 +10,7 @@ import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.Adhkar
 import app.mawaqeet.core.AdhkarCatalog
@@ -17,6 +18,14 @@ import app.mawaqeet.core.AdhkarRepository
 import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.AdhkarSlot
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
+import app.mawaqeet.core.AdhkarSet
 import org.junit.Assert.assertFalse
 import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.PrayerCore
@@ -245,7 +254,7 @@ class AdhkarScreenTest {
     fun `after-prayer adhkar open on the most recent Prayer, and another Prayer can be chosen before starting`() {
         show()
         waitForText("After-prayer adhkar")
-        compose.onNodeWithText("After-prayer adhkar").performClick()
+        compose.onNodeWithText("After-prayer adhkar").performScrollTo().performClick()
         waitForText("Dhikr 1 of 1")
         compose.onNode(hasText("Fajr") and androidx.compose.ui.test.isSelected()).assertExists()
 
@@ -260,6 +269,62 @@ class AdhkarScreenTest {
         waitForText("Adhkar after Fajr completed for today")
         assertTrue(adhkar.isComplete(AdhkarSlot.afterPrayer(Prayer.FAJR)))
         assertFalse(adhkar.isComplete(AdhkarSlot.afterPrayer(Prayer.DHUHR)))
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `the Tasbeeh at the top counts each tap with a vibration and resets to zero`() {
+        show()
+        waitForText("التسبيح")
+        waitForTotal("مجموع اليوم: 0")
+
+        // The first tap waits for the screen: each tap re-reads the total off the main thread.
+        for (n in 1..3) {
+            compose.onNodeWithText("اضغط للتسبيح").performClick()
+            waitForTotal("مجموع اليوم: $n")
+        }
+        compose.onNodeWithText("3").assertIsDisplayed()
+        assertEquals(3, haptics.count)
+        assertEquals(3, adhkar.tasbeeh())
+        assertFalse(adhkar.isComplete(AdhkarSetId.MORNING))
+
+        compose.onNodeWithText("تصفير").performClick()
+        waitForTotal("مجموع اليوم: 0")
+        assertEquals(0, adhkar.tasbeeh())
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `the Tasbeeh shows the total already counted today`() {
+        repeat(33) { adhkar.countTasbeeh() }
+        show()
+        waitForTotal("مجموع اليوم: 33")
+        compose.onNodeWithText("33").assertIsDisplayed()
+    }
+
+    private fun waitForTotal(state: String) = compose.waitUntil(5_000) {
+        compose.onAllNodes(hasStateDescription(state)).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `TalkBack reads the Tasbeeh as one item with today's total and the count action`() {
+        adhkar.countTasbeeh()
+        show()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasStateDescription("Today's total: 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val counter = compose.onNode(hasStateDescription("Today's total: 1")).fetchSemanticsNode()
+        val texts = counter.config[SemanticsProperties.Text].map { it.text }
+        assertTrue("reads $texts", "Tasbeeh" in texts)
+        assertEquals("Count one", counter.config[androidx.compose.ui.semantics.SemanticsActions.OnClick].label)
+
+        compose.onNode(hasStateDescription("Today's total: 1")).performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasStateDescription("Today's total: 2")).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Reset").assertIsDisplayed()
     }
 }
 
@@ -293,5 +358,47 @@ class AdhkarAccessibilityTest {
             compose.onAllNodes(androidx.compose.ui.test.hasText("الذكر", substring = true)).fetchSemanticsNodes().isNotEmpty()
         }
         compose.assertAccessible("Morning adhkar", density)
+    }
+
+    @Test
+    @Config(qualifiers = "ar-w360dp-h640dp")
+    fun `on a phone screen at 200% text the longest dhikr scrolls inside its card and the card fits the screen`() {
+        val bundled = java.io.File("src/main/assets/adhkar.tsv").inputStream().use(AdhkarCatalog::read)
+        val longest = bundled.sets.flatMap { it.adhkar }.maxBy { it.text.length }
+        val adhkar = Adhkar(
+            AdhkarCatalog(listOf(AdhkarSet(AdhkarSetId.MORNING, listOf(longest)))),
+            PrayerCore(PrayerSettings.Default, Clock.systemUTC(), EmptyLog),
+            repo,
+        )
+        compose.setContent {
+            MawaqeetTheme { ProvideDisplayFormatter(DigitStyle.AUTOMATIC) { AdhkarScreen(adhkar, repo.changes) } }
+        }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("أذكار الصباح")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("أذكار الصباح").performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasText(longest.text), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val window = compose.onRoot(useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        // The text sits in its own scroller inside the card (the innermost one; the page scrolls too), shorter
+        // than the text itself, so the card never grows past the screen.
+        val scrollers = hasScrollAction() and hasAnyDescendant(hasText(longest.text))
+        fun cardScroller() = compose.onAllNodes(scrollers, useUnmergedTree = true).fetchSemanticsNodes()
+            .minBy { it.size.height }
+        fun text() = compose.onNode(hasText(longest.text), useUnmergedTree = true).fetchSemanticsNode()
+        assertTrue("the text fits without scrolling", text().size.height > cardScroller().size.height)
+        // With the page scrolled to the count, the whole text area and the count are on screen together.
+        compose.onNode(hasText("/", substring = true), useUnmergedTree = true).performScrollTo()
+        val count = compose.onNode(hasText("/", substring = true), useUnmergedTree = true).fetchSemanticsNode()
+        val scroller = cardScroller()
+        assertTrue("the count is off screen", count.boundsInRoot.height >= count.size.height - 1 && count.boundsInRoot.bottom <= window.bottom)
+        assertTrue("the card's text runs off screen", scroller.boundsInRoot.top >= window.top && scroller.boundsInRoot.height >= scroller.size.height - 1)
+        // Scrolling inside the card shows the rest of the text, and does not count.
+        val before = text().positionInRoot.y
+        compose.onNode(SemanticsMatcher("card scroller") { it.id == scroller.id }, useUnmergedTree = true)
+            .performTouchInput { swipeUp() }
+        compose.waitForIdle()
+        assertTrue("the text did not scroll", text().positionInRoot.y < before - 1)
+        assertEquals(0, adhkar.progress(AdhkarSlot.MORNING).items.single().counted)
     }
 }

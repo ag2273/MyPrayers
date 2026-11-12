@@ -117,6 +117,9 @@ class PrayerSilencer(
         if (window.end.isAfter(now)) SilenceNotification.post(context, window, digits, language) else end(window)
     }
 
+    /** Whether the app holds the phone silenced for a Silence Window at [now]: one started and not yet at its end. */
+    fun isActive(now: Instant = Instant.now()): Boolean = active()?.end?.isAfter(now) == true
+
     private fun active(): SilenceWindow? = record.getString(KEY_WINDOW, null)?.let(::decode)
 
     private fun awaiting(): SilenceWindow? = record.getString(KEY_AWAITING, null)?.let(::decode)

@@ -41,6 +41,8 @@
     <string name="about_summary">Prayer Times, Adhan Alerts and a Prayer Log, all on your device.</string>
     <string name="about_libraries">Libraries</string>
     <string name="about_datasets">Data</string>
+    <string name="about_texts">Texts</string>
+    <string name="about_use_hisn">The morning, evening and after-prayer adhkar and their counts, taken from the hadith collections they come from</string>
     <string name="about_fonts">Fonts</string>
     <string name="about_recordings">Adhan recordings</string>
     <string name="about_recordings_none">The app doesn\'t include adhan recordings yet. You can pick an adhan from your files in the Alerts settings.</string>
@@ -435,6 +437,10 @@
     <string name="adhkar_set_complete_body">May Allah accept it from us and from you.</string>
     <string name="adhkar_record">Adhkar Record</string>
     <string name="adhkar_record_summary">The days you completed the adhkar</string>
+    <string name="tasbeeh">Tasbeeh</string>
+    <string name="tasbeeh_tap_hint">Tap to count</string>
+    <string name="tasbeeh_total">Today\'s total: %1$s</string>
+    <string name="tasbeeh_reset">Reset</string>
     <string name="adhkar_record_morning">Morning</string>
     <string name="adhkar_record_evening">Evening</string>
     <string name="adhkar_record_after_prayers">After prayers</string>

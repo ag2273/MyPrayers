@@ -29,15 +29,17 @@ class WorshipReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_REMIND) return
         val reminder = reminder(intent) ?: return
+        // Inside a Silence Window the reminder must not break the silence (#76).
+        val silent = PrayerSilencer(context).isActive()
         val set = reminder.kind.adhkarSet
         if (set == null) {
-            WorshipReminderNotification.post(context, reminder)
+            WorshipReminderNotification.post(context, reminder, silent = silent)
             return
         }
         val pending = goAsync()
         lastCheck = scope.launch {
             try {
-                if (!isComplete(context, set, reminder.prayerDay)) WorshipReminderNotification.post(context, reminder)
+                if (!isComplete(context, set, reminder.prayerDay)) WorshipReminderNotification.post(context, reminder, silent = silent)
             } finally {
                 pending.finish()
             }
@@ -64,6 +66,7 @@ class WorshipReminderReceiver : BroadcastReceiver() {
         internal suspend fun idle() {
             lastCheck?.join()
         }
+
         private const val EXTRA_KIND = "kind"
         private const val EXTRA_PRAYER_DAY = "prayer_day"
         private const val EXTRA_AT = "at"
