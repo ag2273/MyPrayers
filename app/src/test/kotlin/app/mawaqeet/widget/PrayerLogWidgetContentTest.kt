@@ -159,6 +159,7 @@ class PrayerLogWidgetContentTest {
         override fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean) {
             if (prayed) entries += prayerDay to prayer else entries -= prayerDay to prayer
         }
+        override fun hasAnyEntry() = entries.isNotEmpty()
         override fun firstUseDate() = firstUse
         override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {
             if (firstUse == null) firstUse = prayerDay

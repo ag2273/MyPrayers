@@ -144,4 +144,21 @@ class PrayerLogTest {
 
         assertEquals(date("2026-11-08"), log.firstUseDate())
     }
+
+    @Test
+    fun `the Prayer Log has a mark from the first mark until it is all unmarked or deleted`() {
+        val log = InMemoryPrayerLog()
+        val core = coreAt("2026-11-08T13:00", log)
+        assertFalse(core.hasAnyMark())
+
+        core.mark(date("2026-11-07"), Prayer.ISHA)
+        assertTrue(coreAt("2026-11-12T10:00", log).hasAnyMark())
+
+        core.unmark(date("2026-11-07"), Prayer.ISHA)
+        assertFalse(core.hasAnyMark())
+
+        core.mark(date("2026-11-08"), Prayer.FAJR)
+        core.deletePrayerLog()
+        assertFalse(core.hasAnyMark())
+    }
 }

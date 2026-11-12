@@ -8,10 +8,14 @@ import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.ui.components.Card
-import app.mawaqeet.ui.components.TabPage
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -93,6 +97,8 @@ fun HomeScreen(
     showFixAlertsTip: Boolean = false,
     onOpenFixAlerts: () -> Unit = {},
     onFixAlertsDone: () -> Unit = {},
+    /** The tools row under the Next Prayer card, or null for none. */
+    tools: (@Composable () -> Unit)? = null,
 ) {
     // Re-query the core every second: the countdown ticks and the display day switches at local midnight.
     var now by remember { mutableStateOf(clock.instant()) }
@@ -109,13 +115,20 @@ fun HomeScreen(
     val prayerDay by produceState<PrayerDay?>(null, core, changes, day.next) {
         value = withContext(Dispatchers.IO) { core.currentPrayerDay() }
     }
+    // Null until read, so the hint never flashes for a user who has marked before.
+    val hasAnyMark by produceState<Boolean?>(null, core, changes) {
+        value = withContext(Dispatchers.IO) { core.hasAnyMark() }
+    }
     val scope = rememberCoroutineScope()
     val tip: (@Composable () -> Unit)? = if (showFixAlertsTip) {
         { FixAlertsTip(onOpenFixAlerts, onFixAlertsDone) }
     } else {
         null
     }
-    HomeContent(day, now, prayerDay, locationName, alerts, onOpenLocation, locationHint, onLocationHint, tip) { prayer ->
+    HomeContent(
+        day, now, prayerDay, locationName, alerts, onOpenLocation, locationHint, onLocationHint, tip, tools,
+        showLogHint = hasAnyMark == false,
+    ) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
             scope.launch(Dispatchers.IO) {
@@ -140,9 +153,11 @@ private fun HomeContent(
     locationHint: String?,
     onLocationHint: () -> Unit,
     tip: (@Composable () -> Unit)?,
+    tools: (@Composable () -> Unit)?,
+    showLogHint: Boolean,
     onToggle: (Prayer) -> Unit,
 ) {
-    TabPage(title = null) {
+    FillingPage {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             DateLine(day, Modifier.weight(1f))
             LocationChip(locationName, onOpenLocation)
@@ -152,9 +167,10 @@ private fun HomeContent(
         }
         tip?.invoke()
         day.highLatitude?.let { HighLatitudeNote(it) }
-        NextPrayerCard(day, now)
-        Card(Modifier.padding(vertical = 0.dp)) {
-            Column(Modifier.padding(vertical = 4.dp)) {
+        NextPrayerCard(day, now, Modifier.layoutId(Fill.TakesTheRest))
+        tools?.invoke()
+        Card(Modifier.layoutId(Fill.Rows(count = day.prayerTimes.size + 1))) {
+            SharedHeightColumn(Modifier.fillMaxHeight().padding(vertical = 4.dp)) {
                 val isNextToday = day.next.time.toLocalDate() == day.date
                 day.prayerTimes.forEach { prayerTime ->
                     val prayer = prayerTime.prayer
@@ -175,12 +191,103 @@ private fun HomeContent(
                 }
             }
         }
-        Text(
-            stringResource(R.string.home_log_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
+        if (showLogHint) {
+            Text(
+                stringResource(R.string.home_log_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+    }
+}
+
+/** How a child of [FillingPage] takes the page's spare height. Children without one keep their own height. */
+private sealed interface Fill {
+    /** The Prayer Time rows: they share the spare height evenly, up to [MAX_ROW_HEIGHT] each. */
+    data class Rows(val count: Int) : Fill
+
+    /** The Next Prayer card: whatever the rows leave. */
+    data object TakesTheRest : Fill
+}
+
+private val MAX_ROW_HEIGHT = 64.dp
+private val PAGE_GAP = 10.dp
+private val PAGE_PADDING_H = 16.dp
+private val PAGE_PADDING_V = 8.dp
+
+/**
+ * Today's page: a column that fills its viewport exactly when its content fits. Spare height goes first to the
+ * [Fill.Rows] child (each row up to [MAX_ROW_HEIGHT]), then to the [Fill.TakesTheRest] child. When the content is
+ * taller than the viewport (a large font), nothing grows and the page scrolls.
+ */
+@Composable
+private fun FillingPage(content: @Composable () -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val viewport = constraints.maxHeight
+        Layout(
+            content,
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = PAGE_PADDING_H, vertical = PAGE_PADDING_V),
+        ) { children, constraints ->
+            val width = constraints.maxWidth
+            val gap = PAGE_GAP.roundToPx()
+            val own = Constraints(maxWidth = width)
+            val rows = children.firstOrNull { it.layoutId is Fill.Rows }
+            val rest = children.firstOrNull { it.layoutId == Fill.TakesTheRest }
+            val rowsMin = rows?.minIntrinsicHeight(width) ?: 0
+            val restMin = rest?.minIntrinsicHeight(width) ?: 0
+            val fixed = children.filter { it !== rows && it !== rest }.associateWith { it.measure(own) }
+            val used = fixed.values.sumOf { it.height } + rowsMin + restMin + gap * (children.size - 1).coerceAtLeast(0)
+            val target = if (viewport == Constraints.Infinity) 0 else viewport - PAGE_PADDING_V.roundToPx() * 2
+            val spare = (target - used).coerceAtLeast(0)
+            val rowsCap = (rows?.layoutId as? Fill.Rows)?.let { (MAX_ROW_HEIGHT.roundToPx() * it.count + 8.dp.roundToPx() - rowsMin).coerceAtLeast(0) } ?: 0
+            val rowsExtra = if (rest == null) spare else spare.coerceAtMost(rowsCap)
+            fun exactly(height: Int) = Constraints(minWidth = 0, maxWidth = width, minHeight = height, maxHeight = height)
+            val placeables = children.map {
+                when (it) {
+                    rows -> it.measure(exactly(rowsMin + rowsExtra))
+                    rest -> it.measure(exactly(restMin + spare - rowsExtra))
+                    else -> fixed.getValue(it)
+                }
+            }
+            val height = placeables.sumOf { it.height } + gap * (placeables.size - 1).coerceAtLeast(0)
+            layout(width, height) {
+                var y = 0
+                placeables.forEach {
+                    it.placeRelative(0, y)
+                    y += it.height + gap
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A column that gives each child its own minimum height plus an even share of whatever height is left over, so taller
+ * rows (a wrapped name at a large font) are never squeezed to fit the others.
+ */
+@Composable
+private fun SharedHeightColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Layout(content, modifier) { children, constraints ->
+        val width = constraints.maxWidth
+        val mins = children.map { it.minIntrinsicHeight(width) }
+        val spare = if (constraints.hasBoundedHeight) (constraints.maxHeight - mins.sum()).coerceAtLeast(0) else 0
+        val share = if (children.isEmpty()) 0 else spare / children.size
+        val placeables = children.mapIndexed { i, child ->
+            val h = mins[i] + share + if (i < spare - share * children.size) 1 else 0
+            child.measure(Constraints(minWidth = width, maxWidth = width, minHeight = h, maxHeight = h))
+        }
+        val height = placeables.sumOf { it.height }.coerceAtLeast(constraints.minHeight)
+        layout(width, height) {
+            var y = 0
+            placeables.forEach {
+                it.placeRelative(0, y)
+                y += it.height
+            }
+        }
     }
 }
 
@@ -234,7 +341,7 @@ private fun FixAlertsTip(onOpen: () -> Unit, onDone: () -> Unit) {
 private fun DateLine(day: DisplayDay, modifier: Modifier = Modifier) {
     val format = LocalDisplayFormatter.current
     Column(modifier) {
-        Text(format.gregorianDate(day.date), style = MaterialTheme.typography.titleLarge)
+        Text(format.gregorianDate(day.date), style = MaterialTheme.typography.titleMedium)
         Text(
             format.hijriDate(day.hijriDate),
             style = MaterialTheme.typography.bodyMedium,
@@ -262,33 +369,38 @@ private data class LogCell(val state: LogState, val markable: Boolean)
  * Prayer has passed (hidden before Fajr, when the previous Prayer was yesterday's).
  */
 @Composable
-private fun NextPrayerCard(day: DisplayDay, now: Instant) {
+private fun NextPrayerCard(day: DisplayDay, now: Instant, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val next = day.next
     val format = LocalDisplayFormatter.current
     val onCard = colors.onTertiaryContainer
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(colors.tertiaryContainer, RoundedCornerShape(28.dp))
-            .padding(horizontal = 22.dp, vertical = 20.dp)
+            .padding(horizontal = 22.dp, vertical = 12.dp)
             .semantics(mergeDescendants = true) {},
+        // When the page gives it spare height, the content stays in the middle.
+        verticalArrangement = Arrangement.Center,
     ) {
-        Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.bodyMedium, color = onCard)
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(prayerName(next), style = MaterialTheme.typography.headlineLarge, color = onCard, modifier = Modifier.weight(1f))
-            Text(format.time(next.time), style = MaterialTheme.typography.headlineLarge, color = onCard)
+        // The label and the countdown share a line, so Today fits a small phone (#87).
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.bodyMedium, color = onCard, modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.tertiary,
+            )
         }
-        Text(
-            text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
-            style = MaterialTheme.typography.titleLarge,
-            color = colors.tertiary,
-        )
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(prayerName(next), style = MaterialTheme.typography.headlineMedium, color = onCard, modifier = Modifier.weight(1f))
+            Text(format.time(next.time), style = MaterialTheme.typography.headlineMedium, color = onCard)
+        }
         val previous = day.prayerTimes.lastOrNull { !it.time.toInstant().isAfter(now) }
         if (previous != null && next.time.toLocalDate() == day.date) {
             val total = Duration.between(previous.time, next.time).seconds.coerceAtLeast(1)
             val passed = Duration.between(previous.time.toInstant(), now).seconds.coerceIn(0, total)
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(8.dp))
             Box(Modifier.fillMaxWidth().height(6.dp).background(onCard.copy(alpha = 0.2f), RoundedCornerShape(3.dp))) {
                 Box(
                     Modifier
@@ -297,7 +409,7 @@ private fun NextPrayerCard(day: DisplayDay, now: Instant) {
                         .background(colors.tertiary, RoundedCornerShape(3.dp)),
                 )
             }
-            Row(Modifier.fillMaxWidth().padding(top = 6.dp).clearAndSetSemantics {}) {
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {}) {
                 Text("${prayerName(previous)} ${format.time(previous.time)}", style = MaterialTheme.typography.bodySmall, color = onCard, modifier = Modifier.weight(1f))
                 Text("${prayerName(next)} ${format.time(next.time)}", style = MaterialTheme.typography.bodySmall, color = onCard)
             }
@@ -342,8 +454,9 @@ private fun TimeRow(
                         }
                 },
             )
-            .heightIn(min = 54.dp)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            // A Prayer row is a 48dp tap target; Sunrise is never tapped, so it may be shorter.
+            .heightIn(min = if (log == null) 0.dp else 48.dp)
+            .padding(horizontal = 10.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {

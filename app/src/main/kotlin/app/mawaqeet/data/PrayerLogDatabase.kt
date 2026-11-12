@@ -53,6 +53,9 @@ internal interface PrayerLogDao {
     @Query("SELECT * FROM prayer_log")
     fun allEntries(): List<PrayerLogEntry>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM prayer_log)")
+    fun hasAnyEntry(): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(entry: PrayerLogEntry)
 

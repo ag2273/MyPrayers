@@ -90,6 +90,9 @@ class PrayerCore(
      */
     fun deletePrayerLog() = log.deleteAllEntries(firstUseFrom = prayerDayDateAt(clock.instant(), places()))
 
+    /** Whether the Prayer Log holds any mark at all, on any Prayer Day. Today shows its log hint until it does. */
+    fun hasAnyMark(): Boolean = log.hasAnyEntry()
+
     /** Marks [prayer] on the Prayer Day [date] as prayed, unless it isn't markable yet or the day is read-only. */
     fun mark(date: LocalDate, prayer: Prayer): LogCommandResult = setPrayed(date, prayer, true)
 

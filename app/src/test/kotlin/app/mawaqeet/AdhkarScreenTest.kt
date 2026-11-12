@@ -110,6 +110,7 @@ internal class FakeAdhkarRepository : AdhkarRepository {
 internal object EmptyLog : PrayerLogRepository {
     override fun prayedOn(prayerDay: LocalDate) = emptySet<Prayer>()
     override fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean) = Unit
+    override fun hasAnyEntry() = false
     override fun firstUseDate(): LocalDate? = null
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) = Unit
     override fun pastPlaces() = emptyList<PastPlace>()
