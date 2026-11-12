@@ -7,6 +7,9 @@
   - datastore/settings.preferences_pb: every setting, including the location. DataStore keeps one file, so the
     location can't be excluded on its own; the other settings are re-chosen in onboarding after a cloud restore.
   - alert_plan.txt (device-protected): Prayer Times from which the location could be worked out; rebuilt anyway.
+  The Backup File (#98, Settings → Backup) is separate from these rules: the user exports it by hand with the
+  system file picker to wherever they choose; the app never sends it anywhere. It holds the same settings and
+  records (not Custom Adhan files).
   Keep this file and backup_rules.xml (Android 8-11) in step.
 -->
 <data-extraction-rules>

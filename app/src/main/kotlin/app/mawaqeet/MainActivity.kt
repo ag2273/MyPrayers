@@ -122,6 +122,7 @@ class MainActivity : AppCompatActivity() {
                 val storedLocation by remember { settingsStore.savedLocation.map { listOfNotNull(it) } }.collectAsState(initial = null)
                 val onboarded by settingsStore.onboardingDone.collectAsState(initial = null)
                 val fixAlertsDone by settingsStore.fixAlertsDone.collectAsState(initial = true)
+                val lastBackupExport by settingsStore.lastBackupExport.collectAsState(initial = null)
                 val current = settings ?: return@MawaqeetTheme
                 val onboardingDone = onboarded ?: return@MawaqeetTheme
                 val digits = storedDigits ?: return@MawaqeetTheme
@@ -386,6 +387,12 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
+                            override fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit) {
+                                scope.launch {
+                                    onResult(app.backup.export { contentResolver.openOutputStream(uri, "w") })
+                                }
+                            }
+
                             override fun setCustomAdhan(recording: AdhanRecording, uri: Uri?) {
                                 // Keep read access before storing, so the alert can open the file after a reboot.
                                 if (uri != null) CustomAdhanFiles.keep(this@MainActivity, uri)
@@ -475,6 +482,7 @@ class MainActivity : AppCompatActivity() {
                         settingsActions,
                         widgetAppearance,
                         onNavigate = { settingsRoute = it },
+                        lastBackupExport = lastBackupExport,
                     )
                 } else {
                     MainScaffold(tab, onSelect = { tab = it }) {

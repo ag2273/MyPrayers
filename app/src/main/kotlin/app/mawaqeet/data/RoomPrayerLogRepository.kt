@@ -3,6 +3,7 @@ package app.mawaqeet.data
 import app.mawaqeet.core.Location
 import app.mawaqeet.core.PastPlace
 import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.PrayerLogBackup
 import app.mawaqeet.core.PrayerLogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,5 +59,17 @@ class RoomPrayerLogRepository(private val db: PrayerLogDatabase) : PrayerLogRepo
             dao.replaceFirstUse(FirstUse(prayerDay = firstUseFrom.toString()))
         }
         version.update { it + 1 }
+    }
+
+    /** The whole Prayer Log as a Backup File holds it, read in one transaction. Blocks. */
+    fun backup(): PrayerLogBackup = db.runInTransaction<PrayerLogBackup> {
+        PrayerLogBackup(
+            firstUse = firstUseDate(),
+            prayed = dao.allEntries()
+                .mapNotNull { entry -> Prayer.entries.firstOrNull { it.name == entry.prayer }?.let { LocalDate.parse(entry.prayerDay) to it } }
+                .groupBy({ it.first }, { it.second })
+                .mapValues { it.value.toSet() },
+            pastPlaces = pastPlaces(),
+        )
     }
 }

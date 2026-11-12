@@ -55,7 +55,7 @@ class AccessibilityTest {
     fun `in Arabic at 200% text nothing is cut off and every tap target is big enough`() =
         checkScreens(
             "سجل الصلاة", "رجوع", "الإعدادات", "الفجر",
-            listOf("الموقع وطريقة الحساب", "التنبيهات والأذان", "اللغة والعرض", "أدوات الشاشة الرئيسية", "حول مواقيت وبياناتك"),
+            listOf("الموقع وطريقة الحساب", "التنبيهات والأذان", "اللغة والعرض", "أدوات الشاشة الرئيسية", "النسخة الاحتياطية", "حول مواقيت وبياناتك"),
         )
 
     @Test
@@ -63,6 +63,6 @@ class AccessibilityTest {
     fun `in English at 200% text nothing is cut off and every tap target is big enough`() =
         checkScreens(
             "Prayer Log", "Back", "Settings", "Fajr",
-            listOf("Location & calculation", "Alerts & adhan", "Language & display", "Widgets", "About & your data"),
+            listOf("Location & calculation", "Alerts & adhan", "Language & display", "Widgets", "Backup", "About & your data"),
         )
 }
