@@ -235,6 +235,39 @@ class SettingsScreenTest {
         }
     }
 
+    @Test
+    @Config(qualifiers = "en")
+    fun `morning and evening adhkar reminders are off under Worship reminders, and the morning one at 60 minutes after Fajr is stored`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun reminders() = runBlocking { store.settings.first() }.alerts.worshipReminders
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Morning adhkar").performScrollTo().assertIsOff()
+            compose.onNodeWithText("Evening adhkar").performScrollTo().assertIsOff()
+            compose.onNodeWithText("30 minutes after Fajr, skipped once you have read them").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("30 minutes after Asr, skipped once you have read them").performScrollTo().assertIsDisplayed()
+            // The minutes only show once it is on.
+            assertEquals(false, shown("60 min"))
+
+            compose.onNodeWithText("Morning adhkar").performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { reminders().morningAdhkar.enabled && shown("60 min") }
+            compose.onNodeWithText("30 min").performScrollTo().assertIsSelected()
+            compose.onNodeWithText("60 min").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { reminders().morningAdhkar.minutes == 60 }
+            compose.waitUntil(timeoutMillis = 5_000) { shown("60 minutes after Fajr, skipped once you have read them") }
+            compose.onNodeWithText("60 min").assertIsSelected()
+            assertEquals(app.mawaqeet.core.AdhkarReminder(), reminders().eveningAdhkar)
+            compose.onNodeWithText("Evening adhkar").performScrollTo().assertIsOff()
+        } finally {
+            runBlocking {
+                store.setAdhkarReminder(app.mawaqeet.core.AdhkarSetId.MORNING, false)
+                store.setAdhkarReminderMinutes(app.mawaqeet.core.AdhkarSetId.MORNING, 30)
+            }
+        }
+    }
+
     /** Opens Settings → Alerts with Do Not Disturb access granted and Prayer Silence turned on, then runs [block]. */
     private fun withPrayerSilenceOn(block: (alerts: () -> app.mawaqeet.core.AlertSettings) -> Unit) {
         shadowOf(compose.activity.getSystemService(NotificationManager::class.java)).setNotificationPolicyAccessGranted(true)

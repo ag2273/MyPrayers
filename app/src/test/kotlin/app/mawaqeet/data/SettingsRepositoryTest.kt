@@ -328,4 +328,29 @@ class SettingsRepositoryTest {
 
         assertEquals(2, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat.intervalHours)
     }
+
+    @Test
+    fun `adhkar reminders are off 30 minutes after their Prayer by default, and each keeps its own choice after an app restart`() {
+        val off = app.mawaqeet.core.AdhkarReminder(enabled = false, minutes = 30)
+        val before = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders
+        assertEquals(off, before.morningAdhkar)
+        assertEquals(off, before.eveningAdhkar)
+        withRepository { repo, _ ->
+            repo.setAdhkarReminder(app.mawaqeet.core.AdhkarSetId.MORNING, true)
+            repo.setAdhkarReminderMinutes(app.mawaqeet.core.AdhkarSetId.MORNING, 60)
+            repo.setAdhkarReminderMinutes(app.mawaqeet.core.AdhkarSetId.EVENING, 15)
+        }
+
+        val after = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders
+
+        assertEquals(app.mawaqeet.core.AdhkarReminder(enabled = true, minutes = 60), after.morningAdhkar)
+        assertEquals(app.mawaqeet.core.AdhkarReminder(enabled = false, minutes = 15), after.eveningAdhkar)
+    }
+
+    @Test
+    fun `a stored adhkar reminder minutes that is not offered reads as the default`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("worship_morning_adhkar_minutes")] = 20 } }
+
+        assertEquals(30, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.morningAdhkar.minutes)
+    }
 }

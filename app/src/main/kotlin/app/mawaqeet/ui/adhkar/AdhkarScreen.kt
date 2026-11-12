@@ -70,16 +70,22 @@ private fun slotName(slot: AdhkarSlot): String =
 /**
  * The «الأذكار» tab (#62, #70, #74): the morning and evening sets and the five after-prayer slots with today's
  * state; one opens in the reader. The Adhkar Record's week grid opens from the end of the list. [adhkar] is null while the bundled catalog loads. [changes] signals every write to the
- * Adhkar repository.
+ * Adhkar repository. [openSlot] (an adhkar reminder's tap, #75) opens that set in the reader, then [onOpened] is called.
  */
 @Composable
-fun AdhkarScreen(adhkar: Adhkar?, changes: StateFlow<Int>) {
+fun AdhkarScreen(adhkar: Adhkar?, changes: StateFlow<Int>, openSlot: AdhkarSlot? = null, onOpened: () -> Unit = {}) {
     var open by rememberSaveable { mutableStateOf<String?>(null) }
     var record by rememberSaveable { mutableStateOf(false) }
-    val openSlot = open?.let(AdhkarSlot::ofKey)
+    LaunchedEffect(openSlot) {
+        if (openSlot == null) return@LaunchedEffect
+        record = false
+        open = openSlot.key
+        onOpened()
+    }
+    val reading = open?.let(AdhkarSlot::ofKey)
     when {
-        adhkar != null && openSlot != null ->
-            SetReader(adhkar, openSlot, changes, onSwitch = { open = it.key }, onBack = { open = null })
+        adhkar != null && reading != null ->
+            SetReader(adhkar, reading, changes, onSwitch = { open = it.key }, onBack = { open = null })
         adhkar != null && record -> AdhkarRecordPage(adhkar, changes, onBack = { record = false })
         else -> SetList(adhkar, changes, onOpen = { open = it.key }, onOpenRecord = { record = true })
     }

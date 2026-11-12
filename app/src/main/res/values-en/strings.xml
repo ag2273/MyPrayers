@@ -484,4 +484,10 @@
     <string name="worship_reminders_channel_description">Gentle reminders with the usual notification sound, never an adhan</string>
     <string name="salawat_reminder_title">Send salawat on the Prophet ﷺ</string>
     <string name="salawat_reminder_text">O Allah, send prayers and peace upon our Prophet Muhammad</string>
+    <!-- Morning and evening adhkar reminders (#75) -->
+    <string name="adhkar_morning_reminder_description">%1$s minutes after Fajr, skipped once you have read them</string>
+    <string name="adhkar_evening_reminder_description">%1$s minutes after Asr, skipped once you have read them</string>
+    <string name="adhkar_reminder_minutes">%1$s min</string>
+    <string name="adhkar_morning_reminder_text">Time for the morning adhkar</string>
+    <string name="adhkar_evening_reminder_text">Time for the evening adhkar</string>
 </resources>

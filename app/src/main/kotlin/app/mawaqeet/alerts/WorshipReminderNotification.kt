@@ -1,20 +1,23 @@
 package app.mawaqeet.alerts
 
 import android.app.NotificationChannel
+import android.app.PendingIntent
 import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioAttributes
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import app.mawaqeet.MainActivity
 import app.mawaqeet.R
+import app.mawaqeet.core.AdhkarSlot
 import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.WorshipReminderKind
 
 /**
  * A Worship Reminder's gentle notification (#63) on its own «تذكيرات العبادة» channel, with the system's default
  * notification sound (never an adhan). One notification per kind: a new salawat reminder replaces the last one.
- * Tapping opens the app.
+ * Tapping opens the app; an adhkar reminder's tap opens its Adhkar Set (#75).
  */
 internal object WorshipReminderNotification {
     const val CHANNEL = "worship_reminders"
@@ -27,12 +30,22 @@ internal object WorshipReminderNotification {
         ensureChannel(context)
         val (title, text) = when (reminder.kind) {
             WorshipReminderKind.SALAWAT -> R.string.salawat_reminder_title to R.string.salawat_reminder_text
+            WorshipReminderKind.MORNING_ADHKAR -> R.string.adhkar_morning to R.string.adhkar_morning_reminder_text
+            WorshipReminderKind.EVENING_ADHKAR -> R.string.adhkar_evening to R.string.adhkar_evening_reminder_text
         }
+        val tap = reminder.kind.adhkarSet?.let { set ->
+            PendingIntent.getActivity(
+                context,
+                ID_BASE + reminder.kind.ordinal,
+                MainActivity.openAdhkarIntent(context, AdhkarSlot.of(set)),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        } ?: AlertScheduler.openAppIntent(context)
         val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(title))
             .setContentText(context.getString(text))
-            .setContentIntent(AlertScheduler.openAppIntent(context))
+            .setContentIntent(tap)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setWhen(reminder.instant.toEpochMilli())

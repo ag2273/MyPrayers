@@ -24,6 +24,8 @@ import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.AdhkarReminder
+import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
@@ -288,6 +290,17 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[SALAWAT_INTERVAL_HOURS] = hours }
     }
 
+    /** «أذكار الصباح» or «أذكار المساء» under «تذكيرات العبادة» (#75); [set] is MORNING or EVENING. */
+    suspend fun setAdhkarReminder(set: AdhkarSetId, on: Boolean) {
+        store.edit { it[adhkarReminderKeys(set).first] = on }
+    }
+
+    /** [minutes] after Fajr (morning) or Asr (evening), one of [AdhkarReminder.MINUTES]; kept while the reminder is off. */
+    suspend fun setAdhkarReminderMinutes(set: AdhkarSetId, minutes: Int) {
+        require(minutes in AdhkarReminder.MINUTES)
+        store.edit { it[adhkarReminderKeys(set).second] = minutes }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -357,6 +370,8 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                     intervalHours = this[SALAWAT_INTERVAL_HOURS]?.takeIf { it in SalawatReminder.INTERVAL_HOURS }
                         ?: default.worshipReminders.salawat.intervalHours,
                 ),
+                morningAdhkar = adhkarReminder(AdhkarSetId.MORNING, default.worshipReminders.morningAdhkar),
+                eveningAdhkar = adhkarReminder(AdhkarSetId.EVENING, default.worshipReminders.eveningAdhkar),
             ),
         )
     }
@@ -410,6 +425,26 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         /** Worship Reminders (#63): «الصلاة على النبي ﷺ» on or off, and its interval in hours. */
         private val SALAWAT_ENABLED = booleanPreferencesKey("worship_salawat_enabled")
         private val SALAWAT_INTERVAL_HOURS = intPreferencesKey("worship_salawat_interval_hours")
+
+        /** Worship Reminders (#75): the morning and evening adhkar reminders, on or off, and their minutes after the Prayer. */
+        private fun adhkarReminderKeys(set: AdhkarSetId) = when (set) {
+            AdhkarSetId.MORNING -> MORNING_ADHKAR_ENABLED to MORNING_ADHKAR_MINUTES
+            AdhkarSetId.EVENING -> EVENING_ADHKAR_ENABLED to EVENING_ADHKAR_MINUTES
+            AdhkarSetId.AFTER_PRAYER -> throw IllegalArgumentException("After-prayer adhkar have no reminder")
+        }
+
+        private fun Preferences.adhkarReminder(set: AdhkarSetId, default: AdhkarReminder): AdhkarReminder {
+            val (enabled, minutes) = adhkarReminderKeys(set)
+            return AdhkarReminder(
+                enabled = this[enabled] ?: default.enabled,
+                minutes = this[minutes]?.takeIf { it in AdhkarReminder.MINUTES } ?: default.minutes,
+            )
+        }
+
+        private val MORNING_ADHKAR_ENABLED = booleanPreferencesKey("worship_morning_adhkar_enabled")
+        private val MORNING_ADHKAR_MINUTES = intPreferencesKey("worship_morning_adhkar_minutes")
+        private val EVENING_ADHKAR_ENABLED = booleanPreferencesKey("worship_evening_adhkar_enabled")
+        private val EVENING_ADHKAR_MINUTES = intPreferencesKey("worship_evening_adhkar_minutes")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

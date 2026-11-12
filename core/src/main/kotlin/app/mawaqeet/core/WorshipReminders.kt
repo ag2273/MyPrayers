@@ -6,12 +6,32 @@ import java.time.LocalDate
 
 /**
  * Settings → Alerts → «تذكيرات العبادة»: the Worship Reminders, each off by default and switched on separately. None is
- * planned while the master switch ([AlertSettings.enabled]) is off. Later reminders (morning and evening adhkar,
- * Surat Al-Kahf) join here as their own fields.
+ * planned while the master switch ([AlertSettings.enabled]) is off. Later reminders (Surat Al-Kahf) join here as their
+ * own fields.
  */
 data class WorshipReminders(
     val salawat: SalawatReminder = SalawatReminder(),
+    /** «أذكار الصباح» (#75): [AdhkarReminder.minutes] after Fajr; opens the morning set, skipped once it is complete. */
+    val morningAdhkar: AdhkarReminder = AdhkarReminder(),
+    /** «أذكار المساء» (#75): [AdhkarReminder.minutes] after Asr; opens the evening set, skipped once it is complete. */
+    val eveningAdhkar: AdhkarReminder = AdhkarReminder(),
 )
+
+/** The morning or evening adhkar reminder: once a Prayer Day, [minutes] after Fajr (morning) or Asr (evening). */
+data class AdhkarReminder(
+    val enabled: Boolean = false,
+    /** One of [MINUTES]; kept while the reminder is off. */
+    val minutes: Int = DEFAULT_MINUTES,
+) {
+    init {
+        require(minutes in MINUTES) { "Adhkar reminders come $MINUTES minutes after their Prayer, not $minutes" }
+    }
+
+    companion object {
+        const val DEFAULT_MINUTES = 30
+        val MINUTES = listOf(15, 30, 45, 60)
+    }
+}
 
 /** «الصلاة على النبي ﷺ»: a reminder every [intervalHours] hours from Sunrise + [intervalHours] until Isha. */
 data class SalawatReminder(
@@ -31,8 +51,15 @@ data class SalawatReminder(
     }
 }
 
-/** Which Worship Reminder a [PlannedWorshipReminder] is. Stored by name: add new kinds at the end. */
-enum class WorshipReminderKind { SALAWAT }
+/**
+ * Which Worship Reminder a [PlannedWorshipReminder] is. Stored by name: add new kinds at the end. [adhkarSet] is the
+ * Adhkar Set an adhkar reminder opens (and is skipped for once complete); null for the others.
+ */
+enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
+    SALAWAT,
+    MORNING_ADHKAR(AdhkarSetId.MORNING),
+    EVENING_ADHKAR(AdhkarSetId.EVENING),
+}
 
 /**
  * One Worship Reminder the scheduler must raise: a gentle notification at [instant], never an adhan. Identified by
@@ -64,3 +91,12 @@ internal fun salawatReminders(salawat: SalawatReminder, prayerDay: LocalDate, su
         .mapIndexed { slot, instant -> PlannedWorshipReminder(WorshipReminderKind.SALAWAT, instant, prayerDay, slot) }
         .toList()
 }
+
+/** [kind]'s reminder of one Prayer Day: [AdhkarReminder.minutes] after [prayerTime] (Fajr or Asr), when it is on. */
+internal fun adhkarReminder(
+    reminder: AdhkarReminder,
+    kind: WorshipReminderKind,
+    prayerDay: LocalDate,
+    prayerTime: Instant,
+): PlannedWorshipReminder? =
+    if (reminder.enabled) PlannedWorshipReminder(kind, prayerTime.plus(Duration.ofMinutes(reminder.minutes.toLong())), prayerDay) else null

@@ -63,6 +63,8 @@ import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.AdhkarReminder
+import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.ui.components.Segment
@@ -244,6 +246,37 @@ private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions)
                 Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             )
         }
+        RowDivider()
+        AdhkarReminderRows(AdhkarSetId.MORNING, alerts.worshipReminders.morningAdhkar, actions)
+        RowDivider()
+        AdhkarReminderRows(AdhkarSetId.EVENING, alerts.worshipReminders.eveningAdhkar, actions)
+    }
+}
+
+/** «أذكار الصباح» or «أذكار المساء» (#75): its switch, then its minutes after Fajr or Asr once it is on. */
+@Composable
+private fun AdhkarReminderRows(set: AdhkarSetId, reminder: AdhkarReminder, actions: SettingsActions) {
+    val format = LocalDisplayFormatter.current
+    val (title, description) = when (set) {
+        AdhkarSetId.EVENING -> R.string.adhkar_evening to R.string.adhkar_evening_reminder_description
+        else -> R.string.adhkar_morning to R.string.adhkar_morning_reminder_description
+    }
+    SwitchRow(
+        title = stringResource(title),
+        description = stringResource(description, format.number(reminder.minutes)),
+        checked = reminder.enabled,
+        onChange = { actions.setAdhkarReminder(set, it) },
+    )
+    if (reminder.enabled) {
+        RowDivider()
+        SegmentedChoice(
+            AdhkarReminder.MINUTES.map { minutes ->
+                Segment(stringResource(R.string.adhkar_reminder_minutes, format.number(minutes)), reminder.minutes == minutes) {
+                    actions.setAdhkarReminderMinutes(set, minutes)
+                }
+            },
+            Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        )
     }
 }
 

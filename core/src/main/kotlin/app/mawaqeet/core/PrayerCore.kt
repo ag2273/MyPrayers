@@ -129,8 +129,11 @@ class PrayerCore(
     private fun worshipReminders(days: List<Pair<LocalDate, CalculatedDay>>, now: Instant, end: Instant): List<PlannedWorshipReminder> {
         val reminders = settings.alerts.worshipReminders
         return days.flatMap { (date, day) ->
-            val isha = day.prayerTimes.single { it.prayer == Prayer.ISHA }.time.toInstant()
-            salawatReminders(reminders.salawat, date, day.sunrise.toInstant(), isha)
+            fun at(prayer: Prayer) = day.prayerTimes.single { it.prayer == prayer }.time.toInstant()
+            salawatReminders(reminders.salawat, date, day.sunrise.toInstant(), at(Prayer.ISHA)) + listOfNotNull(
+                adhkarReminder(reminders.morningAdhkar, WorshipReminderKind.MORNING_ADHKAR, date, at(Prayer.FAJR)),
+                adhkarReminder(reminders.eveningAdhkar, WorshipReminderKind.EVENING_ADHKAR, date, at(Prayer.ASR)),
+            )
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
     }
 

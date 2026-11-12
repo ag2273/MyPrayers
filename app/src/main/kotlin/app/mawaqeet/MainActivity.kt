@@ -34,6 +34,7 @@ import app.mawaqeet.alerts.AlertPermissions
 import app.mawaqeet.alerts.AlertRescheduler
 import app.mawaqeet.alerts.AlertScheduler
 import app.mawaqeet.core.AdhanRecording
+import app.mawaqeet.core.AdhkarSlot
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.alerts.CustomAdhanFiles
 import app.mawaqeet.alerts.PrayerSilencer
@@ -80,22 +81,24 @@ import java.time.Clock
 
 /** AppCompatActivity (not ComponentActivity) so the per-app language backport works on Android 8–12. */
 class MainActivity : AppCompatActivity() {
-    /** Which screen a widget tap asked for; [OpenRequest.id] makes the same request twice still count. */
-    private data class OpenRequest(val opens: Opens, val id: Long = System.nanoTime())
+    /** Which screen a widget tap asked for (and which Adhkar Set a reminder's tap); [OpenRequest.id] makes the same request twice still count. */
+    private data class OpenRequest(val opens: Opens, val slot: AdhkarSlot? = null, val id: Long = System.nanoTime())
+
+    private fun openRequestOf(intent: Intent?): OpenRequest? = Opens.from(intent)?.let { OpenRequest(it, adhkarSlot(intent)) }
 
     private var openRequest by mutableStateOf<OpenRequest?>(null)
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        openRequest = Opens.from(intent)?.let(::OpenRequest)
+        openRequest = openRequestOf(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         // A recreated activity keeps its own screen; only a fresh launch follows the widget's request.
-        if (savedInstanceState == null) openRequest = Opens.from(intent)?.let(::OpenRequest)
+        if (savedInstanceState == null) openRequest = openRequestOf(intent)
         val clock = Clock.systemUTC()
         val app = application as MawaqeetApplication
         val prayerLog = app.prayerLog
@@ -132,13 +135,20 @@ class MainActivity : AppCompatActivity() {
                 var settingsRoute by rememberSaveable { mutableStateOf<SettingsRoute?>(null) }
                 var showLocation by rememberSaveable { mutableStateOf(false) }
                 var showFixAlerts by rememberSaveable { mutableStateOf(false) }
+                // The Adhkar Set an adhkar reminder's tap asked for, until the Adhkar tab opens it.
+                var adhkarToOpen by remember { mutableStateOf<AdhkarSlot?>(null) }
                 // A widget tap opens today's Prayer Times (Home) or the Prayer Log, from whatever screen was open.
                 LaunchedEffect(openRequest) {
                     val request = openRequest ?: return@LaunchedEffect
                     showLocation = false
                     showFixAlerts = false
                     settingsRoute = null
-                    tab = if (request.opens == Opens.PRAYER_LOG) Tab.LOG else Tab.TODAY
+                    tab = when (request.opens) {
+                        Opens.PRAYER_LOG -> Tab.LOG
+                        Opens.ADHKAR -> Tab.ADHKAR
+                        Opens.TODAY -> Tab.TODAY
+                    }
+                    adhkarToOpen = request.slot
                     openRequest = null
                 }
                 val scope = rememberCoroutineScope()
@@ -290,6 +300,14 @@ class MainActivity : AppCompatActivity() {
 
                             override fun setSalawatInterval(hours: Int) {
                                 scope.launch { settingsStore.setSalawatInterval(hours) }
+                            }
+
+                            override fun setAdhkarReminder(set: app.mawaqeet.core.AdhkarSetId, on: Boolean) {
+                                scope.launch { settingsStore.setAdhkarReminder(set, on) }
+                            }
+
+                            override fun setAdhkarReminderMinutes(set: app.mawaqeet.core.AdhkarSetId, minutes: Int) {
+                                scope.launch { settingsStore.setAdhkarReminderMinutes(set, minutes) }
                             }
 
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
@@ -469,7 +487,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     }
                     Tab.LOG -> PrayerLogScreen(core, prayerLog.changes)
-                    Tab.ADHKAR -> AdhkarScreen(adhkar, app.adhkar.changes)
+                    Tab.ADHKAR -> AdhkarScreen(adhkar, app.adhkar.changes, openSlot = adhkarToOpen, onOpened = { adhkarToOpen = null })
                     Tab.TODAY -> HomeScreen(
                         core, clock, prayerLog.changes, locationName(savedLocation),
                         alerts = current.alerts,
@@ -511,10 +529,11 @@ class MainActivity : AppCompatActivity() {
         return app.locationUpdater.onDevicePosition(position.latitude, position.longitude)
     }
 
-    /** The screen a widget opens. */
+    /** The screen a widget (or an adhkar reminder) opens. */
     enum class Opens {
         TODAY,
-        PRAYER_LOG;
+        PRAYER_LOG,
+        ADHKAR;
 
         companion object {
             fun from(intent: Intent?): Opens? = intent?.getStringExtra(EXTRA_OPENS)?.let { name -> entries.firstOrNull { it.name == name } }
@@ -534,6 +553,18 @@ class MainActivity : AppCompatActivity() {
             // Distinct data per screen, so the two widgets' PendingIntents never replace each other's extras.
             .setData(Uri.parse("mawaqeet://open/${opens.name.lowercase()}"))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+        private const val EXTRA_ADHKAR_SLOT = "app.mawaqeet.extra.ADHKAR_SLOT"
+
+        /** What an adhkar Worship Reminder's tap starts (#75): the Adhkar tab with [slot] open in the reader. */
+        fun openAdhkarIntent(context: Context, slot: AdhkarSlot): Intent = Intent(context, MainActivity::class.java)
+            .putExtra(EXTRA_OPENS, Opens.ADHKAR.name)
+            .putExtra(EXTRA_ADHKAR_SLOT, slot.key)
+            .setData(Uri.parse("mawaqeet://open/adhkar/${slot.key}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+        /** The Adhkar slot [intent] asks to open, if any. */
+        fun adhkarSlot(intent: Intent?): AdhkarSlot? = intent?.getStringExtra(EXTRA_ADHKAR_SLOT)?.let(AdhkarSlot::ofKey)
     }
 
 }

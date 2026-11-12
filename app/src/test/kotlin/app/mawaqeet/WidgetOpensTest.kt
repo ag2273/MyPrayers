@@ -79,4 +79,23 @@ class WidgetOpensTest {
         assert(!today.filterEquals(log))
         assert(MainActivity.Opens.from(log) == MainActivity.Opens.PRAYER_LOG)
     }
+
+    private fun waitForPart(text: String) = compose.waitUntil(timeoutMillis = 5_000) {
+        compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    @Test
+    fun `an adhkar reminder's tap opens that set in the reader, from any screen`() {
+        activity = Robolectric.buildActivity(
+            MainActivity::class.java,
+            MainActivity.openAdhkarIntent(context, app.mawaqeet.core.AdhkarSlot.MORNING),
+        ).setup()
+        waitFor("Tap anywhere on the card to count")
+        waitForPart("أَصْبَحْنَا وَأَصْبَحَ")
+
+        tapWidget(MainActivity.Opens.PRAYER_LOG)
+        waitFor("This week")
+        activity.newIntent(MainActivity.openAdhkarIntent(context, app.mawaqeet.core.AdhkarSlot.EVENING))
+        waitForPart("أَمْسَيْنَا وَأَمْسَى")
+    }
 }

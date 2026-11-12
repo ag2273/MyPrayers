@@ -144,6 +144,12 @@ interface SettingsActions {
     /** Salawat reminders every [hours] hours, one of [app.mawaqeet.core.SalawatReminder.INTERVAL_HOURS]. */
     fun setSalawatInterval(hours: Int)
 
+    /** «أذكار الصباح» or «أذكار المساء» under «تذكيرات العبادة» (#75); [set] is MORNING or EVENING. */
+    fun setAdhkarReminder(set: app.mawaqeet.core.AdhkarSetId, on: Boolean)
+
+    /** The adhkar reminder's minutes after Fajr or Asr, one of [app.mawaqeet.core.AdhkarReminder.MINUTES]. */
+    fun setAdhkarReminderMinutes(set: app.mawaqeet.core.AdhkarSetId, minutes: Int)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 
