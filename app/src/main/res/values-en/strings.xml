@@ -437,6 +437,10 @@
     <string name="adhkar_set_complete_body">May Allah accept it from us and from you.</string>
     <string name="adhkar_record">Adhkar Record</string>
     <string name="adhkar_record_summary">The days you completed the adhkar</string>
+    <string name="tasbeeh">Tasbeeh</string>
+    <string name="tasbeeh_tap_hint">Tap to count</string>
+    <string name="tasbeeh_total">Today\'s total: %1$s</string>
+    <string name="tasbeeh_reset">Reset</string>
     <string name="adhkar_record_morning">Morning</string>
     <string name="adhkar_record_evening">Evening</string>
     <string name="adhkar_record_after_prayers">After prayers</string>
@@ -475,4 +479,15 @@
     <string name="widget_preview_clock_hijri">28 Jumada al-Ula 1448 AH</string>
     <string name="widget_preview_clock_gregorian">Sun 8 Nov</string>
     <string name="widget_preview_clock_since">from Sunrise 06:27</string>
+    <!-- Worship Reminders (#63) -->
+    <string name="worship_reminders">Worship reminders</string>
+    <string name="salawat_reminder">Salawat on the Prophet ﷺ</string>
+    <string name="salawat_reminder_description">A gentle reminder between Sunrise and Isha</string>
+    <string name="salawat_every_1">Every hour</string>
+    <string name="salawat_every_2">Every 2 hours</string>
+    <string name="salawat_every_3">Every 3 hours</string>
+    <string name="worship_reminders_channel_name">Worship reminders</string>
+    <string name="worship_reminders_channel_description">Gentle reminders with the usual notification sound, never an adhan</string>
+    <string name="salawat_reminder_title">Send salawat on the Prophet ﷺ</string>
+    <string name="salawat_reminder_text">O Allah, send prayers and peace upon our Prophet Muhammad</string>
 </resources>

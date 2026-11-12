@@ -284,6 +284,14 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.stepPrayerSilenceMinutes(jumuah, step) }
                             }
 
+                            override fun setSalawatReminder(on: Boolean) {
+                                scope.launch { settingsStore.setSalawatReminder(on) }
+                            }
+
+                            override fun setSalawatInterval(hours: Int) {
+                                scope.launch { settingsStore.setSalawatInterval(hours) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {

@@ -472,6 +472,12 @@
     <!-- The Adhkar Record week grid (#74): marks only, no streaks or scores. -->
     <string name="adhkar_record">سجل الأذكار</string>
     <string name="adhkar_record_summary">الأيام التي أتممت فيها الأذكار</string>
+    <!-- The free Tasbeeh at the top of the Adhkar tab (#71): today's total, not in the Adhkar Record. -->
+    <string name="tasbeeh">التسبيح</string>
+    <string name="tasbeeh_tap_hint">اضغط للتسبيح</string>
+    <!-- What TalkBack reads for the Tasbeeh counter. -->
+    <string name="tasbeeh_total">مجموع اليوم: %1$s</string>
+    <string name="tasbeeh_reset">تصفير</string>
     <string name="adhkar_record_morning">الصباح</string>
     <string name="adhkar_record_evening">المساء</string>
     <string name="adhkar_record_after_prayers">بعد الصلوات</string>
@@ -525,4 +531,15 @@
     <string name="widget_preview_clock_hijri">٢٨ جمادى الأولى ١٤٤٨ هـ</string>
     <string name="widget_preview_clock_gregorian">الأحد ٨ نوفمبر</string>
     <string name="widget_preview_clock_since">من الشروق ٠٦:٢٧</string>
+    <!-- Worship Reminders (#63) -->
+    <string name="worship_reminders">تذكيرات العبادة</string>
+    <string name="salawat_reminder">الصلاة على النبي ﷺ</string>
+    <string name="salawat_reminder_description">تذكير لطيف بين الشروق والعشاء</string>
+    <string name="salawat_every_1">كل ساعة</string>
+    <string name="salawat_every_2">كل ساعتين</string>
+    <string name="salawat_every_3">كل ثلاث ساعات</string>
+    <string name="worship_reminders_channel_name">تذكيرات العبادة</string>
+    <string name="worship_reminders_channel_description">تذكيرات لطيفة بصوت الإشعارات المعتاد، لا بالأذان</string>
+    <string name="salawat_reminder_title">صلِّ على النبي ﷺ</string>
+    <string name="salawat_reminder_text">اللهم صلِّ وسلِّم على نبينا محمد</string>
 </resources>

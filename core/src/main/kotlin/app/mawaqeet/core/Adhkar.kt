@@ -274,6 +274,24 @@ class Adhkar(
         return AdhkarWeek(days, countedFrom)
     }
 
+    /** The free Tasbeeh's total on the current Prayer Day: zero at each new Prayer Day. Not in the Adhkar Record. */
+    fun tasbeeh(): Int = repo.counts(today(), TASBEEH_SLOT)[TASBEEH_SLOT] ?: 0
+
+    /** Counts one Tasbeeh and returns the new total. */
+    fun countTasbeeh(): Int = synchronized(repo) {
+        val day = today()
+        repo.clearCountsBefore(day)
+        val total = tasbeeh() + 1
+        repo.setCount(day, TASBEEH_SLOT, TASBEEH_SLOT, total)
+        total
+    }
+
+    /** Puts the Tasbeeh total back to zero and returns it. */
+    fun resetTasbeeh(): Int = synchronized(repo) {
+        repo.clearCounts(today(), TASBEEH_SLOT)
+        0
+    }
+
     /** Permanently deletes the Adhkar Record (after the user confirms); it then counts from the current Prayer Day. */
     fun deleteRecord() = synchronized(repo) { repo.deleteRecord(firstUseFrom = today()) }
 
@@ -300,4 +318,13 @@ class Adhkar(
     }
 
     private fun PrayerDay.hasArrived(prayer: Prayer): Boolean = stateOf(prayer) != LogState.NOT_YET_DUE
+
+    private companion object {
+        /**
+         * The Tasbeeh total is kept as a count under this slot (and dhikr id), so it lasts for its Prayer Day like set
+         * progress. No [AdhkarSlot] has this key and it is never recorded, so it stays out of the Adhkar Record.
+         * Stored: never change it.
+         */
+        const val TASBEEH_SLOT = "tasbeeh"
+    }
 }

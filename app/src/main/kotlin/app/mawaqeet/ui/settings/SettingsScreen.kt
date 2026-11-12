@@ -138,6 +138,12 @@ interface SettingsActions {
     /** The − and + buttons of the Silence Window's duration ([jumuah]: Jumu'ah's), one [app.mawaqeet.core.PrayerSilence.MINUTES_STEP] per step. */
     fun stepPrayerSilenceMinutes(jumuah: Boolean, step: Int)
 
+    /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63). */
+    fun setSalawatReminder(on: Boolean)
+
+    /** Salawat reminders every [hours] hours, one of [app.mawaqeet.core.SalawatReminder.INTERVAL_HOURS]. */
+    fun setSalawatInterval(hours: Int)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 

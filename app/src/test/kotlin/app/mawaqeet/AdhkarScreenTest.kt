@@ -10,6 +10,7 @@ import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.Adhkar
 import app.mawaqeet.core.AdhkarCatalog
@@ -253,7 +254,7 @@ class AdhkarScreenTest {
     fun `after-prayer adhkar open on the most recent Prayer, and another Prayer can be chosen before starting`() {
         show()
         waitForText("After-prayer adhkar")
-        compose.onNodeWithText("After-prayer adhkar").performClick()
+        compose.onNodeWithText("After-prayer adhkar").performScrollTo().performClick()
         waitForText("Dhikr 1 of 1")
         compose.onNode(hasText("Fajr") and androidx.compose.ui.test.isSelected()).assertExists()
 
@@ -268,6 +269,62 @@ class AdhkarScreenTest {
         waitForText("Adhkar after Fajr completed for today")
         assertTrue(adhkar.isComplete(AdhkarSlot.afterPrayer(Prayer.FAJR)))
         assertFalse(adhkar.isComplete(AdhkarSlot.afterPrayer(Prayer.DHUHR)))
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `the Tasbeeh at the top counts each tap with a vibration and resets to zero`() {
+        show()
+        waitForText("التسبيح")
+        waitForTotal("مجموع اليوم: 0")
+
+        // The first tap waits for the screen: each tap re-reads the total off the main thread.
+        for (n in 1..3) {
+            compose.onNodeWithText("اضغط للتسبيح").performClick()
+            waitForTotal("مجموع اليوم: $n")
+        }
+        compose.onNodeWithText("3").assertIsDisplayed()
+        assertEquals(3, haptics.count)
+        assertEquals(3, adhkar.tasbeeh())
+        assertFalse(adhkar.isComplete(AdhkarSetId.MORNING))
+
+        compose.onNodeWithText("تصفير").performClick()
+        waitForTotal("مجموع اليوم: 0")
+        assertEquals(0, adhkar.tasbeeh())
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `the Tasbeeh shows the total already counted today`() {
+        repeat(33) { adhkar.countTasbeeh() }
+        show()
+        waitForTotal("مجموع اليوم: 33")
+        compose.onNodeWithText("33").assertIsDisplayed()
+    }
+
+    private fun waitForTotal(state: String) = compose.waitUntil(5_000) {
+        compose.onAllNodes(hasStateDescription(state)).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `TalkBack reads the Tasbeeh as one item with today's total and the count action`() {
+        adhkar.countTasbeeh()
+        show()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasStateDescription("Today's total: 1")).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val counter = compose.onNode(hasStateDescription("Today's total: 1")).fetchSemanticsNode()
+        val texts = counter.config[SemanticsProperties.Text].map { it.text }
+        assertTrue("reads $texts", "Tasbeeh" in texts)
+        assertEquals("Count one", counter.config[androidx.compose.ui.semantics.SemanticsActions.OnClick].label)
+
+        compose.onNode(hasStateDescription("Today's total: 1")).performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasStateDescription("Today's total: 2")).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Reset").assertIsDisplayed()
     }
 }
 

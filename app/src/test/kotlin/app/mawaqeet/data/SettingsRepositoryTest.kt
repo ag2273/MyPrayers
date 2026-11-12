@@ -305,4 +305,27 @@ class SettingsRepositoryTest {
         }
         assertEquals(app.mawaqeet.widget.WidgetAppearance(), withRepository { repo, _ -> repo.widgetAppearance.first() })
     }
+
+    @Test
+    fun `salawat reminders are off every 2 hours by default, and switching them on every 3 hours survives an app restart`() {
+        assertEquals(
+            app.mawaqeet.core.SalawatReminder(enabled = false, intervalHours = 2),
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat,
+        )
+        withRepository { repo, _ ->
+            repo.setSalawatReminder(true)
+            repo.setSalawatInterval(3)
+        }
+
+        val salawat = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat
+
+        assertEquals(app.mawaqeet.core.SalawatReminder(enabled = true, intervalHours = 3), salawat)
+    }
+
+    @Test
+    fun `a stored salawat interval that is not 1, 2 or 3 hours reads as the default`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("worship_salawat_interval_hours")] = 5 } }
+
+        assertEquals(2, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat.intervalHours)
+    }
 }

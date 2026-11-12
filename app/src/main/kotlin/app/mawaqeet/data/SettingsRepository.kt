@@ -24,7 +24,9 @@ import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
+import app.mawaqeet.core.WorshipReminders
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.widget.WidgetAppearance
 import app.mawaqeet.widget.WidgetColors
@@ -275,6 +277,17 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         }
     }
 
+    /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63); planned only while the master switch is on. */
+    suspend fun setSalawatReminder(on: Boolean) {
+        store.edit { it[SALAWAT_ENABLED] = on }
+    }
+
+    /** Every [hours] hours, one of [SalawatReminder.INTERVAL_HOURS]; kept while salawat reminders are off. */
+    suspend fun setSalawatInterval(hours: Int) {
+        require(hours in SalawatReminder.INTERVAL_HOURS)
+        store.edit { it[SALAWAT_INTERVAL_HOURS] = hours }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -338,6 +351,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                 jumuahMinutes = this[PRAYER_SILENCE_JUMUAH_MINUTES]?.takeIf { it in PrayerSilence.JUMUAH_MINUTES_RANGE }
                     ?: default.prayerSilence.jumuahMinutes,
             ),
+            worshipReminders = WorshipReminders(
+                salawat = SalawatReminder(
+                    enabled = this[SALAWAT_ENABLED] ?: default.worshipReminders.salawat.enabled,
+                    intervalHours = this[SALAWAT_INTERVAL_HOURS]?.takeIf { it in SalawatReminder.INTERVAL_HOURS }
+                        ?: default.worshipReminders.salawat.intervalHours,
+                ),
+            ),
         )
     }
 
@@ -386,6 +406,10 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val PRAYER_SILENCE_OFF = stringSetPreferencesKey("prayer_silence_off")
         private val PRAYER_SILENCE_MINUTES = intPreferencesKey("prayer_silence_minutes")
         private val PRAYER_SILENCE_JUMUAH_MINUTES = intPreferencesKey("prayer_silence_jumuah_minutes")
+
+        /** Worship Reminders (#63): «الصلاة على النبي ﷺ» on or off, and its interval in hours. */
+        private val SALAWAT_ENABLED = booleanPreferencesKey("worship_salawat_enabled")
+        private val SALAWAT_INTERVAL_HOURS = intPreferencesKey("worship_salawat_interval_hours")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

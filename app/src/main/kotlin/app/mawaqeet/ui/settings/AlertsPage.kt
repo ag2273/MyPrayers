@@ -63,6 +63,7 @@ import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.ui.components.Segment
 import app.mawaqeet.ui.components.SegmentedChoice
@@ -78,7 +79,7 @@ private val REMINDER_MINUTES = listOf(10, 15, 20, 30, 45, 60)
 
 /**
  * Settings → Alerts & adhan: the All alerts master switch, then one row per Prayer with its Adhan Alert switch (the row opens the Prayer's own page), how
- * alerts behave (alarm-clock mode, play on silent, vibration), the adhan's volume (alarm or media), then the Custom
+ * the Worship Reminders, how alerts behave (alarm-clock mode, play on silent, vibration), the adhan's volume (alarm or media), then the Custom
  * Adhan files.
  */
 @Composable
@@ -108,6 +109,7 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
             )
         }
     }
+    WorshipReminderRows(alerts, actions)
     SectionTitle(stringResource(R.string.alerts_behaviour))
     Card {
         SwitchRow(
@@ -214,6 +216,34 @@ private fun PrayerSilenceRows(alerts: AlertSettings, actions: SettingsActions) {
             shorter = R.string.prayer_silence_jumuah_shorter,
             longer = R.string.prayer_silence_jumuah_longer,
         ) { step -> actions.stepPrayerSilenceMinutes(jumuah = true, step = step) }
+    }
+}
+
+/**
+ * «تذكيرات العبادة» (#63): each Worship Reminder's switch, all off by default, with its choices once it is on. Shown
+ * only with the master switch on, since none is planned without it.
+ */
+@Composable
+private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions) {
+    val salawat = alerts.worshipReminders.salawat
+    SectionTitle(stringResource(R.string.worship_reminders))
+    Card {
+        SwitchRow(
+            title = stringResource(R.string.salawat_reminder),
+            description = stringResource(R.string.salawat_reminder_description),
+            checked = salawat.enabled,
+            onChange = actions::setSalawatReminder,
+        )
+        if (salawat.enabled) {
+            RowDivider()
+            val labels = mapOf(1 to R.string.salawat_every_1, 2 to R.string.salawat_every_2, 3 to R.string.salawat_every_3)
+            SegmentedChoice(
+                SalawatReminder.INTERVAL_HOURS.map { hours ->
+                    Segment(stringResource(labels.getValue(hours)), salawat.intervalHours == hours) { actions.setSalawatInterval(hours) }
+                },
+                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
     }
 }
 
