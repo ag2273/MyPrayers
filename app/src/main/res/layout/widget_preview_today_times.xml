@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget picker preview of Today's Prayer Times (4×2). Sample content only; the widget itself is drawn by Glance. -->
+<!-- Widget picker preview of Today's Prayer Times (4×1, resizable to 4×2). Sample content only; the widget itself is drawn by Glance. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
     android:backgroundTint="@color/widget_background"
-    android:gravity="top"
+    android:gravity="center_vertical"
     android:orientation="vertical"
     android:paddingHorizontal="18dp"
-    android:paddingVertical="14dp">
+    android:paddingVertical="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,7 +23,7 @@
             android:maxLines="1"
             android:text="@string/widget_today_times"
             android:textColor="@color/widget_text_muted"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <TextView
@@ -32,16 +32,16 @@
             android:maxLines="1"
             android:text="@string/widget_preview_hijri_short"
             android:textColor="@color/widget_text_muted"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="bold"
                 android:layout_marginStart="8dp" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="bottom"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <LinearLayout
@@ -51,7 +51,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="0dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -59,7 +59,7 @@
                 android:maxLines="1"
                 android:text="@string/prayer_fajr"
                 android:textColor="@color/widget_text_muted"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -67,7 +67,7 @@
                 android:maxLines="1"
                 android:text="@string/widget_preview_fajr_time"
                 android:textColor="@color/widget_text"
-                android:textSize="15sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
@@ -79,7 +79,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="0dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -87,7 +87,7 @@
                 android:maxLines="1"
                 android:text="@string/prayer_dhuhr"
                 android:textColor="@color/widget_text_muted"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -95,7 +95,7 @@
                 android:maxLines="1"
                 android:text="@string/widget_preview_dhuhr_time"
                 android:textColor="@color/widget_text"
-                android:textSize="15sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
@@ -109,7 +109,7 @@
             android:backgroundTint="@color/widget_accent"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="0dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -117,7 +117,7 @@
                 android:maxLines="1"
                 android:text="@string/prayer_asr"
                 android:textColor="@color/widget_on_accent"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -125,7 +125,7 @@
                 android:maxLines="1"
                 android:text="@string/widget_preview_asr_time"
                 android:textColor="@color/widget_on_accent"
-                android:textSize="15sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
@@ -137,7 +137,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="0dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -145,7 +145,7 @@
                 android:maxLines="1"
                 android:text="@string/prayer_maghrib"
                 android:textColor="@color/widget_text_muted"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -153,7 +153,7 @@
                 android:maxLines="1"
                 android:text="@string/widget_preview_maghrib_time"
                 android:textColor="@color/widget_text"
-                android:textSize="15sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
@@ -165,7 +165,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="6dp">
+            android:paddingVertical="0dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -173,7 +173,7 @@
                 android:maxLines="1"
                 android:text="@string/prayer_isha"
                 android:textColor="@color/widget_text_muted"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -181,7 +181,7 @@
                 android:maxLines="1"
                 android:text="@string/widget_preview_isha_time"
                 android:textColor="@color/widget_text"
-                android:textSize="15sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:layout_marginTop="2dp" />
         </LinearLayout>

@@ -128,6 +128,22 @@ class WidgetPickerTest {
     }
 
     @Test
+    @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
+    fun `the 4x1 previews fit a 4x1 cell, so no time is cut off`() {
+        val density = context.resources.displayMetrics.density
+        val heights = listOf(R.xml.today_times_widget_info, R.xml.today_log_widget_info, R.xml.date_strip_widget_info).associate { info ->
+            val view = RemoteViews(context.packageName, previewLayout(info)).apply(context, FrameLayout(context))
+            view.measure(
+                android.view.View.MeasureSpec.makeMeasureSpec((300 * density).toInt(), android.view.View.MeasureSpec.EXACTLY),
+                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+            )
+            // The picker draws a 4x1 preview about 80dp tall (Samsung One UI); leave room for a larger font.
+            context.resources.getResourceEntryName(info) to view.measuredHeight / density
+        }
+        assertTrue("previews need $heights dp", heights.values.all { it <= 72f })
+    }
+
+    @Test
     fun `every widget has a preview that the launcher can inflate, with text in it`() {
         val previews = providers.values.map(::previewLayout)
         for ((receiver, preview) in providers.keys.zip(previews)) {
