@@ -45,15 +45,7 @@ fun ColumnScope.AboutContent() {
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.padding(top = 8.dp).semantics { heading() },
         )
-        val credits = Credits.of(kind)
-        if (credits.isEmpty() && kind == CreditKind.RECORDING) {
-            Text(
-                stringResource(R.string.about_recordings_none),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        credits.forEach { CreditRow(it) }
+        Credits.of(kind).forEach { CreditRow(it) }
     }
 }
 
@@ -61,7 +53,9 @@ fun ColumnScope.AboutContent() {
 private fun CreditRow(credit: Credit) {
     val uri = LocalUriHandler.current
     val use = stringResource(credit.use)
-    val spoken = stringResource(R.string.about_credit_description, "${credit.name}: $use", credit.licence)
+    val name = credit.nameRes?.let { stringResource(it) } ?: credit.name
+    val licence = credit.licenceRes?.let { stringResource(it) } ?: credit.licence
+    val spoken = stringResource(R.string.about_credit_description, "$name: $use", licence)
     val open = { runCatching { uri.openUri(credit.url) }; Unit }
     Column(
         Modifier
@@ -79,10 +73,10 @@ private fun CreditRow(credit: Credit) {
         // Latin names in an Arabic page still line up at the page's start, not at their own (left) one.
         val align = if (LocalLayoutDirection.current == LayoutDirection.Rtl) TextAlign.Right else TextAlign.Left
         val full = Modifier.fillMaxWidth()
-        Text(credit.name, style = MaterialTheme.typography.bodyLarge, textAlign = align, modifier = full)
+        Text(name, style = MaterialTheme.typography.bodyLarge, textAlign = align, modifier = full)
         Text(use, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = align, modifier = full)
         Text(
-            stringResource(R.string.about_licence, credit.licence),
+            stringResource(R.string.about_licence, licence),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = align,

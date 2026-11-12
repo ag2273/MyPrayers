@@ -9,7 +9,6 @@ enum class CreditKind(@param:StringRes val title: Int) {
     DATASET(R.string.about_datasets),
     TEXT(R.string.about_texts),
     FONT(R.string.about_fonts),
-    RECORDING(R.string.about_recordings),
 }
 
 /**
@@ -24,6 +23,10 @@ data class Credit(
     @param:StringRes val use: Int,
     /** Maven groups (or `group:artifact`) this credit covers, so a test can check every shipped dependency is listed. */
     val modules: List<String> = emptyList(),
+    /** The name in the app's language, for a work with an Arabic title (a book), instead of [name]. */
+    @param:StringRes val nameRes: Int? = null,
+    /** The licence line in the app's language when it is a description rather than a licence's proper name. */
+    @param:StringRes val licenceRes: Int? = null,
 )
 
 object Credits {
@@ -57,6 +60,7 @@ object Credits {
         Credit(
             "Hisn al-Muslim (Sa'id ibn Ali ibn Wahf al-Qahtani)", CreditKind.TEXT, "Hadith texts from their primary sources",
             "https://sunnah.com/hisn", R.string.about_use_hisn,
+            nameRes = R.string.about_name_hisn, licenceRes = R.string.about_licence_hisn,
         ),
         Credit(
             "Noto Kufi Arabic (Google)", CreditKind.FONT, "SIL Open Font License 1.1",
@@ -68,6 +72,6 @@ object Credits {
         ),
     )
 
-    /** The credits of [kind], in list order. A kind with none (no adhan recording ships yet) shows a note instead. */
+    /** The credits of [kind], in list order. The adhan recordings are deliberately not credited, so there is no kind for them. */
     fun of(kind: CreditKind) = all.filter { it.kind == kind }
 }

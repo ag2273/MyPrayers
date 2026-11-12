@@ -737,8 +737,9 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
     Card {
         CreditKind.entries.forEachIndexed { index, kind ->
             if (index > 0) RowDivider()
-            val names = Credits.of(kind).joinToString(" · ") { it.name.substringBefore(" (").substringBefore(":") }
-            NavRow(stringResource(kind.title), names.ifEmpty { stringResource(R.string.about_recordings_none_short) }, onClick = onOpenCredits)
+            val names = Credits.of(kind).map { credit -> credit.nameRes?.let { stringResource(it) } ?: credit.name }
+                .joinToString(" · ") { it.substringBefore(" (").substringBefore(":") }
+            NavRow(stringResource(kind.title), names, onClick = onOpenCredits)
         }
     }
     SectionTitle(stringResource(R.string.settings_section_your_data))

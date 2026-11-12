@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import app.mawaqeet.alerts.AlertScheduler
+import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.weather.WeatherUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,8 @@ class ClockTickReceiver : BroadcastReceiver() {
             try {
                 // About hourly, the weather beside the clock: fetched before this minute's render shows it.
                 runCatching { WeatherUpdater.updateIfDue(context.applicationContext) }
+                // A Silence Window whose end alarm never came gets its sound back within the minute.
+                runCatching { PrayerSilencer(context.applicationContext).endIfOverdue() }
                 Widgets.refresh(context.applicationContext, Widgets.clocks)
             } finally {
                 pending.finish()
