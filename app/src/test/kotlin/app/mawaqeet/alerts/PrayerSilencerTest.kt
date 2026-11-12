@@ -160,4 +160,15 @@ class PrayerSilencerTest {
 
         assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
     }
+
+    @Test
+    fun `if the user turns Do Not Disturb on during the window, the end leaves their choice alone`() {
+        PrayerSilencer(context).start(window)
+        notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+
+        PrayerSilencer(context).end(window)
+
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, notifications.currentInterruptionFilter)
+    }
 }

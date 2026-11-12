@@ -20,8 +20,8 @@ import kotlinx.coroutines.flow.first
 /**
  * Prayer Silence's thin adapter over the ringer. At a Silence Window's [start] it puts the phone on the window's mode
  * (silent or vibrate) only if the phone is on normal sound with Do Not Disturb off, and records the mode it replaced; at
- * the [end] it restores that mode only if the ringer is still the one the app set (so the user's own change during the
- * window wins). A phone already silent, on vibrate or on Do Not Disturb is left alone and nothing is restored, whichever
+ * the [end] it restores that mode only if the ringer and the Do Not Disturb setting are still what the app left (so the
+ * user's own change during the window wins). A phone already silent, on vibrate or on Do Not Disturb is left alone and nothing is restored, whichever
  * mode is chosen. Without Do Not Disturb (notification policy) access Android forbids silencing, so nothing happens.
  *
  * While it holds the phone silenced it shows [SilenceNotification] (in [digits] and [language]), whose «استعادة الصوت»
@@ -59,19 +59,28 @@ class PrayerSilencer(
             .putString(KEY_WINDOW, encode(window))
             .putInt(KEY_PREVIOUS, previous)
             .putInt(KEY_APPLIED, applied)
+            // What the app left, so the end can tell whether the user has since turned Do Not Disturb on or off.
+            .putInt(KEY_FILTER, notifications.currentInterruptionFilter)
             .apply()
         SilenceNotification.post(context, window, digits, language)
     }
 
-    /** The window's planned end: the recorded mode comes back if the ringer is still the one the app set. */
+    /**
+     * The window's planned end: the recorded mode comes back if the ringer and the Do Not Disturb setting are both still
+     * what the app left (a change by the user during the window wins).
+     */
     fun end(window: SilenceWindow) {
         if (awaiting()?.id == window.id) record.edit().remove(KEY_AWAITING).apply()
         SilenceNotification.cancel(context)
         if (active()?.id != window.id) return
         val previous = record.getInt(KEY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)
         val applied = record.getInt(KEY_APPLIED, -1)
+        // A record from before the filter was kept has none to compare.
+        val filter = record.getInt(KEY_FILTER, notifications.currentInterruptionFilter)
         forget()
-        if (audio.ringerMode == applied) runCatching { audio.ringerMode = previous }
+        if (audio.ringerMode == applied && notifications.currentInterruptionFilter == filter) {
+            runCatching { audio.ringerMode = previous }
+        }
     }
 
     /** «استعادة الصوت»: ends [window] now, as its planned end would, and drops its end alarm. */
@@ -125,7 +134,7 @@ class PrayerSilencer(
     private fun awaiting(): SilenceWindow? = record.getString(KEY_AWAITING, null)?.let(::decode)
 
     private fun forget() {
-        record.edit().remove(KEY_WINDOW).remove(KEY_PREVIOUS).remove(KEY_APPLIED).apply()
+        record.edit().remove(KEY_WINDOW).remove(KEY_PREVIOUS).remove(KEY_APPLIED).remove(KEY_FILTER).apply()
     }
 
     private fun ringerMode(mode: SilenceMode): Int = when (mode) {
@@ -138,6 +147,7 @@ class PrayerSilencer(
         private const val KEY_WINDOW = "window"
         private const val KEY_PREVIOUS = "previous_ringer_mode"
         private const val KEY_APPLIED = "applied_ringer_mode"
+        private const val KEY_FILTER = "interruption_filter"
         private const val KEY_AWAITING = "awaiting_adhan"
 
         private val SilenceWindow.id: String get() = "$prayerDay/${prayer.name}"
