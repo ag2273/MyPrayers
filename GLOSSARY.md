@@ -57,7 +57,7 @@ An optional alert a chosen number of minutes before a Prayer Time.
 _Avoid_: Pre-alert, warning
 
 **Worship Reminder**:
-An optional, gentle reminder for daily worship beyond the five Prayers, under «تذكيرات العبادة» in Settings → Alerts: sending salawat on the Prophet ﷺ every 1, 2 or 3 hours from Sunrise until Isha (and later the morning and evening adhkar and Surat Al-Kahf). Each is off by default, uses the normal notification sound, never an adhan, and is silenced by «كل تنبيهات التطبيق». Not a Prayer Reminder, which comes before a Prayer Time.
+An optional, gentle reminder for daily worship beyond the five Prayers, under «تذكيرات العبادة» in Settings → Alerts: sending salawat on the Prophet ﷺ every 1, 2 or 3 hours from Sunrise until Isha, and reading Surat Al-Kahf on Friday at Sunrise + 1 hour (its «قرأتها» only dismisses it: no Quran text, no Kahf log) (and later the morning and evening adhkar). Each is off by default, uses the normal notification sound, never an adhan, and is silenced by «كل تنبيهات التطبيق». Not a Prayer Reminder, which comes before a Prayer Time.
 _Avoid_: Dhikr reminder, nudge, Sunnah alert
 
 **Adhan Alert**:

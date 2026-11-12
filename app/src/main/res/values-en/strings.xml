@@ -488,4 +488,10 @@
     <string name="worship_reminders_channel_description">Gentle reminders with the usual notification sound, never an adhan</string>
     <string name="salawat_reminder_title">Send salawat on the Prophet ﷺ</string>
     <string name="salawat_reminder_text">O Allah, send prayers and peace upon our Prophet Muhammad</string>
+    <!-- Surat Al-Kahf on Friday (#64) -->
+    <string name="kahf_reminder">Surat Al-Kahf</string>
+    <string name="kahf_reminder_description">A reminder on Friday, an hour after Sunrise</string>
+    <string name="kahf_reminder_title">Read Surat Al-Kahf</string>
+    <string name="kahf_reminder_text">Reading Surat Al-Kahf is a Sunnah of Friday</string>
+    <string name="kahf_reminder_read">I read it</string>
 </resources>

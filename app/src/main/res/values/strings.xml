@@ -540,4 +540,10 @@
     <string name="worship_reminders_channel_description">تذكيرات لطيفة بصوت الإشعارات المعتاد، لا بالأذان</string>
     <string name="salawat_reminder_title">صلِّ على النبي ﷺ</string>
     <string name="salawat_reminder_text">اللهم صلِّ وسلِّم على نبينا محمد</string>
+    <!-- Surat Al-Kahf on Friday (#64) -->
+    <string name="kahf_reminder">سورة الكهف</string>
+    <string name="kahf_reminder_description">تذكير يوم الجمعة بعد الشروق بساعة</string>
+    <string name="kahf_reminder_title">اقرأ سورة الكهف</string>
+    <string name="kahf_reminder_text">من سنن يوم الجمعة قراءة سورة الكهف</string>
+    <string name="kahf_reminder_read">قرأتها</string>
 </resources>

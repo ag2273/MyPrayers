@@ -130,7 +130,8 @@ class PrayerCore(
         val reminders = settings.alerts.worshipReminders
         return days.flatMap { (date, day) ->
             val isha = day.prayerTimes.single { it.prayer == Prayer.ISHA }.time.toInstant()
-            salawatReminders(reminders.salawat, date, day.sunrise.toInstant(), isha)
+            salawatReminders(reminders.salawat, date, day.sunrise.toInstant(), isha) +
+                kahfReminders(reminders.kahf, date, day.sunrise.toInstant())
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
     }
 

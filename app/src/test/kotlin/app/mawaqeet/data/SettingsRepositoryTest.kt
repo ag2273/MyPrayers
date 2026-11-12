@@ -328,4 +328,17 @@ class SettingsRepositoryTest {
 
         assertEquals(2, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat.intervalHours)
     }
+
+    @Test
+    fun `the Kahf reminder is off by default, and switching it on survives an app restart`() {
+        assertEquals(
+            app.mawaqeet.core.KahfReminder(enabled = false),
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.kahf,
+        )
+        withRepository { repo, _ -> repo.setKahfReminder(true) }
+
+        val kahf = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.kahf
+
+        assertEquals(app.mawaqeet.core.KahfReminder(enabled = true), kahf)
+    }
 }

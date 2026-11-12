@@ -24,6 +24,7 @@ import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.KahfReminder
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
@@ -288,6 +289,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[SALAWAT_INTERVAL_HOURS] = hours }
     }
 
+    /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64); planned only while the master switch is on. */
+    suspend fun setKahfReminder(on: Boolean) {
+        store.edit { it[KAHF_ENABLED] = on }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -357,6 +363,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                     intervalHours = this[SALAWAT_INTERVAL_HOURS]?.takeIf { it in SalawatReminder.INTERVAL_HOURS }
                         ?: default.worshipReminders.salawat.intervalHours,
                 ),
+                kahf = KahfReminder(enabled = this[KAHF_ENABLED] ?: default.worshipReminders.kahf.enabled),
             ),
         )
     }
@@ -410,6 +417,9 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         /** Worship Reminders (#63): «الصلاة على النبي ﷺ» on or off, and its interval in hours. */
         private val SALAWAT_ENABLED = booleanPreferencesKey("worship_salawat_enabled")
         private val SALAWAT_INTERVAL_HOURS = intPreferencesKey("worship_salawat_interval_hours")
+
+        /** Worship Reminders (#64): «سورة الكهف» on or off. */
+        private val KAHF_ENABLED = booleanPreferencesKey("worship_kahf_enabled")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

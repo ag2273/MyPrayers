@@ -144,6 +144,9 @@ interface SettingsActions {
     /** Salawat reminders every [hours] hours, one of [app.mawaqeet.core.SalawatReminder.INTERVAL_HOURS]. */
     fun setSalawatInterval(hours: Int)
 
+    /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64). */
+    fun setKahfReminder(on: Boolean)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 

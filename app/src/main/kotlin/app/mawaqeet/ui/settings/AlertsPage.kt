@@ -244,6 +244,13 @@ private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions)
                 Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             )
         }
+        RowDivider()
+        SwitchRow(
+            title = stringResource(R.string.kahf_reminder),
+            description = stringResource(R.string.kahf_reminder_description),
+            checked = alerts.worshipReminders.kahf.enabled,
+            onChange = actions::setKahfReminder,
+        )
     }
 }
 
