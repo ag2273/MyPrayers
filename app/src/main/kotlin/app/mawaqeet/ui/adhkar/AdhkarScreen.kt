@@ -68,7 +68,7 @@ private fun slotName(slot: AdhkarSlot): String =
         ?: stringResource(slot.set.nameRes)
 
 /**
- * The «الأذكار» tab (#62, #70, #74): the morning and evening sets and the five after-prayer slots with today's
+ * The «الأذكار» tab (#62, #70, #71, #74): the free Tasbeeh at the top, then the morning and evening sets and the five after-prayer slots with today's
  * state; one opens in the reader. The Adhkar Record's week grid opens from the end of the list. [adhkar] is null while the bundled catalog loads. [changes] signals every write to the
  * Adhkar repository.
  */
@@ -85,17 +85,32 @@ fun AdhkarScreen(adhkar: Adhkar?, changes: StateFlow<Int>) {
     }
 }
 
-/** What the list shows now: every slot's progress and the Prayer after-prayer adhkar default to. */
-private data class AdhkarToday(val slots: List<SetProgress>, val defaultPrayer: Prayer)
+/** What the list shows now: every slot's progress, the Prayer after-prayer adhkar default to, and the Tasbeeh total. */
+private data class AdhkarToday(val slots: List<SetProgress>, val defaultPrayer: Prayer, val tasbeeh: Int)
 
 @Composable
 private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSlot) -> Unit, onOpenRecord: () -> Unit) {
     val version by changes.collectAsState()
     val today by produceState<AdhkarToday?>(null, adhkar, version) {
-        value = adhkar?.let { a -> withContext(Dispatchers.IO) { AdhkarToday(a.slots.map(a::progress), a.defaultAfterPrayer()) } }
+        value = adhkar?.let { a ->
+            withContext(Dispatchers.IO) { AdhkarToday(a.slots.map(a::progress), a.defaultAfterPrayer(), a.tasbeeh()) }
+        }
     }
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
     TabPage(stringResource(R.string.tab_adhkar)) {
         val shown = today ?: return@TabPage
+        if (adhkar != null) {
+            // Each write changes the repository, which re-reads [today]: the total shown is always the stored one.
+            Tasbeeh(
+                total = shown.tasbeeh,
+                onCount = {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    scope.launch(Dispatchers.IO) { adhkar.countTasbeeh() }
+                },
+                onReset = { scope.launch(Dispatchers.IO) { adhkar.resetTasbeeh() } },
+            )
+        }
         val (daily, afterPrayer) = shown.slots.partition { it.set != AdhkarSetId.AFTER_PRAYER }
         if (daily.isNotEmpty()) {
             Card {
@@ -124,6 +139,44 @@ private fun SetList(adhkar: Adhkar?, changes: StateFlow<Int>, onOpen: (AdhkarSlo
         }
         Card {
             NavRow(stringResource(R.string.adhkar_record), stringResource(R.string.adhkar_record_summary), icon = R.drawable.ic_log, onClick = onOpenRecord)
+        }
+    }
+}
+
+/**
+ * The free Tasbeeh (#71): a large tap target that counts one with a light vibration, today's total for the Prayer
+ * Day, and a reset. The tap target is one TalkBack item that reads the total; the reset is its own button.
+ */
+@Composable
+private fun Tasbeeh(total: Int, onCount: () -> Unit, onReset: () -> Unit) {
+    val format = LocalDisplayFormatter.current
+    val state = stringResource(R.string.tasbeeh_total, format.number(total))
+    Card {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 160.dp)
+                .clickable(onClickLabel = stringResource(R.string.adhkar_count_one), onClick = onCount)
+                .semantics(mergeDescendants = true) { stateDescription = state }
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(stringResource(R.string.tasbeeh), style = MaterialTheme.typography.titleMedium)
+            Text(format.number(total), style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.tasbeeh_tap_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        RowDivider()
+        OutlinedButton(
+            onClick = onReset,
+            enabled = total > 0,
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 8.dp).heightIn(min = 48.dp),
+        ) {
+            Text(stringResource(R.string.tasbeeh_reset))
         }
     }
 }
