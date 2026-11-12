@@ -176,13 +176,7 @@ class AlertScheduler(context: Context) {
         .putExtra(AlertReceiver.EXTRA_ADHAN_VOLUME, alert.adhanVolume.name)
         .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, alert.prayerDay.toString())
         .putExtra(AlertReceiver.EXTRA_FULL_SCREEN, alert.deliveryMode == DeliveryMode.ALARM_CLOCK)
-        .apply {
-            if (silence != null) {
-                putExtra(AlertReceiver.EXTRA_SILENCE_START, silence.start.toEpochMilli())
-                putExtra(AlertReceiver.EXTRA_SILENCE_END, silence.end.toEpochMilli())
-                putExtra(AlertReceiver.EXTRA_SILENCE_MODE, silence.mode.name)
-            }
-        }
+        .apply { if (silence != null) putSilenceWindow(silence, AlertReceiver.SILENCE_PREFIX) }
 
     /**
      * Settings → Alerts → Try it: an Adhan Alert for [prayer] in [delaySeconds], delivered like a real one in the

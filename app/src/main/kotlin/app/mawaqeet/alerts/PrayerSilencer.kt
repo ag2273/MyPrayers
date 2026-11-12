@@ -8,11 +8,9 @@ import android.content.IntentFilter
 import android.media.AudioManager
 import androidx.core.content.ContextCompat
 import app.mawaqeet.core.DigitStyle
-import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.SilenceWindow
 import java.time.Instant
-import java.time.LocalDate
 
 /**
  * Prayer Silence's thin adapter over the ringer. At a Silence Window's [start] it puts the phone on the window's mode
@@ -195,21 +193,10 @@ class PrayerSilencer(
 
         private val SilenceWindow.id: String get() = "$prayerDay/${prayer.name}"
 
-        private fun encode(w: SilenceWindow): String =
-            listOf(w.prayer.name, w.prayerDay, w.start.toEpochMilli(), w.end.toEpochMilli(), w.mode.name, w.isJumuah).joinToString("\t")
+        private fun encode(w: SilenceWindow): String = encodeSilenceWindow(w)
 
         /** Null for an unreadable record. */
-        private fun decode(text: String): SilenceWindow? = runCatching {
-            val f = text.split('\t')
-            SilenceWindow(
-                prayer = Prayer.valueOf(f[0]),
-                prayerDay = LocalDate.parse(f[1]),
-                start = Instant.ofEpochMilli(f[2].toLong()),
-                end = Instant.ofEpochMilli(f[3].toLong()),
-                mode = SilenceMode.valueOf(f[4]),
-                isJumuah = f[5].toBooleanStrict(),
-            )
-        }.getOrNull()
+        private fun decode(text: String): SilenceWindow? = runCatching { decodeSilenceWindow(text) }.getOrNull()
 
         /**
          * Listens for ringer changes for as long as the process lives ([ringerChanged]). Called from the Application, so

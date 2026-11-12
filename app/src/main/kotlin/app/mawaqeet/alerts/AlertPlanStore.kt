@@ -1,6 +1,7 @@
 package app.mawaqeet.alerts
 
 import android.content.Context
+import android.content.Intent
 import androidx.core.util.AtomicFile
 import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhanVolume
@@ -75,12 +76,7 @@ internal class AlertPlanStore(context: Context) {
                 ).joinToString("\t"),
             )
         }
-        for (w in plan.silenceWindows) {
-            appendLine(
-                listOf(SILENCE, w.prayer.name, w.prayerDay, w.start.toEpochMilli(), w.end.toEpochMilli(), w.mode.name, w.isJumuah)
-                    .joinToString("\t"),
-            )
-        }
+        for (w in plan.silenceWindows) appendLine(SILENCE + "\t" + encodeSilenceWindow(w))
         for (r in plan.worshipReminders) {
             appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot).joinToString("\t"))
         }
@@ -103,18 +99,7 @@ internal class AlertPlanStore(context: Context) {
                 slot = f[4].toInt(),
             )
         }
-        val silenceWindows = silenceLines.map { line ->
-            val f = line.split('\t')
-            require(f.size == 7)
-            SilenceWindow(
-                prayer = Prayer.valueOf(f[1]),
-                prayerDay = LocalDate.parse(f[2]),
-                start = Instant.ofEpochMilli(f[3].toLong()),
-                end = Instant.ofEpochMilli(f[4].toLong()),
-                mode = SilenceMode.valueOf(f[5]),
-                isJumuah = f[6].toBooleanStrict(),
-            )
-        }
+        val silenceWindows = silenceLines.map { decodeSilenceWindow(it.removePrefix(SILENCE + "\t")) }
         val alerts = alertLines.map { line ->
             val f = line.split('\t')
             require(f.size == 11)
@@ -160,6 +145,52 @@ data class NotificationStyle(val digits: DigitStyle, val language: String) {
         val Default = NotificationStyle(DigitStyle.AUTOMATIC, "")
     }
 }
+
+/**
+ * Text form of a [SilenceWindow], shared by the stored plan's `silence` lines and [PrayerSilencer]'s record:
+ * `prayer prayerDay start end mode isJumuah`, tab-separated, instants in epoch millis.
+ */
+internal fun encodeSilenceWindow(w: SilenceWindow): String =
+    listOf(w.prayer.name, w.prayerDay, w.start.toEpochMilli(), w.end.toEpochMilli(), w.mode.name, w.isJumuah).joinToString("\t")
+
+/** Throws IllegalArgumentException (or a parse exception) for an unreadable window. */
+internal fun decodeSilenceWindow(text: String): SilenceWindow {
+    val f = text.split('\t')
+    require(f.size == 6)
+    return SilenceWindow(
+        prayer = Prayer.valueOf(f[0]),
+        prayerDay = LocalDate.parse(f[1]),
+        start = Instant.ofEpochMilli(f[2].toLong()),
+        end = Instant.ofEpochMilli(f[3].toLong()),
+        mode = SilenceMode.valueOf(f[4]),
+        isJumuah = f[5].toBooleanStrict(),
+    )
+}
+
+/**
+ * A [SilenceWindow] as intent extras, shared by [SilenceReceiver]'s alarms (no prefix) and an Adhan Alert's alarm,
+ * which carries the window it opens under `silence_` ([AlertReceiver.EXTRA_SILENCE_START] and the rest).
+ */
+internal fun Intent.putSilenceWindow(w: SilenceWindow, prefix: String = ""): Intent = this
+    .putExtra(prefix + "prayer", w.prayer.name)
+    .putExtra(prefix + "prayer_day", w.prayerDay.toString())
+    .putExtra(prefix + "start", w.start.toEpochMilli())
+    .putExtra(prefix + "end", w.end.toEpochMilli())
+    .putExtra(prefix + "mode", w.mode.name)
+    .putExtra(prefix + "jumuah", w.isJumuah)
+
+/** The window [putSilenceWindow] put under [prefix], or null if missing or unreadable. */
+internal fun Intent.silenceWindow(prefix: String = ""): SilenceWindow? = runCatching {
+    require(hasExtra(prefix + "end"))
+    SilenceWindow(
+        prayer = Prayer.valueOf(getStringExtra(prefix + "prayer")!!),
+        prayerDay = LocalDate.parse(getStringExtra(prefix + "prayer_day")!!),
+        start = Instant.ofEpochMilli(getLongExtra(prefix + "start", 0)),
+        end = Instant.ofEpochMilli(getLongExtra(prefix + "end", 0)),
+        mode = SilenceMode.valueOf(getStringExtra(prefix + "mode") ?: SilenceMode.SILENT.name),
+        isJumuah = getBooleanExtra(prefix + "jumuah", false),
+    )
+}.getOrNull()
 
 private const val CUSTOM_PREFIX = "CUSTOM:"
 

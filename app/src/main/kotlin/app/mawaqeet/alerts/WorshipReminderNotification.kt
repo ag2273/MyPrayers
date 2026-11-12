@@ -17,8 +17,8 @@ import app.mawaqeet.core.WorshipReminderKind
 /**
  * A Worship Reminder's gentle notification (#63) on its own «تذكيرات العبادة» channel, with the system's default
  * notification sound (never an adhan). One notification per kind: a new salawat reminder replaces the last one.
- * Tapping opens the app; an adhkar reminder's tap opens its Adhkar Set (#75).
- * Tapping opens the app. The Surat Al-Kahf reminder (#64) also has «قرأتها», which only dismisses it.
+ * Tapping opens the app; an adhkar reminder's tap opens its Adhkar Set (#75). The Surat Al-Kahf reminder (#64) also
+ * has «قرأتها», which only dismisses it.
  */
 internal object WorshipReminderNotification {
     const val CHANNEL = "worship_reminders"

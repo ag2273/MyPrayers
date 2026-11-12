@@ -8,9 +8,7 @@ import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlayback
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
-import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.SilenceWindow
-import java.time.Instant
 import java.time.Duration
 import java.time.LocalDate
 
@@ -54,7 +52,9 @@ class AlertReceiver : BroadcastReceiver() {
                         vibration = intent.getBooleanExtra(EXTRA_VIBRATION, true),
                     )
                     val adhanPlaying = AlertOutput.deliver(context, notification, sound, playback, adhanVolume(intent))
-                    val window = if (kind == AlertKind.ADHAN_ALERT) silenceWindow(intent, prayer, notification.prayerDay) else null
+                    // The Silence Window this Adhan Alert opens (the scheduler set no start alarm for it): it starts when
+                    // the adhan stops, or now when no adhan plays.
+                    val window = if (kind == AlertKind.ADHAN_ALERT) intent.silenceWindow(SILENCE_PREFIX) else null
                     when {
                         window == null -> Unit
                         // Recorded at once, before the player can stop.
@@ -72,23 +72,6 @@ class AlertReceiver : BroadcastReceiver() {
         AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true) {
             startSilence?.let { PrayerSilencer(context).start(it) }
         }
-    }
-
-    /**
-     * The Silence Window this Adhan Alert's Prayer opens ([EXTRA_SILENCE_END]; the scheduler set no start alarm for it):
-     * it starts when the adhan stops, or now when no adhan plays.
-     */
-    private fun silenceWindow(intent: Intent, prayer: Prayer, prayerDay: LocalDate?): SilenceWindow? {
-        if (prayerDay == null || !intent.hasExtra(EXTRA_SILENCE_END)) return null
-        val mode = SilenceMode.entries.firstOrNull { it.name == intent.getStringExtra(EXTRA_SILENCE_MODE) } ?: return null
-        return SilenceWindow(
-            prayer = prayer,
-            prayerDay = prayerDay,
-            start = Instant.ofEpochMilli(intent.getLongExtra(EXTRA_SILENCE_START, 0)),
-            end = Instant.ofEpochMilli(intent.getLongExtra(EXTRA_SILENCE_END, 0)),
-            mode = mode,
-            isJumuah = intent.getBooleanExtra(EXTRA_JUMUAH, false),
-        )
     }
 
     companion object {
@@ -132,11 +115,11 @@ class AlertReceiver : BroadcastReceiver() {
         const val EXTRA_FULL_SCREEN = "full_screen"
 
         /**
-         * The Silence Window this Adhan Alert opens, if Prayer Silence is on for its Prayer: start and planned end (epoch
-         * millis) and [SilenceMode] name. Absent when there is none.
+         * The Silence Window this Adhan Alert opens, if Prayer Silence is on for its Prayer, as [putSilenceWindow]
+         * writes it under this prefix (e.g. [EXTRA_SILENCE_END], its planned end in epoch millis). Absent when there is
+         * none.
          */
-        const val EXTRA_SILENCE_START = "silence_start"
-        const val EXTRA_SILENCE_END = "silence_end"
-        const val EXTRA_SILENCE_MODE = "silence_mode"
+        const val SILENCE_PREFIX = "silence_"
+        const val EXTRA_SILENCE_END = SILENCE_PREFIX + "end"
     }
 }
