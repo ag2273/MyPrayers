@@ -4,6 +4,7 @@ package app.mawaqeet
 import android.view.View
 import android.app.NotificationManager
 import android.provider.Settings
+import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -212,6 +213,10 @@ class SettingsScreenTest {
 
             compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.enabled }
             compose.waitUntil(timeoutMillis = 5_000) { !grantShown() }
+            // The stored value and the Grant row change before the switch recomposes: wait for the switch too.
+            compose.waitUntil(timeoutMillis = 5_000) {
+                compose.onAllNodes(hasText("Silent during Prayer") and isOn()).fetchSemanticsNodes().isNotEmpty()
+            }
             compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsOn()
 
             // Revoked later: the switch reads off again and Grant comes back.
