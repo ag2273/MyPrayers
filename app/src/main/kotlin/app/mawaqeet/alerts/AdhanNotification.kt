@@ -41,14 +41,15 @@ data class AdhanNotification(
      */
     fun builder(context: Context, channel: String = CHANNEL_ADHAN): NotificationCompat.Builder {
         ensureChannels(context)
-        val name = context.getString(if (isJumuah) R.string.prayer_jumuah else prayer.nameRes)
+        val text = alertText(context)
+        val name = text.getString(if (isJumuah) R.string.prayer_jumuah else prayer.nameRes)
         val builder = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(AlertScheduler.openAppIntent(context))
             .setAutoCancel(true)
         return if (kind == AlertKind.PRAYER_REMINDER) {
             builder
-                .setContentTitle(context.getString(R.string.prayer_reminder_title, name))
+                .setContentTitle(text.getString(R.string.prayer_reminder_title, name))
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setWhen(prayerTime)
                 .setShowWhen(true)
@@ -57,7 +58,7 @@ data class AdhanNotification(
                 .setTimeoutAfter((prayerTime - System.currentTimeMillis()).coerceAtLeast(60_000))
         } else {
             builder
-                .setContentTitle(context.getString(R.string.adhan_alert_title, name))
+                .setContentTitle(text.getString(R.string.adhan_alert_title, name))
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .apply { if (fullScreen) setFullScreenIntent(AdhanAlarmActivity.pendingIntent(context, this@AdhanNotification), true) }
@@ -66,7 +67,7 @@ data class AdhanNotification(
                     addAction(
                         NotificationCompat.Action(
                             0,
-                            context.getString(R.string.mark_as_prayed),
+                            text.getString(R.string.mark_as_prayed),
                             MarkPrayedReceiver.intent(context, prayer, day, id),
                         ),
                     )
@@ -106,16 +107,18 @@ data class AdhanNotification(
 
         fun ensureChannels(context: Context) {
             val manager = context.getSystemService(NotificationManager::class.java)
+            // Channel names show in the phone's notification settings: in the app's language too.
+            val text = alertText(context)
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ADHAN, context.getString(R.string.adhan_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
-                    description = context.getString(R.string.adhan_channel_description)
+                NotificationChannel(CHANNEL_ADHAN, text.getString(R.string.adhan_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = text.getString(R.string.adhan_channel_description)
                     setSound(null, null)
                     enableVibration(false)
                 },
             )
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_REMINDERS, context.getString(R.string.reminder_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = context.getString(R.string.reminder_channel_description)
+                NotificationChannel(CHANNEL_REMINDERS, text.getString(R.string.reminder_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = text.getString(R.string.reminder_channel_description)
                     setSound(
                         android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
                         AudioAttributes.Builder()
@@ -130,10 +133,10 @@ data class AdhanNotification(
                 manager.createNotificationChannel(
                     NotificationChannel(
                         CHANNEL_ADHAN_SOUND,
-                        context.getString(R.string.adhan_sound_channel_name),
+                        text.getString(R.string.adhan_sound_channel_name),
                         NotificationManager.IMPORTANCE_HIGH,
                     ).apply {
-                        description = context.getString(R.string.adhan_sound_channel_description)
+                        description = text.getString(R.string.adhan_sound_channel_description)
                         setSound(
                             AdhanSounds.bundled(context, AlertSound.FullAdhan),
                             AudioAttributes.Builder()

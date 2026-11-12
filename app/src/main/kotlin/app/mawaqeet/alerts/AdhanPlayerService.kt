@@ -73,7 +73,7 @@ class AdhanPlayerService : Service() {
     private fun playingNotification(n: AdhanNotification) = n.builder(this)
         .setOngoing(true)
         .setDeleteIntent(stopIntent(this))
-        .addAction(NotificationCompat.Action(0, getString(R.string.adhan_stop), stopIntent(this)))
+        .addAction(NotificationCompat.Action(0, alertText(this).getString(R.string.adhan_stop), stopIntent(this)))
         .build()
 
     private fun play(sound: AlertSound) {

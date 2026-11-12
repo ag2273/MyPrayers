@@ -39,6 +39,7 @@ internal object WorshipReminderNotification {
             WorshipReminderKind.MORNING_ADHKAR -> R.string.adhkar_morning to R.string.adhkar_morning_reminder_text
             WorshipReminderKind.EVENING_ADHKAR -> R.string.adhkar_evening to R.string.adhkar_evening_reminder_text
         }
+        val strings = alertText(context)
         val id = id(reminder.kind)
         val tap = reminder.kind.adhkarSet?.let { set ->
             PendingIntent.getActivity(
@@ -50,8 +51,8 @@ internal object WorshipReminderNotification {
         } ?: AlertScheduler.openAppIntent(context)
         val builder = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(context.getString(title))
-            .setContentText(context.getString(text))
+            .setContentTitle(strings.getString(title))
+            .setContentText(strings.getString(text))
             .setContentIntent(tap)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
@@ -60,7 +61,7 @@ internal object WorshipReminderNotification {
         if (reminder.kind == WorshipReminderKind.KAHF) {
             // «قرأتها» only dismisses: the app keeps no Kahf log.
             builder.addAction(
-                NotificationCompat.Action(0, context.getString(R.string.kahf_reminder_read), WorshipReminderReceiver.dismissIntent(context, id)),
+                NotificationCompat.Action(0, strings.getString(R.string.kahf_reminder_read), WorshipReminderReceiver.dismissIntent(context, id)),
             )
         }
         NotificationManagerCompat.from(context).notify(id, builder.build())
@@ -72,9 +73,10 @@ internal object WorshipReminderNotification {
     fun cancel(context: Context, id: Int) = NotificationManagerCompat.from(context).cancel(id)
 
     fun ensureChannel(context: Context) {
+        val text = alertText(context)
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, context.getString(R.string.worship_reminders_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = context.getString(R.string.worship_reminders_channel_description)
+            NotificationChannel(CHANNEL, text.getString(R.string.worship_reminders_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = text.getString(R.string.worship_reminders_channel_description)
                 setSound(
                     Settings.System.DEFAULT_NOTIFICATION_URI,
                     AudioAttributes.Builder()
