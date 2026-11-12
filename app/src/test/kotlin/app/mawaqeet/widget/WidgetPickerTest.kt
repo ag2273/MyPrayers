@@ -57,7 +57,7 @@ class WidgetPickerTest {
     }
 
     @Test
-    fun `Big Clock is listed as «ساعة كبيرة», 4×2 by default`() {
+    fun `Big Clock is listed under its Arabic name, 4x2 by default`() {
         val label = context.packageManager.getReceiverInfo(ComponentName(context, BigClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
             .loadLabel(context.packageManager).toString()
         assertEquals("ساعة كبيرة", label)
@@ -79,7 +79,7 @@ class WidgetPickerTest {
     }
 
     @Test
-    fun `Gold Clock is listed as «ساعة ذهبية», 4×2 by default, with a black preview`() {
+    fun `Gold Clock is listed under its Arabic name, 4x2 by default, with a black preview`() {
         val label = context.packageManager.getReceiverInfo(ComponentName(context, GoldClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
             .loadLabel(context.packageManager).toString()
         assertEquals("ساعة ذهبية", label)
@@ -103,7 +103,7 @@ class WidgetPickerTest {
     }
 
     @Test
-    fun `Clock and Prayer is listed as «ساعة وصلاة», 4×2 by default, with a preview of the split layout`() {
+    fun `Clock and Prayer is listed under its Arabic name, 4x2 by default, with a preview of the split layout`() {
         val label = context.packageManager.getReceiverInfo(ComponentName(context, ClockPrayerWidgetReceiver::class.java), PackageManager.GET_META_DATA)
             .loadLabel(context.packageManager).toString()
         assertEquals("ساعة وصلاة", label)
