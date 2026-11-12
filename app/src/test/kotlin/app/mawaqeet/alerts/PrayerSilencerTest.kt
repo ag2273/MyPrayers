@@ -16,6 +16,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowSystemClock
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 
@@ -162,13 +164,37 @@ class PrayerSilencerTest {
     }
 
     @Test
-    fun `if the user turns Do Not Disturb on during the window, the end leaves their choice alone`() {
+    fun `if the user turns Do Not Disturb on during the window, the end brings the sound back and keeps it on`() {
         PrayerSilencer(context).start(window)
         notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
 
         PrayerSilencer(context).end(window)
 
-        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, notifications.currentInterruptionFilter)
+    }
+
+    @Test
+    fun `Do Not Disturb that the phone turns on along with the silence is turned off again at the end`() {
+        PrayerSilencer(context).start(window)
+        // Samsung (and AOSP's ringer delegate) turn Do Not Disturb on a moment after an app silences the ringer.
+        notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        PrayerSilencer(context).interruptionFilterChanged()
+
+        PrayerSilencer(context).end(window)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertEquals(NotificationManager.INTERRUPTION_FILTER_ALL, notifications.currentInterruptionFilter)
+    }
+
+    @Test
+    fun `Do Not Disturb turned on later in the window is the user's, and the end keeps it`() {
+        PrayerSilencer(context).start(window)
+        ShadowSystemClock.advanceBy(Duration.ofMinutes(5))
+        notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        PrayerSilencer(context).interruptionFilterChanged()
+
+        PrayerSilencer(context).end(window)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
         assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, notifications.currentInterruptionFilter)
     }
 
