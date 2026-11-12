@@ -21,8 +21,10 @@ import kotlinx.coroutines.flow.first
  * Prayer Silence's thin adapter over the ringer. At a Silence Window's [start] it puts the phone on the window's mode
  * (silent or vibrate) only if the phone is on normal sound with Do Not Disturb off, and records the mode it replaced; at
  * the [end] it restores that mode only if the ringer and the Do Not Disturb setting are still what the app left (so the
- * user's own change during the window wins). A phone already silent, on vibrate or on Do Not Disturb is left alone and nothing is restored, whichever
- * mode is chosen. Without Do Not Disturb (notification policy) access Android forbids silencing, so nothing happens.
+ * user's own change during the window wins). A window that starts while the app still holds the phone silenced for an
+ * earlier one extends that silence to the later end, keeping the first window's replaced mode, so the earlier end never
+ * restores the sound early. A phone already silent, on vibrate or on Do Not Disturb is left alone and nothing is
+ * restored, whichever mode is chosen. Without Do Not Disturb (notification policy) access Android forbids silencing, so nothing happens.
  *
  * While it holds the phone silenced it shows [SilenceNotification] (in [digits] and [language]), whose «استعادة الصوت»
  * calls [restore]. A ringer change by the user ([ringerChanged], via [watchRinger]) hands the window to them: the
@@ -47,6 +49,7 @@ class PrayerSilencer(
 
     fun start(window: SilenceWindow) {
         if (!hasAccess(notifications)) return
+        if (extend(window)) return
         val doNotDisturb = notifications.currentInterruptionFilter.let {
             it != NotificationManager.INTERRUPTION_FILTER_ALL && it != NotificationManager.INTERRUPTION_FILTER_UNKNOWN
         }
@@ -66,13 +69,34 @@ class PrayerSilencer(
     }
 
     /**
+     * [window] starts while the app still holds the phone silenced for another, overlapping one: the silence lasts until
+     * the later of the two ends, with the mode it replaced kept from the first start. True when the app holds it.
+     */
+    private fun extend(window: SilenceWindow): Boolean {
+        val held = active() ?: return false
+        if (held.id == window.id || audio.ringerMode != record.getInt(KEY_APPLIED, -1)) return false
+        if (window.end.isAfter(held.end)) hold(window)
+        return true
+    }
+
+    /** [window] becomes the recorded one (same replaced mode), with its end alarm armed and the notification updated. */
+    private fun hold(window: SilenceWindow) {
+        record.edit().putString(KEY_WINDOW, encode(window)).apply()
+        AlertScheduler(context).armSilenceEnd(window)
+        SilenceNotification.post(context, window, digits, language)
+    }
+
+    /**
      * The window's planned end: the recorded mode comes back if the ringer and the Do Not Disturb setting are both still
      * what the app left (a change by the user during the window wins).
      */
     fun end(window: SilenceWindow) {
         if (awaiting()?.id == window.id) record.edit().remove(KEY_AWAITING).apply()
+        val held = active()
+        // Another window holds the silence now (they overlapped): its own end restores the sound.
+        if (held != null && held.id != window.id) return
         SilenceNotification.cancel(context)
-        if (active()?.id != window.id) return
+        if (held == null) return
         val previous = record.getInt(KEY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)
         val applied = record.getInt(KEY_APPLIED, -1)
         // A record from before the filter was kept has none to compare.

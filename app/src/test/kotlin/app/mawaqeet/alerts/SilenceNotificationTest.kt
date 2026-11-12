@@ -152,6 +152,34 @@ class SilenceNotificationTest {
         assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
     }
 
+    @Test
+    fun `a window that starts while the phone is still held silent extends the silence to its own end`() {
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val overlapping = window.copy(
+            prayer = Prayer.MAGHRIB,
+            start = Instant.parse("2026-11-08T15:20:00Z"),
+            end = Instant.parse("2026-11-08T15:40:00Z"),
+        )
+        PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window)
+
+        PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(overlapping)
+        assertEquals("الهاتف صامت حتى ٣:٤٠", posted.single().text())
+        assertEquals(
+            listOf(SilenceReceiver.ACTION_END to overlapping.end.toEpochMilli()),
+            shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms
+                .map { shadowOf(it.operation).savedIntent.action to it.triggerAtTime },
+        )
+
+        // The first window's own end no longer brings the sound back early.
+        PrayerSilencer(context).end(window)
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        assertEquals(1, posted.size)
+
+        PrayerSilencer(context).end(overlapping)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertTrue(posted.isEmpty())
+    }
+
     private val early = Instant.parse("2026-11-08T14:00:00Z")
 
     private fun silenceAlarmActions() = shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms

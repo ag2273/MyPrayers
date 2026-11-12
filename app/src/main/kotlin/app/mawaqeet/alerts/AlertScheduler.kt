@@ -79,6 +79,13 @@ class AlertScheduler(context: Context) {
         flag or PendingIntent.FLAG_IMMUTABLE,
     )
 
+    /** Sets (or moves) [window]'s end alarm, e.g. when an overlapping window extends the silence to it. */
+    fun armSilenceEnd(window: SilenceWindow) {
+        if (!canScheduleExact(alarmManager)) return
+        val operation = silenceIntent(window, start = false, PendingIntent.FLAG_UPDATE_CURRENT)!!
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, window.end.toEpochMilli(), operation)
+    }
+
     /** Drops [window]'s end alarm (it was ended early with «استعادة الصوت»). */
     fun cancelSilenceEnd(window: SilenceWindow) = cancel(silenceIntent(window, start = false, PendingIntent.FLAG_NO_CREATE))
 
