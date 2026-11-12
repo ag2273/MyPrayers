@@ -18,6 +18,7 @@ import app.mawaqeet.core.WorshipReminderKind
  * A Worship Reminder's gentle notification (#63) on its own «تذكيرات العبادة» channel, with the system's default
  * notification sound (never an adhan). One notification per kind: a new salawat reminder replaces the last one.
  * Tapping opens the app; an adhkar reminder's tap opens its Adhkar Set (#75).
+ * Tapping opens the app. The Surat Al-Kahf reminder (#64) also has «قرأتها», which only dismisses it.
  */
 internal object WorshipReminderNotification {
     const val CHANNEL = "worship_reminders"
@@ -34,18 +35,20 @@ internal object WorshipReminderNotification {
         ensureChannel(context)
         val (title, text) = when (reminder.kind) {
             WorshipReminderKind.SALAWAT -> R.string.salawat_reminder_title to R.string.salawat_reminder_text
+            WorshipReminderKind.KAHF -> R.string.kahf_reminder_title to R.string.kahf_reminder_text
             WorshipReminderKind.MORNING_ADHKAR -> R.string.adhkar_morning to R.string.adhkar_morning_reminder_text
             WorshipReminderKind.EVENING_ADHKAR -> R.string.adhkar_evening to R.string.adhkar_evening_reminder_text
         }
+        val id = id(reminder.kind)
         val tap = reminder.kind.adhkarSet?.let { set ->
             PendingIntent.getActivity(
                 context,
-                ID_BASE + reminder.kind.ordinal,
+                id,
                 MainActivity.openAdhkarIntent(context, AdhkarSlot.of(set)),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         } ?: AlertScheduler.openAppIntent(context)
-        val notification = NotificationCompat.Builder(context, CHANNEL)
+        val builder = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(title))
             .setContentText(context.getString(text))
@@ -54,9 +57,19 @@ internal object WorshipReminderNotification {
             .setAutoCancel(true)
             .setWhen(reminder.instant.toEpochMilli())
             .setSilent(silent)
-            .build()
-        NotificationManagerCompat.from(context).notify(ID_BASE + reminder.kind.ordinal, notification)
+        if (reminder.kind == WorshipReminderKind.KAHF) {
+            // «قرأتها» only dismisses: the app keeps no Kahf log.
+            builder.addAction(
+                NotificationCompat.Action(0, context.getString(R.string.kahf_reminder_read), WorshipReminderReceiver.dismissIntent(context, id)),
+            )
+        }
+        NotificationManagerCompat.from(context).notify(id, builder.build())
     }
+
+    /** The notification id of [kind]'s reminders: one per kind, so a new one replaces the last. */
+    fun id(kind: WorshipReminderKind): Int = ID_BASE + kind.ordinal
+
+    fun cancel(context: Context, id: Int) = NotificationManagerCompat.from(context).cancel(id)
 
     fun ensureChannel(context: Context) {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(

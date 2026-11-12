@@ -150,6 +150,9 @@ interface SettingsActions {
     /** The adhkar reminder's minutes after Fajr or Asr, one of [app.mawaqeet.core.AdhkarReminder.MINUTES]. */
     fun setAdhkarReminderMinutes(set: app.mawaqeet.core.AdhkarSetId, minutes: Int)
 
+    /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64). */
+    fun setKahfReminder(on: Boolean)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 

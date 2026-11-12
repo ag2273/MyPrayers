@@ -496,4 +496,10 @@
     <string name="adhkar_reminder_minutes">%1$s min</string>
     <string name="adhkar_morning_reminder_text">Time for the morning adhkar</string>
     <string name="adhkar_evening_reminder_text">Time for the evening adhkar</string>
+    <!-- Surat Al-Kahf on Friday (#64) -->
+    <string name="kahf_reminder">Surat Al-Kahf</string>
+    <string name="kahf_reminder_description">A reminder on Friday, an hour after Sunrise</string>
+    <string name="kahf_reminder_title">Read Surat Al-Kahf</string>
+    <string name="kahf_reminder_text">Reading Surat Al-Kahf is a Sunnah of Friday</string>
+    <string name="kahf_reminder_read">I read it</string>
 </resources>

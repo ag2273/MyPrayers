@@ -1,16 +1,17 @@
 package app.mawaqeet.core
 
+import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 
 /**
  * Settings → Alerts → «تذكيرات العبادة»: the Worship Reminders, each off by default and switched on separately. None is
- * planned while the master switch ([AlertSettings.enabled]) is off. Later reminders (Surat Al-Kahf) join here as their
- * own fields.
+ * planned while the master switch ([AlertSettings.enabled]) is off. Each reminder is its own field.
  */
 data class WorshipReminders(
     val salawat: SalawatReminder = SalawatReminder(),
+    val kahf: KahfReminder = KahfReminder(),
     /** «أذكار الصباح» (#75): [AdhkarReminder.minutes] after Fajr; opens the morning set, skipped once it is complete. */
     val morningAdhkar: AdhkarReminder = AdhkarReminder(),
     /** «أذكار المساء» (#75): [AdhkarReminder.minutes] after Asr; opens the evening set, skipped once it is complete. */
@@ -52,11 +53,22 @@ data class SalawatReminder(
 }
 
 /**
+ * «سورة الكهف» (#64): a reminder to read Surat Al-Kahf every Friday at Sunrise + [AFTER_SUNRISE]. The app shows no
+ * Quran text and keeps no Kahf log: the reminder's «قرأتها» only dismisses it.
+ */
+data class KahfReminder(val enabled: Boolean = false) {
+    companion object {
+        val AFTER_SUNRISE: Duration = Duration.ofHours(1)
+    }
+}
+
+/**
  * Which Worship Reminder a [PlannedWorshipReminder] is. Stored by name: add new kinds at the end. [adhkarSet] is the
  * Adhkar Set an adhkar reminder opens (and is skipped for once complete); null for the others.
  */
 enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
     SALAWAT,
+    KAHF,
     MORNING_ADHKAR(AdhkarSetId.MORNING),
     EVENING_ADHKAR(AdhkarSetId.EVENING),
 }
@@ -100,3 +112,9 @@ internal fun adhkarReminder(
     prayerTime: Instant,
 ): PlannedWorshipReminder? =
     if (reminder.enabled) PlannedWorshipReminder(kind, prayerTime.plus(Duration.ofMinutes(reminder.minutes.toLong())), prayerDay) else null
+
+/** The Kahf reminder of one Prayer Day: Sunrise + [KahfReminder.AFTER_SUNRISE], on a Friday only. */
+internal fun kahfReminders(kahf: KahfReminder, prayerDay: LocalDate, sunrise: Instant): List<PlannedWorshipReminder> {
+    if (!kahf.enabled || prayerDay.dayOfWeek != DayOfWeek.FRIDAY) return emptyList()
+    return listOf(PlannedWorshipReminder(WorshipReminderKind.KAHF, sunrise.plus(KahfReminder.AFTER_SUNRISE), prayerDay))
+}

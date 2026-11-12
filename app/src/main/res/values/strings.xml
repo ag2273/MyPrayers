@@ -548,4 +548,10 @@
     <string name="adhkar_reminder_minutes">%1$s دقيقة</string>
     <string name="adhkar_morning_reminder_text">حان وقت أذكار الصباح</string>
     <string name="adhkar_evening_reminder_text">حان وقت أذكار المساء</string>
+    <!-- Surat Al-Kahf on Friday (#64) -->
+    <string name="kahf_reminder">سورة الكهف</string>
+    <string name="kahf_reminder_description">تذكير يوم الجمعة بعد الشروق بساعة</string>
+    <string name="kahf_reminder_title">اقرأ سورة الكهف</string>
+    <string name="kahf_reminder_text">من سنن يوم الجمعة قراءة سورة الكهف</string>
+    <string name="kahf_reminder_read">قرأتها</string>
 </resources>

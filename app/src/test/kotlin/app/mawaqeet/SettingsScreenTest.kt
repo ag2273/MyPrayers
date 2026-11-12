@@ -268,6 +268,25 @@ class SettingsScreenTest {
         }
     }
 
+    @Test
+    @Config(qualifiers = "en")
+    fun `the Surat Al-Kahf reminder is off under Worship reminders, and switching it on stores it`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun kahf() = runBlocking { store.settings.first() }.alerts.worshipReminders.kahf
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Surat Al-Kahf").performScrollTo().assertIsOff()
+
+            compose.onNodeWithText("Surat Al-Kahf").performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { kahf().enabled }
+            compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Surat Al-Kahf").assertIsOn() }.isSuccess }
+        } finally {
+            runBlocking { store.setKahfReminder(false) }
+        }
+    }
+
     /** Opens Settings → Alerts with Do Not Disturb access granted and Prayer Silence turned on, then runs [block]. */
     private fun withPrayerSilenceOn(block: (alerts: () -> app.mawaqeet.core.AlertSettings) -> Unit) {
         shadowOf(compose.activity.getSystemService(NotificationManager::class.java)).setNotificationPolicyAccessGranted(true)

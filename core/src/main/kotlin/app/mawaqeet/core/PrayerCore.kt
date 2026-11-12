@@ -130,7 +130,8 @@ class PrayerCore(
         val reminders = settings.alerts.worshipReminders
         return days.flatMap { (date, day) ->
             fun at(prayer: Prayer) = day.prayerTimes.single { it.prayer == prayer }.time.toInstant()
-            salawatReminders(reminders.salawat, date, day.sunrise.toInstant(), at(Prayer.ISHA)) + listOfNotNull(
+            salawatReminders(reminders.salawat, date, day.sunrise.toInstant(), at(Prayer.ISHA)) +
+                kahfReminders(reminders.kahf, date, day.sunrise.toInstant()) + listOfNotNull(
                 adhkarReminder(reminders.morningAdhkar, WorshipReminderKind.MORNING_ADHKAR, date, at(Prayer.FAJR)),
                 adhkarReminder(reminders.eveningAdhkar, WorshipReminderKind.EVENING_ADHKAR, date, at(Prayer.ASR)),
             )

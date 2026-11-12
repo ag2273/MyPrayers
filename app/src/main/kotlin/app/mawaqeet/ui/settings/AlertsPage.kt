@@ -247,6 +247,13 @@ private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions)
             )
         }
         RowDivider()
+        SwitchRow(
+            title = stringResource(R.string.kahf_reminder),
+            description = stringResource(R.string.kahf_reminder_description),
+            checked = alerts.worshipReminders.kahf.enabled,
+            onChange = actions::setKahfReminder,
+        )
+        RowDivider()
         AdhkarReminderRows(AdhkarSetId.MORNING, alerts.worshipReminders.morningAdhkar, actions)
         RowDivider()
         AdhkarReminderRows(AdhkarSetId.EVENING, alerts.worshipReminders.eveningAdhkar, actions)

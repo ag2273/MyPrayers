@@ -310,6 +310,10 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setAdhkarReminderMinutes(set, minutes) }
                             }
 
+                            override fun setKahfReminder(on: Boolean) {
+                                scope.launch { settingsStore.setKahfReminder(on) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {

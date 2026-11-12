@@ -26,6 +26,7 @@ import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
+import app.mawaqeet.core.KahfReminder
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
@@ -301,6 +302,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[adhkarReminderKeys(set).second] = minutes }
     }
 
+    /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64); planned only while the master switch is on. */
+    suspend fun setKahfReminder(on: Boolean) {
+        store.edit { it[KAHF_ENABLED] = on }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -372,6 +378,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                 ),
                 morningAdhkar = adhkarReminder(AdhkarSetId.MORNING, default.worshipReminders.morningAdhkar),
                 eveningAdhkar = adhkarReminder(AdhkarSetId.EVENING, default.worshipReminders.eveningAdhkar),
+                kahf = KahfReminder(enabled = this[KAHF_ENABLED] ?: default.worshipReminders.kahf.enabled),
             ),
         )
     }
@@ -445,6 +452,9 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val MORNING_ADHKAR_MINUTES = intPreferencesKey("worship_morning_adhkar_minutes")
         private val EVENING_ADHKAR_ENABLED = booleanPreferencesKey("worship_evening_adhkar_enabled")
         private val EVENING_ADHKAR_MINUTES = intPreferencesKey("worship_evening_adhkar_minutes")
+
+        /** Worship Reminders (#64): «سورة الكهف» on or off. */
+        private val KAHF_ENABLED = booleanPreferencesKey("worship_kahf_enabled")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

@@ -1,5 +1,6 @@
 package app.mawaqeet.alerts
 
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -24,9 +25,14 @@ import java.time.LocalDate
  * travels in the intent. Nothing is rescheduled here: the plan moves on with the Adhan Alerts and the display alarm.
  * An adhkar reminder (#75) first asks the Adhkar core, off the main thread, whether its set is already complete for
  * the reminder's Prayer Day, and is dropped if so; when that cannot be read (before the first unlock) it is posted.
+ * Also receives «قرأتها» ([ACTION_DISMISS], #64), which only dismisses the reminder.
  */
 class WorshipReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == ACTION_DISMISS) {
+            WorshipReminderNotification.cancel(context, intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1))
+            return
+        }
         if (intent.action != ACTION_REMIND) return
         val reminder = reminder(intent) ?: return
         // Inside a Silence Window the reminder must not break the silence (#76).
@@ -71,6 +77,18 @@ class WorshipReminderReceiver : BroadcastReceiver() {
         private const val EXTRA_PRAYER_DAY = "prayer_day"
         private const val EXTRA_AT = "at"
         private const val EXTRA_SLOT = "slot"
+
+        /** A reminder's «قرأتها» (#64): dismisses its notification, nothing else. */
+        const val ACTION_DISMISS = "app.mawaqeet.action.WORSHIP_REMINDER_DISMISS"
+        private const val EXTRA_NOTIFICATION_ID = "notification_id"
+
+        /** The broadcast that dismisses the Worship Reminder notification [id]. */
+        internal fun dismissIntent(context: Context, id: Int): PendingIntent = PendingIntent.getBroadcast(
+            context,
+            id,
+            Intent(context, WorshipReminderReceiver::class.java).setAction(ACTION_DISMISS).putExtra(EXTRA_NOTIFICATION_ID, id),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
 
         /** The broadcast [reminder]'s alarm delivers. */
         internal fun intent(context: Context, reminder: PlannedWorshipReminder): Intent =
