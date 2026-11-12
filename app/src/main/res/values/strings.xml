@@ -192,6 +192,7 @@
     <string name="alerts_volume_media_description">يعلو ويخفت مع صوت الموسيقى والفيديو</string>
     <string name="alerts_volume_level_alarm">مستوى صوت المنبّه</string>
     <string name="alerts_volume_level_media">مستوى صوت الوسائط</string>
+    <string name="alerts_volume_level_kept">يؤذّن دائمًا بهذا المستوى، حتى لو تغيّر صوت الهاتف بعدها، ثم يعود صوت الهاتف كما كان</string>
     <string name="alerts_volume_level_value">%1$s٪</string>
     <string name="alerts_volume_test">استمع للأذان المختصر</string>
     <string name="alerts_custom_adhan">أذان من اختيارك</string>

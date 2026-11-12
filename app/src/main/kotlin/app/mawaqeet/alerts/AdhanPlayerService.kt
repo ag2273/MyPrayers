@@ -23,7 +23,7 @@ import app.mawaqeet.core.Prayer
 /**
  * The adhan player: a `mediaPlayback` foreground service started by [AlertOutput] when the core says an Adhan
  * Alert should sound. It plays on the alarm stream (following the alarm volume) or, when the user chose it, the media
- * stream (following the media volume) — see [AdhanVolume] — fades in over [FADE_IN_MS], holds transient audio
+ * stream (following the media volume) — see [AdhanVolume] — at the level chosen in Settings ([AdhanLevel]), fades in over [FADE_IN_MS], holds transient audio
  * focus so other media pauses and resumes, and shows the Adhan Alert notification with Stop.
  *
  * All decisions (silent mode, calls, lateness) are made before it starts, in the core.
@@ -34,6 +34,8 @@ class AdhanPlayerService : Service() {
     private var focus: AudioFocusRequest? = null
     private var notification: AdhanNotification? = null
     private var attributes: AudioAttributes = AdhanSounds.attributes(AdhanVolume.ALARM)
+    /** The stream level this adhan set ([AdhanLevel]), put back when it stops. */
+    private var level: AdhanLevel.Applied? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -56,7 +58,9 @@ class AdhanPlayerService : Service() {
             fullScreen = intent.getBooleanExtra(AlertReceiver.EXTRA_FULL_SCREEN, false),
         )
         stopPlayback() // A new alert replaces one still playing.
-        attributes = AdhanSounds.attributes(AlertReceiver.adhanVolume(intent))
+        val volume = AlertReceiver.adhanVolume(intent)
+        attributes = AdhanSounds.attributes(volume)
+        level = AdhanLevel(this).apply(getSystemService(AudioManager::class.java), volume)
         notification?.let { if (it.id != next.id) it.post(this) }
         notification = next
         playingId = next.id
@@ -137,8 +141,11 @@ class AdhanPlayerService : Service() {
         handler.removeCallbacksAndMessages(null)
         player?.release()
         player = null
-        focus?.let { getSystemService(AudioManager::class.java).abandonAudioFocusRequest(it) }
+        val audio = getSystemService(AudioManager::class.java)
+        focus?.let { audio.abandonAudioFocusRequest(it) }
         focus = null
+        level?.restore(audio)
+        level = null
     }
 
     /** Stops at once, leaving the Adhan Alert notification in place without Stop. */
