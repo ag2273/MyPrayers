@@ -66,7 +66,11 @@ class MawaqeetApplication : Application() {
         // first unlock DataStore is unreadable; RescheduleReceiver re-arms the device-protected plan copy instead
         // and BOOT_COMPLETED restarts the process' work after unlock.
         if (UserManagerCompat.isUserUnlocked(this)) {
-            appScope.launch { settings.settings.collect { AlertRescheduler.reschedule(this@MawaqeetApplication, it) } }
+            // Digits and language too: they travel with the plan, for the receivers' notifications.
+            appScope.launch {
+                combine(settings.settings, settings.digitStyle, settings.appLanguage) { s, _, _ -> s }
+                    .collect { AlertRescheduler.reschedule(this@MawaqeetApplication, it) }
+            }
             // Every later change of what widgets show (method, adjustments, location, digits, language, widget appearance)
             // re-renders them.
             appScope.launch {

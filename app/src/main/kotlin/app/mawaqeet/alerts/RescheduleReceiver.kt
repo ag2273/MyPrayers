@@ -21,7 +21,7 @@ class RescheduleReceiver : BroadcastReceiver() {
             // The widgets' times and countdown follow the clock, zone and plan; refreshAll skips a locked boot.
             // A Silence Window caught by a reboot or a clock change: restored at once if its end has passed.
             in ACTIONS -> AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true) {
-                PrayerSilencer.inAppStyle(context).catchUp(Instant.now())
+                PrayerSilencer(context).catchUp(Instant.now())
             }
             // The system language changed: widgets following it re-render (the alarms don't depend on it).
             Intent.ACTION_LOCALE_CHANGED -> Widgets.refreshAllAsync(this, context)

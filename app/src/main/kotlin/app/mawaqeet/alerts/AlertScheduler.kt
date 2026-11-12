@@ -34,8 +34,11 @@ class AlertScheduler(context: Context) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
     private val store = AlertPlanStore(context)
 
-    /** Schedules [plan] and stores it. Without the exact-alarm permission nothing is set (the Grant screen shows). */
-    fun apply(plan: AlertPlan, now: Instant = Instant.now()) {
+    /**
+     * Schedules [plan] and stores it, with the app's [style] for the receivers' notifications. Without the exact-alarm
+     * permission nothing is set (the Grant screen shows).
+     */
+    fun apply(plan: AlertPlan, now: Instant = Instant.now(), style: NotificationStyle = NotificationStyle.Default) {
         val previous = store.read()
         val keep = plan.alerts.map { it.requestCode }.toSet()
         previous?.alerts?.filter { it.requestCode !in keep }?.forEach { cancel(alertIntent(it, PendingIntent.FLAG_NO_CREATE)) }
@@ -48,7 +51,7 @@ class AlertScheduler(context: Context) {
         previous?.worshipReminders?.filter { it.requestCode !in keepWorship }?.forEach {
             cancel(worshipIntent(it, PendingIntent.FLAG_NO_CREATE))
         }
-        store.write(plan)
+        store.write(plan, style)
         arm(plan)
         armSilence(plan, now)
         armWorship(plan.worshipReminders, now)

@@ -7,15 +7,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
 import androidx.core.content.ContextCompat
-import androidx.core.os.UserManagerCompat
-import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.SilenceWindow
 import java.time.Instant
 import java.time.LocalDate
-import kotlinx.coroutines.flow.first
 
 /**
  * Prayer Silence's thin adapter over the ringer. At a Silence Window's [start] it puts the phone on the window's mode
@@ -26,7 +23,8 @@ import kotlinx.coroutines.flow.first
  * restores the sound early. A phone already silent, on vibrate or on Do Not Disturb is left alone and nothing is
  * restored, whichever mode is chosen. Without Do Not Disturb (notification policy) access Android forbids silencing, so nothing happens.
  *
- * While it holds the phone silenced it shows [SilenceNotification] (in [digits] and [language]), whose «استعادة الصوت»
+ * While it holds the phone silenced it shows [SilenceNotification] (in the app's digits and language, from the
+ * stored plan unless given), whose «استعادة الصوت»
  * calls [restore]. A ringer change by the user ([ringerChanged], via [watchRinger]) hands the window to them: the
  * notification goes and nothing is restored at the end.
  *
@@ -40,9 +38,15 @@ import kotlinx.coroutines.flow.first
  */
 class PrayerSilencer(
     private val context: Context,
-    private val digits: DigitStyle = DigitStyle.AUTOMATIC,
-    private val language: String = "",
+    digits: DigitStyle? = null,
+    language: String? = null,
 ) {
+    /** Given, or else stored with the plan ([AlertPlanStore.readStyle]): a receiver never reads settings. */
+    private val style by lazy {
+        val stored = if (digits == null || language == null) AlertPlanStore(context).readStyle() else NotificationStyle.Default
+        NotificationStyle(digits ?: stored.digits, language ?: stored.language)
+    }
+
     private val audio = context.getSystemService(AudioManager::class.java)
     private val notifications = context.getSystemService(NotificationManager::class.java)
     private val record = context.createDeviceProtectedStorageContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -65,7 +69,7 @@ class PrayerSilencer(
             // What the app left, so the end can tell whether the user has since turned Do Not Disturb on or off.
             .putInt(KEY_FILTER, notifications.currentInterruptionFilter)
             .apply()
-        SilenceNotification.post(context, window, digits, language)
+        SilenceNotification.post(context, window, style.digits, style.language)
     }
 
     /**
@@ -83,7 +87,7 @@ class PrayerSilencer(
     private fun hold(window: SilenceWindow) {
         record.edit().putString(KEY_WINDOW, encode(window)).apply()
         AlertScheduler(context).armSilenceEnd(window)
-        SilenceNotification.post(context, window, digits, language)
+        SilenceNotification.post(context, window, style.digits, style.language)
     }
 
     /**
@@ -162,7 +166,7 @@ class PrayerSilencer(
     fun catchUp(now: Instant) {
         adhanStopped(now)
         val window = active() ?: return
-        if (window.end.isAfter(now)) SilenceNotification.post(context, window, digits, language) else end(window)
+        if (window.end.isAfter(now)) SilenceNotification.post(context, window, style.digits, style.language) else end(window)
     }
 
     /** Whether the app holds the phone silenced for a Silence Window at [now]: one started and not yet at its end. */
@@ -206,16 +210,6 @@ class PrayerSilencer(
                 isJumuah = f[5].toBooleanStrict(),
             )
         }.getOrNull()
-
-        /**
-         * A silencer whose notification is in the app's digits and language, read from settings once the phone is
-         * unlocked; before the first unlock settings are unreadable, so it uses the defaults.
-         */
-        suspend fun inAppStyle(context: Context): PrayerSilencer {
-            val app = context.applicationContext as? MawaqeetApplication
-            if (app == null || !UserManagerCompat.isUserUnlocked(context)) return PrayerSilencer(context)
-            return PrayerSilencer(context, app.settings.digitStyle.first(), app.settings.appLanguage.first())
-        }
 
         /**
          * Listens for ringer changes for as long as the process lives ([ringerChanged]). Called from the Application, so

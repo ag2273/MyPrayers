@@ -265,6 +265,33 @@ class AlertSchedulerTest {
         assertEquals(listOf(SilenceReceiver.ACTION_END to dhuhrSilence.end), silenceAlarms())
     }
 
+    @Test
+    fun `a plan stored by the previous version is still read, with the default digits and language`() {
+        val file = java.io.File(context.createDeviceProtectedStorageContext().filesDir, AlertPlanStore.FILE_NAME)
+        file.writeText(
+            listOf(
+                "alert-plan-v6",
+                midnight.toEpochMilli().toString(),
+                listOf(dhuhr.instant.toEpochMilli(), "DHUHR", "ADHAN_ALERT", "SHORT_ADHAN", "EXACT", day, false, dhuhr.instant.toEpochMilli(), false, true, "ALARM").joinToString("\t"),
+                listOf("silence", "DHUHR", day, dhuhrSilence.start.toEpochMilli(), dhuhrSilence.end.toEpochMilli(), "SILENT", false).joinToString("\t"),
+            ).joinToString("\n", postfix = "\n"),
+        )
+
+        val stored = AlertPlanStore(context)
+        assertEquals(listOf(dhuhr), stored.read()!!.alerts)
+        assertEquals(listOf(dhuhrSilence), stored.read()!!.silenceWindows)
+        assertEquals(NotificationStyle.Default, stored.readStyle())
+    }
+
+    @Test
+    fun `the digits and language survive the stored plan`() {
+        val style = NotificationStyle(app.mawaqeet.core.DigitStyle.WESTERN, "en")
+        AlertScheduler(context).apply(AlertPlan(listOf(dhuhr), midnight, silenceWindows = listOf(dhuhrSilence)), early, style)
+
+        assertEquals(style, AlertPlanStore(context).readStyle())
+        assertEquals(listOf(dhuhrSilence), AlertPlanStore(context).read()!!.silenceWindows)
+    }
+
     private val audio get() = context.getSystemService(AudioManager::class.java)
     private val during = Instant.parse("2026-11-08T09:10:00Z")
 

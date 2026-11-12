@@ -8,6 +8,7 @@ import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
+import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.PlannedAlert
 import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.Prayer
@@ -23,23 +24,38 @@ import java.time.LocalDate
  * The last alert plan the scheduler applied, kept in **device-protected storage** (file `files/alert_plan.txt`
  * under `createDeviceProtectedStorageContext()`) so a locked boot can re-arm alarms before the first unlock,
  * when settings in credential-encrypted DataStore are unreadable. One tab-separated line per alert, then one per
- * Silence Window, whose first field is `silence`, then one per Worship Reminder, whose first field is `worship`.
+ * Silence Window, whose first field is `silence`, then one per Worship Reminder, whose first field is `worship`, then
+ * the [NotificationStyle] (`style digits language`, v7), which the alarms' receivers use for their notifications
+ * instead of reading settings.
  */
 internal class AlertPlanStore(context: Context) {
     private val file = AtomicFile(File(context.createDeviceProtectedStorageContext().filesDir, FILE_NAME))
 
-    fun read(): AlertPlan? = try {
-        decode(file.readFully().decodeToString())
-    } catch (_: FileNotFoundException) {
-        null
-    } catch (_: IllegalArgumentException) {
-        null // Unreadable (e.g. an older format): treated as no stored plan; the next full reschedule rewrites it.
+    fun read(): AlertPlan? = readLines()?.let { lines ->
+        try {
+            decode(lines.filterNot { it.startsWith(STYLE + "\t") })
+        } catch (_: IllegalArgumentException) {
+            null // Unreadable (e.g. an older format): treated as no stored plan; the next full reschedule rewrites it.
+        }
     }
 
-    fun write(plan: AlertPlan) {
+    /** The digits and language stored with the plan; [NotificationStyle.Default] for a plan from before v7 or none. */
+    fun readStyle(): NotificationStyle = readLines()
+        ?.firstOrNull { it.startsWith(STYLE + "\t") }
+        ?.split('\t')
+        ?.let { f -> runCatching { NotificationStyle(DigitStyle.valueOf(f[1]), f.getOrElse(2) { "" }) }.getOrNull() }
+        ?: NotificationStyle.Default
+
+    private fun readLines(): List<String>? = try {
+        file.readFully().decodeToString().lines().filter { it.isNotEmpty() }
+    } catch (_: FileNotFoundException) {
+        null
+    }
+
+    fun write(plan: AlertPlan, style: NotificationStyle = NotificationStyle.Default) {
         val out = file.startWrite()
         try {
-            out.write(encode(plan).encodeToByteArray())
+            out.write(encode(plan, style).encodeToByteArray())
             file.finishWrite(out)
         } catch (e: Exception) {
             file.failWrite(out)
@@ -47,7 +63,7 @@ internal class AlertPlanStore(context: Context) {
         }
     }
 
-    private fun encode(plan: AlertPlan): String = buildString {
+    private fun encode(plan: AlertPlan, style: NotificationStyle): String = buildString {
         appendLine(VERSION)
         appendLine(plan.nextLocalMidnight.toEpochMilli())
         for (a in plan.alerts) {
@@ -68,11 +84,12 @@ internal class AlertPlanStore(context: Context) {
         for (r in plan.worshipReminders) {
             appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot).joinToString("\t"))
         }
+        appendLine(listOf(STYLE, style.digits.name, style.language).joinToString("\t"))
     }
 
-    private fun decode(text: String): AlertPlan {
-        val lines = text.lines().filter { it.isNotEmpty() }
-        require(lines.firstOrNull() == VERSION)
+    private fun decode(lines: List<String>): AlertPlan {
+        // v6 differs only in having no style line.
+        require(lines.firstOrNull() == VERSION || lines.firstOrNull() == PREVIOUS_VERSION)
         val midnight = Instant.ofEpochMilli(lines[1].toLong())
         val (worshipLines, otherLines) = lines.drop(2).partition { it.startsWith(WORSHIP + "\t") }
         val (silenceLines, alertLines) = otherLines.partition { it.startsWith(SILENCE + "\t") }
@@ -120,13 +137,27 @@ internal class AlertPlanStore(context: Context) {
 
     companion object {
         const val FILE_NAME = "alert_plan.txt"
-        private const val VERSION = "alert-plan-v6"
+        private const val VERSION = "alert-plan-v7"
+        private const val PREVIOUS_VERSION = "alert-plan-v6"
 
         /** First field of a Silence Window's line (#61). */
         private const val SILENCE = "silence"
 
         /** First field of a Worship Reminder's line (#63): `worship kind prayerDay instant slot`. */
         private const val WORSHIP = "worship"
+
+        /** First field of the [NotificationStyle] line (v7): `style digits language`. */
+        private const val STYLE = "style"
+    }
+}
+
+/**
+ * The app's digits and language (an empty language: the phone's), stored with the plan so the alarms' receivers can
+ * write their notifications in them before the first unlock, and without reading settings in a receiver.
+ */
+data class NotificationStyle(val digits: DigitStyle, val language: String) {
+    companion object {
+        val Default = NotificationStyle(DigitStyle.AUTOMATIC, "")
     }
 }
 

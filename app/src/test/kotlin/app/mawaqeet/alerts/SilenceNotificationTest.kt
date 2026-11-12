@@ -90,6 +90,19 @@ class SilenceNotificationTest {
     }
 
     @Test
+    fun `the app's digits and language travel in the stored plan, so a window started by an alarm uses them`() {
+        AlertScheduler(context).apply(
+            AlertPlan(emptyList(), Instant.parse("2026-11-08T21:00:00Z"), silenceWindows = listOf(window)),
+            early,
+            NotificationStyle(DigitStyle.ARABIC_INDIC, "ar"),
+        )
+
+        PrayerSilencer(context).start(window)
+
+        assertEquals("الهاتف صامت حتى ٣:٢٤", posted.single().text())
+    }
+
+    @Test
     fun `Restore sound brings the sound back at once, removes the notification and cancels the end alarm`() {
         ShadowAlarmManager.setCanScheduleExactAlarms(true)
         AlertScheduler(context).apply(AlertPlan(emptyList(), Instant.parse("2026-11-08T21:00:00Z"), silenceWindows = listOf(window)), early)
