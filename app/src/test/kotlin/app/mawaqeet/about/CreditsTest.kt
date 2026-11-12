@@ -42,6 +42,12 @@ class CreditsTest {
     }
 
     @Test
+    fun `the adhkar texts credit Hisn al-Muslim and its author`() {
+        val texts = Credits.of(CreditKind.TEXT)
+        assertTrue(texts.any { "Hisn al-Muslim" in it.name && "al-Qahtani" in it.name })
+    }
+
+    @Test
     fun `every credit links to its source over https`() {
         assertTrue(Credits.all.all { it.url.startsWith("https://") && it.licence.isNotBlank() })
     }

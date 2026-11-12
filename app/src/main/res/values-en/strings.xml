@@ -41,6 +41,8 @@
     <string name="about_summary">Prayer Times, Adhan Alerts and a Prayer Log, all on your device.</string>
     <string name="about_libraries">Libraries</string>
     <string name="about_datasets">Data</string>
+    <string name="about_texts">Texts</string>
+    <string name="about_use_hisn">The morning, evening and after-prayer adhkar and their counts, taken from the hadith collections they come from</string>
     <string name="about_fonts">Fonts</string>
     <string name="about_recordings">Adhan recordings</string>
     <string name="about_recordings_none">The app doesn\'t include adhan recordings yet. You can pick an adhan from your files in the Alerts settings.</string>

@@ -188,4 +188,57 @@ class AdhkarCatalogTest {
         assertEquals(3, afterPrayer.first().count)
         assertEquals(listOf(33, 33, 33), afterPrayer.filter { it.text in TASBEEH }.map { it.count })
     }
+
+    private val full = java.io.File("../app/src/main/assets/adhkar.tsv").inputStream().use(AdhkarCatalog::read)
+
+    private fun AdhkarSet.byId(id: String) = adhkar.singleOrNull { it.id == id } ?: error("${this.id.key} has no $id")
+
+    @Test
+    fun `every bundled dhikr has its text, count and source`() {
+        for (set in AdhkarSetId.entries) {
+            val adhkar = full.set(set).adhkar
+            assertTrue(adhkar.isNotEmpty(), "${set.key} is empty")
+            for (d in adhkar) {
+                assertTrue(d.text.isNotBlank() && d.source.isNotBlank() && d.count >= 1, "${set.key}/${d.id}")
+                // Sources are short lines naming the hadith collection, not virtue texts.
+                assertTrue(d.source.startsWith("رواه") || d.source == "متفق عليه", "${set.key}/${d.id}: ${d.source}")
+                assertTrue(d.source.length <= 60, "${set.key}/${d.id} source is long")
+            }
+        }
+    }
+
+    @Test
+    fun `the bundled sets are the full Hisn al-Muslim adhkar without Quran text`() {
+        val morning = full.set(AdhkarSetId.MORNING)
+        val evening = full.set(AdhkarSetId.EVENING)
+        val afterPrayer = full.set(AdhkarSetId.AFTER_PRAYER)
+        assertEquals(20, morning.adhkar.size)
+        assertEquals(17, evening.adhkar.size)
+        assertEquals(8, afterPrayer.adhkar.size)
+        // Repeat counts as in Hisn al-Muslim.
+        for (set in listOf(morning, evening)) {
+            assertEquals(4, set.byId("ushhiduka").count)
+            assertEquals(7, set.byId("hasbiyallah").count)
+            assertEquals(3, set.byId("raditu-billah").count)
+            assertEquals(10, set.byId("la-ilaha-illallah-10").count)
+            assertEquals(10, set.byId("salat-ala-annabi").count)
+            assertEquals("رواه الطبراني", set.byId("salat-ala-annabi").source)
+        }
+        // Said in the morning only: the hundred tahlil, «عدد خلقه» three times, and «علمًا نافعًا».
+        assertEquals(100, morning.byId("la-ilaha-illallah-100").count)
+        assertEquals(3, morning.byId("adada-khalqih").count)
+        assertTrue(evening.adhkar.none { it.id in setOf("la-ilaha-illallah-100", "adada-khalqih", "ilman-nafian") })
+        // Said in the evening only: «أعوذ بكلمات الله التامات» three times (Muslim).
+        assertEquals(3, evening.byId("audhu-bikalimatillah").count)
+        assertTrue(morning.adhkar.none { it.id == "audhu-bikalimatillah" })
+        // Each evening dhikr speaks of the evening.
+        assertTrue(evening.byId("ushhiduka").text.startsWith("اللَّهُمَّ إِنِّي أَمْسَيْتُ"))
+        assertTrue(evening.byId("ma-asbaha-bi").text.startsWith("اللَّهُمَّ مَا أَمْسَى بِي"))
+        assertTrue(evening.adhkar.none { "أَصْبَحْتُ" in it.text || "هَذَا الْيَوْمِ" in it.text })
+        assertTrue(morning.adhkar.none { "أَمْسَيْتُ" in it.text || "اللَّيْلَةِ" in it.text })
+        // After the Prayer: the full «لا إله إلا الله ... ولو كره الكافرون» (Muslim) before the tasbeeh.
+        assertEquals("رواه مسلم", afterPrayer.byId("la-hawla-wala-quwwata").source)
+        // Quran text is out of scope (#58): no ayat in the catalog.
+        assertTrue(listOf(morning, evening, afterPrayer).flatMap { it.adhkar }.none { '﴿' in it.text || "الْقَيُّومُ لَا تَأْخُذُهُ" in it.text })
+    }
 }

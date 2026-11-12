@@ -22,7 +22,8 @@ class WorshipReminderReceiver : BroadcastReceiver() {
         }
         if (intent.action != ACTION_REMIND) return
         val reminder = reminder(intent) ?: return
-        WorshipReminderNotification.post(context, reminder)
+        // Inside a Silence Window the reminder must not break the silence (#76).
+        WorshipReminderNotification.post(context, reminder, silent = PrayerSilencer(context).isActive())
     }
 
     companion object {
