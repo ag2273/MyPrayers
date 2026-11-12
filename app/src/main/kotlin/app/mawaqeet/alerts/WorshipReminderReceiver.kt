@@ -32,6 +32,8 @@ class WorshipReminderReceiver : BroadcastReceiver() {
         val reminder = reminder(intent) ?: return
         // Preferences (the silence record) and the database: off the main thread.
         ReceiverWork.run(this) {
+            // A Silence Window whose end alarm never came gets its sound back now.
+            PrayerSilencer(context).endIfOverdue()
             // Inside a Silence Window the reminder must not break the silence (#76).
             val silent = PrayerSilencer(context).isActive()
             val set = reminder.kind.adhkarSet

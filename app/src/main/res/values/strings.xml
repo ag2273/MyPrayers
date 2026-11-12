@@ -39,16 +39,15 @@
     <string name="about_contact">راسلنا</string>
     <string name="about_sources_section">المصادر</string>
     <string name="about_sources_title">المصادر والتراخيص</string>
-    <string name="about_recordings_none_short">لا توجد بعد</string>
     <string name="about_version">الإصدار %1$s</string>
     <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك.</string>
     <string name="about_libraries">المكتبات</string>
     <string name="about_datasets">البيانات</string>
-    <string name="about_texts">النصوص</string>
+    <string name="about_texts">الأذكار</string>
+    <string name="about_name_hisn">حصن المسلم (سعيد بن علي بن وهف القحطاني)</string>
+    <string name="about_licence_hisn">نصوص الأحاديث من مصادرها الأصلية</string>
     <string name="about_use_hisn">نصوص أذكار الصباح والمساء وأذكار ما بعد الصلاة وأعدادها، مأخوذة من مصادرها في كتب الحديث</string>
     <string name="about_fonts">الخطوط</string>
-    <string name="about_recordings">تسجيلات الأذان</string>
-    <string name="about_recordings_none">لا يضم التطبيق تسجيلات أذان بعد. يمكنك اختيار أذان من ملفاتك في إعدادات التنبيهات.</string>
     <string name="about_credit_description">%1$s، الترخيص: %2$s. يفتح الموقع</string>
     <string name="about_licence">الترخيص: %1$s</string>
     <string name="about_use_adhan">حساب مواقيت الصلاة</string>
@@ -414,6 +413,9 @@
     <!-- Prayer Silence notification (#67). -->
     <string name="prayer_silence_notification">الهاتف صامت حتى %1$s</string>
     <string name="prayer_silence_restore">استعادة الصوت</string>
+    <string name="prayer_silence_log">نسخ سجل الصامت</string>
+    <string name="prayer_silence_log_summary">آخر ما فعله الصامت وقت الصلاة، لإرساله إلينا إن لم يعد الصوت.</string>
+    <string name="prayer_silence_log_copied">نُسخ السجل</string>
     <string name="prayer_silence_channel_name">الصامت وقت الصلاة</string>
     <string name="prayer_silence_channel_description">إشعار هادئ ما دام الهاتف صامتًا للصلاة</string>
     <string name="settings_alerts_summary_off">كلها موقوفة</string>
@@ -471,6 +473,8 @@
     <string name="adhkar_count_one">عُدّ مرة</string>
     <string name="adhkar_tap_hint">اضغط في أي مكان على البطاقة للعدّ</string>
     <string name="adhkar_restart">ابدأ من جديد</string>
+    <string name="adhkar_previous">الذكر السابق</string>
+    <string name="adhkar_next">الذكر التالي</string>
     <string name="adhkar_set_complete">اكتملت %1$s لهذا اليوم</string>
     <string name="adhkar_set_complete_body">تقبّل الله منا ومنك.</string>
     <!-- The Adhkar Record week grid (#74): marks only, no streaks or scores. -->
@@ -506,6 +510,7 @@
     <string name="clock_am">ص</string>
     <string name="clock_pm">م</string>
     <!-- TalkBack reads a Clock widget as one sentence: the time, the next Stop and the time left, the dates. -->
+    <string name="clock_weather_description">الطقس %1$s، الرطوبة %2$s، واحتمال المطر %3$s.</string>
     <string name="clock_description">الساعة %1$s. %2$s بعد %3$s. %4$s.</string>
     <plurals name="clock_spoken_hours">
         <item quantity="zero">%s ساعة</item>

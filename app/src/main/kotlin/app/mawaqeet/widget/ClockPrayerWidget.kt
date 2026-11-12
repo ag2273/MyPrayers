@@ -37,7 +37,7 @@ class ClockPrayerWidget(private val clock: Clock = Clock.systemDefaultZone()) : 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
         clock = clock,
-        build = { core, text -> ClockPrayerView(ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context), text) },
+        build = { core, text -> ClockPrayerView(ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context, clockWeather(context, core, clock)), text) },
         layout = { view, rtl -> ClockPrayerLayout(view, rtl) },
     )
 }
@@ -86,6 +86,12 @@ internal object ClockPrayerMetrics {
     /** The prayer side takes at least this share of the width, so its bar reads as a bar. */
     const val PRAYER_SHARE = 0.44f
     const val MAX_GROW = 1.6f
+
+    /** The weather on one line under the clock at 4×2 (design board option «أ»). */
+    val WEATHER = WeatherSizes(temperatureSp = 13f, detailSp = 11f, sunDp = 12f, iconDp = 10f, iconGapDp = 3f, itemGapDp = 8f, lineGapDp = 0f)
+    /** At 4×1 only the temperature, after the clock. */
+    const val COMPACT_TEMPERATURE_SP = 15f
+    const val COMPACT_TEMPERATURE_GAP_DP = 6f
 
     /** Below this height (dp) the launcher gives a 4×1: the dates go, and «الصلاة القادمة» and «من …» where they don't fit. */
     const val COMPACT_BELOW = MIN_HEIGHT
@@ -138,11 +144,15 @@ internal object ClockPrayerMetrics {
             if (since) w(view.since, SINCE_SP * s) else 0f,
         )
         fun prayerWidth(s: Float) = maxOf(prayerText(s), (across - 2 * DIVIDER_GAP_DP * s - 1) * PRAYER_SHARE)
+        val weather = clock.weather
         fun clockSide(s: Float) = maxOf(
-            w(clock.clockSample, CLOCK_SP * s) + if (clock.marker.isEmpty()) 0f else MARKER_GAP_DP * s + w(clock.marker, MARKER_SP * s),
+            w(clock.clockSample, CLOCK_SP * s) + (if (clock.marker.isEmpty()) 0f else MARKER_GAP_DP * s + w(clock.marker, MARKER_SP * s)) +
+                if (compact && weather != null) COMPACT_TEMPERATURE_GAP_DP * s + compactTemperatureWidth(weather, COMPACT_TEMPERATURE_SP * s, fontScale) else 0f,
             if (dates) w(clock.gregorianDate, DATE_SP * s) else 0f,
+            if (!compact && weather != null) WEATHER.lineWidth(weather, s, fontScale) else 0f,
         )
         fun clockHeight(s: Float) = h(clock.clockSample, CLOCK_SP * s) +
+            (if (!compact && weather != null) 2 * LINE_GAP_DP * s + WEATHER.lineHeight(weather, s, fontScale) else 0f) +
             if (dates) 2 * LINE_GAP_DP * s + h(clock.hijriDate, DATE_SP * s) + h(clock.gregorianDate, DATE_SP * s) else 0f
         fun prayerHeight(s: Float) = (if (label) h(view.label, LABEL_SP * s) + LINE_GAP_DP * s else 0f) + LINE_GAP_DP * s +
             maxOf(h(clock.nextName, NAME_SP * s, bold = true), h(clock.nextTime, TIME_SP * s)) +
@@ -191,8 +201,21 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
                                 if (clock.marker.isEmpty()) null else cell {
                                     WidgetLine(clock.marker, ClockPrayerMetrics.MARKER_SP * fit.clockScale, Tone.MUTED, modifier = direction.paddingStart((ClockPrayerMetrics.MARKER_GAP_DP * fit.clockScale).dp))
                                 },
+                                clock.weather?.takeIf { !fit.dates }?.let { weather ->
+                                    cell {
+                                        CompactTemperature(
+                                            weather,
+                                            ClockPrayerMetrics.COMPACT_TEMPERATURE_SP * fit.clockScale,
+                                            direction.paddingStart((ClockPrayerMetrics.COMPACT_TEMPERATURE_GAP_DP * fit.clockScale).dp),
+                                        )
+                                    }
+                                },
                             ),
                         )
+                        val weather = clock.weather
+                        if (fit.dates && weather != null) {
+                            WeatherLine(weather, ClockPrayerMetrics.WEATHER, s, GlanceModifier.padding(top = line * 2))
+                        }
                         if (fit.dates) {
                             WidgetLine(clock.hijriDate, ClockPrayerMetrics.DATE_SP * s, Tone.MUTED, center = true, modifier = GlanceModifier.padding(top = line))
                             WidgetLine(clock.gregorianDate, ClockPrayerMetrics.DATE_SP * s, Tone.MUTED, center = true, modifier = GlanceModifier.padding(top = line))

@@ -25,6 +25,8 @@ import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlarmManager
+import org.robolectric.shadows.ShadowSystemClock
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.util.TimeZone
@@ -117,19 +119,79 @@ class SilenceNotificationTest {
     }
 
     @Test
-    fun `if the user changes the sound mode during the window, the notification goes and the end leaves their choice`() {
+    fun `if the user turns the sound back on during the window, the notification goes and the end leaves their choice`() {
         PrayerSilencer.watchRinger(context)
         PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window)
+        ShadowSystemClock.advanceBy(Duration.ofMinutes(5))
 
-        audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
         context.sendBroadcast(Intent(AudioManager.RINGER_MODE_CHANGED_ACTION))
         idle()
         assertTrue(posted.isEmpty())
 
-        // Even back on silent, the window is theirs now: its end does not turn the sound on over them.
+        // Even silent again, the window is theirs now: its end does not turn the sound on over them.
         audio.ringerMode = AudioManager.RINGER_MODE_SILENT
         PrayerSilencer(context).end(window)
         assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
+    fun `a phone that moves vibrate to mute keeps the notification, and the end brings the sound back`() {
+        // A Samsung S25+ with vibrate chosen: the sound never came back after Isha.
+        PrayerSilencer.watchRinger(context)
+        PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window.copy(mode = SilenceMode.VIBRATE))
+
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        context.sendBroadcast(Intent(AudioManager.RINGER_MODE_CHANGED_ACTION))
+        idle()
+        ShadowSystemClock.advanceBy(Duration.ofMinutes(5))
+        audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+        context.sendBroadcast(Intent(AudioManager.RINGER_MODE_CHANGED_ACTION))
+        idle()
+        assertEquals(1, posted.size)
+
+        PrayerSilencer(context).end(window.copy(mode = SilenceMode.VIBRATE))
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertTrue(posted.isEmpty())
+    }
+
+    @Test
+    fun `a moment on sound right after the start is the phone settling, not the user`() {
+        PrayerSilencer.watchRinger(context)
+        PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window)
+
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        context.sendBroadcast(Intent(AudioManager.RINGER_MODE_CHANGED_ACTION))
+        idle()
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        context.sendBroadcast(Intent(AudioManager.RINGER_MODE_CHANGED_ACTION))
+        idle()
+        assertEquals(1, posted.size)
+
+        PrayerSilencer(context).end(window)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+    }
+
+    @Test
+    fun `a window whose end alarm never came ends at the next check after its end`() {
+        PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window)
+
+        PrayerSilencer(context).endIfOverdue(window.end.minusSeconds(60))
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+
+        PrayerSilencer(context).endIfOverdue(window.end.plusSeconds(60))
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertTrue(posted.isEmpty())
+    }
+
+    @Test
+    fun `what Prayer Silence did is logged for a report`() {
+        PrayerSilencer(context, DigitStyle.ARABIC_INDIC, "ar").start(window)
+        PrayerSilencer(context).end(window)
+
+        val log = SilenceLog.read(context)
+        assertTrue(log, "start ${window.prayer} ringer=silent" in log)
+        assertTrue(log, "restored ringer=normal" in log)
     }
 
     @Test

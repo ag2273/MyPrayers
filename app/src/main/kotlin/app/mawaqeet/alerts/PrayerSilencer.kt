@@ -24,8 +24,10 @@ import java.time.Instant
  *
  * While it holds the phone silenced it shows [SilenceNotification] (in the app's digits and language, from the
  * stored plan unless given), whose «استعادة الصوت»
- * calls [restore]. A ringer change by the user ([ringerChanged], via [watchRinger]) hands the window to them: the
- * notification goes and nothing is restored at the end.
+ * calls [restore]. Turning the sound back on during the window ([ringerChanged], via [watchRinger]) hands it to the
+ * user: the notification goes and the end changes nothing. A move between silent and vibrate does not: phones make it
+ * themselves (a Samsung S25+ put the phone from the vibrate the app set onto mute, and the sound never came back), so
+ * the window stays the app's and its end brings the sound back.
  *
  * Many phones (Samsung among them) turn Do Not Disturb on themselves when an app silences the ringer, sometimes a moment
  * later. A Do Not Disturb change within [SIDE_EFFECT_MILLIS] of the start ([interruptionFilterChanged]) is taken as
@@ -74,6 +76,7 @@ class PrayerSilencer(
             .putBoolean(KEY_DND_BY_APP, isDoNotDisturb(filter))
             .putLong(KEY_STARTED_AT, SystemClock.elapsedRealtime())
             .apply()
+        log("start ${window.prayer}", filter)
         SilenceNotification.post(context, window, style.digits, style.language)
     }
 
@@ -96,28 +99,34 @@ class PrayerSilencer(
     }
 
     /**
-     * The window's planned end: the recorded mode comes back if the ringer is still what the app set (a ringer change by
-     * the user during the window wins). A Do Not Disturb change by the user during the window is kept as they left it;
-     * one the phone made along with the silence is undone.
+     * The window's planned end: the recorded mode comes back while the phone is still silent or on vibrate (the user
+     * turning the sound on during the window already handed it to them). A Do Not Disturb change by the user during the
+     * window is kept as they left it; one the phone made along with the silence is undone.
      */
     fun end(window: SilenceWindow) {
         if (awaiting()?.id == window.id) record.edit().remove(KEY_AWAITING).apply()
         val held = active()
+        log("end ${window.prayer}${if (held == null) " (not held)" else ""}", notifications.currentInterruptionFilter)
         // Another window holds the silence now (they overlapped): its own end restores the sound.
         if (held != null && held.id != window.id) return
         SilenceNotification.cancel(context)
         if (held == null) return
         val previous = record.getInt(KEY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)
-        val applied = record.getInt(KEY_APPLIED, -1)
         // A record from before the filter was kept has none to compare.
         val filter = record.getInt(KEY_FILTER, notifications.currentInterruptionFilter)
         val dndByApp = record.getBoolean(KEY_DND_BY_APP, false)
         forget()
-        // The user moved the ringer themselves: theirs to keep.
-        if (audio.ringerMode != applied) return
+        // The sound is already on (the phone's own doing, since the user turning it on forgets the window first).
+        if (audio.ringerMode == previous && !isDoNotDisturb(notifications.currentInterruptionFilter)) return
         val now = notifications.currentInterruptionFilter
         runCatching { audio.ringerMode = previous }
+        if (audio.ringerMode != previous && isDoNotDisturb(now) && (now == filter || dndByApp)) {
+            // Some phones keep the ringer muted while their own Do Not Disturb is on: turn it off, then try again.
+            runCatching { notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL) }
+            runCatching { audio.ringerMode = previous }
+        }
         val after = notifications.currentInterruptionFilter
+        log("restored", after)
         when {
             // The user changed Do Not Disturb during the window: the ringer comes back but their setting stays, even
             // on phones where restoring the ringer turns Do Not Disturb off.
@@ -129,13 +138,15 @@ class PrayerSilencer(
     }
 
     /**
-     * Do Not Disturb changed. Right after the start, with the ringer still as the app set it, that is the phone's own
+     * Do Not Disturb changed. Right after the start, with the ringer still muted, that is the phone's own
      * side effect of the silence: it becomes part of what the app left, so the end still restores the sound (and turns
      * Do Not Disturb off). Later on it is the user's change, which [end] keeps.
      */
     fun interruptionFilterChanged() {
         if (!record.contains(KEY_WINDOW)) return
-        if (audio.ringerMode != record.getInt(KEY_APPLIED, -1)) return
+        log("dnd changed", notifications.currentInterruptionFilter)
+        // Still muted (as the app set it, or moved by the phone between silent and vibrate).
+        if (audio.ringerMode == record.getInt(KEY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)) return
         val since = SystemClock.elapsedRealtime() - record.getLong(KEY_STARTED_AT, Long.MIN_VALUE / 2)
         if (since !in 0..SIDE_EFFECT_MILLIS) return
         val filter = notifications.currentInterruptionFilter
@@ -164,14 +175,33 @@ class PrayerSilencer(
     }
 
     /**
-     * The ringer changed. If it is no longer the mode the app set, the user changed it themselves: the window is theirs
-     * now, so its end restores nothing and the notification goes.
+     * The ringer changed. Back on sound (and not by the app's own end), the user turned it on: the window is theirs now,
+     * so its end restores nothing and the notification goes. Moved between silent and vibrate, it is most likely the
+     * phone's own doing, and the window stays the app's: the new mode is what the end expects to find.
      */
     fun ringerChanged() {
         if (!record.contains(KEY_WINDOW)) return
-        if (audio.ringerMode == record.getInt(KEY_APPLIED, -1)) return
+        val mode = audio.ringerMode
+        if (mode == record.getInt(KEY_APPLIED, -1)) return
+        log("ringer changed", notifications.currentInterruptionFilter)
+        val since = SystemClock.elapsedRealtime() - record.getLong(KEY_STARTED_AT, Long.MIN_VALUE / 2)
+        // Right after the start any move is the phone settling (even a moment on sound): not the user's.
+        if (since in 0..SIDE_EFFECT_MILLIS) return
+        if (mode != record.getInt(KEY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)) {
+            record.edit().putInt(KEY_APPLIED, mode).apply()
+            return
+        }
         forget()
         SilenceNotification.cancel(context)
+    }
+
+    /**
+     * A safety net for an end alarm that never came (a phone that drops exact alarms): a window the app still holds
+     * whose planned end is past [now] ends now. Called from the receivers that run anyway (the minute tick, alerts).
+     */
+    fun endIfOverdue(now: Instant = Instant.now()) {
+        val held = active() ?: return
+        if (!held.end.isAfter(now)) end(held)
     }
 
     /**
@@ -202,6 +232,8 @@ class PrayerSilencer(
 
     /** Whether the app holds the phone silenced for a Silence Window at [now]: one started and not yet at its end. */
     fun isActive(now: Instant = Instant.now()): Boolean = active()?.end?.isAfter(now) == true
+
+    private fun log(event: String, filter: Int) = SilenceLog.add(context, event, audio.ringerMode, filter)
 
     private fun active(): SilenceWindow? = record.getString(KEY_WINDOW, null)?.let(::decode)
 

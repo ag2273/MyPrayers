@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -222,7 +223,9 @@ private fun outsideTimeNote(set: SetProgress): String = when (set.set) {
 
 /**
  * One set, one dhikr card at a time. Tapping anywhere on the card counts one with a light vibration; at the
- * dhikr's count the next one shows. Progress is the core's, per Prayer Day, so leaving and returning resumes.
+ * dhikr's count the next one not yet said shows. «السابق» and «التالي» move a whole dhikr back or on without
+ * counting; a skipped dhikr stays unsaid, so the set completes only once it is said too. Progress is the core's, per
+ * Prayer Day, so leaving and returning resumes at the first dhikr not yet said.
  */
 @Composable
 private fun SetReader(
@@ -234,6 +237,8 @@ private fun SetReader(
 ) {
     val version by changes.collectAsState()
     var progress by remember(adhkar, set) { mutableStateOf<SetProgress?>(null) }
+    // The dhikr shown, when moved with «السابق» or «التالي»; null follows the first dhikr not yet said.
+    var moved by rememberSaveable(set.key) { mutableStateOf<Int?>(null) }
     LaunchedEffect(adhkar, set, version) { progress = withContext(Dispatchers.IO) { adhkar.progress(set) } }
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
@@ -241,7 +246,7 @@ private fun SetReader(
     val name = slotName(set)
     SubPage(stringResource(set.set.nameRes), onBack) {
         val shown = progress ?: return@SubPage
-        val index = shown.currentIndex
+        val index = moved?.takeIf { it in shown.items.indices } ?: shown.currentIndex
         val prayer = set.prayer
         // After-prayer adhkar: which Prayer they are for can change until the first count.
         if (prayer != null && shown.items.none { it.counted > 0 }) {
@@ -274,8 +279,26 @@ private fun SetReader(
                 )
             }
             DhikrCard(shown.items[index]) {
+                if (shown.items[index].isDone) return@DhikrCard
                 haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                scope.launch { progress = withContext(Dispatchers.IO) { adhkar.count(set) } }
+                scope.launch {
+                    val after = withContext(Dispatchers.IO) { adhkar.count(set, index) }
+                    progress = after
+                    // At its count, on to the next dhikr not yet said.
+                    if (after.items[index].isDone) moved = after.nextUndone(index)
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = { moved = index - 1 },
+                    enabled = index > 0,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) { Text(stringResource(R.string.adhkar_previous)) }
+                OutlinedButton(
+                    onClick = { moved = index + 1 },
+                    enabled = index < shown.items.lastIndex,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) { Text(stringResource(R.string.adhkar_next)) }
             }
             Text(
                 stringResource(R.string.adhkar_tap_hint),
@@ -284,7 +307,10 @@ private fun SetReader(
             )
         }
         OutlinedButton(
-            onClick = { scope.launch { progress = withContext(Dispatchers.IO) { adhkar.restart(set) } } },
+            onClick = {
+                moved = null
+                scope.launch { progress = withContext(Dispatchers.IO) { adhkar.restart(set) } }
+            },
             modifier = Modifier.heightIn(min = 48.dp),
         ) {
             Text(stringResource(R.string.adhkar_restart))

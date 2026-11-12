@@ -185,6 +185,13 @@ data class SetProgress(
     val currentIndex: Int? = items.indexOfFirst { !it.isDone }.takeIf { it >= 0 }
 
     val current: DhikrProgress? get() = currentIndex?.let(items::get)
+
+    /**
+     * The dhikr to show after [index] reached its count: the next one after it not yet said in full, else the first
+     * such one before it (one skipped with «التالي»), or null when all are.
+     */
+    fun nextUndone(index: Int): Int? =
+        (index + 1 until items.size).firstOrNull { !items[it].isDone } ?: currentIndex
 }
 
 /**
@@ -205,12 +212,17 @@ class Adhkar(
     /** [slot] as read on the current Prayer Day. */
     fun progress(slot: AdhkarSlot): SetProgress = progressOn(prayers.currentPrayerDay(), slot)
 
-    /** Counts one repetition of the current dhikr; at its count the next dhikr becomes current. */
-    fun count(slot: AdhkarSlot): SetProgress = synchronized(repo) {
+    /**
+     * Counts one repetition of the dhikr at [index] (the reader's «التالي» and «السابق» move between them), or of the
+     * current dhikr when [index] is null. A dhikr already said in full is not counted again. The set is complete
+     * once every dhikr has reached its count, in any order.
+     */
+    fun count(slot: AdhkarSlot, index: Int? = null): SetProgress = synchronized(repo) {
         val day = prayers.currentPrayerDay()
         repo.clearCountsBefore(day.date)
         val before = progressOn(day, slot)
-        val current = before.current ?: return before
+        val current = (if (index == null) before.current else before.items.getOrNull(index)) ?: return before
+        if (current.isDone) return before
         repo.recordFirstUseIfAbsent(day.date)
         repo.setCount(day.date, slot.key, current.dhikr.id, current.counted + 1)
         val after = progressOn(day, slot)

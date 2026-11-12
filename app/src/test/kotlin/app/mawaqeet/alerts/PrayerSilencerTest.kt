@@ -156,6 +156,9 @@ class PrayerSilencerTest {
     @Test
     fun `if the user turns the sound back on during the window, the end leaves their choice alone`() {
         PrayerSilencer(context).start(window)
+        ShadowSystemClock.advanceBy(Duration.ofMinutes(5))
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        PrayerSilencer(context).ringerChanged()
         audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
 
         PrayerSilencer(context).end(window)

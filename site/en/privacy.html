@@ -26,9 +26,9 @@
   </header>
   <main class="doc">
     <h1>Privacy policy</h1>
-    <p class="meta">Mawaqeet (app.nileorbit.mawaqeet) by NileOrbit · Last updated 11 November 2026</p>
+    <p class="meta">Mawaqeet (app.nileorbit.mawaqeet) by NileOrbit · Last updated 12 November 2026</p>
 
-    <div class="summary"><b>In short:</b> Mawaqeet collects no data about you and sends nothing anywhere. It needs no account, doesn't connect to the internet, and has no ads, analytics or trackers. Everything it saves stays on your phone.</div>
+    <div class="summary"><b>In short:</b> Mawaqeet collects no data about you. It needs no account, has no ads, analytics or trackers, and everything it saves stays on your phone. Its only internet connection fetches the weather for the clock widgets, using only an approximate location for your city.</div>
 
     <h2>What the app keeps on your phone</h2>
     <ul>
@@ -37,10 +37,13 @@
       <li><b>Your settings:</b> calculation method, alerts, sounds, appearance and widgets.</li>
       <li><b>Custom adhan:</b> if you pick an audio file from your phone, the app plays it from where it is and never sends it anywhere.</li>
     </ul>
-    <p>None of this leaves your phone, and neither we nor anyone else can see it.</p>
+    <p>None of this leaves your phone (except the rounded location used to fetch the weather, below), and neither we nor anyone else can see it.</p>
 
     <h2>Location</h2>
     <p>The app asks only for <b>approximate</b> location, reads it only while the app is open, and never in the background. You can decline and choose your city by search or coordinates instead; every feature still works.</p>
+
+    <h2>Weather on the clock widgets</h2>
+    <p>The Big Clock, Gold Clock and Clock &amp; Prayer widgets show the temperature, humidity and chance of rain. To get them, the app contacts the free <a href="https://open-meteo.com">Open-Meteo</a> service about once an hour and sends it your city's coordinates <b>rounded to a tenth of a degree</b> (about 10 km), so it never receives your exact place. Nothing else is sent: no name, account, device identifier or prayer log. As with any internet connection, the service sees the connection's IP address; see <a href="https://open-meteo.com/en/terms">Open-Meteo's terms and privacy policy</a>. This happens only while a clock widget is on your home screen, and with no internet the weather simply disappears and the widget works as before.</p>
 
     <h2>Backup and moving to a new phone</h2>
     <p>The prayer log and settings (including your location) are excluded from Android's cloud backup. They move only in a direct transfer from your old phone to your new one (by cable or a direct connection), which happens between your two devices and never passes through us.</p>
@@ -52,9 +55,9 @@
       <li><b>Full-screen notifications:</b> to show the adhan over the lock screen in alarm-clock mode, if you turn it on.</li>
       <li><b>Foreground media playback:</b> so the adhan plays to the end, with a notification that has a Stop button.</li>
       <li><b>Run at startup:</b> to reschedule alerts after the phone restarts.</li>
+      <li><b>Internet:</b> only to fetch the weather for the clock widgets, as above.</li>
       <li><b>Vibration</b> and <b>approximate location</b>, as above.</li>
     </ul>
-    <p>The app does not request internet access.</p>
 
     <h2>Deleting your data</h2>
     <p>Settings → "About &amp; your data" → "Delete Prayer Log". Uninstalling the app deletes all of its data.</p>

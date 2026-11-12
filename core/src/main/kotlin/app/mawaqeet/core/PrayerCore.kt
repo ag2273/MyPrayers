@@ -15,6 +15,9 @@ class PrayerCore(
     private val clock: Clock,
     private val log: PrayerLogRepository,
 ) {
+    /** The location the times are for (the Clock Widgets' weather is fetched for it, rounded). */
+    val location: Location get() = settings.location
+
     /** The alert settings in effect, for showing each Prayer's kind of alert (the Next Prayer widget's chip). */
     fun alerts(): AlertSettings = settings.alerts
 

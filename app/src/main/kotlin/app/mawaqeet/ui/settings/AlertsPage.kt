@@ -63,6 +63,7 @@ import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
+import app.mawaqeet.alerts.SilenceLog
 import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
@@ -250,6 +251,22 @@ private fun PrayerSilenceRows(alerts: AlertSettings, actions: SettingsActions) {
             shorter = R.string.prayer_silence_jumuah_shorter,
             longer = R.string.prayer_silence_jumuah_longer,
         ) { step -> actions.stepPrayerSilenceMinutes(jumuah = true, step = step) }
+    }
+    SilenceLogRow()
+}
+
+/** «نسخ سجل الصامت»: what Prayer Silence did lately, copied for a report when the sound did not come back. */
+@Composable
+private fun SilenceLogRow() {
+    val context = LocalContext.current
+    val copied = stringResource(R.string.prayer_silence_log_copied)
+    Card {
+        NavRow(stringResource(R.string.prayer_silence_log), stringResource(R.string.prayer_silence_log_summary)) {
+            val text = SilenceLog.read(context).ifEmpty { "-" }
+            context.getSystemService(android.content.ClipboardManager::class.java)
+                .setPrimaryClip(android.content.ClipData.newPlainText("Mawaqeet silence log", text))
+            android.widget.Toast.makeText(context, copied, android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 }
 

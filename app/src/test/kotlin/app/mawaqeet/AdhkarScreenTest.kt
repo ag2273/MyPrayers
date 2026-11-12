@@ -10,6 +10,7 @@ import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.Adhkar
@@ -185,6 +186,31 @@ class AdhkarScreenTest {
 
         compose.onNodeWithText("ابدأ من جديد").performClick()
         waitForText("الذكر 1 من 2")
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `Next and Previous move a whole dhikr without counting, and a skipped one keeps the set open`() {
+        show()
+        waitForText("أذكار الصباح")
+        compose.onNodeWithText("أذكار الصباح").performClick()
+        waitForText("الذكر 1 من 2")
+
+        compose.onNodeWithText("الذكر التالي").performClick()
+        waitForText("الذكر 2 من 2")
+        assertEquals(0, haptics.count)
+        compose.onNodeWithText("الذكر التالي").assertIsNotEnabled()
+
+        // Say the second dhikr in full: the first, skipped, comes back.
+        val text = "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ"
+        repeat(3) { compose.onNodeWithText(text).performClick(); compose.waitForIdle() }
+        waitForText("الذكر 1 من 2")
+        assertFalse(adhkar.isComplete(AdhkarSetId.MORNING))
+
+        compose.onNodeWithText("الذكر السابق").assertIsNotEnabled()
+        compose.onNodeWithText("اللَّهُمَّ بِكَ أَصْبَحْنَا").performClick()
+        waitForText("اكتملت أذكار الصباح لهذا اليوم")
+        assertTrue(adhkar.isComplete(AdhkarSetId.MORNING))
     }
 
     @Test

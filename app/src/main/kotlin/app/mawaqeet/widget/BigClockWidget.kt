@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.AndroidRemoteViews
@@ -23,10 +25,16 @@ import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.layout.padding
 import androidx.glance.layout.wrapContentHeight
 import androidx.glance.layout.wrapContentWidth
 import app.mawaqeet.R
+import app.mawaqeet.core.PrayerCore
+import app.mawaqeet.core.Weather
+import app.mawaqeet.weather.WeatherStore
 import java.text.DecimalFormatSymbols
 import java.time.Clock
 import java.time.ZoneId
@@ -47,7 +55,7 @@ class BigClockWidget(private val clock: Clock = Clock.systemDefaultZone()) : Gla
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
         clock = clock,
-        build = { core, text -> ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context) },
+        build = { core, text -> ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context, clockWeather(context, core, clock)) },
         layout = { view, rtl -> BigClockLayout(view, rtl) },
     )
 }
@@ -65,6 +73,21 @@ internal fun clockContent(
     val now = ZonedDateTime.now(clock.withZone(ZoneId.systemDefault()))
     return ClockContent.of(day, now, text.formatter, DateFormat.is24HourFormat(context))
         .also { ClockTickReceiver.schedule(context, it.nextChange(now.toInstant())) }
+}
+
+/** The weather to show beside the clock (fetched within [Weather.SHOW_FOR] for this location), or null. */
+internal fun clockWeather(context: Context, core: PrayerCore, clock: Clock = Clock.systemDefaultZone()): Weather? =
+    WeatherStore(context).shownFor(core.location, clock.instant())
+
+/** The weather beside the clock, in the user's digits: «٢٩°», «٣٨٪», «٥٪». */
+internal data class ClockWeather(val temperature: String, val humidity: String, val rain: String) {
+    companion object {
+        fun of(weather: Weather, text: WidgetText): ClockWeather {
+            val f = text.formatter
+            val percent = if (text.rtl) "٪" else "%"
+            return ClockWeather("${f.number(weather.temperature)}°", f.number(weather.humidityPercent) + percent, f.number(weather.rainChancePercent) + percent)
+        }
+    }
 }
 
 /** What the Clock layouts draw, already in the user's language and digits. */
@@ -87,15 +110,17 @@ internal data class ClockView(
     /** The date line's two halves, for layouts that put them on lines of their own (Clock & Prayer). */
     val hijriDate: String,
     val gregorianDate: String,
-    /** TalkBack's one sentence: the time, the next Stop and the time left, the dates. */
+    /** TalkBack's one sentence: the time, the next Stop and the time left, the dates, and the weather. */
     val description: String,
+    /** Beside the clock (temperature only at 4×1); null without a recent fetch. */
+    val weather: ClockWeather? = null,
 ) {
     /** «الشروق ٠٦:٢٧» */
     val previous: String get() = "$previousName $previousTime"
     val next: String get() = "$nextName $nextTime"
 
     companion object {
-        fun of(content: ClockContent, text: WidgetText, context: Context): ClockView {
+        fun of(content: ClockContent, text: WidgetText, context: Context, weather: Weather? = null): ClockView {
             val s = text.strings
             val marker = when (content.meridiem) {
                 Meridiem.AM -> s.getString(R.string.clock_am)
@@ -105,6 +130,9 @@ internal data class ClockView(
             val nextName = s.getString(content.next.nameRes)
             val time = if (marker.isEmpty()) content.clockTime else "${content.clockTime} $marker"
             val dates = content.hijriDate + (if (text.rtl) "، " else ", ") + content.gregorianDate
+            val shownWeather = weather?.let { ClockWeather.of(it, text) }
+            val described = s.getString(R.string.clock_description, time, nextName, spoken(content, text), dates) +
+                (shownWeather?.let { " " + s.getString(R.string.clock_weather_description, it.temperature, it.humidity, it.rain) } ?: "")
             return ClockView(
                 clockTime = content.clockTime,
                 clockSample = text.formatter.clockTime(ZonedDateTime.of(2026, 1, 1, 10, 0, 0, 0, ZoneId.of("UTC")), twentyFourHour = true),
@@ -119,7 +147,8 @@ internal data class ClockView(
                 dateLine = content.dateLine,
                 hijriDate = content.hijriDate,
                 gregorianDate = content.gregorianDate,
-                description = s.getString(R.string.clock_description, time, nextName, spoken(content, text), dates),
+                description = described,
+                weather = shownWeather,
             )
         }
 
@@ -172,15 +201,35 @@ internal object BigClockMetrics {
     /** How far it grows past the reference sizes on a roomy 4×2. */
     const val MAX_GROW = 1.6f
 
+    /** The weather beside the clock (design board option «أ»), after a hairline. */
+    val WEATHER = WeatherSizes(temperatureSp = 17f, detailSp = 9f, sunDp = 13f, iconDp = 8f, iconGapDp = 3f, itemGapDp = 6f, lineGapDp = 3f)
+    /** Either side of the hairline between the clock and the weather. */
+    const val WEATHER_GAP_DP = 10f
+    /** At 4×1 only the temperature, after the clock. */
+    const val COMPACT_TEMPERATURE_SP = 18f
+    const val COMPACT_TEMPERATURE_GAP_DP = 8f
+
+    /** The clock's line at 4×2: the clock and marker, then the hairline and the weather when there is one. */
+    fun clockRowWidth(view: ClockView, s: Float, fontScale: Float): Float {
+        val clock = textWidthDp(view.clockSample, CLOCK_SP * s, fontScale) +
+            if (view.marker.isEmpty()) 0f else MARKER_GAP_DP * s + textWidthDp(view.marker, MARKER_SP * s, fontScale)
+        val weather = view.weather ?: return clock
+        return clock + 2 * WEATHER_GAP_DP * s + 1 + WEATHER.width(weather, s, fontScale)
+    }
+
+    fun clockRowHeight(view: ClockView, s: Float, fontScale: Float): Float = maxOf(
+        lineHeightDp(view.clockSample, CLOCK_SP * s, fontScale).toFloat(),
+        view.weather?.let { WEATHER.height(it, s, fontScale) } ?: 0f,
+    )
+
     fun scale(view: ClockView, widthDp: Float, heightDp: Float, fontScale: Float = 1f): Float {
         val across = widthDp - 2 * PADDING_H.value
         val room = heightDp - 2 * PADDING_V.value - 1
         return fitScale(floor = 0.4f, start = MAX_GROW) { s ->
-            val clockWidth = textWidthDp(view.clockSample, CLOCK_SP * s, fontScale) +
-                if (view.marker.isEmpty()) 0f else MARKER_GAP_DP * s + textWidthDp(view.marker, MARKER_SP * s, fontScale)
+            val clockWidth = clockRowWidth(view, s, fontScale)
             val rowWidth = textWidthDp(view.previous, STOP_SP * s, fontScale) + textWidthDp(view.countdown, COUNTDOWN_SP * s, fontScale, bold = true) +
                 textWidthDp(view.next, STOP_SP * s, fontScale, bold = true) + 2 * ROW_GAP_DP * s
-            val height = lineHeightDp(view.clockSample, CLOCK_SP * s, fontScale) + LINE_GAP_DP * s +
+            val height = clockRowHeight(view, s, fontScale) + LINE_GAP_DP * s +
                 maxOf(lineHeightDp(view.previous, STOP_SP * s, fontScale), lineHeightDp(view.countdown, COUNTDOWN_SP * s, fontScale, bold = true)) +
                 2 * LINE_GAP_DP * s + WidgetArt.LINE_HEIGHT_DP + lineHeightDp(view.dateLine, DATE_SP * s, fontScale)
             clockWidth <= across && rowWidth <= across && textWidthDp(view.dateLine, DATE_SP * s, fontScale) <= across && height <= room
@@ -212,7 +261,8 @@ internal object BigClockMetrics {
         val across = widthDp - 2 * PADDING_H.value
         val room = heightDp - 2 * COMPACT_PADDING_V.value - 1
         fun clockWidth(s: Float) = textWidthDp(view.clockSample, CLOCK_SP * s, fontScale) +
-            if (view.marker.isEmpty()) 0f else MARKER_GAP_DP * s + textWidthDp(view.marker, MARKER_SP * s, fontScale)
+            (if (view.marker.isEmpty()) 0f else MARKER_GAP_DP * s + textWidthDp(view.marker, MARKER_SP * s, fontScale)) +
+            (view.weather?.let { COMPACT_TEMPERATURE_GAP_DP * s + compactTemperatureWidth(it, COMPACT_TEMPERATURE_SP * s, fontScale) } ?: 0f)
         fun countdownWidth(s: Float) = textWidthDp(view.countdown, COUNTDOWN_SP * s, fontScale, bold = true)
         fun sideWidth(s: Float, stops: Boolean) = if (!stops) countdownWidth(s) else
             textWidthDp(view.previous, STOP_SP * s, fontScale) + countdownWidth(s) + textWidthDp(view.next, STOP_SP * s, fontScale, bold = true) + 2 * ROW_GAP_DP * s
@@ -250,6 +300,7 @@ internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = C
     val direction = LocalWidgetDirection.current
     WidgetFrame(rtl, horizontal = BigClockMetrics.PADDING_H, vertical = BigClockMetrics.PADDING_V, description = view.description) {
         Box(GlanceModifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            val weather = view.weather
             ReadingRow(
                 verticalAlignment = Alignment.CenterVertically,
                 children = listOfNotNull(
@@ -257,6 +308,11 @@ internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = C
                     if (view.marker.isEmpty()) null else cell {
                         WidgetLine(view.marker, BigClockMetrics.MARKER_SP * scale, Tone.MUTED, modifier = direction.paddingStart((BigClockMetrics.MARKER_GAP_DP * scale).dp))
                     },
+                    if (weather == null) null else cell {
+                        val height = BigClockMetrics.WEATHER.height(weather, scale, context.resources.configuration.fontScale)
+                        Hairline(height, GlanceModifier.padding(horizontal = (BigClockMetrics.WEATHER_GAP_DP * scale).dp))
+                    },
+                    if (weather == null) null else cell { WeatherBlock(weather, BigClockMetrics.WEATHER, scale) },
                 ),
             )
         }
@@ -286,6 +342,11 @@ private fun BigClockCompactLayout(view: ClockView, rtl: Boolean, tones: ClockTon
                 cell { ClockFace(view, BigClockMetrics.CLOCK_SP * fit.clockScale) },
                 if (view.marker.isEmpty()) null else cell {
                     WidgetLine(view.marker, BigClockMetrics.MARKER_SP * fit.clockScale, Tone.MUTED, modifier = direction.paddingStart((BigClockMetrics.MARKER_GAP_DP * fit.clockScale).dp))
+                },
+                view.weather?.let { weather ->
+                    cell {
+                        CompactTemperature(weather, BigClockMetrics.COMPACT_TEMPERATURE_SP * fit.clockScale, direction.paddingStart((BigClockMetrics.COMPACT_TEMPERATURE_GAP_DP * fit.clockScale).dp))
+                    }
                 },
                 cell {
                     Column(GlanceModifier.defaultWeight().then(direction.paddingStart((BigClockMetrics.SIDE_GAP_DP * scale).dp)), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -373,4 +434,115 @@ internal fun stopClockTicksIfNoneLeft(context: Context) {
     val manager = AppWidgetManager.getInstance(context) ?: return
     val placed = Widgets.clockReceivers.any { manager.getAppWidgetIds(ComponentName(context, it)).isNotEmpty() }
     if (!placed) ClockTickReceiver.cancel(context)
+}
+
+/** The weather block's sizes at scale 1, per Clock layout. */
+internal data class WeatherSizes(
+    val temperatureSp: Float,
+    val detailSp: Float,
+    val sunDp: Float,
+    val iconDp: Float,
+    val iconGapDp: Float,
+    val itemGapDp: Float,
+    val lineGapDp: Float,
+) {
+    fun temperatureWidth(w: ClockWeather, s: Float, fontScale: Float) = sunDp * s + iconGapDp * s + textWidthDp(w.temperature, temperatureSp * s, fontScale)
+
+    fun detailsWidth(w: ClockWeather, s: Float, fontScale: Float) =
+        2 * (iconDp * s + iconGapDp * s) + itemGapDp * s + textWidthDp(w.humidity, detailSp * s, fontScale) + textWidthDp(w.rain, detailSp * s, fontScale)
+
+    /** The temperature over the humidity and the chance of rain (Big Clock, Gold Clock). */
+    fun width(w: ClockWeather, s: Float, fontScale: Float) = maxOf(temperatureWidth(w, s, fontScale), detailsWidth(w, s, fontScale))
+
+    fun height(w: ClockWeather, s: Float, fontScale: Float) = maxOf(sunDp * s, lineHeightDp(w.temperature, temperatureSp * s, fontScale).toFloat()) +
+        lineGapDp * s + maxOf(iconDp * s, lineHeightDp(w.humidity, detailSp * s, fontScale).toFloat())
+
+    /** All three on one line (Clock & Prayer, under the clock). */
+    fun lineWidth(w: ClockWeather, s: Float, fontScale: Float) = temperatureWidth(w, s, fontScale) + itemGapDp * s + detailsWidth(w, s, fontScale)
+
+    fun lineHeight(w: ClockWeather, s: Float, fontScale: Float) =
+        maxOf(sunDp * s, lineHeightDp(w.temperature, temperatureSp * s, fontScale).toFloat(), lineHeightDp(w.humidity, detailSp * s, fontScale).toFloat())
+}
+
+/** The width of [CompactTemperature] at [sp]. */
+internal fun compactTemperatureWidth(w: ClockWeather, sp: Float, fontScale: Float) = sp * 0.8f + 2 + textWidthDp(w.temperature, sp, fontScale)
+
+/** A thin vertical line in the style's divider colour. */
+@Composable
+internal fun Hairline(heightDp: Float, modifier: GlanceModifier = GlanceModifier) {
+    val style = LocalWidgetStyle.current
+    Box(modifier) {
+        Image(ImageProvider(R.drawable.widget_rect), contentDescription = null, modifier = GlanceModifier.width(1.dp).height(heightDp.dp), colorFilter = tint(style.divider))
+    }
+}
+
+/** The sun in the accent and the temperature: «☀ ٢٩°». */
+@Composable
+private fun Temperature(w: ClockWeather, sizes: WeatherSizes, s: Float) {
+    val style = LocalWidgetStyle.current
+    val direction = LocalWidgetDirection.current
+    ReadingRow(
+        verticalAlignment = Alignment.CenterVertically,
+        children = listOf(
+            cell { Image(ImageProvider(R.drawable.widget_weather_sun), null, GlanceModifier.size((sizes.sunDp * s).dp), colorFilter = tint(style.accent)) },
+            cell { WidgetLine(w.temperature, sizes.temperatureSp * s, Tone.TEXT, modifier = direction.paddingStart((sizes.iconGapDp * s).dp)) },
+        ),
+    )
+}
+
+/** «💧 ٣٨٪  🌧 ٥٪» in the muted colour. */
+@Composable
+private fun WeatherDetails(w: ClockWeather, sizes: WeatherSizes, s: Float, modifier: GlanceModifier = GlanceModifier) {
+    val style = LocalWidgetStyle.current
+    val direction = LocalWidgetDirection.current
+    val icon = GlanceModifier.size((sizes.iconDp * s).dp)
+    val gap = direction.paddingStart((sizes.iconGapDp * s).dp)
+    ReadingRow(
+        modifier,
+        Alignment.CenterVertically,
+        listOf(
+            cell { Image(ImageProvider(R.drawable.widget_weather_drop), null, icon, colorFilter = tint(style.muted)) },
+            cell { WidgetLine(w.humidity, sizes.detailSp * s, Tone.MUTED, modifier = gap) },
+            cell { Box(direction.paddingStart((sizes.itemGapDp * s).dp)) { Image(ImageProvider(R.drawable.widget_weather_rain), null, icon, colorFilter = tint(style.muted)) } },
+            cell { WidgetLine(w.rain, sizes.detailSp * s, Tone.MUTED, modifier = gap) },
+        ),
+    )
+}
+
+/** Beside the clock: the temperature, and under it the humidity and the chance of rain. */
+@Composable
+internal fun WeatherBlock(w: ClockWeather, sizes: WeatherSizes, s: Float) {
+    Column(horizontalAlignment = LocalWidgetDirection.current.start) {
+        Temperature(w, sizes, s)
+        WeatherDetails(w, sizes, s, GlanceModifier.padding(top = (sizes.lineGapDp * s).dp))
+    }
+}
+
+/** Under the clock (Clock & Prayer): the temperature, the humidity and the chance of rain on one line. */
+@Composable
+internal fun WeatherLine(w: ClockWeather, sizes: WeatherSizes, s: Float, modifier: GlanceModifier = GlanceModifier) {
+    val direction = LocalWidgetDirection.current
+    ReadingRow(
+        modifier,
+        Alignment.CenterVertically,
+        listOf(
+            cell { Temperature(w, sizes, s) },
+            cell { WeatherDetails(w, sizes, s, direction.paddingStart((sizes.itemGapDp * s).dp)) },
+        ),
+    )
+}
+
+/** At 4×1, the temperature alone after the clock. */
+@Composable
+internal fun CompactTemperature(w: ClockWeather, sp: Float, modifier: GlanceModifier = GlanceModifier) {
+    val style = LocalWidgetStyle.current
+    val direction = LocalWidgetDirection.current
+    ReadingRow(
+        modifier,
+        Alignment.CenterVertically,
+        listOf(
+            cell { Image(ImageProvider(R.drawable.widget_weather_sun), null, GlanceModifier.size((sp * 0.8f).dp), colorFilter = tint(style.accent)) },
+            cell { WidgetLine(w.temperature, sp, Tone.TEXT, modifier = direction.paddingStart(2.dp)) },
+        ),
+    )
 }
