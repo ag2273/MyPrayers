@@ -44,6 +44,8 @@
     <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك.</string>
     <string name="about_libraries">المكتبات</string>
     <string name="about_datasets">البيانات</string>
+    <string name="about_texts">النصوص</string>
+    <string name="about_use_hisn">نصوص أذكار الصباح والمساء وأذكار ما بعد الصلاة وأعدادها، مأخوذة من مصادرها في كتب الحديث</string>
     <string name="about_fonts">الخطوط</string>
     <string name="about_recordings">تسجيلات الأذان</string>
     <string name="about_recordings_none">لا يضم التطبيق تسجيلات أذان بعد. يمكنك اختيار أذان من ملفاتك في إعدادات التنبيهات.</string>

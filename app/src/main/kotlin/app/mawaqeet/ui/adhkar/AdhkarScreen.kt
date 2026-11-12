@@ -2,7 +2,10 @@ package app.mawaqeet.ui.adhkar
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -27,6 +30,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -304,7 +308,11 @@ private fun DhikrCard(item: DhikrProgress, onCount: () -> Unit) {
         ) {
             // Always Arabic, right to left, even in the English UI.
             val arabic = TextStyle(textDirection = TextDirection.Rtl, textAlign = TextAlign.Center)
-            Text(item.dhikr.text, style = MaterialTheme.typography.headlineSmall.merge(arabic), modifier = Modifier.fillMaxWidth())
+            // A long dhikr at a large font scrolls inside the card, so its source and count stay in view (#72).
+            val textHeight = (LocalConfiguration.current.screenHeightDp * 0.4f).dp
+            Box(Modifier.fillMaxWidth().heightIn(max = textHeight).verticalScroll(rememberScrollState())) {
+                Text(item.dhikr.text, style = MaterialTheme.typography.headlineSmall.merge(arabic), modifier = Modifier.fillMaxWidth())
+            }
             Text(
                 item.dhikr.source,
                 style = MaterialTheme.typography.bodyMedium.merge(arabic),

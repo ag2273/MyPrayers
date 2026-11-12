@@ -7,6 +7,7 @@ import app.mawaqeet.R
 enum class CreditKind(@param:StringRes val title: Int) {
     LIBRARY(R.string.about_libraries),
     DATASET(R.string.about_datasets),
+    TEXT(R.string.about_texts),
     FONT(R.string.about_fonts),
     RECORDING(R.string.about_recordings),
 }
@@ -50,6 +51,12 @@ object Credits {
         Credit(
             "Natural Earth", CreditKind.DATASET, "Public domain",
             "https://www.naturalearthdata.com/", R.string.about_use_natural_earth,
+        ),
+        // The compilation is not openly licensed (#72): the texts are taken from the hadith collections it cites,
+        // and the book is credited for the selection, order and counts.
+        Credit(
+            "Hisn al-Muslim (Sa'id ibn Ali ibn Wahf al-Qahtani)", CreditKind.TEXT, "Hadith texts from their primary sources",
+            "https://sunnah.com/hisn", R.string.about_use_hisn,
         ),
         Credit(
             "Noto Kufi Arabic (Google)", CreditKind.FONT, "SIL Open Font License 1.1",

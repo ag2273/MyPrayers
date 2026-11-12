@@ -18,6 +18,14 @@ import app.mawaqeet.core.AdhkarRepository
 import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.AdhkarSlot
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
+import app.mawaqeet.core.AdhkarSet
 import org.junit.Assert.assertFalse
 import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.PrayerCore
@@ -350,5 +358,47 @@ class AdhkarAccessibilityTest {
             compose.onAllNodes(androidx.compose.ui.test.hasText("الذكر", substring = true)).fetchSemanticsNodes().isNotEmpty()
         }
         compose.assertAccessible("Morning adhkar", density)
+    }
+
+    @Test
+    @Config(qualifiers = "ar-w360dp-h640dp")
+    fun `on a phone screen at 200% text the longest dhikr scrolls inside its card and the card fits the screen`() {
+        val bundled = java.io.File("src/main/assets/adhkar.tsv").inputStream().use(AdhkarCatalog::read)
+        val longest = bundled.sets.flatMap { it.adhkar }.maxBy { it.text.length }
+        val adhkar = Adhkar(
+            AdhkarCatalog(listOf(AdhkarSet(AdhkarSetId.MORNING, listOf(longest)))),
+            PrayerCore(PrayerSettings.Default, Clock.systemUTC(), EmptyLog),
+            repo,
+        )
+        compose.setContent {
+            MawaqeetTheme { ProvideDisplayFormatter(DigitStyle.AUTOMATIC) { AdhkarScreen(adhkar, repo.changes) } }
+        }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("أذكار الصباح")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("أذكار الصباح").performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasText(longest.text), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val window = compose.onRoot(useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        // The text sits in its own scroller inside the card (the innermost one; the page scrolls too), shorter
+        // than the text itself, so the card never grows past the screen.
+        val scrollers = hasScrollAction() and hasAnyDescendant(hasText(longest.text))
+        fun cardScroller() = compose.onAllNodes(scrollers, useUnmergedTree = true).fetchSemanticsNodes()
+            .minBy { it.size.height }
+        fun text() = compose.onNode(hasText(longest.text), useUnmergedTree = true).fetchSemanticsNode()
+        assertTrue("the text fits without scrolling", text().size.height > cardScroller().size.height)
+        // With the page scrolled to the count, the whole text area and the count are on screen together.
+        compose.onNode(hasText("/", substring = true), useUnmergedTree = true).performScrollTo()
+        val count = compose.onNode(hasText("/", substring = true), useUnmergedTree = true).fetchSemanticsNode()
+        val scroller = cardScroller()
+        assertTrue("the count is off screen", count.boundsInRoot.height >= count.size.height - 1 && count.boundsInRoot.bottom <= window.bottom)
+        assertTrue("the card's text runs off screen", scroller.boundsInRoot.top >= window.top && scroller.boundsInRoot.height >= scroller.size.height - 1)
+        // Scrolling inside the card shows the rest of the text, and does not count.
+        val before = text().positionInRoot.y
+        compose.onNode(SemanticsMatcher("card scroller") { it.id == scroller.id }, useUnmergedTree = true)
+            .performTouchInput { swipeUp() }
+        compose.waitForIdle()
+        assertTrue("the text did not scroll", text().positionInRoot.y < before - 1)
+        assertEquals(0, adhkar.progress(AdhkarSlot.MORNING).items.single().counted)
     }
 }
