@@ -39,6 +39,38 @@ class PrayerCore(
         )
     }
 
+    /**
+     * Where [instant] falls in Ramadan Mode: fasting from a Fasting Day's Imsak to its Maghrib, suhoor from Maghrib to
+     * the next Imsak when the next day is a Fasting Day (and before Imsak on a Fasting Day), otherwise none.
+     */
+    fun ramadanState(instant: Instant = clock.instant()): RamadanState {
+        val date = LocalDate.ofInstant(instant, settings.location.zone)
+        val today = fastingDay(date)
+        return when {
+            today != null && instant.isBefore(today.imsak.toInstant()) -> today.suhoor()
+            today != null && instant.isBefore(today.maghrib.toInstant()) -> today
+            !instant.isBefore(calculateDay(settings, date).at(Prayer.MAGHRIB).toInstant()) ->
+                fastingDay(date.plusDays(1))?.suhoor() ?: RamadanState.None
+            else -> RamadanState.None
+        }
+    }
+
+    /** [date]'s fast, or null when it is not a Fasting Day. */
+    private fun fastingDay(date: LocalDate): RamadanState.Fasting? {
+        val hijri = HijriDate.of(date, settings.hijriOffsetDays)
+        if (hijri.month != RAMADAN_MONTH) return null
+        val day = calculateDay(settings, date)
+        return RamadanState.Fasting(
+            dayOfRamadan = hijri.day,
+            imsak = day.at(Prayer.FAJR).minusMinutes(settings.alerts.ramadan.imsakMinutes.toLong()),
+            maghrib = day.at(Prayer.MAGHRIB),
+        )
+    }
+
+    private fun CalculatedDay.at(prayer: Prayer) = prayerTimes.single { it.prayer == prayer }.time
+
+    private fun RamadanState.Fasting.suhoor() = RamadanState.Suhoor(dayOfRamadan, imsak, maghrib)
+
     /** The Prayer Day now falls in. */
     fun currentPrayerDay(): PrayerDay = places().let { prayerDay(prayerDayDateAt(clock.instant(), it), it) }
 

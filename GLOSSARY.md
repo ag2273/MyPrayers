@@ -60,6 +60,26 @@ _Avoid_: Pre-alert, warning
 An optional, gentle reminder for daily worship beyond the five Prayers, under «تذكيرات العبادة» in Settings → Alerts: sending salawat on the Prophet ﷺ every 1, 2 or 3 hours from Sunrise until Isha; reading Surat Al-Kahf on Friday at Sunrise + 1 hour (its «قرأتها» only dismisses it: no Quran text, no Kahf log); and the morning and evening adhkar 15, 30 (default), 45 or 60 minutes after Fajr and Asr, which open that Adhkar Set and are skipped once it is complete for that Prayer Day. Each is off by default, uses the normal notification sound, never an adhan, and is silenced by «كل تنبيهات التطبيق». Not a Prayer Reminder, which comes before a Prayer Time.
 _Avoid_: Dhikr reminder, nudge, Sunnah alert
 
+**Ramadan Mode**:
+How the app behaves in Ramadan, by the app's Hijri date with the user's Hijri offset: it turns on by itself for every Fasting Day and the suhoor before it, and off after the last one. Today's Next Prayer card counts down to Iftar while fasting and to the end of Suhoor after Maghrib, keeping the next Prayer as one line inside.
+_Avoid_: Ramadan setting, fasting mode
+
+**Fasting Day**:
+A Prayer Day whose Hijri date (with the user's Hijri offset) is in Ramadan. Its fast runs from Imsak to Maghrib.
+_Avoid_: Ramadan day (in code), sawm day
+
+**Imsak**:
+The moment a Fasting Day's fast begins and Suhoor ends: Fajr minus a chosen number of minutes (10 by default, 0 to 30), set under «رمضان» in «تذكيرات العبادة».
+_Avoid_: Fajr (Imsak comes before it), dawn
+
+**Iftar**:
+Breaking the fast at Maghrib on a Fasting Day; the fasting card counts down to it from Imsak.
+_Avoid_: Sunset meal, Maghrib alert
+
+**Suhoor**:
+The pre-dawn meal before a Fasting Day: from Maghrib (or, on the Fasting Day itself, midnight) until that day's Imsak, and only when the next day is a Fasting Day, so never on the night before Eid.
+_Avoid_: Sahur, sehri
+
 **Adhan Alert**:
 The alert raised when a Prayer Time arrives, playing either the Short Adhan (default) or the Full Adhan.
 _Avoid_: Alarm, prayer notification

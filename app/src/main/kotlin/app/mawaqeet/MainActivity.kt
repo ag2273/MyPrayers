@@ -314,6 +314,10 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setKahfReminder(on) }
                             }
 
+                            override fun stepImsakMinutes(step: Int) {
+                                scope.launch { settingsStore.stepImsakMinutes(step) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {

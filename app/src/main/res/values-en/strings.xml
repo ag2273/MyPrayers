@@ -511,4 +511,18 @@
     <string name="kahf_reminder_title">Read Surat Al-Kahf</string>
     <string name="kahf_reminder_text">Reading Surat Al-Kahf is a Sunnah of Friday</string>
     <string name="kahf_reminder_read">I read it</string>
+    <!-- Ramadan Mode on Today (#90): the Next Prayer card's fasting and suhoor forms. -->
+    <string name="ramadan_day">Ramadan · Day %1$s</string>
+    <string name="ramadan_imsak_at">Imsak %1$s</string>
+    <string name="ramadan_iftar_at">Iftar %1$s</string>
+    <string name="ramadan_suhoor">Suhoor</string>
+    <string name="ramadan_suhoor_ends_in">ends in %1$s</string>
+    <!-- The next Prayer inside the Ramadan card: name, time, then the time left ("1h 10m"). -->
+    <string name="ramadan_next_prayer">Next Prayer: %1$s %2$s · in %3$s</string>
+    <!-- Ramadan under Worship Reminders (#90) -->
+    <string name="ramadan">Ramadan</string>
+    <string name="ramadan_imsak">Imsak</string>
+    <string name="ramadan_imsak_summary">Before Fajr, shown on Today in Ramadan</string>
+    <string name="ramadan_imsak_closer">Imsak %1$s minutes closer to Fajr</string>
+    <string name="ramadan_imsak_earlier">Imsak %1$s minutes earlier</string>
 </resources>

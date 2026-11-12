@@ -563,4 +563,18 @@
     <string name="kahf_reminder_title">اقرأ سورة الكهف</string>
     <string name="kahf_reminder_text">من سنن يوم الجمعة قراءة سورة الكهف</string>
     <string name="kahf_reminder_read">قرأتها</string>
+    <!-- Ramadan Mode on Today (#90): the Next Prayer card's fasting and suhoor forms. -->
+    <string name="ramadan_day">رمضان · اليوم %1$s</string>
+    <string name="ramadan_imsak_at">الإمساك %1$s</string>
+    <string name="ramadan_iftar_at">الإفطار %1$s</string>
+    <string name="ramadan_suhoor">السحور</string>
+    <string name="ramadan_suhoor_ends_in">ينتهي بعد %1$s</string>
+    <!-- The next Prayer inside the Ramadan card: name, time, then the time left ("١ س ١٠ د"). -->
+    <string name="ramadan_next_prayer">الصلاة القادمة: %1$s %2$s · بعد %3$s</string>
+    <!-- Ramadan under Worship Reminders (#90) -->
+    <string name="ramadan">رمضان</string>
+    <string name="ramadan_imsak">الإمساك</string>
+    <string name="ramadan_imsak_summary">قبل الفجر، يظهر على بطاقة اليوم في رمضان</string>
+    <string name="ramadan_imsak_closer">تقريب الإمساك من الفجر %1$s دقائق</string>
+    <string name="ramadan_imsak_earlier">تبكير الإمساك %1$s دقائق</string>
 </resources>

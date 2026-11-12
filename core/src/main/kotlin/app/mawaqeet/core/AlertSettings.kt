@@ -80,6 +80,8 @@ data class AlertSettings(
     val prayerSilence: PrayerSilence = PrayerSilence(),
     /** «تذكيرات العبادة»; none is planned while [enabled] is off (each keeps its own settings for when it is back on). */
     val worshipReminders: WorshipReminders = WorshipReminders(),
+    /** «رمضان» under «تذكيرات العبادة»: Ramadan Mode's Imsak. */
+    val ramadan: RamadanSettings = RamadanSettings(),
 ) {
     fun of(prayer: Prayer): PrayerAlertSettings = prayers[prayer] ?: PrayerAlertSettings()
 
@@ -103,8 +105,8 @@ data class AlertSettings(
         Prayer.entries.all { of(it) == other.of(it) } &&
         alarmClockMode == other.alarmClockMode && playOnSilent == other.playOnSilent && vibration == other.vibration &&
         adhanVolume == other.adhanVolume && customAdhans == other.customAdhans && prayerSilence == other.prayerSilence &&
-        worshipReminders == other.worshipReminders
+        worshipReminders == other.worshipReminders && ramadan == other.ramadan
 
     override fun hashCode(): Int =
-        listOf(enabled, Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, adhanVolume, customAdhans, prayerSilence, worshipReminders).hashCode()
+        listOf(enabled, Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, adhanVolume, customAdhans, prayerSilence, worshipReminders, ramadan).hashCode()
 }
