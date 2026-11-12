@@ -166,7 +166,7 @@ class SettingsScreenTest {
 
     @Test
     @Config(qualifiers = "en")
-    fun `turning on Silent during Prayer asks for Do Not Disturb access, stays off without it and offers Grant until it is given`() {
+    fun `turning on Silent during Prayer explains, asks for Do Not Disturb access and is stored on only once it is given`() {
         val policy = shadowOf(compose.activity.getSystemService(NotificationManager::class.java))
         policy.setNotificationPolicyAccessGranted(false)
         openSettings("Settings")
@@ -174,21 +174,43 @@ class SettingsScreenTest {
         val store = (compose.activity.application as MawaqeetApplication).settings
         fun alerts() = runBlocking { store.settings.first() }.alerts
         fun grantShown() = compose.onAllNodesWithText("Grant").fetchSemanticsNodes().isNotEmpty()
+        fun comeBack() {
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        }
         try {
             compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsOff()
             assertEquals(false, grantShown())
 
+            // First a short explanation; "Not now" leaves everything as it was.
             compose.onNodeWithText("Silent during Prayer").performClick()
+            compose.onNodeWithText("Do Not Disturb access").assertIsDisplayed()
+            assertEquals(null, shadowOf(compose.activity).nextStartedActivity)
+            compose.onNodeWithText("Not now").performClick()
+            compose.waitForIdle()
+            assertEquals(null, shadowOf(compose.activity).nextStartedActivity)
+            assertEquals(false, alerts().prayerSilence.enabled)
 
+            // Continue opens the system page, but nothing is stored yet.
+            compose.onNodeWithText("Silent during Prayer").performClick()
+            compose.onNodeWithText("Continue").performClick()
+            compose.waitForIdle()
             assertEquals(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS, shadowOf(compose.activity).nextStartedActivity?.action)
-            compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.enabled && grantShown() }
+            assertEquals(false, alerts().prayerSilence.enabled)
+
+            // Back without access: still off, with Grant to try again.
+            comeBack()
+            compose.waitUntil(timeoutMillis = 5_000) { grantShown() }
             compose.onNodeWithText("Silent during Prayer").assertIsOff()
+            assertEquals(false, alerts().prayerSilence.enabled)
 
-            // The user allows access in system settings and comes back.
+            // Grant, the user allows access in system settings and comes back: now it is stored on.
+            compose.onNodeWithText("Grant").performClick()
+            assertEquals(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS, shadowOf(compose.activity).nextStartedActivity?.action)
             policy.setNotificationPolicyAccessGranted(true)
-            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            comeBack()
 
+            compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.enabled }
             compose.waitUntil(timeoutMillis = 5_000) { !grantShown() }
             compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsOn()
 

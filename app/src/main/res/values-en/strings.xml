@@ -362,6 +362,9 @@
     <string name="prayer_silence">Silent during Prayer</string>
     <string name="prayer_silence_description">Puts the phone on silent or vibrate at the Prayers you choose, then restores its sound. A phone that is already silent or on vibrate is left alone.</string>
     <string name="prayer_silence_access">Allow Do Not Disturb access</string>
+    <string name="prayer_silence_access_title">Do Not Disturb access</string>
+    <string name="prayer_silence_access_explanation">To put your phone on silent at Prayer and bring the sound back afterwards, Android needs you to give the app Do Not Disturb access. Settings will open: choose Mawaqeet, allow access, then come back to the app.</string>
+    <string name="prayer_silence_access_continue">Continue</string>
     <string name="prayer_silence_mode_silent">Silent</string>
     <string name="prayer_silence_mode_vibrate">Vibrate</string>
     <string name="prayer_silence_prayers">At these Prayers</string>

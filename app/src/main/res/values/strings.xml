@@ -386,6 +386,9 @@
     <string name="prayer_silence">الصامت وقت الصلاة</string>
     <string name="prayer_silence_description">يضع الهاتف على الصامت أو الاهتزاز عند الصلوات التي تختارها، ثم يعيد الصوت كما كان. إن كان الهاتف صامتًا أو على الاهتزاز من قبل فلا يغيّره.</string>
     <string name="prayer_silence_access">اسمح بالوصول إلى «عدم الإزعاج»</string>
+    <string name="prayer_silence_access_title">إذن «عدم الإزعاج»</string>
+    <string name="prayer_silence_access_explanation">ليضع التطبيق هاتفك على الصامت وقت الصلاة ثم يعيد الصوت بعدها، يشترط النظام أن تأذن له بالوصول إلى «عدم الإزعاج». ستُفتح صفحة الإعدادات، فاختر «مواقيت» وفعّل الإذن ثم عُد إلى التطبيق.</string>
+    <string name="prayer_silence_access_continue">متابعة</string>
     <!-- Prayer Silence choices (#68). -->
     <string name="prayer_silence_mode_silent">صامت</string>
     <string name="prayer_silence_mode_vibrate">اهتزاز</string>

@@ -144,15 +144,43 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
 
 /**
  * «الصامت وقت الصلاة» (#61), shown whatever the master switch says. The switch reads on only while Prayer Silence is
- * turned on AND Do Not Disturb access is granted (checked on every resume). Turning it on without access stores the
- * choice and opens the system page; until access is given (or after it is revoked) a Grant row explains why.
+ * turned on AND Do Not Disturb access is granted (checked on every resume). Turning it on without access first explains
+ * why (a dialog), then opens the system page; the choice is stored only when the user comes back with access given.
+ * Refused (or revoked later), the switch stays off and a Grant row explains why and asks again.
  */
 @Composable
 private fun PrayerSilenceRows(alerts: AlertSettings, actions: SettingsActions) {
     var access by remember { mutableStateOf(actions.hasDoNotDisturbAccess()) }
+    // Sent to the system page to turn Prayer Silence on: stored on if the user comes back with access.
+    var asking by rememberSaveable { mutableStateOf(false) }
+    var refused by rememberSaveable { mutableStateOf(false) }
+    var explaining by rememberSaveable { mutableStateOf(false) }
     LifecycleResumeEffect(Unit) {
         access = actions.hasDoNotDisturbAccess()
+        if (asking) {
+            asking = false
+            if (access) actions.setPrayerSilenceEnabled(true) else refused = true
+        }
         onPauseOrDispose { }
+    }
+    fun askForAccess() {
+        asking = true
+        actions.openDoNotDisturbAccess()
+    }
+    if (explaining) {
+        AlertDialog(
+            onDismissRequest = { explaining = false },
+            title = { Text(stringResource(R.string.prayer_silence_access_title)) },
+            text = { Text(stringResource(R.string.prayer_silence_access_explanation)) },
+            confirmButton = {
+                TextButton(onClick = { explaining = false; askForAccess() }) {
+                    Text(stringResource(R.string.prayer_silence_access_continue))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { explaining = false }) { Text(stringResource(R.string.not_now)) }
+            },
+        )
     }
     val wanted = alerts.prayerSilence.enabled
     Card {
@@ -161,18 +189,21 @@ private fun PrayerSilenceRows(alerts: AlertSettings, actions: SettingsActions) {
             description = stringResource(R.string.prayer_silence_description),
             checked = wanted && access,
             onChange = { on ->
-                actions.setPrayerSilenceEnabled(on)
-                if (on && !access) actions.openDoNotDisturbAccess()
+                when {
+                    !on -> actions.setPrayerSilenceEnabled(false)
+                    access -> actions.setPrayerSilenceEnabled(true)
+                    else -> explaining = true
+                }
             },
         )
-        if (wanted && !access) {
+        if ((wanted || refused) && !access) {
             RowDivider()
             NavRow(
                 stringResource(R.string.prayer_silence_access),
                 stringResource(R.string.prayer_silence_access_summary),
                 icon = R.drawable.ic_warning,
                 trailing = { Text(stringResource(R.string.grant_button), color = MaterialTheme.colorScheme.primary) },
-                onClick = actions::openDoNotDisturbAccess,
+                onClick = { askForAccess() },
             )
         }
         if (wanted && access) {
