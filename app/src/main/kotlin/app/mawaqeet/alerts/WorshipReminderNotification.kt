@@ -22,7 +22,11 @@ internal object WorshipReminderNotification {
     /** Below the Silence notification's id and every alarm request code; one id per [WorshipReminderKind]. */
     private const val ID_BASE = 1_999_000
 
-    fun post(context: Context, reminder: PlannedWorshipReminder) {
+    /**
+     * [silent] (during a Silence Window, #76) posts it without sound or vibration, whatever the channel says:
+     * NotificationCompat's setSilent puts it in a group that alerts only through a summary, and none is posted.
+     */
+    fun post(context: Context, reminder: PlannedWorshipReminder, silent: Boolean = false) {
         if (!AdhanNotification.canPost(context)) return
         ensureChannel(context)
         val (title, text) = when (reminder.kind) {
@@ -36,6 +40,7 @@ internal object WorshipReminderNotification {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setWhen(reminder.instant.toEpochMilli())
+            .setSilent(silent)
             .build()
         NotificationManagerCompat.from(context).notify(ID_BASE + reminder.kind.ordinal, notification)
     }
