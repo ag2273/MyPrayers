@@ -63,6 +63,16 @@ import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
+import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.AdhkarReminder
+import app.mawaqeet.core.AdhkarSetId
+import app.mawaqeet.core.SalawatReminder
+import app.mawaqeet.core.SilenceMode
+import app.mawaqeet.ui.components.Segment
+import app.mawaqeet.ui.components.SegmentedChoice
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.text.style.TextAlign
 import app.mawaqeet.ui.LocalDisplayFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -72,7 +82,7 @@ private val REMINDER_MINUTES = listOf(10, 15, 20, 30, 45, 60)
 
 /**
  * Settings → Alerts & adhan: the All alerts master switch, then one row per Prayer with its Adhan Alert switch (the row opens the Prayer's own page), how
- * alerts behave (alarm-clock mode, play on silent, vibration), the adhan's volume (alarm or media), then the Custom
+ * the Worship Reminders, how alerts behave (alarm-clock mode, play on silent, vibration), the adhan's volume (alarm or media), then the Custom
  * Adhan files.
  */
 @Composable
@@ -86,6 +96,7 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
             onChange = actions::setAlertsEnabled,
         )
     }
+    PrayerSilenceRows(alerts, actions)
     if (!alerts.enabled) return
     SectionTitle(stringResource(R.string.alerts_each_prayer))
     Card {
@@ -101,6 +112,7 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
             )
         }
     }
+    WorshipReminderRows(alerts, actions)
     SectionTitle(stringResource(R.string.alerts_behaviour))
     Card {
         SwitchRow(
@@ -129,6 +141,213 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
     }
     AdhanVolumeRows(alerts, actions)
     CustomAdhanRows(alerts, actions)
+}
+
+/**
+ * «الصامت وقت الصلاة» (#61), shown whatever the master switch says. The switch reads on only while Prayer Silence is
+ * turned on AND Do Not Disturb access is granted (checked on every resume). Turning it on without access first explains
+ * why (a dialog), then opens the system page; the choice is stored only when the user comes back with access given.
+ * Refused (or revoked later), the switch stays off and a Grant row explains why and asks again.
+ */
+@Composable
+private fun PrayerSilenceRows(alerts: AlertSettings, actions: SettingsActions) {
+    var access by remember { mutableStateOf(actions.hasDoNotDisturbAccess()) }
+    // Sent to the system page to turn Prayer Silence on: stored on if the user comes back with access.
+    var asking by rememberSaveable { mutableStateOf(false) }
+    var refused by rememberSaveable { mutableStateOf(false) }
+    var explaining by rememberSaveable { mutableStateOf(false) }
+    LifecycleResumeEffect(Unit) {
+        access = actions.hasDoNotDisturbAccess()
+        if (asking) {
+            asking = false
+            if (access) actions.setPrayerSilenceEnabled(true) else refused = true
+        }
+        onPauseOrDispose { }
+    }
+    fun askForAccess() {
+        asking = true
+        actions.openDoNotDisturbAccess()
+    }
+    if (explaining) {
+        AlertDialog(
+            onDismissRequest = { explaining = false },
+            title = { Text(stringResource(R.string.prayer_silence_access_title)) },
+            text = { Text(stringResource(R.string.prayer_silence_access_explanation)) },
+            confirmButton = {
+                TextButton(onClick = { explaining = false; askForAccess() }) {
+                    Text(stringResource(R.string.prayer_silence_access_continue))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { explaining = false }) { Text(stringResource(R.string.not_now)) }
+            },
+        )
+    }
+    val wanted = alerts.prayerSilence.enabled
+    Card {
+        SwitchRow(
+            title = stringResource(R.string.prayer_silence),
+            description = stringResource(R.string.prayer_silence_description),
+            checked = wanted && access,
+            onChange = { on ->
+                when {
+                    !on -> actions.setPrayerSilenceEnabled(false)
+                    access -> actions.setPrayerSilenceEnabled(true)
+                    else -> explaining = true
+                }
+            },
+        )
+        if ((wanted || refused) && !access) {
+            RowDivider()
+            NavRow(
+                stringResource(R.string.prayer_silence_access),
+                stringResource(R.string.prayer_silence_access_summary),
+                icon = R.drawable.ic_warning,
+                trailing = { Text(stringResource(R.string.grant_button), color = MaterialTheme.colorScheme.primary) },
+                onClick = { askForAccess() },
+            )
+        }
+        if (wanted && access) {
+            RowDivider()
+            val mode = alerts.prayerSilence.mode
+            SegmentedChoice(
+                listOf(
+                    Segment(stringResource(R.string.prayer_silence_mode_silent), mode == SilenceMode.SILENT) {
+                        actions.setPrayerSilenceMode(SilenceMode.SILENT)
+                    },
+                    Segment(stringResource(R.string.prayer_silence_mode_vibrate), mode == SilenceMode.VIBRATE) {
+                        actions.setPrayerSilenceMode(SilenceMode.VIBRATE)
+                    },
+                ),
+                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+    }
+    if (!wanted || !access) return
+    val silence = alerts.prayerSilence
+    SectionTitle(stringResource(R.string.prayer_silence_prayers))
+    Card {
+        Prayer.entries.forEachIndexed { index, prayer ->
+            if (index > 0) RowDivider()
+            SwitchRow(stringResource(prayer.nameRes), "", silence.isOn(prayer)) { on -> actions.setPrayerSilencePrayer(prayer, on) }
+        }
+    }
+    Card {
+        SilenceDurationRow(
+            title = stringResource(R.string.prayer_silence_duration),
+            summary = stringResource(R.string.prayer_silence_duration_summary),
+            minutes = silence.minutes,
+            range = PrayerSilence.MINUTES_RANGE,
+            shorter = R.string.prayer_silence_shorter,
+            longer = R.string.prayer_silence_longer,
+        ) { step -> actions.stepPrayerSilenceMinutes(jumuah = false, step = step) }
+        RowDivider()
+        SilenceDurationRow(
+            title = stringResource(R.string.prayer_silence_jumuah),
+            summary = stringResource(R.string.prayer_silence_jumuah_summary),
+            minutes = silence.jumuahMinutes,
+            range = PrayerSilence.JUMUAH_MINUTES_RANGE,
+            shorter = R.string.prayer_silence_jumuah_shorter,
+            longer = R.string.prayer_silence_jumuah_longer,
+        ) { step -> actions.stepPrayerSilenceMinutes(jumuah = true, step = step) }
+    }
+}
+
+/**
+ * «تذكيرات العبادة» (#63): each Worship Reminder's switch, all off by default, with its choices once it is on. Shown
+ * only with the master switch on, since none is planned without it.
+ */
+@Composable
+private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions) {
+    val salawat = alerts.worshipReminders.salawat
+    SectionTitle(stringResource(R.string.worship_reminders))
+    Card {
+        SwitchRow(
+            title = stringResource(R.string.salawat_reminder),
+            description = stringResource(R.string.salawat_reminder_description),
+            checked = salawat.enabled,
+            onChange = actions::setSalawatReminder,
+        )
+        if (salawat.enabled) {
+            RowDivider()
+            val labels = mapOf(1 to R.string.salawat_every_1, 2 to R.string.salawat_every_2, 3 to R.string.salawat_every_3)
+            SegmentedChoice(
+                SalawatReminder.INTERVAL_HOURS.map { hours ->
+                    Segment(stringResource(labels.getValue(hours)), salawat.intervalHours == hours) { actions.setSalawatInterval(hours) }
+                },
+                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+        RowDivider()
+        SwitchRow(
+            title = stringResource(R.string.kahf_reminder),
+            description = stringResource(R.string.kahf_reminder_description),
+            checked = alerts.worshipReminders.kahf.enabled,
+            onChange = actions::setKahfReminder,
+        )
+        RowDivider()
+        AdhkarReminderRows(AdhkarSetId.MORNING, alerts.worshipReminders.morningAdhkar, actions)
+        RowDivider()
+        AdhkarReminderRows(AdhkarSetId.EVENING, alerts.worshipReminders.eveningAdhkar, actions)
+    }
+}
+
+/** «أذكار الصباح» or «أذكار المساء» (#75): its switch, then its minutes after Fajr or Asr once it is on. */
+@Composable
+private fun AdhkarReminderRows(set: AdhkarSetId, reminder: AdhkarReminder, actions: SettingsActions) {
+    val format = LocalDisplayFormatter.current
+    val (title, description) = when (set) {
+        AdhkarSetId.EVENING -> R.string.adhkar_evening to R.string.adhkar_evening_reminder_description
+        else -> R.string.adhkar_morning to R.string.adhkar_morning_reminder_description
+    }
+    SwitchRow(
+        title = stringResource(title),
+        description = stringResource(description, format.number(reminder.minutes)),
+        checked = reminder.enabled,
+        onChange = { actions.setAdhkarReminder(set, it) },
+    )
+    if (reminder.enabled) {
+        RowDivider()
+        SegmentedChoice(
+            AdhkarReminder.MINUTES.map { minutes ->
+                Segment(stringResource(R.string.adhkar_reminder_minutes, format.number(minutes)), reminder.minutes == minutes) {
+                    actions.setAdhkarReminderMinutes(set, minutes)
+                }
+            },
+            Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        )
+    }
+}
+
+/** A Silence Window's duration: its title and summary, then −, the minutes and +, [PrayerSilence.MINUTES_STEP] per tap. */
+@Composable
+private fun SilenceDurationRow(
+    title: String,
+    summary: String,
+    minutes: Int,
+    range: IntRange,
+    @StringRes shorter: Int,
+    @StringRes longer: Int,
+    onStep: (Int) -> Unit,
+) {
+    val format = LocalDisplayFormatter.current
+    val step = format.number(PrayerSilence.MINUTES_STEP)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        RowText(title, summary)
+        StepButton(R.drawable.ic_minus, stringResource(shorter, step), enabled = minutes > range.first) { onStep(-1) }
+        Text(
+            pluralStringResource(R.plurals.prayer_silence_minutes, minutes, format.number(minutes)),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(min = 80.dp),
+        )
+        StepButton(R.drawable.ic_plus, stringResource(longer, step), enabled = minutes < range.last) { onStep(+1) }
+    }
 }
 
 /**

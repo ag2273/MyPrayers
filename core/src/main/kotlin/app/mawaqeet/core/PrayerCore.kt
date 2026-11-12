@@ -32,6 +32,7 @@ class PrayerCore(
             date = date, prayerTimes = day.prayerTimes, sunrise = day.sunrise, next = next,
             hijriDate = HijriDate.of(date, settings.hijriOffsetDays),
             highLatitude = day.highLatitude,
+            previousIsha = calculateDay(settings, date.minusDays(1)).prayerTimes.last(),
         )
     }
 
@@ -97,6 +98,8 @@ class PrayerCore(
      * next [AlertPlan.WINDOW]. Sunrise never alerts. Each Prayer follows its [PrayerAlertSettings]; its sound is
      * the chosen recording's Custom Adhan when one is set ([AlertSettings.customAdhans]). With the master switch off
      * ([AlertSettings.enabled]) the plan holds no alerts at all; the display alarm still moves at every Prayer Time.
+     * With Prayer Silence on ([AlertSettings.prayerSilence]) it also holds a Silence Window per chosen Prayer, master switch or not.
+     * With the master switch on it holds the Worship Reminders switched on ([AlertSettings.worshipReminders]).
      */
     fun alertPlan(): AlertPlan {
         val now = clock.instant()
@@ -115,7 +118,43 @@ class PrayerCore(
             .filter { !alertsOn || !settings.alerts.of(it.prayer).adhanAlert }
             .map { it.time.toInstant() }
             .filter { it.isAfter(now) && it.isBefore(midnight) }
-        return AlertPlan(alerts, midnight, unannounced.minOrNull() ?: midnight)
+        return AlertPlan(
+            alerts,
+            midnight,
+            unannounced.minOrNull() ?: midnight,
+            silenceWindows(days, now, end),
+            if (alertsOn) worshipReminders(days, now, end) else emptyList(),
+        )
+    }
+
+    private fun worshipReminders(days: List<Pair<LocalDate, CalculatedDay>>, now: Instant, end: Instant): List<PlannedWorshipReminder> {
+        val reminders = settings.alerts.worshipReminders
+        return days.flatMap { (date, day) ->
+            fun at(prayer: Prayer) = day.prayerTimes.single { it.prayer == prayer }.time.toInstant()
+            salawatReminders(reminders.salawat, date, day.sunrise.toInstant(), at(Prayer.ISHA)) +
+                kahfReminders(reminders.kahf, date, day.sunrise.toInstant()) + listOfNotNull(
+                adhkarReminder(reminders.morningAdhkar, WorshipReminderKind.MORNING_ADHKAR, date, at(Prayer.FAJR)),
+                adhkarReminder(reminders.eveningAdhkar, WorshipReminderKind.EVENING_ADHKAR, date, at(Prayer.ASR)),
+            )
+        }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
+    }
+
+    private fun silenceWindows(days: List<Pair<LocalDate, CalculatedDay>>, now: Instant, end: Instant): List<SilenceWindow> {
+        val silence = settings.alerts.prayerSilence
+        if (!silence.enabled) return emptyList()
+        return days.flatMap { (date, day) ->
+            day.prayerTimes.filter { silence.isOn(it.prayer) }.map { time ->
+                val start = time.time.toInstant()
+                SilenceWindow(
+                    prayer = time.prayer,
+                    prayerDay = date,
+                    start = start,
+                    end = start.plus(silence.duration(time.isJumuah)),
+                    mode = silence.mode,
+                    isJumuah = time.isJumuah,
+                )
+            }
+        }.filter { it.end.isAfter(now) && !it.start.isAfter(end) }.sortedBy { it.start }
     }
 
     private fun plannedAlerts(time: PrayerTime, prayerDay: LocalDate, alerts: AlertSettings): List<PlannedAlert> {
@@ -195,11 +234,11 @@ class PrayerCore(
     private fun settingsOn(date: LocalDate, places: List<PastPlace>): PrayerSettings =
         places.firstOrNull { date < it.until }?.let { settings.copy(location = it.location) } ?: settings
 
-    private companion object {
+    internal companion object {
         /** Today plus the 6 previous Prayer Days. */
-        const val EDIT_WINDOW_DAYS = 7L
+        private const val EDIT_WINDOW_DAYS = 7L
 
-        /** A Prayer Week's length. */
+        /** A Prayer Week's length (the Adhkar Record week's too). */
         const val WEEK_DAYS = 7L
     }
 }

@@ -33,6 +33,8 @@ class WidgetAppearanceRenderTest {
         Triple(NextPrayerWidget(), 250, 110),
         Triple(TodayLogWidget(), 250, 110),
         Triple(WeekLogWidget(), 250, 180),
+        Triple(BigClockWidget(), 250, 110),
+        Triple(ClockPrayerWidget(), 250, 110),
     )
 
     @After

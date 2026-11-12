@@ -17,7 +17,8 @@ import app.mawaqeet.core.AlertSound
 /**
  * Carries out the core's [AlertPlayback] decision for one alert: vibrates, then either starts
  * [AdhanPlayerService] (which posts the notification with Stop) or posts the notification itself. A Prayer
- * Reminder never starts the player: its sound is the reminder channel's.
+ * Reminder never starts the player: its sound is the reminder channel's. [deliver] returns whether the adhan player
+ * was started, so a Silence Window can wait for it to stop.
  */
 object AlertOutput {
     fun deliver(
@@ -26,22 +27,24 @@ object AlertOutput {
         sound: AlertSound,
         playback: AlertPlayback,
         volume: AdhanVolume = AdhanVolume.ALARM,
-    ) {
+    ): Boolean {
         if (playback.vibrate) vibrate(context)
         val play = playback.play
-        when {
+        return when {
             notification.kind == AlertKind.PRAYER_REMINDER ->
                 // The reminder channel's own short sound; a reminder that must stay quiet goes on the silent channel.
-                notification.post(context, notification.builder(context, if (play == null) AdhanNotification.CHANNEL_ADHAN else AdhanNotification.CHANNEL_REMINDERS).build())
-            play == null -> notification.post(context)
+                false.also { notification.post(context, notification.builder(context, if (play == null) AdhanNotification.CHANNEL_ADHAN else AdhanNotification.CHANNEL_REMINDERS).build()) }
+            play == null -> false.also { notification.post(context) }
             BuildConfig.ADHAN_CHANNEL_SOUND_FALLBACK ->
-                notification.post(context, notification.builder(context, AdhanNotification.CHANNEL_ADHAN_SOUND).build())
+                false.also { notification.post(context, notification.builder(context, AdhanNotification.CHANNEL_ADHAN_SOUND).build()) }
             else -> try {
                 ContextCompat.startForegroundService(context, AdhanPlayerService.playIntent(context, notification, play, volume))
+                true
             } catch (e: IllegalStateException) {
                 // ForegroundServiceStartNotAllowedException (12+) is an IllegalStateException: never lose the alert.
                 Log.w("AlertOutput", "Adhan player could not start", e)
                 notification.post(context)
+                false
             }
         }
     }

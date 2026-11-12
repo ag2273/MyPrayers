@@ -22,6 +22,7 @@ import org.xmlpull.v1.XmlPullParser
 @Config(sdk = [36], qualifiers = "ar")
 class WidgetPickerTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val ANDROID = "http://schemas.android.com/apk/res/android"
 
     private val providers = mapOf(
         NextPrayerWidgetReceiver::class.java to R.xml.next_prayer_widget_info,
@@ -30,6 +31,9 @@ class WidgetPickerTest {
         DateStripWidgetReceiver::class.java to R.xml.date_strip_widget_info,
         TodayLogWidgetReceiver::class.java to R.xml.today_log_widget_info,
         WeekLogWidgetReceiver::class.java to R.xml.week_log_widget_info,
+        BigClockWidgetReceiver::class.java to R.xml.big_clock_widget_info,
+        GoldClockWidgetReceiver::class.java to R.xml.gold_clock_widget_info,
+        ClockPrayerWidgetReceiver::class.java to R.xml.clock_prayer_widget_info,
     )
 
     /** The `android:previewLayout` of a widget's provider info, or 0. */
@@ -37,7 +41,7 @@ class WidgetPickerTest {
         val parser = context.resources.getXml(info)
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.eventType == XmlPullParser.START_TAG && parser.name == "appwidget-provider") {
-                return parser.getAttributeResourceValue("http://schemas.android.com/apk/res/android", "previewLayout", 0)
+                return parser.getAttributeResourceValue(ANDROID, "previewLayout", 0)
             }
         }
         return 0
@@ -50,6 +54,77 @@ class WidgetPickerTest {
                 .loadLabel(context.packageManager).toString()
         }
         assertEquals(labels.toString(), labels.size, labels.toSet().size)
+    }
+
+    @Test
+    fun `Big Clock is listed under its Arabic name, 4x2 by default`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, BigClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("ساعة كبيرة", label)
+        val parser = context.resources.getXml(R.xml.big_clock_widget_info)
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "appwidget-provider") {
+                assertEquals("4", parser.getAttributeValue(ANDROID, "targetCellWidth"))
+                assertEquals("2", parser.getAttributeValue(ANDROID, "targetCellHeight"))
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `in English Big Clock is listed as Big Clock`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, BigClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("Big Clock", label)
+    }
+
+    @Test
+    fun `Gold Clock is listed under its Arabic name, 4x2 by default, with a black preview`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, GoldClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("ساعة ذهبية", label)
+        val parser = context.resources.getXml(R.xml.gold_clock_widget_info)
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "appwidget-provider") {
+                assertEquals("4", parser.getAttributeValue(ANDROID, "targetCellWidth"))
+                assertEquals("2", parser.getAttributeValue(ANDROID, "targetCellHeight"))
+            }
+        }
+        val preview = RemoteViews(context.packageName, previewLayout(R.xml.gold_clock_widget_info)).apply(context, FrameLayout(context))
+        assertEquals(android.graphics.Color.BLACK, preview.backgroundTintList?.defaultColor)
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `in English Gold Clock is listed as Gold Clock`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, GoldClockWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("Gold Clock", label)
+    }
+
+    @Test
+    fun `Clock and Prayer is listed under its Arabic name, 4x2 by default, with a preview of the split layout`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, ClockPrayerWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("ساعة وصلاة", label)
+        val parser = context.resources.getXml(R.xml.clock_prayer_widget_info)
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "appwidget-provider") {
+                assertEquals("4", parser.getAttributeValue(ANDROID, "targetCellWidth"))
+                assertEquals("2", parser.getAttributeValue(ANDROID, "targetCellHeight"))
+            }
+        }
+        val preview = RemoteViews(context.packageName, previewLayout(R.xml.clock_prayer_widget_info)).apply(context, FrameLayout(context))
+        val texts = widgetTexts(preview).map { it.text.toString() }
+        assertTrue(texts.toString(), "الصلاة القادمة" in texts && "بعد" in texts)
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `in English Clock and Prayer is listed as Clock & Prayer`() {
+        val label = context.packageManager.getReceiverInfo(ComponentName(context, ClockPrayerWidgetReceiver::class.java), PackageManager.GET_META_DATA)
+            .loadLabel(context.packageManager).toString()
+        assertEquals("Clock & Prayer", label)
     }
 
     @Test

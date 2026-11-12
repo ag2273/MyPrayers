@@ -56,6 +56,10 @@ _Avoid_: Auto method, region preset
 An optional alert a chosen number of minutes before a Prayer Time.
 _Avoid_: Pre-alert, warning
 
+**Worship Reminder**:
+An optional, gentle reminder for daily worship beyond the five Prayers, under «تذكيرات العبادة» in Settings → Alerts: sending salawat on the Prophet ﷺ every 1, 2 or 3 hours from Sunrise until Isha; reading Surat Al-Kahf on Friday at Sunrise + 1 hour (its «قرأتها» only dismisses it: no Quran text, no Kahf log); and the morning and evening adhkar 15, 30 (default), 45 or 60 minutes after Fajr and Asr, which open that Adhkar Set and are skipped once it is complete for that Prayer Day. Each is off by default, uses the normal notification sound, never an adhan, and is silenced by «كل تنبيهات التطبيق». Not a Prayer Reminder, which comes before a Prayer Time.
+_Avoid_: Dhikr reminder, nudge, Sunnah alert
+
 **Adhan Alert**:
 The alert raised when a Prayer Time arrives, playing either the Short Adhan (default) or the Full Adhan.
 _Avoid_: Alarm, prayer notification
@@ -72,6 +76,42 @@ _Avoid_: Long adhan, adhan audio
 An audio file the user picks from their own phone to play as the Short Adhan, the Full Adhan or Fajr's Full Adhan instead of the bundled recording. Each is chosen separately: a Custom Adhan for the Full Adhan never changes Fajr, which keeps its own adhan with «الصلاة خير من النوم» unless the user picks a Custom Adhan for Fajr's Full Adhan.
 _Avoid_: Imported sound, user ringtone
 
+**Prayer Silence**:
+An optional setting, off by default, that puts the phone on silent («صامت») or vibrate («اهتزاز») at each Prayer the user keeps on (all five once enabled) and restores its previous sound mode afterwards. It needs Do Not Disturb access, works even with every app alert off, and leaves a phone that is already silent, on vibrate or on Do Not Disturb alone.
+_Avoid_: Auto-silent, mute mode, prayer mode
+
+**Silence Window**:
+One planned stretch of Prayer Silence: from a Prayer's Prayer Time to a fixed end (20 minutes later by default, 45 for Jumu'ah; both adjustable), carrying the chosen silent or vibrate mode, identified by its Prayer Day and Prayer. The phone is silenced once that Prayer's adhan stops (finished, stopped or not played), or at the Prayer Time when there is no Adhan Alert; the end stays fixed, and a restart during the window still restores the sound at the end (at once if the end has passed).
+_Avoid_: Silent period, mute window
+
+**Jumu'ah**:
+Dhuhr on a Friday. It is announced as Jumu'ah, and its Silence Window has its own duration, long enough for the khutbah.
+_Avoid_: Friday prayer (in code), Friday Dhuhr (as a separate Prayer)
+
 **Widget Variant**:
 One of the distinct home-screen widget designs the app offers, each with its own layout and content.
 _Avoid_: Widget size, widget type, skin
+
+**Dhikr**:
+One remembrance of an Adhkar Set: its Arabic text, how many times it is said, and a short source line (e.g. «رواه مسلم»). Always shown in Arabic. Plural: adhkar.
+_Avoid_: Zikr, prayer (a dhikr is never a Prayer), dua (in code)
+
+**Adhkar Set**:
+An ordered list of adhkar read together from Hisn al-Muslim: the morning adhkar, the evening adhkar, the after-prayer adhkar. Read one dhikr at a time with a counter; its progress lasts until the end of the Prayer Day, and a restart begins it again.
+_Avoid_: Adhkar list, wird, routine
+
+**Tasbeeh**:
+The free counter at the top of the Adhkar tab, for the user's own dhikr: each tap counts one with a light vibration. It keeps today's total for the Prayer Day (zero again at the next Fajr) and has a reset. It is not an Adhkar Set and never appears in the Adhkar Record.
+_Avoid_: Sebha, misbaha, tally, score
+
+**Adhkar Record**:
+Which Adhkar Sets the user completed (every dhikr said its full count) on each Prayer Day. It is not the Prayer Log, and a restart never removes a completed day. A set counts only when finished in its time: the morning adhkar from Fajr to Dhuhr, the evening adhkar from Asr to the next Fajr, the after-prayer adhkar once their Prayer's time has arrived. The after-prayer adhkar are recorded per Prayer, against the most recent Prayer whose time has arrived unless the user picks another before starting. Any set can be read at any time. It is shown as a week grid (a row per Prayer Day, a mark for the morning, the evening and after each Prayer) that counts only from the Adhkar first-use date, the Prayer Day of the first count; days before it are never shown as missed. It shares the Prayer Log's backup rules and is deleted separately («حذف سجل الأذكار»).
+_Avoid_: Adhkar log, streak, score
+
+**Clock Widget**:
+A Widget Variant built around a big home-screen clock that also shows the interval between two Stops: the previous and next Stop with their times, a countdown in hours and minutes, a bar for how much of the interval has passed, and the Hijri and Gregorian dates. Big Clock «ساعة كبيرة», Gold Clock «ساعة ذهبية» and Clock & Prayer «ساعة وصلاة» are Clock Widgets.
+_Avoid_: Clock, digital clock widget
+
+**Stop**:
+One end of a Clock Widget's interval: one of the five Prayers or Sunrise (Fajr → Sunrise → Dhuhr). Before Fajr the previous Stop is the previous day's Isha; after Isha the next Stop is the next day's Fajr. Sunrise being a Stop never makes it a Prayer: it still never alerts and is never logged.
+_Avoid_: Waypoint, milestone, prayer (for Sunrise)

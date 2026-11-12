@@ -29,6 +29,11 @@ data class DisplayDay(
     val hijriDate: HijriDate,
     /** Non-null when a high-latitude rule set [date]'s Fajr or Isha: Home shows a short note. */
     val highLatitude: HighLatitudeAdjustment? = null,
+    /**
+     * The day before [date]'s Isha, from that day's own Prayer Times: before Fajr the previous Stop. The core always
+     * sets it; the default (today's Isha a day earlier) is for days built by hand in tests.
+     */
+    val previousIsha: PrayerTime = prayerTimes.last().let { it.copy(time = it.time.minusDays(1)) },
 ) {
     /** Whether a high-latitude rule was applied to [date]'s Prayer Times. */
     val highLatitudeRuleApplied: Boolean

@@ -44,6 +44,8 @@
     <string name="about_summary">مواقيت الصلاة وتنبيهات الأذان وسجل الصلاة، تعمل كلها على جهازك.</string>
     <string name="about_libraries">المكتبات</string>
     <string name="about_datasets">البيانات</string>
+    <string name="about_texts">النصوص</string>
+    <string name="about_use_hisn">نصوص أذكار الصباح والمساء وأذكار ما بعد الصلاة وأعدادها، مأخوذة من مصادرها في كتب الحديث</string>
     <string name="about_fonts">الخطوط</string>
     <string name="about_recordings">تسجيلات الأذان</string>
     <string name="about_recordings_none">لا يضم التطبيق تسجيلات أذان بعد. يمكنك اختيار أذان من ملفاتك في إعدادات التنبيهات.</string>
@@ -318,6 +320,11 @@
     <string name="delete_prayer_log_title">حذف سجل الصلاة؟</string>
     <string name="delete_prayer_log_body">سيُمحى كل ما سجّلته من صلوات نهائيًا من هذا الهاتف، ولا يمكن التراجع عن ذلك.</string>
     <string name="delete_prayer_log_confirm">حذف</string>
+    <string name="delete_adhkar_record">حذف سجل الأذكار</string>
+    <string name="delete_adhkar_record_summary">يمحو نهائيًا سجل ما أتممته من الأذكار</string>
+    <string name="delete_adhkar_record_done">حُذف سجل الأذكار</string>
+    <string name="delete_adhkar_record_title">حذف سجل الأذكار؟</string>
+    <string name="delete_adhkar_record_body">سيُمحى سجل ما أتممته من الأذكار نهائيًا من هذا الهاتف، ولا يمكن التراجع عن ذلك.</string>
     <!-- Prayer Time adjustments (#20). -->
     <string name="adjustments">تعديل المواقيت</string>
     <string name="adjustments_none">بلا تعديل</string>
@@ -376,6 +383,39 @@
     <string name="alerts_all">كل تنبيهات التطبيق</string>
     <string name="alerts_all_on_description">الأذان والتذكير يعملان حسب إعداد كل صلاة</string>
     <string name="alerts_all_off_description">متوقفة: لن يصلك أذان ولا تذكير ولا أي إشعار من التطبيق حتى تشغّلها</string>
+    <!-- Prayer Silence (#61). -->
+    <string name="prayer_silence">الصامت وقت الصلاة</string>
+    <string name="prayer_silence_description">يضع الهاتف على الصامت أو الاهتزاز عند الصلوات التي تختارها، ثم يعيد الصوت كما كان. إن كان الهاتف صامتًا أو على الاهتزاز من قبل فلا يغيّره.</string>
+    <string name="prayer_silence_access">اسمح بالوصول إلى «عدم الإزعاج»</string>
+    <string name="prayer_silence_access_title">إذن «عدم الإزعاج»</string>
+    <string name="prayer_silence_access_explanation">ليضع التطبيق هاتفك على الصامت وقت الصلاة ثم يعيد الصوت بعدها، يشترط النظام أن تأذن له بالوصول إلى «عدم الإزعاج». ستُفتح صفحة الإعدادات، فاختر «مواقيت» وفعّل الإذن ثم عُد إلى التطبيق.</string>
+    <string name="prayer_silence_access_continue">متابعة</string>
+    <!-- Prayer Silence choices (#68). -->
+    <string name="prayer_silence_mode_silent">صامت</string>
+    <string name="prayer_silence_mode_vibrate">اهتزاز</string>
+    <string name="prayer_silence_prayers">عند هذه الصلوات</string>
+    <string name="prayer_silence_duration">المدة</string>
+    <string name="prayer_silence_duration_summary">من دخول وقت الصلاة</string>
+    <string name="prayer_silence_jumuah">الجمعة</string>
+    <string name="prayer_silence_jumuah_summary">ظهر يوم الجمعة، لتشمل الخطبة</string>
+    <string name="prayer_silence_shorter">تقصير مدة الصامت %1$s دقائق</string>
+    <string name="prayer_silence_longer">إطالة مدة الصامت %1$s دقائق</string>
+    <string name="prayer_silence_jumuah_shorter">تقصير صامت الجمعة %1$s دقائق</string>
+    <string name="prayer_silence_jumuah_longer">إطالة صامت الجمعة %1$s دقائق</string>
+    <plurals name="prayer_silence_minutes">
+        <item quantity="zero">%1$s دقيقة</item>
+        <item quantity="one">دقيقة واحدة</item>
+        <item quantity="two">دقيقتان</item>
+        <item quantity="few">%1$s دقائق</item>
+        <item quantity="many">%1$s دقيقة</item>
+        <item quantity="other">%1$s دقيقة</item>
+    </plurals>
+    <string name="prayer_silence_access_summary">يحتاجه التطبيق ليضع الهاتف على الصامت، ولا يعمل الصامت وقت الصلاة بدونه.</string>
+    <!-- Prayer Silence notification (#67). -->
+    <string name="prayer_silence_notification">الهاتف صامت حتى %1$s</string>
+    <string name="prayer_silence_restore">استعادة الصوت</string>
+    <string name="prayer_silence_channel_name">الصامت وقت الصلاة</string>
+    <string name="prayer_silence_channel_description">إشعار هادئ ما دام الهاتف صامتًا للصلاة</string>
     <string name="settings_alerts_summary_off">كلها موقوفة</string>
     <string name="settings_alerts_off">التنبيهات متوقفة</string>
     <string name="settings_alerts_off_summary">أوقفت كل تنبيهات التطبيق. اضغط لتشغيلها من جديد.</string>
@@ -403,4 +443,119 @@
     <!-- TalkBack on a Prayer's column in the Today with Prayer Log widget: "الظهر: لم تُسجَّل. اضغط للتسجيل". -->
     <string name="widget_mark_hint">%1$s: %2$s. اضغط للتسجيل</string>
     <string name="widget_unmark_hint">%1$s: %2$s. اضغط للإلغاء</string>
+
+    <!-- The Adhkar tab (#62). The adhkar themselves are always Arabic (asset adhkar.tsv); only this copy is translated. -->
+    <string name="tab_adhkar">الأذكار</string>
+    <string name="adhkar_morning">أذكار الصباح</string>
+    <!-- #70: the evening and after-prayer sets, and when each counts in the Adhkar Record. -->
+    <string name="adhkar_evening">أذكار المساء</string>
+    <string name="adhkar_after_prayer">أذكار بعد الصلاة</string>
+    <!-- %1$s is a Prayer's name: «بعد صلاة الفجر». -->
+    <string name="adhkar_after_prayer_slot">بعد صلاة %1$s</string>
+    <string name="adhkar_after_prayer_name">أذكار بعد صلاة %1$s</string>
+    <string name="adhkar_after_which_prayer">بعد أيّ صلاة؟</string>
+    <string name="adhkar_time_morning">وقتها من الفجر إلى الظهر</string>
+    <string name="adhkar_time_evening">وقتها من العصر إلى الفجر</string>
+    <string name="adhkar_not_yet_time">لم يحن وقتها بعد</string>
+    <string name="adhkar_read_outside_time">قُرئت في غير وقتها</string>
+    <string name="adhkar_outside_morning">وقت أذكار الصباح من الفجر إلى الظهر. يمكنك قراءتها الآن، لكنها لا تُسجَّل لهذا اليوم.</string>
+    <string name="adhkar_outside_evening">وقت أذكار المساء من العصر إلى الفجر. يمكنك قراءتها الآن، لكنها لا تُسجَّل لهذا اليوم.</string>
+    <string name="adhkar_outside_after_prayer">لم يحن وقت صلاة %1$s بعد. يمكنك القراءة، لكنها لا تُسجَّل.</string>
+    <string name="adhkar_set_read">أتممت قراءة %1$s</string>
+    <string name="adhkar_not_started">لم تبدأ بعد</string>
+    <string name="adhkar_resume">وصلت إلى الذكر %1$s من %2$s</string>
+    <string name="adhkar_done_today">تمّت اليوم</string>
+    <string name="adhkar_position">الذكر %1$s من %2$s</string>
+    <!-- On the dhikr card, under the text: "١ / ٣". TalkBack reads adhkar_card_state instead. -->
+    <string name="adhkar_card_state">قيل %1$s من %2$s، وبقي %3$s</string>
+    <string name="adhkar_count_one">عُدّ مرة</string>
+    <string name="adhkar_tap_hint">اضغط في أي مكان على البطاقة للعدّ</string>
+    <string name="adhkar_restart">ابدأ من جديد</string>
+    <string name="adhkar_set_complete">اكتملت %1$s لهذا اليوم</string>
+    <string name="adhkar_set_complete_body">تقبّل الله منا ومنك.</string>
+    <!-- The Adhkar Record week grid (#74): marks only, no streaks or scores. -->
+    <string name="adhkar_record">سجل الأذكار</string>
+    <string name="adhkar_record_summary">الأيام التي أتممت فيها الأذكار</string>
+    <!-- The free Tasbeeh at the top of the Adhkar tab (#71): today's total, not in the Adhkar Record. -->
+    <string name="tasbeeh">التسبيح</string>
+    <string name="tasbeeh_tap_hint">اضغط للتسبيح</string>
+    <!-- What TalkBack reads for the Tasbeeh counter. -->
+    <string name="tasbeeh_total">مجموع اليوم: %1$s</string>
+    <string name="tasbeeh_reset">تصفير</string>
+    <string name="adhkar_record_morning">الصباح</string>
+    <string name="adhkar_record_evening">المساء</string>
+    <string name="adhkar_record_after_prayers">بعد الصلوات</string>
+    <string name="adhkar_record_completed">اكتملت</string>
+    <string name="adhkar_record_not_completed">لم تكتمل</string>
+    <string name="adhkar_record_not_yet_due">لم يحن وقتها بعد</string>
+    <string name="adhkar_record_before_first_use">قبل بدء استخدامك للأذكار</string>
+    <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
+    <string name="widget_big_clock">ساعة كبيرة</string>
+    <string name="widget_big_clock_description">ساعة كبيرة، والعدّ التنازلي وشريط من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
+    <!-- Gold Clock widget (#65): Big Clock's layout, always black and gold. -->
+    <string name="widget_gold_clock">ساعة ذهبية</string>
+    <string name="widget_gold_clock_description">ساعة كبيرة على خلفية سوداء، والعدّ التنازلي وشريط ذهبيان من الصلاة السابقة إلى القادمة، والتاريخان الهجري والميلادي</string>
+    <!-- Clock & Prayer widget (#66): the split layout, clock and dates beside the next Prayer. -->
+    <string name="widget_clock_prayer">ساعة وصلاة</string>
+    <string name="widget_clock_prayer_description">ساعة كبيرة والتاريخان الهجري والميلادي، وبجانبها الصلاة القادمة ووقتها والعدّ التنازلي وشريط من الصلاة السابقة</string>
+    <!-- Before the countdown: "بعد ١ س ١٠ د". -->
+    <string name="clock_prayer_in">بعد</string>
+    <!-- The previous Stop and its time: "من الشروق ٠٦:٢٧". -->
+    <string name="clock_prayer_since">من %1$s</string>
+    <!-- The Clock's own marker beside the time in 12-hour time: morning and evening. -->
+    <string name="clock_am">ص</string>
+    <string name="clock_pm">م</string>
+    <!-- TalkBack reads a Clock widget as one sentence: the time, the next Stop and the time left, the dates. -->
+    <string name="clock_description">الساعة %1$s. %2$s بعد %3$s. %4$s.</string>
+    <plurals name="clock_spoken_hours">
+        <item quantity="zero">%s ساعة</item>
+        <item quantity="one">ساعة واحدة</item>
+        <item quantity="two">ساعتين</item>
+        <item quantity="few">%s ساعات</item>
+        <item quantity="many">%s ساعة</item>
+        <item quantity="other">%s ساعة</item>
+    </plurals>
+    <plurals name="clock_spoken_minutes">
+        <item quantity="zero">%s دقيقة</item>
+        <item quantity="one">دقيقة واحدة</item>
+        <item quantity="two">دقيقتين</item>
+        <item quantity="few">%s دقائق</item>
+        <item quantity="many">%s دقيقة</item>
+        <item quantity="other">%s دقيقة</item>
+    </plurals>
+    <!-- Hours and minutes spoken together: "ساعة و١٠ دقائق". -->
+    <string name="clock_spoken_hours_minutes">%1$s و%2$s</string>
+    <!-- Sample content for the Big Clock's picker preview. -->
+    <string name="widget_preview_clock">١٠:٣٠</string>
+    <string name="widget_preview_clock_countdown">١ س ٣٤ د</string>
+    <string name="widget_preview_sunrise">الشروق ٠٦:٢٧</string>
+    <string name="widget_preview_dhuhr">الظهر ١٢:٠٤</string>
+    <string name="widget_preview_clock_date">٢٨ جمادى الأولى ١٤٤٨ هـ · الأحد ٨ نوفمبر</string>
+    <!-- Sample content for the Clock & Prayer picker preview. -->
+    <string name="widget_preview_clock_hijri">٢٨ جمادى الأولى ١٤٤٨ هـ</string>
+    <string name="widget_preview_clock_gregorian">الأحد ٨ نوفمبر</string>
+    <string name="widget_preview_clock_since">من الشروق ٠٦:٢٧</string>
+    <!-- Worship Reminders (#63) -->
+    <string name="worship_reminders">تذكيرات العبادة</string>
+    <string name="salawat_reminder">الصلاة على النبي ﷺ</string>
+    <string name="salawat_reminder_description">تذكير لطيف بين الشروق والعشاء</string>
+    <string name="salawat_every_1">كل ساعة</string>
+    <string name="salawat_every_2">كل ساعتين</string>
+    <string name="salawat_every_3">كل ثلاث ساعات</string>
+    <string name="worship_reminders_channel_name">تذكيرات العبادة</string>
+    <string name="worship_reminders_channel_description">تذكيرات لطيفة بصوت الإشعارات المعتاد، لا بالأذان</string>
+    <string name="salawat_reminder_title">صلِّ على النبي ﷺ</string>
+    <string name="salawat_reminder_text">اللهم صلِّ وسلِّم على نبينا محمد</string>
+    <!-- Morning and evening adhkar reminders (#75) -->
+    <string name="adhkar_morning_reminder_description">بعد الفجر بـ%1$s دقيقة، ولا يأتي إن أتممتها</string>
+    <string name="adhkar_evening_reminder_description">بعد العصر بـ%1$s دقيقة، ولا يأتي إن أتممتها</string>
+    <string name="adhkar_reminder_minutes">%1$s دقيقة</string>
+    <string name="adhkar_morning_reminder_text">حان وقت أذكار الصباح</string>
+    <string name="adhkar_evening_reminder_text">حان وقت أذكار المساء</string>
+    <!-- Surat Al-Kahf on Friday (#64) -->
+    <string name="kahf_reminder">سورة الكهف</string>
+    <string name="kahf_reminder_description">تذكير يوم الجمعة بعد الشروق بساعة</string>
+    <string name="kahf_reminder_title">اقرأ سورة الكهف</string>
+    <string name="kahf_reminder_text">من سنن يوم الجمعة قراءة سورة الكهف</string>
+    <string name="kahf_reminder_read">قرأتها</string>
 </resources>

@@ -41,6 +41,8 @@
     <string name="about_summary">Prayer Times, Adhan Alerts and a Prayer Log, all on your device.</string>
     <string name="about_libraries">Libraries</string>
     <string name="about_datasets">Data</string>
+    <string name="about_texts">Texts</string>
+    <string name="about_use_hisn">The morning, evening and after-prayer adhkar and their counts, taken from the hadith collections they come from</string>
     <string name="about_fonts">Fonts</string>
     <string name="about_recordings">Adhan recordings</string>
     <string name="about_recordings_none">The app doesn\'t include adhan recordings yet. You can pick an adhan from your files in the Alerts settings.</string>
@@ -299,6 +301,11 @@
     <string name="delete_prayer_log_title">Delete Prayer Log?</string>
     <string name="delete_prayer_log_body">Everything you logged will be erased from this phone for good. This can\'t be undone.</string>
     <string name="delete_prayer_log_confirm">Delete</string>
+    <string name="delete_adhkar_record">Delete Adhkar Record</string>
+    <string name="delete_adhkar_record_summary">Permanently erases the record of the adhkar you completed</string>
+    <string name="delete_adhkar_record_done">Adhkar Record deleted</string>
+    <string name="delete_adhkar_record_title">Delete Adhkar Record?</string>
+    <string name="delete_adhkar_record_body">The record of the adhkar you completed will be erased from this phone for good. This can\'t be undone.</string>
     <!-- Prayer Time adjustments (#20). -->
     <string name="adjustments">Prayer Time adjustments</string>
     <string name="adjustments_none">No adjustments</string>
@@ -353,6 +360,32 @@
     <string name="alerts_all">All app alerts</string>
     <string name="alerts_all_on_description">Adhan Alerts and reminders follow each Prayer\'s settings</string>
     <string name="alerts_all_off_description">Off: no adhan, no reminder and no notification from the app until you turn them back on</string>
+    <string name="prayer_silence">Silent during Prayer</string>
+    <string name="prayer_silence_description">Puts the phone on silent or vibrate at the Prayers you choose, then restores its sound. A phone that is already silent or on vibrate is left alone.</string>
+    <string name="prayer_silence_access">Allow Do Not Disturb access</string>
+    <string name="prayer_silence_access_title">Do Not Disturb access</string>
+    <string name="prayer_silence_access_explanation">To put your phone on silent at Prayer and bring the sound back afterwards, Android needs you to give the app Do Not Disturb access. Settings will open: choose Mawaqeet, allow access, then come back to the app.</string>
+    <string name="prayer_silence_access_continue">Continue</string>
+    <string name="prayer_silence_mode_silent">Silent</string>
+    <string name="prayer_silence_mode_vibrate">Vibrate</string>
+    <string name="prayer_silence_prayers">At these Prayers</string>
+    <string name="prayer_silence_duration">Duration</string>
+    <string name="prayer_silence_duration_summary">From the Prayer Time</string>
+    <string name="prayer_silence_jumuah">Jumu\'ah</string>
+    <string name="prayer_silence_jumuah_summary">Friday Dhuhr, to cover the khutbah</string>
+    <string name="prayer_silence_shorter">Silence %1$s minutes shorter</string>
+    <string name="prayer_silence_longer">Silence %1$s minutes longer</string>
+    <string name="prayer_silence_jumuah_shorter">Jumu\'ah silence %1$s minutes shorter</string>
+    <string name="prayer_silence_jumuah_longer">Jumu\'ah silence %1$s minutes longer</string>
+    <plurals name="prayer_silence_minutes">
+        <item quantity="one">%1$s minute</item>
+        <item quantity="other">%1$s minutes</item>
+    </plurals>
+    <string name="prayer_silence_access_summary">The app needs it to silence the phone; Silent during Prayer can\'t work without it.</string>
+    <string name="prayer_silence_notification">Phone silenced until %1$s</string>
+    <string name="prayer_silence_restore">Restore sound</string>
+    <string name="prayer_silence_channel_name">Silent during Prayer</string>
+    <string name="prayer_silence_channel_description">A quiet notification while the phone is silenced for Prayer</string>
     <string name="settings_alerts_summary_off">All turned off</string>
     <string name="settings_alerts_off">Alerts are off</string>
     <string name="settings_alerts_off_summary">You turned off every app alert. Tap to turn them back on.</string>
@@ -379,4 +412,98 @@
     <string name="widget_legend_not_yet">Not yet</string>
     <string name="widget_mark_hint">%1$s: %2$s. Tap to log</string>
     <string name="widget_unmark_hint">%1$s: %2$s. Tap to undo</string>
+
+    <!-- The Adhkar tab (#62). The adhkar themselves are always Arabic. -->
+    <string name="tab_adhkar">Adhkar</string>
+    <string name="adhkar_morning">Morning adhkar</string>
+    <string name="adhkar_evening">Evening adhkar</string>
+    <string name="adhkar_after_prayer">After-prayer adhkar</string>
+    <string name="adhkar_after_prayer_slot">After %1$s</string>
+    <string name="adhkar_after_prayer_name">Adhkar after %1$s</string>
+    <string name="adhkar_after_which_prayer">After which Prayer?</string>
+    <string name="adhkar_time_morning">Their time is from Fajr to Dhuhr</string>
+    <string name="adhkar_time_evening">Their time is from Asr to Fajr</string>
+    <string name="adhkar_not_yet_time">Not time yet</string>
+    <string name="adhkar_read_outside_time">Read outside their time</string>
+    <string name="adhkar_outside_morning">The morning adhkar are from Fajr to Dhuhr. You can read them now, but they won\'t be recorded for today.</string>
+    <string name="adhkar_outside_evening">The evening adhkar are from Asr to Fajr. You can read them now, but they won\'t be recorded for today.</string>
+    <string name="adhkar_outside_after_prayer">%1$s\'s time hasn\'t come yet. You can read them, but they won\'t be recorded.</string>
+    <string name="adhkar_set_read">%1$s read in full</string>
+    <string name="adhkar_not_started">Not started</string>
+    <string name="adhkar_resume">At dhikr %1$s of %2$s</string>
+    <string name="adhkar_done_today">Done today</string>
+    <string name="adhkar_position">Dhikr %1$s of %2$s</string>
+    <string name="adhkar_card_state">%1$s of %2$s done, %3$s left</string>
+    <string name="adhkar_count_one">Count one</string>
+    <string name="adhkar_tap_hint">Tap anywhere on the card to count</string>
+    <string name="adhkar_restart">Start again</string>
+    <string name="adhkar_set_complete">%1$s completed for today</string>
+    <string name="adhkar_set_complete_body">May Allah accept it from us and from you.</string>
+    <string name="adhkar_record">Adhkar Record</string>
+    <string name="adhkar_record_summary">The days you completed the adhkar</string>
+    <string name="tasbeeh">Tasbeeh</string>
+    <string name="tasbeeh_tap_hint">Tap to count</string>
+    <string name="tasbeeh_total">Today\'s total: %1$s</string>
+    <string name="tasbeeh_reset">Reset</string>
+    <string name="adhkar_record_morning">Morning</string>
+    <string name="adhkar_record_evening">Evening</string>
+    <string name="adhkar_record_after_prayers">After prayers</string>
+    <string name="adhkar_record_completed">Completed</string>
+    <string name="adhkar_record_not_completed">Not completed</string>
+    <string name="adhkar_record_not_yet_due">Not time yet</string>
+    <string name="adhkar_record_before_first_use">Before you started the adhkar</string>
+    <!-- Big Clock widget (#60) and the shared Clock Widget words. -->
+    <string name="widget_big_clock">Big Clock</string>
+    <string name="widget_big_clock_description">A big clock, with a countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <!-- Gold Clock widget (#65). -->
+    <string name="widget_gold_clock">Gold Clock</string>
+    <string name="widget_gold_clock_description">A big clock on black, with a gold countdown and bar from the previous prayer to the next, and the Hijri and Gregorian dates</string>
+    <!-- Clock & Prayer widget (#66). -->
+    <string name="widget_clock_prayer">Clock &amp; Prayer</string>
+    <string name="widget_clock_prayer_description">A big clock with the Hijri and Gregorian dates, beside the next prayer, its time, a countdown and a bar from the previous prayer</string>
+    <string name="clock_prayer_in">in</string>
+    <string name="clock_prayer_since">from %1$s</string>
+    <string name="clock_am">AM</string>
+    <string name="clock_pm">PM</string>
+    <string name="clock_description">%1$s. %2$s in %3$s. %4$s.</string>
+    <plurals name="clock_spoken_hours">
+        <item quantity="one">%s hour</item>
+        <item quantity="other">%s hours</item>
+    </plurals>
+    <plurals name="clock_spoken_minutes">
+        <item quantity="one">%s minute</item>
+        <item quantity="other">%s minutes</item>
+    </plurals>
+    <string name="clock_spoken_hours_minutes">%1$s %2$s</string>
+    <string name="widget_preview_clock">10:30</string>
+    <string name="widget_preview_clock_countdown">1h 34m</string>
+    <string name="widget_preview_sunrise">Sunrise 06:27</string>
+    <string name="widget_preview_dhuhr">Dhuhr 12:04</string>
+    <string name="widget_preview_clock_date">28 Jumada al-Ula 1448 AH · Sun 8 Nov</string>
+    <string name="widget_preview_clock_hijri">28 Jumada al-Ula 1448 AH</string>
+    <string name="widget_preview_clock_gregorian">Sun 8 Nov</string>
+    <string name="widget_preview_clock_since">from Sunrise 06:27</string>
+    <!-- Worship Reminders (#63) -->
+    <string name="worship_reminders">Worship reminders</string>
+    <string name="salawat_reminder">Salawat on the Prophet ﷺ</string>
+    <string name="salawat_reminder_description">A gentle reminder between Sunrise and Isha</string>
+    <string name="salawat_every_1">Every hour</string>
+    <string name="salawat_every_2">Every 2 hours</string>
+    <string name="salawat_every_3">Every 3 hours</string>
+    <string name="worship_reminders_channel_name">Worship reminders</string>
+    <string name="worship_reminders_channel_description">Gentle reminders with the usual notification sound, never an adhan</string>
+    <string name="salawat_reminder_title">Send salawat on the Prophet ﷺ</string>
+    <string name="salawat_reminder_text">O Allah, send prayers and peace upon our Prophet Muhammad</string>
+    <!-- Morning and evening adhkar reminders (#75) -->
+    <string name="adhkar_morning_reminder_description">%1$s minutes after Fajr, skipped once you have read them</string>
+    <string name="adhkar_evening_reminder_description">%1$s minutes after Asr, skipped once you have read them</string>
+    <string name="adhkar_reminder_minutes">%1$s min</string>
+    <string name="adhkar_morning_reminder_text">Time for the morning adhkar</string>
+    <string name="adhkar_evening_reminder_text">Time for the evening adhkar</string>
+    <!-- Surat Al-Kahf on Friday (#64) -->
+    <string name="kahf_reminder">Surat Al-Kahf</string>
+    <string name="kahf_reminder_description">A reminder on Friday, an hour after Sunrise</string>
+    <string name="kahf_reminder_title">Read Surat Al-Kahf</string>
+    <string name="kahf_reminder_text">Reading Surat Al-Kahf is a Sunnah of Friday</string>
+    <string name="kahf_reminder_read">I read it</string>
 </resources>

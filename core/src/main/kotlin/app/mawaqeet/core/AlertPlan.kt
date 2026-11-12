@@ -68,7 +68,8 @@ data class PlannedAlert(
 
 /**
  * Every alert due within [AlertPlan.WINDOW] after now, in time order, plus the next local midnight at the
- * location (the scheduler sets an alarm there so the display day and widgets switch date).
+ * location (the scheduler sets an alarm there so the display day and widgets switch date), the Silence Windows and
+ * the Worship Reminders.
  */
 data class AlertPlan(
     val alerts: List<PlannedAlert>,
@@ -79,6 +80,13 @@ data class AlertPlan(
      * widgets move on at every Prayer Time and at midnight without polling.
      */
     val nextDisplayChange: Instant = nextLocalMidnight,
+    /**
+     * Prayer Silence: every Silence Window that has not ended and starts within [WINDOW], in time order (one in progress
+     * is kept, so the alarm that restores the sound stays set). Empty while Prayer Silence is off.
+     */
+    val silenceWindows: List<SilenceWindow> = emptyList(),
+    /** Every Worship Reminder due after now and within [WINDOW], in time order. Empty with the master switch off. */
+    val worshipReminders: List<PlannedWorshipReminder> = emptyList(),
 ) {
     companion object {
         /** The rolling window the plan covers; rebuilt on every alarm, so it never runs dry. */

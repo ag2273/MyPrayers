@@ -2,7 +2,9 @@ package app.mawaqeet.alerts
 
 import android.app.AlarmManager
 import android.app.Application
+import android.app.NotificationManager
 import android.content.Context
+import android.media.AudioManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.AdhanRecording
@@ -12,6 +14,8 @@ import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.PlannedAlert
 import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.SilenceMode
+import app.mawaqeet.core.SilenceWindow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -161,5 +165,184 @@ class AlertSchedulerTest {
         AlertScheduler(context).apply(AlertPlan(listOf(dhuhr, asr), midnight))
 
         assertEquals(emptyList<Instant>(), triggerTimes())
+    }
+
+    private fun silence(prayer: Prayer, start: String, end: String) = SilenceWindow(
+        prayer = prayer,
+        prayerDay = day,
+        start = Instant.parse(start),
+        end = Instant.parse(end),
+        mode = SilenceMode.SILENT,
+        isJumuah = false,
+    )
+
+    private val dhuhrSilence = silence(Prayer.DHUHR, "2026-11-08T09:04:00Z", "2026-11-08T09:24:00Z")
+    private val asrSilence = silence(Prayer.ASR, "2026-11-08T12:17:00Z", "2026-11-08T12:37:00Z")
+    private val early = Instant.parse("2026-11-08T08:00:00Z")
+
+    private fun silenceAlarms() = alarms.scheduledAlarms
+        .map { shadowOf(it.operation).savedIntent.action to Instant.ofEpochMilli(it.triggerAtTime) }
+        .filter { (action, _) -> action != AlertReceiver.ACTION_ALERT && action != AlertReceiver.ACTION_MIDNIGHT }
+        .sortedBy { it.second }
+
+    @Test
+    fun `each Silence Window gets an exact alarm at its start and one at its end, even with no alert planned`() {
+        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(dhuhrSilence, asrSilence)), early)
+
+        assertEquals(
+            listOf(
+                SilenceReceiver.ACTION_START to dhuhrSilence.start,
+                SilenceReceiver.ACTION_END to dhuhrSilence.end,
+                SilenceReceiver.ACTION_START to asrSilence.start,
+                SilenceReceiver.ACTION_END to asrSilence.end,
+            ),
+            silenceAlarms(),
+        )
+        assertTrue(alarms.scheduledAlarms.all { it.allowWhileIdle && it.alarmClockInfo == null })
+    }
+
+    @Test
+    fun `a Silence Window in progress gets only its end alarm, so a reschedule never silences the phone twice`() {
+        AlertScheduler(context).apply(
+            AlertPlan(emptyList(), midnight, silenceWindows = listOf(dhuhrSilence)),
+            now = Instant.parse("2026-11-08T09:10:00Z"),
+        )
+
+        assertEquals(listOf(SilenceReceiver.ACTION_END to dhuhrSilence.end), silenceAlarms())
+    }
+
+    @Test
+    fun `turning Prayer Silence off cancels its alarms`() {
+        val scheduler = AlertScheduler(context)
+        scheduler.apply(AlertPlan(listOf(dhuhr), midnight, silenceWindows = listOf(dhuhrSilence, asrSilence)), early)
+
+        scheduler.apply(AlertPlan(listOf(dhuhr), midnight), early)
+
+        assertEquals(emptyList<Pair<String?, Instant>>(), silenceAlarms())
+        assertEquals(listOf(dhuhr.instant, midnight), triggerTimes())
+    }
+
+    @Test
+    fun `Silence Windows survive the stored plan, so a reboot re-arms the ones not yet over`() {
+        AlertScheduler(context).apply(AlertPlan(listOf(dhuhr), midnight, silenceWindows = listOf(dhuhrSilence, asrSilence)), early)
+        assertEquals(listOf(dhuhrSilence, asrSilence), AlertPlanStore(context).read()!!.silenceWindows)
+        alarms.scheduledAlarms.toList().forEach { context.getSystemService(AlarmManager::class.java).cancel(it.operation!!) }
+
+        AlertScheduler(context).rearmStoredPlan(now = Instant.parse("2026-11-08T12:20:00Z"))
+
+        assertEquals(listOf(SilenceReceiver.ACTION_END to asrSilence.end), silenceAlarms())
+    }
+
+    @Test
+    fun `a Silence Window with an Adhan Alert is opened by that alert, with no start alarm of its own`() {
+        AlertScheduler(context).apply(AlertPlan(listOf(dhuhr, asr), midnight, silenceWindows = listOf(dhuhrSilence)), early)
+
+        assertEquals(listOf(SilenceReceiver.ACTION_END to dhuhrSilence.end), silenceAlarms())
+        val intents = alarms.scheduledAlarms.map { shadowOf(it.operation).savedIntent }.filter { it.action == AlertReceiver.ACTION_ALERT }
+        val dhuhrAlarm = intents.single { it.getStringExtra(AlertReceiver.EXTRA_PRAYER) == "DHUHR" }
+        val asrAlarm = intents.single { it.getStringExtra(AlertReceiver.EXTRA_PRAYER) == "ASR" }
+        assertEquals(dhuhrSilence.end.toEpochMilli(), dhuhrAlarm.getLongExtra(AlertReceiver.EXTRA_SILENCE_END, 0))
+        assertEquals(false, asrAlarm.hasExtra(AlertReceiver.EXTRA_SILENCE_END))
+    }
+
+    @Test
+    fun `a Silence Window whose Prayer has no Adhan Alert still starts at the Prayer Time`() {
+        AlertScheduler(context).apply(AlertPlan(listOf(asr), midnight, silenceWindows = listOf(dhuhrSilence)), early)
+
+        assertEquals(
+            listOf(SilenceReceiver.ACTION_START to dhuhrSilence.start, SilenceReceiver.ACTION_END to dhuhrSilence.end),
+            silenceAlarms(),
+        )
+    }
+
+    @Test
+    fun `turning the Adhan Alert on drops the start alarm set while it was off`() {
+        val scheduler = AlertScheduler(context)
+        scheduler.apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(dhuhrSilence)), early)
+
+        scheduler.apply(AlertPlan(listOf(dhuhr), midnight, silenceWindows = listOf(dhuhrSilence)), early)
+
+        assertEquals(listOf(SilenceReceiver.ACTION_END to dhuhrSilence.end), silenceAlarms())
+    }
+
+    @Test
+    fun `a plan stored by the previous version is still read, with the default digits and language`() {
+        val file = java.io.File(context.createDeviceProtectedStorageContext().filesDir, AlertPlanStore.FILE_NAME)
+        file.writeText(
+            listOf(
+                "alert-plan-v6",
+                midnight.toEpochMilli().toString(),
+                listOf(dhuhr.instant.toEpochMilli(), "DHUHR", "ADHAN_ALERT", "SHORT_ADHAN", "EXACT", day, false, dhuhr.instant.toEpochMilli(), false, true, "ALARM").joinToString("\t"),
+                listOf("silence", "DHUHR", day, dhuhrSilence.start.toEpochMilli(), dhuhrSilence.end.toEpochMilli(), "SILENT", false).joinToString("\t"),
+            ).joinToString("\n", postfix = "\n"),
+        )
+
+        val stored = AlertPlanStore(context)
+        assertEquals(listOf(dhuhr), stored.read()!!.alerts)
+        assertEquals(listOf(dhuhrSilence), stored.read()!!.silenceWindows)
+        assertEquals(NotificationStyle.Default, stored.readStyle())
+    }
+
+    @Test
+    fun `the digits and language survive the stored plan`() {
+        val style = NotificationStyle(app.mawaqeet.core.DigitStyle.WESTERN, "en")
+        AlertScheduler(context).apply(AlertPlan(listOf(dhuhr), midnight, silenceWindows = listOf(dhuhrSilence)), early, style)
+
+        assertEquals(style, AlertPlanStore(context).readStyle())
+        assertEquals(listOf(dhuhrSilence), AlertPlanStore(context).read()!!.silenceWindows)
+    }
+
+    private val audio get() = context.getSystemService(AudioManager::class.java)
+    private val during = Instant.parse("2026-11-08T09:10:00Z")
+
+    /** The start alarm has fired by then, so only the end alarms count. */
+    private fun endAlarms() = silenceAlarms().filter { it.first == SilenceReceiver.ACTION_END }
+
+    /** The phone on normal sound, silenced by [window]'s start after [scheduler] planned it. */
+    private fun silencedBy(window: SilenceWindow, scheduler: AlertScheduler) {
+        val notifications = context.getSystemService(NotificationManager::class.java)
+        shadowOf(notifications).setNotificationPolicyAccessGranted(true)
+        notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        scheduler.apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(window)), early)
+        PrayerSilencer(context).start(window)
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
+    fun `turning Prayer Silence off during a window brings the sound back at once`() {
+        val scheduler = AlertScheduler(context)
+        silencedBy(dhuhrSilence, scheduler)
+
+        scheduler.apply(AlertPlan(emptyList(), midnight), during)
+
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertEquals(emptyList<Pair<String?, Instant>>(), endAlarms())
+    }
+
+    @Test
+    fun `a reschedule that moves a window's end to before now brings the sound back at once`() {
+        val scheduler = AlertScheduler(context)
+        silencedBy(dhuhrSilence, scheduler)
+
+        val shorter = dhuhrSilence.copy(end = Instant.parse("2026-11-08T09:09:00Z"))
+        scheduler.apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(shorter)), during)
+
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertEquals(emptyList<Pair<String?, Instant>>(), endAlarms())
+    }
+
+    @Test
+    fun `a reschedule that moves a window's end later keeps the phone silent until the new end`() {
+        val scheduler = AlertScheduler(context)
+        silencedBy(dhuhrSilence, scheduler)
+
+        val longer = dhuhrSilence.copy(end = Instant.parse("2026-11-08T09:34:00Z"))
+        scheduler.apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(longer)), during)
+
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        assertEquals(listOf(SilenceReceiver.ACTION_END to longer.end), endAlarms())
+        PrayerSilencer(context).end(longer)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
     }
 }

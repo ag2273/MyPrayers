@@ -198,6 +198,52 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `Prayer Silence is off by default, and turning it on survives an app restart with the other alert settings`() {
+        assertEquals(false, withRepository { repo, _ -> repo.settings.first() }.alerts.prayerSilence.enabled)
+        withRepository { repo, _ ->
+            repo.setAlertsEnabled(false)
+            repo.setPrayerSilenceEnabled(true)
+        }
+
+        val alerts = withRepository { repo, _ -> repo.settings.first() }.alerts
+
+        assertEquals(app.mawaqeet.core.PrayerSilence(enabled = true), alerts.prayerSilence)
+        assertEquals(false, alerts.enabled)
+    }
+
+    @Test
+    fun `Prayer Silence's mode, Prayers and durations survive an app restart`() {
+        withRepository { repo, _ ->
+            repo.setPrayerSilenceMode(app.mawaqeet.core.SilenceMode.VIBRATE)
+            repo.setPrayerSilencePrayer(Prayer.FAJR, false)
+            repo.stepPrayerSilenceMinutes(jumuah = false, step = +2)
+            repo.stepPrayerSilenceMinutes(jumuah = true, step = -1)
+        }
+
+        val silence = withRepository { repo, _ -> repo.settings.first() }.alerts.prayerSilence
+
+        assertEquals(app.mawaqeet.core.SilenceMode.VIBRATE, silence.mode)
+        assertEquals(Prayer.entries.toSet() - Prayer.FAJR, silence.prayers)
+        // One step is five minutes: 20 + 10 and 45 - 5.
+        assertEquals(30, silence.minutes)
+        assertEquals(40, silence.jumuahMinutes)
+    }
+
+    @Test
+    fun `Prayer Silence durations stop at the ends of their ranges, and a stored one out of range reads as the default`() {
+        withRepository { repo, _ ->
+            repo.stepPrayerSilenceMinutes(jumuah = false, step = -100)
+            repo.stepPrayerSilenceMinutes(jumuah = true, step = +100)
+        }
+        val silence = withRepository { repo, _ -> repo.settings.first() }.alerts.prayerSilence
+        assertEquals(app.mawaqeet.core.PrayerSilence.MINUTES_RANGE.first, silence.minutes)
+        assertEquals(app.mawaqeet.core.PrayerSilence.JUMUAH_MINUTES_RANGE.last, silence.jumuahMinutes)
+
+        withRepository { _, store -> store.edit { it[intPreferencesKey("prayer_silence_minutes")] = 1 } }
+        assertEquals(20, withRepository { repo, _ -> repo.settings.first() }.alerts.prayerSilence.minutes)
+    }
+
+    @Test
     fun `a stored reminder lead time below the minimum reads as the default instead of failing`() {
         withRepository { _, store -> store.edit { it[intPreferencesKey("alert_dhuhr_reminder_minutes")] = 5 } }
 
@@ -258,5 +304,66 @@ class SettingsRepositoryTest {
             }
         }
         assertEquals(app.mawaqeet.widget.WidgetAppearance(), withRepository { repo, _ -> repo.widgetAppearance.first() })
+    }
+
+    @Test
+    fun `salawat reminders are off every 2 hours by default, and switching them on every 3 hours survives an app restart`() {
+        assertEquals(
+            app.mawaqeet.core.SalawatReminder(enabled = false, intervalHours = 2),
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat,
+        )
+        withRepository { repo, _ ->
+            repo.setSalawatReminder(true)
+            repo.setSalawatInterval(3)
+        }
+
+        val salawat = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat
+
+        assertEquals(app.mawaqeet.core.SalawatReminder(enabled = true, intervalHours = 3), salawat)
+    }
+
+    @Test
+    fun `a stored salawat interval that is not 1, 2 or 3 hours reads as the default`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("worship_salawat_interval_hours")] = 5 } }
+
+        assertEquals(2, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat.intervalHours)
+    }
+
+    @Test
+    fun `adhkar reminders are off 30 minutes after their Prayer by default, and each keeps its own choice after an app restart`() {
+        val off = app.mawaqeet.core.AdhkarReminder(enabled = false, minutes = 30)
+        val before = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders
+        assertEquals(off, before.morningAdhkar)
+        assertEquals(off, before.eveningAdhkar)
+        withRepository { repo, _ ->
+            repo.setAdhkarReminder(app.mawaqeet.core.AdhkarSetId.MORNING, true)
+            repo.setAdhkarReminderMinutes(app.mawaqeet.core.AdhkarSetId.MORNING, 60)
+            repo.setAdhkarReminderMinutes(app.mawaqeet.core.AdhkarSetId.EVENING, 15)
+        }
+
+        val after = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders
+
+        assertEquals(app.mawaqeet.core.AdhkarReminder(enabled = true, minutes = 60), after.morningAdhkar)
+        assertEquals(app.mawaqeet.core.AdhkarReminder(enabled = false, minutes = 15), after.eveningAdhkar)
+    }
+
+    @Test
+    fun `a stored adhkar reminder minutes that is not offered reads as the default`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("worship_morning_adhkar_minutes")] = 20 } }
+
+        assertEquals(30, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.morningAdhkar.minutes)
+    }
+
+    @Test
+    fun `the Kahf reminder is off by default, and switching it on survives an app restart`() {
+        assertEquals(
+            app.mawaqeet.core.KahfReminder(enabled = false),
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.kahf,
+        )
+        withRepository { repo, _ -> repo.setKahfReminder(true) }
+
+        val kahf = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.kahf
+
+        assertEquals(app.mawaqeet.core.KahfReminder(enabled = true), kahf)
     }
 }

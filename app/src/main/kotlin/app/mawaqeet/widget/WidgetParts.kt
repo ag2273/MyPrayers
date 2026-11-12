@@ -31,6 +31,8 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.currentState
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.wrapContentWidth
 import androidx.glance.layout.Box
@@ -152,6 +154,10 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
     context: Context,
     build: (PrayerCore, WidgetText) -> T,
     deep: Boolean = false,
+    /** A look of the widget's own that Settings → Widgets doesn't change (Gold Clock). */
+    fixedStyle: WidgetStyle? = null,
+    /** The core's clock: the system clock, or a fixed one in tests. */
+    clock: Clock = Clock.systemUTC(),
     layout: @Composable (T, rtl: Boolean) -> Unit,
 ) {
     val app = context.applicationContext as MawaqeetApplication
@@ -164,7 +170,7 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
         withContext(Dispatchers.IO) {
             val locale = appLocale(context, language)
             val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
-            val core = PrayerCore(settings, Clock.systemUTC(), app.prayerLog)
+            val core = PrayerCore(settings, clock, app.prayerLog)
             val strings = localizedContext(context, locale)
             val place = widgetPlaceName(store.savedLocation.first(), strings, locale.language == "ar")
             build(core, WidgetText(DisplayFormatter(locale, digits), strings, rtl, place)) to rtl
@@ -183,7 +189,7 @@ internal suspend fun <T> GlanceAppWidget.provideFromCore(
             }
         }
         CompositionLocalProvider(
-            LocalWidgetStyle provides remember(appearance) { WidgetStyle.of(appearance, deep = deep) },
+            LocalWidgetStyle provides remember(appearance) { fixedStyle ?: WidgetStyle.of(appearance, deep = deep) },
             LocalWidgetDirection provides remember(current.second) { WidgetDirection(current.second, WidgetDirection.phoneRtl(context)) },
         ) {
             layout(current.first, current.second)
@@ -205,6 +211,8 @@ internal fun WidgetFrame(
     opens: MainActivity.Opens = MainActivity.Opens.TODAY,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     decoration: (@Composable () -> Unit)? = null,
+    /** What TalkBack reads for the whole widget, when given (the Clock widgets' one sentence). */
+    description: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val context = LocalContext.current
@@ -219,7 +227,8 @@ internal fun WidgetFrame(
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .padding(horizontal = horizontal, vertical = vertical)
-                    .clickable(actionStartActivity(MainActivity.openIntent(context, opens))),
+                    .clickable(actionStartActivity(MainActivity.openIntent(context, opens)))
+                    .let { m -> description?.let { text -> m.semantics { contentDescription = text } } ?: m },
                 verticalAlignment = verticalAlignment,
                 horizontalAlignment = LocalWidgetDirection.current.start,
             ) {

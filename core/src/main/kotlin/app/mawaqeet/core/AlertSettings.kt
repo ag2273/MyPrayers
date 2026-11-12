@@ -76,6 +76,10 @@ data class AlertSettings(
      * opens. A recording missing from the map plays the bundled one.
      */
     val customAdhans: Map<AdhanRecording, String> = emptyMap(),
+    /** «الصامت وقت الصلاة»; planned whether or not [enabled] is on. */
+    val prayerSilence: PrayerSilence = PrayerSilence(),
+    /** «تذكيرات العبادة»; none is planned while [enabled] is off (each keeps its own settings for when it is back on). */
+    val worshipReminders: WorshipReminders = WorshipReminders(),
 ) {
     fun of(prayer: Prayer): PrayerAlertSettings = prayers[prayer] ?: PrayerAlertSettings()
 
@@ -98,8 +102,9 @@ data class AlertSettings(
     override fun equals(other: Any?): Boolean = other is AlertSettings && enabled == other.enabled &&
         Prayer.entries.all { of(it) == other.of(it) } &&
         alarmClockMode == other.alarmClockMode && playOnSilent == other.playOnSilent && vibration == other.vibration &&
-        adhanVolume == other.adhanVolume && customAdhans == other.customAdhans
+        adhanVolume == other.adhanVolume && customAdhans == other.customAdhans && prayerSilence == other.prayerSilence &&
+        worshipReminders == other.worshipReminders
 
     override fun hashCode(): Int =
-        listOf(enabled, Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, adhanVolume, customAdhans).hashCode()
+        listOf(enabled, Prayer.entries.map(::of), alarmClockMode, playOnSilent, vibration, adhanVolume, customAdhans, prayerSilence, worshipReminders).hashCode()
 }

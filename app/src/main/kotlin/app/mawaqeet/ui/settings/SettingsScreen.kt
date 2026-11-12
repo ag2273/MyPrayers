@@ -125,6 +125,39 @@ interface SettingsActions {
 
     /** Settings → Alerts → All alerts: the master switch; off silences every Adhan Alert and Prayer Reminder. */
     fun setAlertsEnabled(on: Boolean)
+
+    /** Settings → Alerts → «الصامت وقت الصلاة» (#61): stores the choice, independent of the master switch. */
+    fun setPrayerSilenceEnabled(on: Boolean)
+
+    /** «صامت» or «اهتزاز» (#68). */
+    fun setPrayerSilenceMode(mode: app.mawaqeet.core.SilenceMode)
+
+    /** Prayer Silence on or off for one Prayer (#68). */
+    fun setPrayerSilencePrayer(prayer: Prayer, on: Boolean)
+
+    /** The − and + buttons of the Silence Window's duration ([jumuah]: Jumu'ah's), one [app.mawaqeet.core.PrayerSilence.MINUTES_STEP] per step. */
+    fun stepPrayerSilenceMinutes(jumuah: Boolean, step: Int)
+
+    /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63). */
+    fun setSalawatReminder(on: Boolean)
+
+    /** Salawat reminders every [hours] hours, one of [app.mawaqeet.core.SalawatReminder.INTERVAL_HOURS]. */
+    fun setSalawatInterval(hours: Int)
+
+    /** «أذكار الصباح» or «أذكار المساء» under «تذكيرات العبادة» (#75); [set] is MORNING or EVENING. */
+    fun setAdhkarReminder(set: app.mawaqeet.core.AdhkarSetId, on: Boolean)
+
+    /** The adhkar reminder's minutes after Fajr or Asr, one of [app.mawaqeet.core.AdhkarReminder.MINUTES]. */
+    fun setAdhkarReminderMinutes(set: app.mawaqeet.core.AdhkarSetId, minutes: Int)
+
+    /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64). */
+    fun setKahfReminder(on: Boolean)
+
+    /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
+    fun hasDoNotDisturbAccess(): Boolean
+
+    /** The system page where the user grants Do Not Disturb access. */
+    fun openDoNotDisturbAccess()
     fun setAlarmClockMode(on: Boolean)
 
     /** Settings → Alerts → Try it: an Adhan Alert for the next Prayer in 10 seconds, in the current mode. False if it can't be scheduled. */
@@ -151,6 +184,9 @@ interface SettingsActions {
     fun openFixAlerts()
     /** Settings → Prayer Log (#25): permanently deletes every Prayer Log entry. Called only after confirmation. */
     fun deletePrayerLog()
+
+    /** Settings → your data (#74): permanently deletes the Adhkar Record. Called only after confirmation. */
+    fun deleteAdhkarRecord()
 }
 
 /** The Settings sections, each its own page, plus the pages opened from them. */
@@ -477,7 +513,7 @@ private fun AdjustmentRow(prayer: Prayer, minutes: Int, onStep: (Int) -> Unit) {
 /** A round − or + button; [description] is what TalkBack reads (e.g. "Fajr one minute later"). An icon, not a "−"
  * glyph, so it keeps its size when the text is enlarged. */
 @Composable
-private fun StepButton(@DrawableRes icon: Int, description: String, enabled: Boolean, onClick: () -> Unit) {
+internal fun StepButton(@DrawableRes icon: Int, description: String, enabled: Boolean, onClick: () -> Unit) {
     OutlinedIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp)) {
         Icon(painterResource(icon), contentDescription = description, modifier = Modifier.size(20.dp))
     }
@@ -707,7 +743,15 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
     }
     SectionTitle(stringResource(R.string.settings_section_your_data))
     Card {
-        DeletePrayerLogRow(actions)
+        DeleteDataRow(
+            R.string.delete_prayer_log, R.string.delete_prayer_log_summary, R.string.delete_prayer_log_done,
+            R.string.delete_prayer_log_title, R.string.delete_prayer_log_body, actions::deletePrayerLog,
+        )
+        RowDivider()
+        DeleteDataRow(
+            R.string.delete_adhkar_record, R.string.delete_adhkar_record_summary, R.string.delete_adhkar_record_done,
+            R.string.delete_adhkar_record_title, R.string.delete_adhkar_record_body, actions::deleteAdhkarRecord,
+        )
     }
 }
 
@@ -732,9 +776,16 @@ private fun ColumnScope.CreditsPage() {
     }
 }
 
-/** Prayer Log (#25): Delete Prayer Log, behind an in-app confirmation. */
+/** Delete Prayer Log (#25) or Delete Adhkar Record (#74), behind an in-app confirmation. */
 @Composable
-private fun DeletePrayerLogRow(actions: SettingsActions) {
+private fun DeleteDataRow(
+    @StringRes title: Int,
+    @StringRes summary: Int,
+    @StringRes done: Int,
+    @StringRes dialogTitle: Int,
+    @StringRes body: Int,
+    onDelete: () -> Unit,
+) {
     var confirming by rememberSaveable { mutableStateOf(false) }
     var deleted by rememberSaveable { mutableStateOf(false) }
     val error = MaterialTheme.colorScheme.error
@@ -749,9 +800,9 @@ private fun DeletePrayerLogRow(actions: SettingsActions) {
     ) {
         Icon(painterResource(R.drawable.ic_trash), contentDescription = null, tint = error, modifier = Modifier.size(22.dp))
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.delete_prayer_log), style = MaterialTheme.typography.titleMedium, color = error)
+            Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = error)
             Text(
-                stringResource(if (deleted) R.string.delete_prayer_log_done else R.string.delete_prayer_log_summary),
+                stringResource(if (deleted) done else summary),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -760,13 +811,13 @@ private fun DeletePrayerLogRow(actions: SettingsActions) {
     if (confirming) {
         AlertDialog(
             onDismissRequest = { confirming = false },
-            title = { Text(stringResource(R.string.delete_prayer_log_title)) },
-            text = { Text(stringResource(R.string.delete_prayer_log_body)) },
+            title = { Text(stringResource(dialogTitle)) },
+            text = { Text(stringResource(body)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirming = false
                     deleted = true
-                    actions.deletePrayerLog()
+                    onDelete()
                 }) {
                     Text(stringResource(R.string.delete_prayer_log_confirm), color = error)
                 }

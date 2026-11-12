@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AdhanVolume
@@ -22,6 +23,13 @@ import app.mawaqeet.core.LocationSource
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.PrayerSettings
+import app.mawaqeet.core.PrayerSilence
+import app.mawaqeet.core.AdhkarReminder
+import app.mawaqeet.core.AdhkarSetId
+import app.mawaqeet.core.KahfReminder
+import app.mawaqeet.core.SalawatReminder
+import app.mawaqeet.core.SilenceMode
+import app.mawaqeet.core.WorshipReminders
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.widget.WidgetAppearance
 import app.mawaqeet.widget.WidgetColors
@@ -234,6 +242,65 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[ALERTS_ENABLED] = on }
     }
 
+    /**
+     * Settings → Alerts → «الصامت وقت الصلاة» (#61). Independent of the master switch. The screen shows it on only while
+     * Do Not Disturb access is granted too; without access the Silence Windows are planned but change nothing.
+     */
+    suspend fun setPrayerSilenceEnabled(on: Boolean) {
+        store.edit { it[PRAYER_SILENCE_ENABLED] = on }
+    }
+
+    /** «صامت» or «اهتزاز» (#68). */
+    suspend fun setPrayerSilenceMode(mode: SilenceMode) {
+        store.edit { it[PRAYER_SILENCE_MODE] = mode.name }
+    }
+
+    /** Turns Prayer Silence on or off for [prayer] alone (#68); every Prayer is on until turned off. */
+    suspend fun setPrayerSilencePrayer(prayer: Prayer, on: Boolean) {
+        store.edit {
+            val off = it[PRAYER_SILENCE_OFF].orEmpty()
+            it[PRAYER_SILENCE_OFF] = if (on) off - prayer.name else off + prayer.name
+        }
+    }
+
+    /**
+     * Moves the Silence Window's duration ([jumuah] true: Jumu'ah's) by [step] taps ([PrayerSilence.stepped], which
+     * keeps it within its range). Reads and writes in one edit, so quick taps each count.
+     */
+    suspend fun stepPrayerSilenceMinutes(jumuah: Boolean, step: Int) {
+        store.edit {
+            val next = it.alertSettings().prayerSilence.stepped(jumuah, step)
+            if (jumuah) it[PRAYER_SILENCE_JUMUAH_MINUTES] = next.jumuahMinutes else it[PRAYER_SILENCE_MINUTES] = next.minutes
+        }
+    }
+
+    /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63); planned only while the master switch is on. */
+    suspend fun setSalawatReminder(on: Boolean) {
+        store.edit { it[SALAWAT_ENABLED] = on }
+    }
+
+    /** Every [hours] hours, one of [SalawatReminder.INTERVAL_HOURS]; kept while salawat reminders are off. */
+    suspend fun setSalawatInterval(hours: Int) {
+        require(hours in SalawatReminder.INTERVAL_HOURS)
+        store.edit { it[SALAWAT_INTERVAL_HOURS] = hours }
+    }
+
+    /** «أذكار الصباح» or «أذكار المساء» under «تذكيرات العبادة» (#75); [set] is MORNING or EVENING. */
+    suspend fun setAdhkarReminder(set: AdhkarSetId, on: Boolean) {
+        store.edit { it[adhkarReminderKeys(set).first] = on }
+    }
+
+    /** [minutes] after Fajr (morning) or Asr (evening), one of [AdhkarReminder.MINUTES]; kept while the reminder is off. */
+    suspend fun setAdhkarReminderMinutes(set: AdhkarSetId, minutes: Int) {
+        require(minutes in AdhkarReminder.MINUTES)
+        store.edit { it[adhkarReminderKeys(set).second] = minutes }
+    }
+
+    /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64); planned only while the master switch is on. */
+    suspend fun setKahfReminder(on: Boolean) {
+        store.edit { it[KAHF_ENABLED] = on }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -288,6 +355,25 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             customAdhans = AdhanRecording.entries
                 .mapNotNull { recording -> this[customAdhanKey(recording)]?.takeIf { it.isNotEmpty() }?.let { recording to it } }
                 .toMap(),
+            prayerSilence = PrayerSilence(
+                enabled = this[PRAYER_SILENCE_ENABLED] ?: default.prayerSilence.enabled,
+                mode = this[PRAYER_SILENCE_MODE].toEnum(default.prayerSilence.mode),
+                prayers = this[PRAYER_SILENCE_OFF].orEmpty().let { off -> Prayer.entries.filterNot { it.name in off }.toSet() },
+                minutes = this[PRAYER_SILENCE_MINUTES]?.takeIf { it in PrayerSilence.MINUTES_RANGE }
+                    ?: default.prayerSilence.minutes,
+                jumuahMinutes = this[PRAYER_SILENCE_JUMUAH_MINUTES]?.takeIf { it in PrayerSilence.JUMUAH_MINUTES_RANGE }
+                    ?: default.prayerSilence.jumuahMinutes,
+            ),
+            worshipReminders = WorshipReminders(
+                salawat = SalawatReminder(
+                    enabled = this[SALAWAT_ENABLED] ?: default.worshipReminders.salawat.enabled,
+                    intervalHours = this[SALAWAT_INTERVAL_HOURS]?.takeIf { it in SalawatReminder.INTERVAL_HOURS }
+                        ?: default.worshipReminders.salawat.intervalHours,
+                ),
+                morningAdhkar = adhkarReminder(AdhkarSetId.MORNING, default.worshipReminders.morningAdhkar),
+                eveningAdhkar = adhkarReminder(AdhkarSetId.EVENING, default.worshipReminders.eveningAdhkar),
+                kahf = KahfReminder(enabled = this[KAHF_ENABLED] ?: default.worshipReminders.kahf.enabled),
+            ),
         )
     }
 
@@ -327,6 +413,42 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val PLAY_ON_SILENT = booleanPreferencesKey("play_on_silent")
         private val VIBRATION = booleanPreferencesKey("vibration")
         private val ADHAN_VOLUME = stringPreferencesKey("adhan_volume")
+        private val PRAYER_SILENCE_ENABLED = booleanPreferencesKey("prayer_silence_enabled")
+
+        /** [SilenceMode] name. */
+        private val PRAYER_SILENCE_MODE = stringPreferencesKey("prayer_silence_mode")
+
+        /** Names of the Prayers turned off for Prayer Silence; a Prayer not listed is on. */
+        private val PRAYER_SILENCE_OFF = stringSetPreferencesKey("prayer_silence_off")
+        private val PRAYER_SILENCE_MINUTES = intPreferencesKey("prayer_silence_minutes")
+        private val PRAYER_SILENCE_JUMUAH_MINUTES = intPreferencesKey("prayer_silence_jumuah_minutes")
+
+        /** Worship Reminders (#63): «الصلاة على النبي ﷺ» on or off, and its interval in hours. */
+        private val SALAWAT_ENABLED = booleanPreferencesKey("worship_salawat_enabled")
+        private val SALAWAT_INTERVAL_HOURS = intPreferencesKey("worship_salawat_interval_hours")
+
+        /** Worship Reminders (#75): the morning and evening adhkar reminders, on or off, and their minutes after the Prayer. */
+        private fun adhkarReminderKeys(set: AdhkarSetId) = when (set) {
+            AdhkarSetId.MORNING -> MORNING_ADHKAR_ENABLED to MORNING_ADHKAR_MINUTES
+            AdhkarSetId.EVENING -> EVENING_ADHKAR_ENABLED to EVENING_ADHKAR_MINUTES
+            AdhkarSetId.AFTER_PRAYER -> throw IllegalArgumentException("After-prayer adhkar have no reminder")
+        }
+
+        private fun Preferences.adhkarReminder(set: AdhkarSetId, default: AdhkarReminder): AdhkarReminder {
+            val (enabled, minutes) = adhkarReminderKeys(set)
+            return AdhkarReminder(
+                enabled = this[enabled] ?: default.enabled,
+                minutes = this[minutes]?.takeIf { it in AdhkarReminder.MINUTES } ?: default.minutes,
+            )
+        }
+
+        private val MORNING_ADHKAR_ENABLED = booleanPreferencesKey("worship_morning_adhkar_enabled")
+        private val MORNING_ADHKAR_MINUTES = intPreferencesKey("worship_morning_adhkar_minutes")
+        private val EVENING_ADHKAR_ENABLED = booleanPreferencesKey("worship_evening_adhkar_enabled")
+        private val EVENING_ADHKAR_MINUTES = intPreferencesKey("worship_evening_adhkar_minutes")
+
+        /** Worship Reminders (#64): «سورة الكهف» on or off. */
+        private val KAHF_ENABLED = booleanPreferencesKey("worship_kahf_enabled")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

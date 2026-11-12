@@ -2,7 +2,18 @@ package app.mawaqeet
 
 
 import android.view.View
+import android.app.NotificationManager
+import android.provider.Settings
+import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
+import androidx.lifecycle.Lifecycle
+import org.robolectric.Shadows.shadowOf
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -144,12 +155,230 @@ class SettingsScreenTest {
             compose.onNodeWithText("All app alerts").performClick()
             compose.waitUntil(timeoutMillis = 5_000) { !alerts().enabled }
             compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText("Vibration").fetchSemanticsNodes().isEmpty() }
+            // Prayer Silence doesn't depend on the master switch.
+            compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsDisplayed()
             compose.onNodeWithContentDescription("Back").performClick()
             compose.waitForIdle()
             compose.onNodeWithText("Alerts are off").assertIsDisplayed()
         } finally {
             runBlocking { store.setAlertsEnabled(true) }
         }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `turning on Silent during Prayer explains, asks for Do Not Disturb access and is stored on only once it is given`() {
+        val policy = shadowOf(compose.activity.getSystemService(NotificationManager::class.java))
+        policy.setNotificationPolicyAccessGranted(false)
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun alerts() = runBlocking { store.settings.first() }.alerts
+        fun grantShown() = compose.onAllNodesWithText("Grant").fetchSemanticsNodes().isNotEmpty()
+        fun comeBack() {
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        }
+        try {
+            compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsOff()
+            assertEquals(false, grantShown())
+
+            // First a short explanation; "Not now" leaves everything as it was.
+            compose.onNodeWithText("Silent during Prayer").performClick()
+            compose.onNodeWithText("Do Not Disturb access").assertIsDisplayed()
+            assertEquals(null, shadowOf(compose.activity).nextStartedActivity)
+            compose.onNodeWithText("Not now").performClick()
+            compose.waitForIdle()
+            assertEquals(null, shadowOf(compose.activity).nextStartedActivity)
+            assertEquals(false, alerts().prayerSilence.enabled)
+
+            // Continue opens the system page, but nothing is stored yet.
+            compose.onNodeWithText("Silent during Prayer").performClick()
+            compose.onNodeWithText("Continue").performClick()
+            compose.waitForIdle()
+            assertEquals(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS, shadowOf(compose.activity).nextStartedActivity?.action)
+            assertEquals(false, alerts().prayerSilence.enabled)
+
+            // Back without access: still off, with Grant to try again.
+            comeBack()
+            compose.waitUntil(timeoutMillis = 5_000) { grantShown() }
+            compose.onNodeWithText("Silent during Prayer").assertIsOff()
+            assertEquals(false, alerts().prayerSilence.enabled)
+
+            // Grant, the user allows access in system settings and comes back: now it is stored on.
+            compose.onNodeWithText("Grant").performClick()
+            assertEquals(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS, shadowOf(compose.activity).nextStartedActivity?.action)
+            policy.setNotificationPolicyAccessGranted(true)
+            comeBack()
+
+            compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.enabled }
+            compose.waitUntil(timeoutMillis = 5_000) { !grantShown() }
+            // The stored value and the Grant row change before the switch recomposes: wait for the switch too.
+            compose.waitUntil(timeoutMillis = 5_000) {
+                compose.onAllNodes(hasText("Silent during Prayer") and isOn()).fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Silent during Prayer").performScrollTo().assertIsOn()
+
+            // Revoked later: the switch reads off again and Grant comes back.
+            policy.setNotificationPolicyAccessGranted(false)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            compose.waitUntil(timeoutMillis = 5_000) { grantShown() }
+            compose.onNodeWithText("Silent during Prayer").assertIsOff()
+        } finally {
+            runBlocking { store.setPrayerSilenceEnabled(false) }
+        }
+    }
+
+    private fun shown(text: String) = compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `salawat reminders are off under Worship reminders, and switching them on every 3 hours stores it`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun salawat() = runBlocking { store.settings.first() }.alerts.worshipReminders.salawat
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Worship reminders").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Salawat on the Prophet ﷺ").performScrollTo().assertIsOff()
+            // The interval only shows once it is on.
+            assertEquals(false, shown("Every 2 hours"))
+
+            compose.onNodeWithText("Salawat on the Prophet ﷺ").performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { salawat().enabled && shown("Every 2 hours") }
+            compose.onNodeWithText("Every 2 hours").performScrollTo().assertIsSelected()
+            compose.onNodeWithText("Every 3 hours").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { salawat().intervalHours == 3 }
+            compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Every 3 hours").assertIsSelected() }.isSuccess }
+            compose.onNodeWithText("Every 2 hours").assertIsNotSelected()
+            compose.onNodeWithText("Salawat on the Prophet ﷺ").performScrollTo().assertIsOn()
+        } finally {
+            runBlocking {
+                store.setSalawatReminder(false)
+                store.setSalawatInterval(2)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `morning and evening adhkar reminders are off under Worship reminders, and the morning one at 60 minutes after Fajr is stored`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun reminders() = runBlocking { store.settings.first() }.alerts.worshipReminders
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Morning adhkar").performScrollTo().assertIsOff()
+            compose.onNodeWithText("Evening adhkar").performScrollTo().assertIsOff()
+            compose.onNodeWithText("30 minutes after Fajr, skipped once you have read them").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("30 minutes after Asr, skipped once you have read them").performScrollTo().assertIsDisplayed()
+            // The minutes only show once it is on.
+            assertEquals(false, shown("60 min"))
+
+            compose.onNodeWithText("Morning adhkar").performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { reminders().morningAdhkar.enabled && shown("60 min") }
+            compose.onNodeWithText("30 min").performScrollTo().assertIsSelected()
+            compose.onNodeWithText("60 min").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { reminders().morningAdhkar.minutes == 60 }
+            compose.waitUntil(timeoutMillis = 5_000) { shown("60 minutes after Fajr, skipped once you have read them") }
+            compose.onNodeWithText("60 min").assertIsSelected()
+            assertEquals(app.mawaqeet.core.AdhkarReminder(), reminders().eveningAdhkar)
+            compose.onNodeWithText("Evening adhkar").performScrollTo().assertIsOff()
+        } finally {
+            runBlocking {
+                store.setAdhkarReminder(app.mawaqeet.core.AdhkarSetId.MORNING, false)
+                store.setAdhkarReminderMinutes(app.mawaqeet.core.AdhkarSetId.MORNING, 30)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `the Surat Al-Kahf reminder is off under Worship reminders, and switching it on stores it`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun kahf() = runBlocking { store.settings.first() }.alerts.worshipReminders.kahf
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Surat Al-Kahf").performScrollTo().assertIsOff()
+
+            compose.onNodeWithText("Surat Al-Kahf").performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { kahf().enabled }
+            compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Surat Al-Kahf").assertIsOn() }.isSuccess }
+        } finally {
+            runBlocking { store.setKahfReminder(false) }
+        }
+    }
+
+    /** Opens Settings → Alerts with Do Not Disturb access granted and Prayer Silence turned on, then runs [block]. */
+    private fun withPrayerSilenceOn(block: (alerts: () -> app.mawaqeet.core.AlertSettings) -> Unit) {
+        shadowOf(compose.activity.getSystemService(NotificationManager::class.java)).setNotificationPolicyAccessGranted(true)
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun alerts() = runBlocking { store.settings.first() }.alerts
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            // Its choices only show once it is on.
+            assertEquals(0, compose.onAllNodesWithText("Vibrate").fetchSemanticsNodes().size)
+            compose.onNodeWithText("Silent during Prayer").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.enabled && shown("Vibrate") }
+            block(::alerts)
+        } finally {
+            runBlocking {
+                store.setPrayerSilenceEnabled(false)
+                store.setPrayerSilenceMode(app.mawaqeet.core.SilenceMode.SILENT)
+                Prayer.entries.forEach { store.setPrayerSilencePrayer(it, true) }
+                store.stepPrayerSilenceMinutes(jumuah = false, step = -100)
+                store.stepPrayerSilenceMinutes(jumuah = false, step = +3)
+                store.stepPrayerSilenceMinutes(jumuah = true, step = -100)
+                store.stepPrayerSilenceMinutes(jumuah = true, step = +6)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `Prayer Silence silences by default and choosing Vibrate stores it`() = withPrayerSilenceOn { alerts ->
+        compose.onNodeWithText("Silent").performScrollTo().assertIsSelected()
+
+        compose.onNodeWithText("Vibrate").performScrollTo().performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.mode == app.mawaqeet.core.SilenceMode.VIBRATE }
+        compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Vibrate").assertIsSelected() }.isSuccess }
+        compose.onNodeWithText("Silent").assertIsNotSelected()
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `every Prayer is silenced once Prayer Silence is on, and turning one off stores it`() = withPrayerSilenceOn { alerts ->
+        val asr = compose.onNode(hasText("Asr") and isToggleable())
+        asr.performScrollTo().assertIsOn()
+
+        asr.performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { Prayer.ASR !in alerts().prayerSilence.prayers }
+        assertEquals(Prayer.entries.toSet() - Prayer.ASR, alerts().prayerSilence.prayers)
+        compose.waitUntil(timeoutMillis = 5_000) { runCatching { asr.assertIsOff() }.isSuccess }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `the minus and plus buttons change the Silence Window and Jumu'ah durations five minutes at a time`() = withPrayerSilenceOn { alerts ->
+        compose.onNodeWithText("20 minutes").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("45 minutes").performScrollTo().assertIsDisplayed()
+
+        compose.onNodeWithContentDescription("Silence 5 minutes longer").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Silence 5 minutes longer").performClick()
+        compose.onNodeWithContentDescription("Jumu'ah silence 5 minutes shorter").performScrollTo().performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { alerts().prayerSilence.let { it.minutes == 30 && it.jumuahMinutes == 40 } }
+        compose.waitUntil(timeoutMillis = 5_000) { shown("30 minutes") && shown("40 minutes") }
+        compose.onNodeWithText("30 minutes").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("40 minutes").performScrollTo().assertIsDisplayed()
     }
 
     @Test
