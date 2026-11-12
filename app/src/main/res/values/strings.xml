@@ -508,6 +508,7 @@
     <string name="clock_am">ص</string>
     <string name="clock_pm">م</string>
     <!-- TalkBack reads a Clock widget as one sentence: the time, the next Stop and the time left, the dates. -->
+    <string name="clock_weather_description">الطقس %1$s، الرطوبة %2$s، واحتمال المطر %3$s.</string>
     <string name="clock_description">الساعة %1$s. %2$s بعد %3$s. %4$s.</string>
     <plurals name="clock_spoken_hours">
         <item quantity="zero">%s ساعة</item>

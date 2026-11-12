@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import app.mawaqeet.alerts.AlertScheduler
+import app.mawaqeet.weather.WeatherUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,13 +20,15 @@ import java.time.Instant
  * Non-wakeup (`RTC`): with the screen off the alarm waits, and fires as soon as the phone wakes, so a Clock widget
  * costs nothing while nobody looks. One alarm at a time: each Clock render arms the next and replaces it. Only
  * a render arms it, so with no Clock widget on the home screen nothing renders and the chain stops; removing the
- * last one also cancels it ([cancel]).
+ * last one also cancels it ([cancel]). Before rendering it fetches the weather when due ([WeatherUpdater]).
  */
 class ClockTickReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
+                // About hourly, the weather beside the clock: fetched before this minute's render shows it.
+                runCatching { WeatherUpdater.updateIfDue(context.applicationContext) }
                 Widgets.refresh(context.applicationContext, Widgets.clocks)
             } finally {
                 pending.finish()

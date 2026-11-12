@@ -20,7 +20,7 @@ class GoldClockWidget(private val clock: Clock = Clock.systemDefaultZone()) : Gl
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
         clock = clock,
-        build = { core, text -> ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context) },
+        build = { core, text -> ClockView.of(clockContent(context, core.displayDay(), text, clock), text, context, clockWeather(context, core, clock)) },
         fixedStyle = goldClockStyle(),
         layout = { view, rtl -> BigClockLayout(view, rtl, GOLD_TONES) },
     )

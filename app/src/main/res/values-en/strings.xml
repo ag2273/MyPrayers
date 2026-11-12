@@ -467,6 +467,7 @@
     <string name="clock_prayer_since">from %1$s</string>
     <string name="clock_am">AM</string>
     <string name="clock_pm">PM</string>
+    <string name="clock_weather_description">Weather %1$s, humidity %2$s, chance of rain %3$s.</string>
     <string name="clock_description">%1$s. %2$s in %3$s. %4$s.</string>
     <plurals name="clock_spoken_hours">
         <item quantity="one">%s hour</item>
