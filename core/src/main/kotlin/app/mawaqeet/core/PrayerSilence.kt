@@ -37,6 +37,16 @@ data class PrayerSilence(
     /** How long a Silence Window lasts: [jumuahMinutes] for Jumu'ah, else [minutes]. */
     fun duration(isJumuah: Boolean): Duration = Duration.ofMinutes((if (isJumuah) jumuahMinutes else minutes).toLong())
 
+    /**
+     * The duration ([jumuah]: Jumu'ah's) moved by [steps] taps of [MINUTES_STEP] minutes (negative: shorter), kept
+     * within [MINUTES_RANGE] or [JUMUAH_MINUTES_RANGE]; the other duration is unchanged.
+     */
+    fun stepped(jumuah: Boolean, steps: Int): PrayerSilence = if (jumuah) {
+        copy(jumuahMinutes = (jumuahMinutes + steps * MINUTES_STEP).coerceIn(JUMUAH_MINUTES_RANGE))
+    } else {
+        copy(minutes = (minutes + steps * MINUTES_STEP).coerceIn(MINUTES_RANGE))
+    }
+
     companion object {
         const val DEFAULT_MINUTES = 20
         const val DEFAULT_JUMUAH_MINUTES = 45

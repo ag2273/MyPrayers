@@ -90,4 +90,19 @@ class PrayerSilenceChoicesTest {
         assertTrue(runCatching { PrayerSilence(minutes = PrayerSilence.MINUTES_RANGE.first - 1) }.isFailure)
         assertTrue(runCatching { PrayerSilence(jumuahMinutes = PrayerSilence.JUMUAH_MINUTES_RANGE.last + 1) }.isFailure)
     }
+
+    @Test
+    fun `each tap moves a duration by 5 minutes, and never past its range`() {
+        val silence = PrayerSilence(enabled = true)
+
+        assertEquals(25, silence.stepped(jumuah = false, steps = 1).minutes)
+        assertEquals(45, silence.stepped(jumuah = false, steps = 1).jumuahMinutes)
+        assertEquals(35, silence.stepped(jumuah = true, steps = -2).jumuahMinutes)
+        assertEquals(20, silence.stepped(jumuah = true, steps = -2).minutes)
+        // 5 to 60 minutes; Jumu'ah 15 to 120.
+        assertEquals(5, PrayerSilence(minutes = 10).stepped(jumuah = false, steps = -3).minutes)
+        assertEquals(60, PrayerSilence(minutes = 55).stepped(jumuah = false, steps = 4).minutes)
+        assertEquals(15, PrayerSilence(jumuahMinutes = 20).stepped(jumuah = true, steps = -1).stepped(jumuah = true, steps = -1).jumuahMinutes)
+        assertEquals(120, PrayerSilence(jumuahMinutes = 115).stepped(jumuah = true, steps = 2).jumuahMinutes)
+    }
 }

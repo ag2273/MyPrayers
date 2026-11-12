@@ -264,19 +264,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
     }
 
     /**
-     * Moves the Silence Window's duration ([jumuah] true: Jumu'ah's) by [step] times [PrayerSilence.MINUTES_STEP]
-     * minutes, kept within its range. Reads and writes in one edit, so quick taps each count.
+     * Moves the Silence Window's duration ([jumuah] true: Jumu'ah's) by [step] taps ([PrayerSilence.stepped], which
+     * keeps it within its range). Reads and writes in one edit, so quick taps each count.
      */
     suspend fun stepPrayerSilenceMinutes(jumuah: Boolean, step: Int) {
         store.edit {
-            val current = it.alertSettings().prayerSilence
-            if (jumuah) {
-                val range = PrayerSilence.JUMUAH_MINUTES_RANGE
-                it[PRAYER_SILENCE_JUMUAH_MINUTES] = (current.jumuahMinutes + step * PrayerSilence.MINUTES_STEP).coerceIn(range.first, range.last)
-            } else {
-                val range = PrayerSilence.MINUTES_RANGE
-                it[PRAYER_SILENCE_MINUTES] = (current.minutes + step * PrayerSilence.MINUTES_STEP).coerceIn(range.first, range.last)
-            }
+            val next = it.alertSettings().prayerSilence.stepped(jumuah, step)
+            if (jumuah) it[PRAYER_SILENCE_JUMUAH_MINUTES] = next.jumuahMinutes else it[PRAYER_SILENCE_MINUTES] = next.minutes
         }
     }
 
