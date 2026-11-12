@@ -2,7 +2,9 @@ package app.mawaqeet.alerts
 
 import android.app.AlarmManager
 import android.app.Application
+import android.app.NotificationManager
 import android.content.Context
+import android.media.AudioManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.AdhanRecording
@@ -261,5 +263,59 @@ class AlertSchedulerTest {
         scheduler.apply(AlertPlan(listOf(dhuhr), midnight, silenceWindows = listOf(dhuhrSilence)), early)
 
         assertEquals(listOf(SilenceReceiver.ACTION_END to dhuhrSilence.end), silenceAlarms())
+    }
+
+    private val audio get() = context.getSystemService(AudioManager::class.java)
+    private val during = Instant.parse("2026-11-08T09:10:00Z")
+
+    /** The start alarm has fired by then, so only the end alarms count. */
+    private fun endAlarms() = silenceAlarms().filter { it.first == SilenceReceiver.ACTION_END }
+
+    /** The phone on normal sound, silenced by [window]'s start after [scheduler] planned it. */
+    private fun silencedBy(window: SilenceWindow, scheduler: AlertScheduler) {
+        val notifications = context.getSystemService(NotificationManager::class.java)
+        shadowOf(notifications).setNotificationPolicyAccessGranted(true)
+        notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        scheduler.apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(window)), early)
+        PrayerSilencer(context).start(window)
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
+    fun `turning Prayer Silence off during a window brings the sound back at once`() {
+        val scheduler = AlertScheduler(context)
+        silencedBy(dhuhrSilence, scheduler)
+
+        scheduler.apply(AlertPlan(emptyList(), midnight), during)
+
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertEquals(emptyList<Pair<String?, Instant>>(), endAlarms())
+    }
+
+    @Test
+    fun `a reschedule that moves a window's end to before now brings the sound back at once`() {
+        val scheduler = AlertScheduler(context)
+        silencedBy(dhuhrSilence, scheduler)
+
+        val shorter = dhuhrSilence.copy(end = Instant.parse("2026-11-08T09:09:00Z"))
+        scheduler.apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(shorter)), during)
+
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+        assertEquals(emptyList<Pair<String?, Instant>>(), endAlarms())
+    }
+
+    @Test
+    fun `a reschedule that moves a window's end later keeps the phone silent until the new end`() {
+        val scheduler = AlertScheduler(context)
+        silencedBy(dhuhrSilence, scheduler)
+
+        val longer = dhuhrSilence.copy(end = Instant.parse("2026-11-08T09:34:00Z"))
+        scheduler.apply(AlertPlan(emptyList(), midnight, silenceWindows = listOf(longer)), during)
+
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        assertEquals(listOf(SilenceReceiver.ACTION_END to longer.end), endAlarms())
+        PrayerSilencer(context).end(longer)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
     }
 }

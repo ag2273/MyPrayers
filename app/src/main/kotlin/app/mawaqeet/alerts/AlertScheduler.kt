@@ -52,6 +52,8 @@ class AlertScheduler(context: Context) {
         arm(plan)
         armSilence(plan, now)
         armWorship(plan.worshipReminders, now)
+        // The window the phone is silenced for may have left the plan or moved its end: its end alarm went with it.
+        PrayerSilencer(context).replan(plan.silenceWindows, now)
     }
 
     /** Re-arms the stored plan's alerts and Silence Windows still after [now], with no recalculation (works before the first unlock). */

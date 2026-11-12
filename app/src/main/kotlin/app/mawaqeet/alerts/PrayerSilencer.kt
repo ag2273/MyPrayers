@@ -107,6 +107,21 @@ class PrayerSilencer(
         }
     }
 
+    /**
+     * A new plan was applied ([AlertScheduler.apply]). The window the app holds silent ends now, under [end]'s usual
+     * rules, if the plan no longer has it (Prayer Silence or its Prayer turned off) or now ends it before [now] (a
+     * location change or an adjustment); one still planned with a new end or mode follows it, with its end alarm moved.
+     * Without this the dropped end alarm would leave the phone silent indefinitely.
+     */
+    fun replan(planned: List<SilenceWindow>, now: Instant) {
+        val held = active() ?: return
+        val same = planned.firstOrNull { it.id == held.id }
+        when {
+            same == null || !same.end.isAfter(now) -> restore(held)
+            same != held -> hold(same)
+        }
+    }
+
     /** «استعادة الصوت»: ends [window] now, as its planned end would, and drops its end alarm. */
     fun restore(window: SilenceWindow) {
         end(window)

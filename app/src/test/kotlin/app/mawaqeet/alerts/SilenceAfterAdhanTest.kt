@@ -8,15 +8,15 @@ import android.media.AudioManager
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.core.AlertKind
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.PlannedAlert
-import app.mawaqeet.core.Prayer
-import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.SilenceWindow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,7 +26,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlarmManager
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalDate
+import kotlinx.coroutines.runBlocking
 
 /**
  * Prayer Silence starts once the adhan has stopped, or at the Prayer Time when there is no adhan to play, and a reboot
@@ -42,25 +42,22 @@ class SilenceAfterAdhanTest {
     private val posted: List<Notification> get() = shadowOf(notificationManager).allNotifications
 
     private val now: Instant = Instant.ofEpochMilli(System.currentTimeMillis())
-    private val day = LocalDate.parse("2026-11-08")
+    private val settings get() = (context.applicationContext as MawaqeetApplication).settings
 
-    private val window = SilenceWindow(
-        prayer = Prayer.DHUHR,
-        prayerDay = day,
-        start = now,
-        end = now.plus(Duration.ofMinutes(20)),
-        mode = SilenceMode.SILENT,
-        isJumuah = false,
-    )
+    /**
+     * A Silence Window the app itself planned (Prayer Silence on), well ahead: every alarm reschedules, and a
+     * reschedule ends a held window that is not in the plan.
+     */
+    private lateinit var window: SilenceWindow
 
     private fun adhanAlert(sound: AlertSound) = PlannedAlert(
         instant = now,
-        prayer = Prayer.DHUHR,
+        prayer = window.prayer,
         kind = AlertKind.ADHAN_ALERT,
         sound = sound,
         deliveryMode = DeliveryMode.EXACT,
-        prayerDay = day,
-        isJumuah = false,
+        prayerDay = window.prayerDay,
+        isJumuah = window.isJumuah,
     )
 
     @Before
@@ -70,6 +67,31 @@ class SilenceAfterAdhanTest {
         shadowOf(notificationManager).setNotificationPolicyAccessGranted(true)
         notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
         audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        // The app's own first reschedule (Prayer Silence still off) must not land after the one below.
+        waitFor { AlertPlanStore(context).read() != null }
+        runBlocking {
+            settings.setPrayerSilenceEnabled(true)
+            AlertRescheduler.reschedule(context)
+        }
+        window = waitForPlannedWindow()
+    }
+
+    @After
+    fun turnPrayerSilenceOff() = runBlocking { settings.setPrayerSilenceEnabled(false) }
+
+    private fun waitFor(condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 5_000
+        while (!condition() && System.currentTimeMillis() < deadline) Thread.sleep(20)
+    }
+
+    private fun waitForPlannedWindow(): SilenceWindow {
+        val deadline = System.currentTimeMillis() + 5_000
+        while (System.currentTimeMillis() < deadline) {
+            val planned = AlertPlanStore(context).read()?.silenceWindows.orEmpty()
+            planned.firstOrNull { it.start.isAfter(now.plus(Duration.ofHours(1))) }?.let { return it }
+            Thread.sleep(20)
+        }
+        throw AssertionError("the app never planned a Silence Window")
     }
 
     /** The alarm for [alert] fires, opening [window]. */
@@ -152,7 +174,11 @@ class SilenceAfterAdhanTest {
 
     @Test
     fun `the boot broadcast before the first unlock restores a window that ended while the phone was off`() {
-        val over = window.copy(start = now.minus(Duration.ofHours(2)), end = now.minus(Duration.ofHours(1)))
+        val over = window.copy(
+            prayerDay = window.prayerDay.minusDays(2),
+            start = now.minus(Duration.ofHours(2)),
+            end = now.minus(Duration.ofHours(1)),
+        )
         PrayerSilencer(context).start(over)
 
         context.sendBroadcast(Intent(Intent.ACTION_LOCKED_BOOT_COMPLETED).setPackage(context.packageName))
