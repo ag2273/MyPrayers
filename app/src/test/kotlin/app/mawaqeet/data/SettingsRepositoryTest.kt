@@ -400,6 +400,34 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `the Sunnah Fast reminders are off by default, and each switch survives an app restart and a backup`() {
+        assertEquals(emptySet<app.mawaqeet.core.SunnahFast>(), withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.fasts.on)
+
+        val backup = withRepository { repo, _ ->
+            repo.setFastReminder(app.mawaqeet.core.SunnahFast.ARAFAH, true)
+            repo.setFastReminder(app.mawaqeet.core.SunnahFast.SIX_OF_SHAWWAL, true)
+            repo.setFastReminder(app.mawaqeet.core.SunnahFast.MONDAY_THURSDAY, true)
+            repo.setFastReminder(app.mawaqeet.core.SunnahFast.MONDAY_THURSDAY, false)
+            repo.backupSettings()
+        }
+
+        val on = setOf(app.mawaqeet.core.SunnahFast.ARAFAH, app.mawaqeet.core.SunnahFast.SIX_OF_SHAWWAL)
+        assertEquals(on, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.fasts.on)
+        // Through a Backup File into a phone with none on, the same switches come back.
+        fun snapshot(settings: Map<String, app.mawaqeet.core.SettingValue>) = app.mawaqeet.core.BackupSnapshot(
+            settings, app.mawaqeet.core.PrayerLogBackup(null, emptyMap(), emptyList()), app.mawaqeet.core.AdhkarRecordBackup(null, emptyMap()),
+        )
+        val file = app.mawaqeet.core.Backup.export(snapshot(backup), java.time.Instant.parse("2026-11-13T00:00:00Z"))
+        val restored = (app.mawaqeet.core.Backup.restore(file, snapshot(emptyMap())) as app.mawaqeet.core.RestoreResult.Restored).snapshot
+        withRepository { repo, _ ->
+            repo.restoreSettings(emptyMap())
+            assertEquals(emptySet<app.mawaqeet.core.SunnahFast>(), repo.settings.first().alerts.worshipReminders.fasts.on)
+            repo.restoreSettings(restored.settings)
+            assertEquals(on, repo.settings.first().alerts.worshipReminders.fasts.on)
+        }
+    }
+
+    @Test
     fun `stored suhoor minutes outside the choices read as the hour before Fajr`() {
         withRepository { _, store -> store.edit { it[intPreferencesKey("ramadan_suhoor_minutes")] = 50 } }
 

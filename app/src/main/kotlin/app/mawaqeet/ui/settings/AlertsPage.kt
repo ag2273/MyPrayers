@@ -70,6 +70,8 @@ import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SuhoorReminder
+import app.mawaqeet.core.FastReminders
+import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.ui.components.Segment
 import app.mawaqeet.ui.components.SegmentedChoice
@@ -313,7 +315,43 @@ private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions)
         RowDivider()
         AdhkarReminderRows(AdhkarSetId.EVENING, alerts.worshipReminders.eveningAdhkar, actions)
     }
+    FastReminderRows(alerts.worshipReminders.fasts, actions)
     RamadanRows(alerts.ramadan, actions, reminders = true)
+}
+
+/** Each Sunnah Fast's switch title and description, in the order Settings lists them. */
+private val FAST_REMINDER_ROWS = listOf(
+    SunnahFast.MONDAY_THURSDAY to (R.string.fast_switch_monday_thursday to R.string.fast_switch_monday_thursday_description),
+    SunnahFast.WHITE_DAYS to (R.string.fast_switch_white_days to R.string.fast_switch_white_days_description),
+    SunnahFast.ARAFAH to (R.string.fast_switch_arafah to R.string.fast_switch_arafah_description),
+    SunnahFast.ASHURA to (R.string.fast_switch_ashura to R.string.fast_switch_ashura_description),
+    SunnahFast.SIX_OF_SHAWWAL to (R.string.fast_switch_six_of_shawwal to R.string.fast_switch_six_of_shawwal_description),
+)
+
+/**
+ * «صيام السنة» under «تذكيرات العبادة» (#95): one switch per Sunnah Fast, all off by default, each a reminder the night
+ * before, half an hour after Isha. Shown with the other Worship Reminders, only while the master switch is on.
+ */
+@Composable
+private fun FastReminderRows(fasts: FastReminders, actions: SettingsActions) {
+    SectionTitle(stringResource(R.string.fast_reminders))
+    Text(
+        stringResource(R.string.fast_reminders_description),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 6.dp),
+    )
+    Card {
+        FAST_REMINDER_ROWS.forEachIndexed { index, (fast, text) ->
+            if (index > 0) RowDivider()
+            SwitchRow(
+                title = stringResource(text.first),
+                description = stringResource(text.second),
+                checked = fasts.isOn(fast),
+                onChange = { on -> actions.setFastReminder(fast, on) },
+            )
+        }
+    }
 }
 
 /**

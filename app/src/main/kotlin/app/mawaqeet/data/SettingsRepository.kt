@@ -29,7 +29,9 @@ import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
+import app.mawaqeet.core.FastReminders
 import app.mawaqeet.core.KahfReminder
+import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
@@ -334,6 +336,14 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[KAHF_ENABLED] = on }
     }
 
+    /**
+     * Settings → Alerts → «تذكيرات العبادة» → «صيام السنة» (#95): [fast]'s reminder the night before, under key
+     * `worship_fast_<fast>` (e.g. `worship_fast_arafah`); planned only while the master switch is on.
+     */
+    suspend fun setFastReminder(fast: SunnahFast, on: Boolean) {
+        store.edit { it[fastReminderKey(fast)] = on }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -501,6 +511,9 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                 morningAdhkar = adhkarReminder(AdhkarSetId.MORNING, default.worshipReminders.morningAdhkar),
                 eveningAdhkar = adhkarReminder(AdhkarSetId.EVENING, default.worshipReminders.eveningAdhkar),
                 kahf = KahfReminder(enabled = this[KAHF_ENABLED] ?: default.worshipReminders.kahf.enabled),
+                fasts = FastReminders(
+                    SunnahFast.entries.filterTo(mutableSetOf()) { this[fastReminderKey(it)] ?: default.worshipReminders.fasts.isOn(it) },
+                ),
             ),
         )
     }
@@ -568,6 +581,8 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             AdhkarSetId.EVENING -> EVENING_ADHKAR_ENABLED to EVENING_ADHKAR_MINUTES
             AdhkarSetId.AFTER_PRAYER -> throw IllegalArgumentException("After-prayer adhkar have no reminder")
         }
+
+        private fun fastReminderKey(fast: SunnahFast) = booleanPreferencesKey("worship_fast_${fast.name.lowercase()}")
 
         private fun Preferences.adhkarReminder(set: AdhkarSetId, default: AdhkarReminder): AdhkarReminder {
             val (enabled, minutes) = adhkarReminderKeys(set)

@@ -250,10 +250,28 @@ class AlertScheduler(context: Context) {
         /** Worship Reminders' request codes sit above every Silence Window's. */
         private const val WORSHIP_REQUEST_CODE_BASE = 4_000_000
 
-        /** Stable and distinct per (Prayer Day, kind, slot): 128 codes a day, [PlannedWorshipReminder.MAX_SLOTS] per kind. */
+        /**
+         * Stable and distinct per (Prayer Day, kind, slot). The first [SLOTTED_KINDS] kinds take 128 codes a day,
+         * [PlannedWorshipReminder.MAX_SLOTS] per kind (unchanged since #63, so alarms set by older versions are still
+         * found). Later kinds come once a day: one code each per day from [ONCE_A_DAY_REQUEST_CODE_BASE], room for
+         * [ONCE_A_DAY_KINDS] (before #95 they ran into the next day's codes).
+         */
         internal val PlannedWorshipReminder.requestCode: Int
-            get() = WORSHIP_REQUEST_CODE_BASE + (prayerDay.toEpochDay().mod(100_000L)).toInt() * 128 +
-                kind.ordinal * PlannedWorshipReminder.MAX_SLOTS + slot
+            get() {
+                val day = (prayerDay.toEpochDay().mod(100_000L)).toInt()
+                return if (kind.ordinal < SLOTTED_KINDS) {
+                    WORSHIP_REQUEST_CODE_BASE + day * 128 + kind.ordinal * PlannedWorshipReminder.MAX_SLOTS + slot
+                } else {
+                    ONCE_A_DAY_REQUEST_CODE_BASE + day * ONCE_A_DAY_KINDS + (kind.ordinal - SLOTTED_KINDS)
+                }
+            }
+
+        /** Salawat, Kahf and the two adhkar reminders. */
+        private const val SLOTTED_KINDS = 4
+
+        /** Above every slotted kind's code (4,000,000 + 100,000 days × 128). */
+        private const val ONCE_A_DAY_REQUEST_CODE_BASE = 20_000_000
+        private const val ONCE_A_DAY_KINDS = 32
 
         /** Exact alarms are always allowed before Android 12; from 12 the user can revoke them (14+: off by default). */
         fun canScheduleExact(alarmManager: AlarmManager): Boolean =

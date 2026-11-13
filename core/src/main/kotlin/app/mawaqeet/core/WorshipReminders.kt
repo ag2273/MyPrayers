@@ -16,6 +16,8 @@ data class WorshipReminders(
     val morningAdhkar: AdhkarReminder = AdhkarReminder(),
     /** «أذكار المساء» (#75): [AdhkarReminder.minutes] after Asr; opens the evening set, skipped once it is complete. */
     val eveningAdhkar: AdhkarReminder = AdhkarReminder(),
+    /** «صيام السنة» (#95): a reminder the night before each Sunnah Fast switched on. */
+    val fasts: FastReminders = FastReminders(),
 )
 
 /** The morning or evening adhkar reminder: once a Prayer Day, [minutes] after Fajr (morning) or Asr (evening). */
@@ -77,18 +79,25 @@ enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
 
     /** «تنبيه الإمساك» (#91), at a Fasting Day's Imsak; its Prayer Day is that Fasting Day's date. */
     IMSAK,
+
+    /**
+     * «صيام السنة» (#95), the night before a Sunnah Fast; its Prayer Day is the day before the fast, and
+     * [PlannedWorshipReminder.fast] says which.
+     */
+    SUNNAH_FAST,
 }
 
 /**
  * One Worship Reminder the scheduler must raise: a gentle notification at [instant], never an adhan. Identified by
  * [kind], [prayerDay] and [slot] (its place among that kind's reminders on that Prayer Day, from 0; always 0 for a
- * kind that comes once a day).
+ * kind that comes once a day). [fast] is what a [WorshipReminderKind.SUNNAH_FAST] reminder announces, null for the others.
  */
 data class PlannedWorshipReminder(
     val kind: WorshipReminderKind,
     val instant: Instant,
     val prayerDay: LocalDate,
     val slot: Int = 0,
+    val fast: FastDay? = null,
 ) {
     init {
         require(slot in 0 until MAX_SLOTS) { "A Worship Reminder's slot is below $MAX_SLOTS, not $slot" }
