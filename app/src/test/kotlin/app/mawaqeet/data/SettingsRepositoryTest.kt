@@ -380,4 +380,29 @@ class SettingsRepositoryTest {
         withRepository { _, store -> store.edit { it[intPreferencesKey("ramadan_imsak_minutes")] = 45 } }
         assertEquals(10, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
     }
+
+    @Test
+    fun `the Ramadan reminders are off by default, and their switches and the suhoor minutes survive an app restart`() {
+        val before = withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan
+        assertEquals(app.mawaqeet.core.SuhoorReminder(enabled = false, minutes = 60), before.suhoorReminder)
+        assertEquals(false, before.imsakAlert)
+
+        withRepository { repo, _ ->
+            repo.setSuhoorReminder(true)
+            repo.setSuhoorReminderMinutes(90)
+            repo.setImsakAlert(true)
+        }
+
+        val after = withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan
+        assertEquals(app.mawaqeet.core.SuhoorReminder(enabled = true, minutes = 90), after.suhoorReminder)
+        assertEquals(true, after.imsakAlert)
+        assertEquals(10, after.imsakMinutes)
+    }
+
+    @Test
+    fun `stored suhoor minutes outside the choices read as the hour before Fajr`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("ramadan_suhoor_minutes")] = 50 } }
+
+        assertEquals(60, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.suhoorReminder.minutes)
+    }
 }

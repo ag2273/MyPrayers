@@ -40,6 +40,7 @@ class AlertReceiver : BroadcastReceiver() {
                         intent.getLongExtra(EXTRA_PRAYER_TIME, at),
                         prayerDay(intent),
                         fullScreen = intent.getBooleanExtra(EXTRA_FULL_SCREEN, false),
+                        isIftar = intent.getBooleanExtra(EXTRA_IFTAR, false),
                     )
                     val sound = intent.getStringExtra(EXTRA_SOUND)?.let(::decodeAlertSound) ?: AlertSound.ShortAdhan
                     val late = Duration.ofMillis((now - at).coerceAtLeast(0))
@@ -87,6 +88,9 @@ class AlertReceiver : BroadcastReceiver() {
         const val ACTION_MIDNIGHT = "app.mawaqeet.action.LOCAL_MIDNIGHT"
         const val EXTRA_PRAYER = "prayer"
         const val EXTRA_JUMUAH = "jumuah"
+
+        /** [app.mawaqeet.core.PlannedAlert.isIftar] (#91); missing reads as false. */
+        const val EXTRA_IFTAR = "iftar"
         const val EXTRA_REQUEST_CODE = "request_code"
 
         /** The alert's [AlertSound], as [encodeAlertSound] writes it. */

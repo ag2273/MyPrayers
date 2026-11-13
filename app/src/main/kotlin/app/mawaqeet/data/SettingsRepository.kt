@@ -31,6 +31,7 @@ import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
 import app.mawaqeet.core.RamadanSettings
+import app.mawaqeet.core.SuhoorReminder
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.core.SettingValue
 import app.mawaqeet.widget.WidgetAppearance
@@ -283,6 +284,22 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[RAMADAN_IMSAK_MINUTES] = it.alertSettings().ramadan.stepped(step).imsakMinutes }
     }
 
+    /** «تذكير السحور» under «رمضان» (#91); planned only on Fasting Days while the master switch is on. */
+    suspend fun setSuhoorReminder(on: Boolean) {
+        store.edit { it[RAMADAN_SUHOOR_ENABLED] = on }
+    }
+
+    /** The suhoor reminder's [minutes] before Fajr, one of [SuhoorReminder.MINUTES]; kept while it is off. */
+    suspend fun setSuhoorReminderMinutes(minutes: Int) {
+        require(minutes in SuhoorReminder.MINUTES)
+        store.edit { it[RAMADAN_SUHOOR_MINUTES] = minutes }
+    }
+
+    /** «تنبيه الإمساك» under «رمضان» (#91); planned only on Fasting Days while the master switch is on. */
+    suspend fun setImsakAlert(on: Boolean) {
+        store.edit { it[RAMADAN_IMSAK_ALERT] = on }
+    }
+
     /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63); planned only while the master switch is on. */
     suspend fun setSalawatReminder(on: Boolean) {
         store.edit { it[SALAWAT_ENABLED] = on }
@@ -397,6 +414,12 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             ramadan = RamadanSettings(
                 imsakMinutes = this[RAMADAN_IMSAK_MINUTES]?.takeIf { it in RamadanSettings.IMSAK_MINUTES_RANGE }
                     ?: default.ramadan.imsakMinutes,
+                suhoorReminder = SuhoorReminder(
+                    enabled = this[RAMADAN_SUHOOR_ENABLED] ?: default.ramadan.suhoorReminder.enabled,
+                    minutes = this[RAMADAN_SUHOOR_MINUTES]?.takeIf { it in SuhoorReminder.MINUTES }
+                        ?: default.ramadan.suhoorReminder.minutes,
+                ),
+                imsakAlert = this[RAMADAN_IMSAK_ALERT] ?: default.ramadan.imsakAlert,
             ),
             prayerSilence = PrayerSilence(
                 enabled = this[PRAYER_SILENCE_ENABLED] ?: default.prayerSilence.enabled,
@@ -503,6 +526,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         /** Worship Reminders (#64): «سورة الكهف» on or off. */
         private val KAHF_ENABLED = booleanPreferencesKey("worship_kahf_enabled")
         private val RAMADAN_IMSAK_MINUTES = intPreferencesKey("ramadan_imsak_minutes")
+
+        /** Ramadan reminders (#91): «تذكير السحور» on or off and its minutes before Fajr, «تنبيه الإمساك» on or off. */
+        private val RAMADAN_SUHOOR_ENABLED = booleanPreferencesKey("ramadan_suhoor_enabled")
+        private val RAMADAN_SUHOOR_MINUTES = intPreferencesKey("ramadan_suhoor_minutes")
+        private val RAMADAN_IMSAK_ALERT = booleanPreferencesKey("ramadan_imsak_alert")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

@@ -38,6 +38,8 @@ internal object WorshipReminderNotification {
             WorshipReminderKind.KAHF -> R.string.kahf_reminder_title to R.string.kahf_reminder_text
             WorshipReminderKind.MORNING_ADHKAR -> R.string.adhkar_morning to R.string.adhkar_morning_reminder_text
             WorshipReminderKind.EVENING_ADHKAR -> R.string.adhkar_evening to R.string.adhkar_evening_reminder_text
+            WorshipReminderKind.SUHOOR -> R.string.suhoor_reminder_title to R.string.suhoor_reminder_text
+            WorshipReminderKind.IMSAK -> R.string.imsak_alert_title to R.string.imsak_alert_text
         }
         val strings = alertText(context)
         val id = id(reminder.kind)
