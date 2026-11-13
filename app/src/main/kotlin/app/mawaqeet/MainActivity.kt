@@ -125,6 +125,7 @@ class MainActivity : AppCompatActivity() {
                 val storedLocation by remember { settingsStore.savedLocation.map { listOfNotNull(it) } }.collectAsState(initial = null)
                 val onboarded by settingsStore.onboardingDone.collectAsState(initial = null)
                 val fixAlertsDone by settingsStore.fixAlertsDone.collectAsState(initial = true)
+                val lastBackupExport by settingsStore.lastBackupExport.collectAsState(initial = null)
                 val current = settings ?: return@MawaqeetTheme
                 val onboardingDone = onboarded ?: return@MawaqeetTheme
                 val digits = storedDigits ?: return@MawaqeetTheme
@@ -321,6 +322,10 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setKahfReminder(on) }
                             }
 
+                            override fun stepImsakMinutes(step: Int) {
+                                scope.launch { settingsStore.stepImsakMinutes(step) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {
@@ -390,6 +395,12 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch(Dispatchers.IO) {
                                     val prayers = PrayerCore(settingsStore.settings.first(), clock, prayerLog)
                                     Adhkar(app.adhkarCatalog, prayers, app.adhkar).deleteRecord()
+                                }
+                            }
+
+                            override fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit) {
+                                scope.launch {
+                                    onResult(app.backup.export { contentResolver.openOutputStream(uri, "w") })
                                 }
                             }
 
@@ -490,6 +501,7 @@ class MainActivity : AppCompatActivity() {
                         settingsActions,
                         widgetAppearance,
                         onNavigate = { settingsRoute = it },
+                        lastBackupExport = lastBackupExport,
                     )
                 } else {
                     MainScaffold(tab, onSelect = { tab = it }) {

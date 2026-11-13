@@ -366,4 +366,18 @@ class SettingsRepositoryTest {
 
         assertEquals(app.mawaqeet.core.KahfReminder(enabled = true), kahf)
     }
+
+    @Test
+    fun `Imsak is 10 minutes before Fajr by default, and a stepped choice survives an app restart within 0 to 30`() {
+        assertEquals(10, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
+
+        withRepository { repo, _ -> repo.stepImsakMinutes(+2) }
+        assertEquals(20, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
+
+        withRepository { repo, _ -> repo.stepImsakMinutes(+100) }
+        assertEquals(30, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
+
+        withRepository { _, store -> store.edit { it[intPreferencesKey("ramadan_imsak_minutes")] = 45 } }
+        assertEquals(10, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
+    }
 }

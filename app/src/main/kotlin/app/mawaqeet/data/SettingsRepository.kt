@@ -30,13 +30,17 @@ import app.mawaqeet.core.KahfReminder
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
+import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SavedLocation
+import app.mawaqeet.core.SettingValue
 import app.mawaqeet.widget.WidgetAppearance
 import app.mawaqeet.widget.WidgetColors
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.DateTimeException
+import java.time.Instant
 import java.time.ZoneId
 
 /**
@@ -274,6 +278,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         }
     }
 
+    /** Settings → Alerts → «تذكيرات العبادة» → «رمضان» (#90): Imsak moved [step] taps of 5 minutes, within 0–30. */
+    suspend fun stepImsakMinutes(step: Int) {
+        store.edit { it[RAMADAN_IMSAK_MINUTES] = it.alertSettings().ramadan.stepped(step).imsakMinutes }
+    }
+
     /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63); planned only while the master switch is on. */
     suspend fun setSalawatReminder(on: Boolean) {
         store.edit { it[SALAWAT_ENABLED] = on }
@@ -333,6 +342,36 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         return unused
     }
 
+    /** Settings → Backup: when a Backup File was last exported from this phone; null before the first. Never in the file. */
+    val lastBackupExport: Flow<Instant?> = store.data.map { prefs -> prefs[LAST_BACKUP_EXPORT]?.let(Instant::ofEpochMilli) }
+        .distinctUntilChanged()
+
+    suspend fun setLastBackupExport(at: Instant) {
+        store.edit { it[LAST_BACKUP_EXPORT] = at.toEpochMilli() }
+    }
+
+    /**
+     * Every stored setting by its key, for the Backup File (#86): the location and Calculation Method, alerts,
+     * reminders, display and widgets. Keys in [THIS_PHONE_ONLY] (and every Custom Adhan file) stay out. A restore
+     * writes each value back with its key's own type (an Int key reads a [SettingValue.Whole] as an Int).
+     */
+    suspend fun backupSettings(): Map<String, SettingValue> = store.data.first().asMap()
+        .filterKeys { key -> key.name !in THIS_PHONE_ONLY && !key.name.startsWith(CUSTOM_ADHAN_PREFIX) }
+        .mapNotNull { (key, value) ->
+            val setting = when (value) {
+                is Boolean -> SettingValue.Flag(value)
+                is Int -> SettingValue.Whole(value.toLong())
+                is Long -> SettingValue.Whole(value)
+                is Double -> SettingValue.Decimal(value)
+                is Float -> SettingValue.Decimal(value.toDouble())
+                is String -> SettingValue.Text(value)
+                is Set<*> -> SettingValue.TextSet(value.filterIsInstance<String>().toSet())
+                else -> null
+            }
+            setting?.let { key.name to it }
+        }
+        .toMap()
+
     private fun Preferences.alertSettings(): AlertSettings {
         val default = AlertSettings()
         val defaultPrayer = PrayerAlertSettings()
@@ -355,6 +394,10 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             customAdhans = AdhanRecording.entries
                 .mapNotNull { recording -> this[customAdhanKey(recording)]?.takeIf { it.isNotEmpty() }?.let { recording to it } }
                 .toMap(),
+            ramadan = RamadanSettings(
+                imsakMinutes = this[RAMADAN_IMSAK_MINUTES]?.takeIf { it in RamadanSettings.IMSAK_MINUTES_RANGE }
+                    ?: default.ramadan.imsakMinutes,
+            ),
             prayerSilence = PrayerSilence(
                 enabled = this[PRAYER_SILENCE_ENABLED] ?: default.prayerSilence.enabled,
                 mode = this[PRAYER_SILENCE_MODE].toEnum(default.prayerSilence.mode),
@@ -381,7 +424,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
     private fun adjustmentKey(prayer: Prayer) = intPreferencesKey("adjust_${prayer.name.lowercase()}")
 
     /** Keys `custom_adhan_short|full|fajr_full`: the Custom Adhan's content URI. */
-    private fun customAdhanKey(recording: AdhanRecording) = stringPreferencesKey("custom_adhan_${recording.name.lowercase()}")
+    private fun customAdhanKey(recording: AdhanRecording) = stringPreferencesKey(CUSTOM_ADHAN_PREFIX + recording.name.lowercase())
 
     /** Keys `alert_<prayer>_adhan|sound|reminder|reminder_minutes`, e.g. `alert_fajr_sound`. */
     private class PrayerAlertKeys(prayer: Prayer) {
@@ -398,6 +441,16 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
     companion object {
         /** The DataStore file name, for `preferencesDataStore(name = ...)` and the backup rules (#25). */
         const val FILE_NAME = "settings"
+
+        private const val CUSTOM_ADHAN_PREFIX = "custom_adhan_"
+        private val LAST_BACKUP_EXPORT = longPreferencesKey("backup_last_export")
+
+        /**
+         * Keys about this phone or this install, never in a Backup File: the last export date, the possibly-stale
+         * location hint, onboarding, and the Fix Alerts steps (they depend on the phone). Custom Adhan files are
+         * left out by their prefix: they are content URIs on this phone.
+         */
+        private val THIS_PHONE_ONLY = setOf("backup_last_export", "location_maybe_stale", "onboarding_done", "fix_alerts_done")
 
         private val METHOD = stringPreferencesKey("calculation_method")
         private val ASR = stringPreferencesKey("asr_convention")
@@ -449,6 +502,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
 
         /** Worship Reminders (#64): «سورة الكهف» on or off. */
         private val KAHF_ENABLED = booleanPreferencesKey("worship_kahf_enabled")
+        private val RAMADAN_IMSAK_MINUTES = intPreferencesKey("ramadan_imsak_minutes")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

@@ -62,6 +62,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.runtime.Immutable
 import app.mawaqeet.R
 import app.mawaqeet.ui.LocalDisplayFormatter
 import app.mawaqeet.core.DisplayDay
@@ -70,6 +73,7 @@ import app.mawaqeet.ui.settings.label
 import app.mawaqeet.core.Prayer
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.core.PrayerTime
+import app.mawaqeet.core.RamadanState
 import kotlinx.coroutines.delay
 import java.time.Clock
 import java.time.Duration
@@ -109,6 +113,7 @@ fun HomeScreen(
         }
     }
     val day = remember(core, now) { core.displayDay() }
+    val ramadan = remember(core, now) { core.ramadanState(now) }
     // The log reads the database, so query it off the main thread, again whenever the log changes or a Prayer
     // Time arrives (the next Prayer moves on, so markability and the Prayer Day may have changed).
     val changes by logChanges.collectAsState()
@@ -126,7 +131,7 @@ fun HomeScreen(
         null
     }
     HomeContent(
-        day, now, prayerDay, locationName, alerts, onOpenLocation, locationHint, onLocationHint, tip, tools,
+        day, now, ramadan, prayerDay, locationName, alerts, onOpenLocation, locationHint, onLocationHint, tip, tools,
         showLogHint = hasAnyMark == false,
     ) { prayer ->
         val logDay = prayerDay
@@ -146,6 +151,7 @@ fun HomeScreen(
 private fun HomeContent(
     day: DisplayDay,
     now: Instant,
+    ramadan: RamadanState,
     prayerDay: PrayerDay?,
     locationName: String,
     alerts: AlertSettings,
@@ -167,7 +173,11 @@ private fun HomeContent(
         }
         tip?.invoke()
         day.highLatitude?.let { HighLatitudeNote(it) }
-        NextPrayerCard(day, now, Modifier.layoutId(Fill.TakesTheRest))
+        val cardSizes = NextPrayerCardSizes.regular()
+        when (ramadan) {
+            RamadanState.None -> NextPrayerCard(day, now, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
+            else -> RamadanCard(ramadan, day.next, now, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
+        }
         tools?.invoke()
         Card(Modifier.layoutId(Fill.Rows(count = day.prayerTimes.size + 1))) {
             SharedHeightColumn(Modifier.fillMaxHeight().padding(vertical = 4.dp)) {
@@ -365,11 +375,40 @@ private fun HighLatitudeNote(adjustment: HighLatitudeAdjustment) {
 private data class LogCell(val state: LogState, val markable: Boolean)
 
 /**
+ * The Next Prayer card's type sizes and spacing, shared by its usual and Ramadan forms so one size class can set
+ * both. [regular] is the card's own design.
+ */
+@Immutable
+private data class NextPrayerCardSizes(
+    /** «الصلاة القادمة», and the Ramadan card's top line. */
+    val label: TextStyle,
+    /** The Prayer's name and time; «الإفطار …» and «السحور». */
+    val headline: TextStyle,
+    val countdown: TextStyle,
+    /** The bar's ends; the Ramadan card's next Prayer line. */
+    val small: TextStyle,
+    val paddingHorizontal: Dp,
+    val paddingVertical: Dp,
+    val barGap: Dp,
+    val barHeight: Dp,
+) {
+    companion object {
+        @Composable
+        fun regular() = MaterialTheme.typography.let {
+            NextPrayerCardSizes(
+                label = it.bodyMedium, headline = it.headlineMedium, countdown = it.titleMedium, small = it.bodySmall,
+                paddingHorizontal = 22.dp, paddingVertical = 12.dp, barGap = 8.dp, barHeight = 6.dp,
+            )
+        }
+    }
+}
+
+/**
  * The next Prayer on a deep teal card: its name and time, the countdown, and how much of the time since the previous
  * Prayer has passed (hidden before Fajr, when the previous Prayer was yesterday's).
  */
 @Composable
-private fun NextPrayerCard(day: DisplayDay, now: Instant, modifier: Modifier = Modifier) {
+private fun NextPrayerCard(day: DisplayDay, now: Instant, sizes: NextPrayerCardSizes, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val next = day.next
     val format = LocalDisplayFormatter.current
@@ -378,42 +417,101 @@ private fun NextPrayerCard(day: DisplayDay, now: Instant, modifier: Modifier = M
         modifier = modifier
             .fillMaxWidth()
             .background(colors.tertiaryContainer, RoundedCornerShape(28.dp))
-            .padding(horizontal = 22.dp, vertical = 12.dp)
+            .padding(horizontal = sizes.paddingHorizontal, vertical = sizes.paddingVertical)
             .semantics(mergeDescendants = true) {},
         // When the page gives it spare height, the content stays in the middle.
         verticalArrangement = Arrangement.Center,
     ) {
         // The label and the countdown share a line, so Today fits a small phone (#87).
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.next_prayer), style = MaterialTheme.typography.bodyMedium, color = onCard, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.next_prayer), style = sizes.label, color = onCard, modifier = Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
-                style = MaterialTheme.typography.titleMedium,
+                style = sizes.countdown,
                 color = colors.tertiary,
             )
         }
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(prayerName(next), style = MaterialTheme.typography.headlineMedium, color = onCard, modifier = Modifier.weight(1f))
-            Text(format.time(next.time), style = MaterialTheme.typography.headlineMedium, color = onCard)
+            Text(prayerName(next), style = sizes.headline, color = onCard, modifier = Modifier.weight(1f))
+            Text(format.time(next.time), style = sizes.headline, color = onCard)
         }
         val previous = day.prayerTimes.lastOrNull { !it.time.toInstant().isAfter(now) }
         if (previous != null && next.time.toLocalDate() == day.date) {
             val total = Duration.between(previous.time, next.time).seconds.coerceAtLeast(1)
             val passed = Duration.between(previous.time.toInstant(), now).seconds.coerceIn(0, total)
-            Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth().height(6.dp).background(onCard.copy(alpha = 0.2f), RoundedCornerShape(3.dp))) {
-                Box(
-                    Modifier
-                        .fillMaxWidth(passed.toFloat() / total)
-                        .height(6.dp)
-                        .background(colors.tertiary, RoundedCornerShape(3.dp)),
-                )
-            }
+            Spacer(Modifier.height(sizes.barGap))
+            ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
             Row(Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {}) {
-                Text("${prayerName(previous)} ${format.time(previous.time)}", style = MaterialTheme.typography.bodySmall, color = onCard, modifier = Modifier.weight(1f))
-                Text("${prayerName(next)} ${format.time(next.time)}", style = MaterialTheme.typography.bodySmall, color = onCard)
+                Text("${prayerName(previous)} ${format.time(previous.time)}", style = sizes.small, color = onCard, modifier = Modifier.weight(1f))
+                Text("${prayerName(next)} ${format.time(next.time)}", style = sizes.small, color = onCard)
             }
         }
+    }
+}
+
+/**
+ * The Next Prayer card's Ramadan form (#90), as tall as the usual card so Today still fits a small phone: the day of
+ * Ramadan and Imsak on top; while fasting, Iftar's time with the countdown to it and a bar from Imsak to Maghrib; from
+ * Maghrib, the countdown to the end of suhoor. The next Prayer stays as one line at the bottom.
+ */
+@Composable
+private fun RamadanCard(state: RamadanState, next: PrayerTime, now: Instant, sizes: NextPrayerCardSizes, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val format = LocalDisplayFormatter.current
+    val onCard = colors.onTertiaryContainer
+    val (day, imsak) = when (state) {
+        is RamadanState.Fasting -> state.dayOfRamadan to state.imsak
+        is RamadanState.Suhoor -> state.dayOfRamadan to state.imsak
+        RamadanState.None -> return
+    }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(colors.tertiaryContainer, RoundedCornerShape(28.dp))
+            .padding(horizontal = sizes.paddingHorizontal, vertical = sizes.paddingVertical)
+            .semantics(mergeDescendants = true) {},
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.ramadan_day, format.number(day)), style = sizes.label, color = onCard, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.ramadan_imsak_at, format.time(imsak)), style = sizes.label, color = onCard)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val (title, countdown) = when (state) {
+                is RamadanState.Fasting -> stringResource(R.string.ramadan_iftar_at, format.time(state.maghrib)) to
+                    stringResource(R.string.countdown, format.countdown(Duration.between(now, state.maghrib.toInstant())))
+                else -> stringResource(R.string.ramadan_suhoor) to
+                    stringResource(R.string.ramadan_suhoor_ends_in, format.countdown(Duration.between(now, imsak.toInstant())))
+            }
+            Text(title, style = sizes.headline, color = onCard, modifier = Modifier.weight(1f))
+            Text(countdown, style = sizes.countdown, color = colors.tertiary)
+        }
+        if (state is RamadanState.Fasting) {
+            val total = Duration.between(state.imsak, state.maghrib).seconds.coerceAtLeast(1)
+            val passed = Duration.between(state.imsak.toInstant(), now).seconds.coerceIn(0, total)
+            Spacer(Modifier.height(sizes.barGap))
+            ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
+        }
+        Text(
+            stringResource(
+                R.string.ramadan_next_prayer,
+                prayerName(next),
+                format.time(next.time),
+                format.hoursMinutes(Duration.between(now, next.time.toInstant())),
+            ),
+            style = sizes.small,
+            color = onCard,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+/** The Next Prayer card's bar, [height] tall, [fraction] of it filled. */
+@Composable
+private fun ProgressBar(fraction: Float, height: Dp, track: Color, fill: Color) {
+    val shape = RoundedCornerShape(height / 2)
+    Box(Modifier.fillMaxWidth().height(height).background(track, shape)) {
+        Box(Modifier.fillMaxWidth(fraction).height(height).background(fill, shape))
     }
 }
 

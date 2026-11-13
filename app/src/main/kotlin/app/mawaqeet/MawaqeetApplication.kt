@@ -9,6 +9,7 @@ import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.core.AdhkarCatalog
 import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.Location
+import app.mawaqeet.data.BackupFiles
 import app.mawaqeet.data.LocationUpdater
 import app.mawaqeet.data.PrayerLogDatabase
 import app.mawaqeet.data.RoomAdhkarRepository
@@ -50,6 +51,9 @@ class MawaqeetApplication : Application() {
 
     /** Every location change goes through it, so past Prayer Days keep their place (see [LocationUpdater]). */
     val locationUpdater: LocationUpdater by lazy { LocationUpdater(settings, prayerLog, Clock.systemUTC()) { cities } }
+
+    /** Settings → Backup: exports (and, from #99, restores) the Backup File. */
+    val backup: BackupFiles by lazy { BackupFiles(settings, prayerLog, adhkar, Clock.systemUTC()) }
 
     /** A move the user declined to apply to their manual location, so it is not asked again in this process. */
     @Volatile

@@ -314,6 +314,30 @@ class SettingsScreenTest {
         }
     }
 
+    @Test
+    @Config(qualifiers = "en")
+    fun `Imsak is 10 minutes before Fajr under Ramadan in Worship reminders, and each tap moves it 5 minutes`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun imsak() = runBlocking { store.settings.first() }.alerts.ramadan.imsakMinutes
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Ramadan").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Imsak").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("10 minutes").performScrollTo().assertIsDisplayed()
+
+            compose.onNodeWithContentDescription("Imsak 5 minutes earlier").performScrollTo().performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { imsak() == 15 && shown("15 minutes") }
+            compose.onNodeWithContentDescription("Imsak 5 minutes closer to Fajr").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Imsak 5 minutes closer to Fajr").performClick()
+            compose.onNodeWithContentDescription("Imsak 5 minutes closer to Fajr").performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { imsak() == 0 }
+        } finally {
+            runBlocking { store.stepImsakMinutes(-100); store.stepImsakMinutes(+2) }
+        }
+    }
+
     /** Opens Settings → Alerts with Do Not Disturb access granted and Prayer Silence turned on, then runs [block]. */
     private fun withPrayerSilenceOn(block: (alerts: () -> app.mawaqeet.core.AlertSettings) -> Unit) {
         shadowOf(compose.activity.getSystemService(NotificationManager::class.java)).setNotificationPolicyAccessGranted(true)

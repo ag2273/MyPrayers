@@ -60,6 +60,26 @@ _Avoid_: Pre-alert, warning
 An optional, gentle reminder for daily worship beyond the five Prayers, under «تذكيرات العبادة» in Settings → Alerts: sending salawat on the Prophet ﷺ every 1, 2 or 3 hours from Sunrise until Isha; reading Surat Al-Kahf on Friday at Sunrise + 1 hour (its «قرأتها» only dismisses it: no Quran text, no Kahf log); and the morning and evening adhkar 15, 30 (default), 45 or 60 minutes after Fajr and Asr, which open that Adhkar Set and are skipped once it is complete for that Prayer Day. Each is off by default, uses the normal notification sound, never an adhan, and is silenced by «كل تنبيهات التطبيق». Not a Prayer Reminder, which comes before a Prayer Time.
 _Avoid_: Dhikr reminder, nudge, Sunnah alert
 
+**Ramadan Mode**:
+How the app behaves in Ramadan, by the app's Hijri date with the user's Hijri offset: it turns on by itself for every Fasting Day and the suhoor before it, and off after the last one. Today's Next Prayer card counts down to Iftar while fasting and to the end of Suhoor after Maghrib, keeping the next Prayer as one line inside.
+_Avoid_: Ramadan setting, fasting mode
+
+**Fasting Day**:
+A Prayer Day whose Hijri date (with the user's Hijri offset) is in Ramadan. Its fast runs from Imsak to Maghrib.
+_Avoid_: Ramadan day (in code), sawm day
+
+**Imsak**:
+The moment a Fasting Day's fast begins and Suhoor ends: Fajr minus a chosen number of minutes (10 by default, 0 to 30), set under «رمضان» in «تذكيرات العبادة».
+_Avoid_: Fajr (Imsak comes before it), dawn
+
+**Iftar**:
+Breaking the fast at Maghrib on a Fasting Day; the fasting card counts down to it from Imsak.
+_Avoid_: Sunset meal, Maghrib alert
+
+**Suhoor**:
+The pre-dawn meal before a Fasting Day: from Maghrib (or, on the Fasting Day itself, midnight) until that day's Imsak, and only when the next day is a Fasting Day, so never on the night before Eid.
+_Avoid_: Sahur, sehri
+
 **Adhan Alert**:
 The alert raised when a Prayer Time arrives, playing either the Short Adhan (default) or the Full Adhan.
 _Avoid_: Alarm, prayer notification
@@ -107,6 +127,10 @@ _Avoid_: Sebha, misbaha, tally, score
 **Adhkar Record**:
 Which Adhkar Sets the user completed (every dhikr said its full count) on each Prayer Day. It is not the Prayer Log, and a restart never removes a completed day. A set counts only when finished in its time: the morning adhkar from Fajr to Dhuhr, the evening adhkar from Asr to the next Fajr, the after-prayer adhkar once their Prayer's time has arrived. The after-prayer adhkar are recorded per Prayer, against the most recent Prayer whose time has arrived unless the user picks another before starting. Any set can be read at any time. It is shown as a week grid (a row per Prayer Day, a mark for the morning, the evening and after each Prayer) that counts only from the Adhkar first-use date, the Prayer Day of the first count; days before it are never shown as missed. It shares the Prayer Log's backup rules and is deleted separately («حذف سجل الأذكار»).
 _Avoid_: Adhkar log, streak, score
+
+**Backup File**:
+One JSON file «mawaqeet-backup-YYYY-MM-DD.json» the user exports from Settings → Backup «النسخة الاحتياطية» and saves wherever they choose with the system file picker. It holds every setting (alerts, reminders, display, widgets), the location and Calculation Method, the Prayer Log (with its first-use date and past places) and the Adhkar Record (with its first-use date); never Custom Adhan files, which the user picks again. It is made only when the user asks and the app never sends it anywhere. It is not Android's cloud backup or a device-to-device transfer, which follow the backup rules.
+_Avoid_: Backup (alone, for the file), export, archive, sync
 
 **Clock Widget**:
 A Widget Variant built around a big home-screen clock that also shows the interval between two Stops: the previous and next Stop with their times, a countdown in hours and minutes, a bar for how much of the interval has passed, and the Hijri and Gregorian dates. Big Clock «ساعة كبيرة», Gold Clock «ساعة ذهبية» and Clock & Prayer «ساعة وصلاة» are Clock Widgets.

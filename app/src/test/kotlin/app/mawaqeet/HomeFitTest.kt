@@ -71,7 +71,7 @@ private class WatchedLog : PrayerLogRepository {
 
 /**
  * Today fits its screen exactly at the default font size (#87): no scroll on a 360×740dp phone, even with the 48dp
- * Tools Row (#88), and no blank area under the last row on a 412×915dp one. A larger font scrolls instead of
+ * Tools Row (#88) and in Ramadan (#90), and no blank area under the last row on a 412×915dp one. A larger font scrolls instead of
  * clipping. The page is shown in the real tab frame, with 24dp stand-ins for the status and gesture bars.
  */
 @RunWith(AndroidJUnit4::class)
@@ -89,7 +89,11 @@ class HomeFitTest {
 
     private val density get() = compose.density.density
 
-    private fun show(withToolsRow: Boolean = false) {
+    /** 15:00 in Makkah on 15 Ramadan 1448 (2027-02-22): the fasting card, with its Imsak → Maghrib bar. */
+    private val ramadanClock = Clock.fixed(LocalDateTime.parse("2027-02-22T15:00").atZone(ZoneId.of("Asia/Riyadh")).toInstant(), ZoneOffset.UTC)
+
+    private fun show(withToolsRow: Boolean = false, clock: Clock = this.clock) {
+        val core = if (clock == this.clock) core else PrayerCore(PrayerSettings.Default, clock, log)
         compose.setContent {
             MawaqeetTheme {
                 ProvideDisplayFormatter(DigitStyle.AUTOMATIC) {
@@ -131,6 +135,19 @@ class HomeFitTest {
         assertEquals("scroll range", 0f, scrollRange())
         val qibla = compose.onNode(hasText(QIBLA) and hasClickAction()).fetchSemanticsNode()
         assertEquals("the Qibla button is 48dp tall", 48f, dp(qibla.touchBoundsInRoot.height), 0.5f)
+        for (prayer in listOf("الفجر", "الظهر", "العصر", "المغرب", ISHA)) {
+            assertTrue("$prayer row is a 48dp tap target", dp(rowOf(prayer).touchBoundsInRoot.height) >= 47.5f)
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "ar-w360dp-h740dp")
+    fun `on a 360x740dp phone the Ramadan card fits too, with room for the tools row`() {
+        log.setPrayed(LocalDate.of(2027, 2, 22), Prayer.FAJR, true)
+        show(withToolsRow = true, clock = ramadanClock)
+        compose.onNodeWithText("رمضان · اليوم ١٥", useUnmergedTree = true).assertIsDisplayed()
+
+        assertEquals("scroll range", 0f, scrollRange())
         for (prayer in listOf("الفجر", "الظهر", "العصر", "المغرب", ISHA)) {
             assertTrue("$prayer row is a 48dp tap target", dp(rowOf(prayer).touchBoundsInRoot.height) >= 47.5f)
         }
