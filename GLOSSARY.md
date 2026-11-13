@@ -149,7 +149,7 @@ The single row of compact buttons on Today, under the Next Prayer card, that ope
 _Avoid_: Shortcuts, quick actions, toolbar
 
 **Hijri Calendar**:
-The Umm al-Qura calendar shifted by the user's Hijri offset, day by day, with each day's Occasions, Sunnah Fasts and whether it is a Forbidden Fast Day. Its screen («التقويم», not a tab) opens from the Tools Row and from the Hijri date on Today; «القادم» lists the Occasions of the next 12 months with only the nearest Monday/Thursday fast and the next white days. Dates may differ by a day from local moon sighting, and the screen says so.
+The Umm al-Qura calendar shifted by the user's Hijri offset, day by day, with each day's Occasions, Sunnah Fasts and whether it is a Forbidden Fast Day. Its screen («التقويم», not a tab) opens from the Tools Row and from the Hijri date on Today; «القادم» lists the Occasions of the next 12 months with only the nearest Monday/Thursday fast and the next white days, and «الشهر» shows a Hijri month as a grid from Saturday. Dates may differ by a day from local moon sighting, and the screen says so.
 _Avoid_: Islamic calendar (in code), moon calendar, events
 
 **Occasion**:

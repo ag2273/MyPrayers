@@ -621,6 +621,13 @@
         <item quantity="one">in %1$s day</item>
         <item quantity="other">in %1$s days</item>
     </plurals>
+    <string name="calendar_month">Month</string>
+    <string name="calendar_previous_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_in_this_month">In this month</string>
+    <string name="calendar_legend_occasion">Occasion</string>
+    <!-- Between the parts of a month-grid day's TalkBack label. -->
+    <string name="calendar_label_separator">", "</string>
     <string name="calendar_open_description">Open the Hijri calendar</string>
     <string name="occasion_hijri_new_year">Hijri New Year</string>
     <string name="occasion_tasua">Tasu\'a</string>

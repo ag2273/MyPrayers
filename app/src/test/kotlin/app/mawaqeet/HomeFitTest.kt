@@ -28,6 +28,8 @@ import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.components.MainScaffold
 import app.mawaqeet.ui.components.Tab
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.home.TodaySize
+import app.mawaqeet.ui.home.TodaySizeKey
 import app.mawaqeet.ui.home.ToolsRow
 import app.mawaqeet.ui.theme.MawaqeetTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,6 +75,10 @@ private class WatchedLog : PrayerLogRepository {
  * Today fits its screen exactly at the default font size (#87): no scroll on a 360×740dp phone, even with the 48dp
  * Tools Row (#88) and in Ramadan (#90), and no blank area under the last row on a 412×915dp one. A larger font scrolls instead of
  * clipping. The page is shown in the real tab frame, with 24dp stand-ins for the status and gesture bars.
+ *
+ * Today picks its size class from the height it has (#101): the original (regular) sizes from 393×852dp up, the compact
+ * ones only on shorter screens. The matrix covers 360×640 to 600×960dp, a phone on its side, font scales 1.3 and 1.5,
+ * normal days and Ramadan, with and without the log hint.
  */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -102,6 +108,7 @@ class HomeFitTest {
                             HomeScreen(
                                 core, clock, log.changes, "مكة المكرمة",
                                 tools = if (withToolsRow) { { ToolsRow(onQibla = {}, onCalendar = {}, onMosques = {}) } } else null,
+                                onOpenCalendar = {},
                             )
                         }
                     }
@@ -176,6 +183,176 @@ class HomeFitTest {
         compose.assertAccessible("Today at the top", density, parentClips = false)
         compose.onNodeWithText(HINT).performScrollTo().assertIsDisplayed()
         compose.assertAccessible("Today at the bottom", density, parentClips = false)
+    }
+
+    /**
+     * Shows Today as the app does, with the Tools Row, on a normal day or in Ramadan, with the log hint (an empty
+     * Prayer Log) or without it (Fajr marked).
+     */
+    private fun showToday(ramadan: Boolean, hint: Boolean) {
+        val clock = if (ramadan) ramadanClock else clock
+        if (!hint) log.setPrayed(if (ramadan) LocalDate.of(2027, 2, 22) else LocalDate.of(2026, 11, 9), Prayer.FAJR, true)
+        show(withToolsRow = true, clock = clock)
+        if (hint) waitForHint()
+        if (ramadan) compose.onNodeWithText("رمضان · اليوم ١٥", useUnmergedTree = true).assertIsDisplayed()
+        compose.waitForIdle()
+    }
+
+    /**
+     * Today fits its screen exactly: nothing to scroll, every Prayer row a 48dp tap target, nothing blank below the
+     * last item (the hint, or Isha's row) beyond the card's inset and the page's margin, and no text cut off.
+     */
+    private fun assertFillsTheScreen(hint: Boolean) {
+        assertEquals("scroll range", 0f, scrollRange())
+        for (prayer in listOf("الفجر", "الظهر", "العصر", "المغرب", ISHA)) {
+            assertTrue("$prayer row is a 48dp tap target", dp(rowOf(prayer).touchBoundsInRoot.height) >= 47.5f)
+        }
+        val last = if (hint) compose.onNodeWithText(HINT).fetchSemanticsNode() else rowOf(ISHA)
+        val gap = dp(page().boundsInRoot.bottom - last.boundsInRoot.bottom)
+        assertTrue("gap below the last item is ${gap}dp", gap <= 20f)
+        compose.assertAccessible("Today", density, parentClips = false)
+    }
+
+    /** With a large font on a short screen: the page scrolls rather than clip, and the hint is reachable. */
+    private fun assertScrollsWithoutClipping(hint: Boolean) {
+        assertTrue("scrolls", scrollRange() > 0f)
+        compose.assertAccessible("Today at the top", density, parentClips = false)
+        if (hint) compose.onNodeWithText(HINT).performScrollTo().assertIsDisplayed()
+        compose.onNode(prayerRow(ISHA)).performScrollTo().assertIsDisplayed()
+        compose.assertAccessible("Today at the bottom", density, parentClips = false)
+    }
+
+    // 360x640dp is shorter than Today's minimum even at the compact sizes (six 48dp rows, the Tools Row, the card and
+    // the header need ~560dp; the tab bar and system bars leave ~500dp), so it scrolls, without clipping.
+    @Test @Config(qualifiers = "ar-w360dp-h640dp")
+    fun `360x640 is compact and scrolls without clipping, with the hint`() {
+        showToday(ramadan = false, hint = true)
+        assertEquals(TodaySize.COMPACT, todaySize())
+        assertScrollsWithoutClipping(hint = true)
+    }
+
+    @Test @Config(qualifiers = "ar-w360dp-h640dp")
+    fun `360x640 in Ramadan is compact and scrolls without clipping`() {
+        showToday(ramadan = true, hint = false)
+        assertEquals(TodaySize.COMPACT, todaySize())
+        assertScrollsWithoutClipping(hint = false)
+    }
+
+    @Test @Config(qualifiers = "ar-w360dp-h740dp")
+    fun `360x740 fits at the compact sizes`() {
+        showToday(ramadan = false, hint = true)
+        assertFillsTheScreen(hint = true)
+        assertEquals(TodaySize.COMPACT, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w393dp-h830dp")
+    fun `the regular sizes come back when the log hint goes`() {
+        // Just too short for the regular sizes with the hint, tall enough without it.
+        showToday(ramadan = false, hint = true)
+        assertEquals(TodaySize.COMPACT, todaySize())
+
+        compose.onNode(prayerRow("الفجر")).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText(HINT)).fetchSemanticsNodes().isEmpty() }
+
+        assertEquals(TodaySize.REGULAR, todaySize())
+        assertFillsTheScreen(hint = false)
+    }
+
+    @Test @Config(qualifiers = "ar-w360dp-h740dp")
+    fun `360x740 fits in Ramadan with the hint`() {
+        showToday(ramadan = true, hint = true)
+        assertFillsTheScreen(hint = true)
+    }
+
+    @Test @Config(qualifiers = "ar-w393dp-h852dp")
+    fun `393x852 fits at the regular sizes, with the hint`() {
+        showToday(ramadan = false, hint = true)
+        assertFillsTheScreen(hint = true)
+        assertEquals(TodaySize.REGULAR, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w393dp-h852dp")
+    fun `393x852 fits in Ramadan at the regular sizes`() {
+        showToday(ramadan = true, hint = false)
+        assertFillsTheScreen(hint = false)
+        assertEquals(TodaySize.REGULAR, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w412dp-h915dp")
+    fun `412x915 fits at the regular sizes`() {
+        showToday(ramadan = false, hint = false)
+        assertFillsTheScreen(hint = false)
+        assertEquals(TodaySize.REGULAR, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w412dp-h915dp")
+    fun `412x915 fits in Ramadan at the regular sizes, with the hint`() {
+        showToday(ramadan = true, hint = true)
+        assertFillsTheScreen(hint = true)
+        assertEquals(TodaySize.REGULAR, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w480dp-h1040dp")
+    fun `480x1040 fills at the regular sizes, with the hint`() {
+        showToday(ramadan = false, hint = true)
+        assertFillsTheScreen(hint = true)
+        assertEquals(TodaySize.REGULAR, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w600dp-h960dp")
+    fun `600x960 fills in Ramadan at the regular sizes`() {
+        showToday(ramadan = true, hint = false)
+        assertFillsTheScreen(hint = false)
+        assertEquals(TodaySize.REGULAR, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w740dp-h360dp")
+    fun `a phone on its side scrolls at the compact sizes without clipping`() {
+        showToday(ramadan = false, hint = true)
+        assertEquals(TodaySize.COMPACT, todaySize())
+        assertScrollsWithoutClipping(hint = true)
+    }
+
+    @Test @Config(qualifiers = "ar-w393dp-h852dp", fontScale = 1.3f)
+    fun `393x852 at font scale 1_3 fits`() {
+        showToday(ramadan = false, hint = true)
+        assertFillsTheScreen(hint = true)
+    }
+
+    @Test @Config(qualifiers = "ar-w412dp-h915dp", fontScale = 1.3f)
+    fun `412x915 at font scale 1_3 fits in Ramadan`() {
+        showToday(ramadan = true, hint = false)
+        assertFillsTheScreen(hint = false)
+    }
+
+    // At font scale 1.5 the header wraps and the rows outgrow 48dp: the page scrolls, without clipping.
+    @Test @Config(qualifiers = "ar-w393dp-h852dp", fontScale = 1.5f)
+    fun `393x852 at font scale 1_5 scrolls without clipping`() {
+        showToday(ramadan = false, hint = false)
+        assertScrollsWithoutClipping(hint = false)
+    }
+
+    @Test @Config(qualifiers = "ar-w412dp-h915dp", fontScale = 1.5f)
+    fun `412x915 at font scale 1_5 scrolls without clipping in Ramadan, with the hint`() {
+        showToday(ramadan = true, hint = true)
+        assertScrollsWithoutClipping(hint = true)
+    }
+
+    /** The size class Today chose (#101). */
+    private fun todaySize(): TodaySize =
+        compose.onNode(SemanticsMatcher.keyIsDefined(TodaySizeKey), useUnmergedTree = true).fetchSemanticsNode().config[TodaySizeKey]
+
+    @Test
+    @Config(qualifiers = "ar-w393dp-h852dp")
+    fun `on a 393x852dp phone Today uses the regular sizes`() {
+        log.setPrayed(LocalDate.of(2026, 11, 9), Prayer.FAJR, true)
+        show(withToolsRow = true)
+
+        assertEquals(TodaySize.REGULAR, todaySize())
+        // The regular card puts «الصلاة القادمة» on its own line, above the countdown.
+        val label = compose.onNodeWithText("الصلاة القادمة", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val countdown = compose.onAllNodes(hasText("بعد ", substring = true), useUnmergedTree = true).fetchSemanticsNodes().single().boundsInRoot
+        assertTrue("countdown below the label", countdown.top >= label.bottom)
     }
 
     @Test

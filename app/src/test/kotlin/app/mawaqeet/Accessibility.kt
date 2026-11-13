@@ -35,8 +35,11 @@ internal fun ComposeTestRule.accessibilityProblems(density: Float, parentClips: 
         val name = node.label()
         if (node.config.contains(SemanticsActions.OnClick)) {
             val touch = node.touchBoundsInRoot
-            if (touch.width / density < 47.5f || touch.height / density < 47.5f) {
-                problems += "«$name» tap target is ${touch.width / density}×${touch.height / density}dp"
+            // Half under the scroll edge, a target is smaller on screen than it is: measure the whole of it.
+            val width = if (parentClips) touch.width else maxOf(touch.width, node.size.width.toFloat())
+            val height = if (parentClips) touch.height else maxOf(touch.height, node.size.height.toFloat())
+            if (width / density < 47.5f || height / density < 47.5f) {
+                problems += "«$name» tap target is ${width / density}×${height / density}dp"
             }
         }
         val layout = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.let { get ->

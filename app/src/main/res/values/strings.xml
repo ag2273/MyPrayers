@@ -680,6 +680,13 @@
         <item quantity="many">بعد %1$s يومًا</item>
         <item quantity="other">بعد %1$s يوم</item>
     </plurals>
+    <string name="calendar_month">الشهر</string>
+    <string name="calendar_previous_month">الشهر السابق</string>
+    <string name="calendar_next_month">الشهر التالي</string>
+    <string name="calendar_in_this_month">في هذا الشهر</string>
+    <string name="calendar_legend_occasion">مناسبة</string>
+    <!-- Between the parts of a month-grid day's TalkBack label. -->
+    <string name="calendar_label_separator">"، "</string>
     <string name="calendar_open_description">فتح التقويم الهجري</string>
     <string name="occasion_hijri_new_year">رأس السنة الهجرية</string>
     <string name="occasion_tasua">يوم تاسوعاء</string>

@@ -34,15 +34,16 @@ import app.mawaqeet.ui.components.SegmentedChoice
 import app.mawaqeet.ui.components.SubPage
 import java.time.LocalDate
 
-/** The Calendar screen's tabs, «القادم» first. The month grid (#94) adds its tab here. */
+/** The Calendar screen's tabs, «القادم» first, then the month grid «الشهر». */
 enum class CalendarTab(@StringRes val label: Int) {
     UPCOMING(R.string.calendar_upcoming),
+    MONTH(R.string.calendar_month),
 }
 
 /**
  * The Hijri Calendar screen (not a tab), opened from «التقويم» on the Tools Row and from the Hijri date on Today:
- * the coming Occasions and Sunnah Fasts of [calendar] from [today] (the display day), and the note that the dates
- * follow Umm al-Qura with the user's offset.
+ * the coming Occasions and Sunnah Fasts of [calendar] from [today] (the display day) or a Hijri month as a grid, and
+ * the note that the dates follow Umm al-Qura with the user's offset.
  */
 @Composable
 fun CalendarScreen(calendar: HijriCalendar, today: LocalDate, onBack: () -> Unit) {
@@ -55,6 +56,7 @@ fun CalendarScreen(calendar: HijriCalendar, today: LocalDate, onBack: () -> Unit
         }
         when (tab) {
             CalendarTab.UPCOMING -> UpcomingList(remember(calendar, today) { calendar.upcoming(today) })
+            CalendarTab.MONTH -> MonthTab(calendar, today)
         }
         Text(
             stringResource(R.string.calendar_note),
