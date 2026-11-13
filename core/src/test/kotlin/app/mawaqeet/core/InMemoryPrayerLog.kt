@@ -14,6 +14,8 @@ class InMemoryPrayerLog : PrayerLogRepository {
         if (prayed) entries += prayerDay to prayer else entries -= prayerDay to prayer
     }
 
+    override fun hasAnyEntry(): Boolean = entries.isNotEmpty()
+
     override fun firstUseDate(): LocalDate? = firstUse
 
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {

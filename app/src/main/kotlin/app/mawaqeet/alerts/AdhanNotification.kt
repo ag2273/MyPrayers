@@ -33,6 +33,8 @@ data class AdhanNotification(
     val prayerDay: LocalDate? = null,
     /** Alarm-clock mode: the Adhan Alert also opens [AdhanAlarmActivity] over the lock screen, like an alarm. */
     val fullScreen: Boolean = false,
+    /** Maghrib's Adhan Alert on a Fasting Day (#91): titled «حان وقت الإفطار» instead of the Prayer's name. */
+    val isIftar: Boolean = false,
 ) {
 
     /**
@@ -58,7 +60,7 @@ data class AdhanNotification(
                 .setTimeoutAfter((prayerTime - System.currentTimeMillis()).coerceAtLeast(60_000))
         } else {
             builder
-                .setContentTitle(text.getString(R.string.adhan_alert_title, name))
+                .setContentTitle(if (isIftar) text.getString(R.string.adhan_alert_iftar_title) else text.getString(R.string.adhan_alert_title, name))
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .apply { if (fullScreen) setFullScreenIntent(AdhanAlarmActivity.pendingIntent(context, this@AdhanNotification), true) }
@@ -100,6 +102,21 @@ data class AdhanNotification(
          * itself); vibration is done by the app ([AlertOutput]) so the vibration setting applies.
          */
         const val CHANNEL_REMINDERS = "prayer_reminders"
+
+        /**
+         * Whether a full-screen intent may open an alarm over the lock screen: always before Android 14, then only with
+         * the «Full screen notifications» permission the user can withdraw.
+         */
+        fun canShowOverLockScreen(context: Context): Boolean =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE || fullScreenPermission(context)
+
+        /** The phone's answer for Android 14's full-screen permission. */
+        internal val DEVICE_FULL_SCREEN_PERMISSION: (Context) -> Boolean =
+            { it.getSystemService(NotificationManager::class.java).canUseFullScreenIntent() }
+
+        /** Android 14's full-screen permission; tests stand in for it, since Robolectric cannot grant it. */
+        @androidx.annotation.VisibleForTesting
+        internal var fullScreenPermission: (Context) -> Boolean = DEVICE_FULL_SCREEN_PERMISSION
 
         fun canPost(context: Context): Boolean =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||

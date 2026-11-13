@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 /**
  * The one entry point that re-renders every home-screen widget. Called from the display alarms
- * (`AlertReceiver`: each Prayer Time and local midnight), from `RescheduleReceiver` (boot, time, zone, locale) and
+ * (`AlertReceiver`: each Prayer Time, Imsak on Fasting Days and local midnight), from `RescheduleReceiver` (boot, time, zone, locale) and
  * on every settings, digit or language change (`MawaqeetApplication`). The periods are the Next Prayer widgets'
  * half-hourly update, which moves their progress line and ring, and the Clock widgets' minute ([ClockTickReceiver]).
  */

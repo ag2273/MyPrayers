@@ -1,5 +1,6 @@
 package app.mawaqeet.data
 
+import app.mawaqeet.core.AdhkarRecordBackup
 import app.mawaqeet.core.AdhkarRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +12,7 @@ import java.time.LocalDate
  * Adhkar progress and the Adhkar Record in the local database (the Prayer Log's file, so the same backup rules
  * apply). Its methods block: call them (and the core's Adhkar commands and queries) off the main thread.
  */
-class RoomAdhkarRepository(db: PrayerLogDatabase) : AdhkarRepository {
+class RoomAdhkarRepository(private val db: PrayerLogDatabase) : AdhkarRepository {
     private val dao = db.adhkarDao()
     private val version = MutableStateFlow(0)
 
@@ -52,5 +53,25 @@ class RoomAdhkarRepository(db: PrayerLogDatabase) : AdhkarRepository {
     override fun deleteRecord(firstUseFrom: LocalDate) {
         dao.deleteRecord(firstUseFrom.toString())
         version.update { it + 1 }
+    }
+
+    /**
+     * Stores a restore's merged Adhkar Record ([app.mawaqeet.core.Backup.restore]): it holds everything already
+     * here, so only adds. Call it inside the restore's transaction ([BackupFiles.restore]). Blocks.
+     */
+    internal fun restore(merged: AdhkarRecordBackup) {
+        merged.completed.forEach { (day, slots) -> slots.forEach { dao.insertRecord(AdhkarRecordEntry(day.toString(), it)) } }
+        merged.firstUse?.let { dao.replaceFirstUse(AdhkarFirstUse(prayerDay = it.toString())) }
+        version.update { it + 1 }
+    }
+
+    /** The whole Adhkar Record as a Backup File holds it (not today's counts), read in one transaction. Blocks. */
+    fun backup(): AdhkarRecordBackup = db.runInTransaction<AdhkarRecordBackup> {
+        AdhkarRecordBackup(
+            firstUse = firstUseDate(),
+            completed = dao.allRecords()
+                .groupBy({ LocalDate.parse(it.prayerDay) }, { it.slot })
+                .mapValues { it.value.toSet() },
+        )
     }
 }

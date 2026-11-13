@@ -89,6 +89,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.text.BidiFormatter
 import androidx.core.text.TextDirectionHeuristicsCompat
+import app.mawaqeet.data.RestoreOutcome
+import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -153,6 +155,33 @@ interface SettingsActions {
     /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64). */
     fun setKahfReminder(on: Boolean)
 
+    /** «صيام السنة» under «تذكيرات العبادة» (#95): [fast]'s reminder the night before. */
+    fun setFastReminder(fast: app.mawaqeet.core.SunnahFast, on: Boolean)
+
+    /** «صلاة الضحى» under «تذكيرات العبادة» → «السنن» (#96). */
+    fun setDuhaReminder(on: Boolean)
+
+    /** The Duha reminder's minutes after Sunrise, one of [app.mawaqeet.core.DuhaReminder.MINUTES]. */
+    fun setDuhaReminderMinutes(minutes: Int)
+
+    /** «قيام الليل» under «تذكيرات العبادة» → «السنن» (#96). */
+    fun setQiyamReminder(on: Boolean)
+
+    /** The Qiyam reminder's style (#97): «إشعار» or «منبّه». */
+    fun setQiyamStyle(style: app.mawaqeet.core.QiyamStyle)
+
+    /** «الإمساك» under «رمضان» (#90): Imsak moved [step] taps of [app.mawaqeet.core.RamadanSettings.IMSAK_MINUTES_STEP] minutes. */
+    fun stepImsakMinutes(step: Int)
+
+    /** «تذكير السحور» under «رمضان» (#91). */
+    fun setSuhoorReminder(on: Boolean)
+
+    /** The suhoor reminder's minutes before Fajr, one of [app.mawaqeet.core.SuhoorReminder.MINUTES]. */
+    fun setSuhoorReminderMinutes(minutes: Int)
+
+    /** «تنبيه الإمساك» under «رمضان» (#91). */
+    fun setImsakAlert(on: Boolean)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 
@@ -187,6 +216,18 @@ interface SettingsActions {
 
     /** Settings → your data (#74): permanently deletes the Adhkar Record. Called only after confirmation. */
     fun deleteAdhkarRecord()
+
+    /**
+     * Settings → Backup (#98): writes a Backup File to [uri], the document the user just created with the system
+     * picker; [onResult] gets false when it couldn't be written (nothing changes then).
+     */
+    fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit)
+
+    /**
+     * Settings → Backup (#99): restores the Backup File at [uri], the document the user just opened with the system
+     * picker and confirmed; [onResult] gets how it ended (only [RestoreOutcome.Restored] changed anything).
+     */
+    fun restoreBackup(uri: Uri, onResult: (RestoreOutcome) -> Unit)
 }
 
 /** The Settings sections, each its own page, plus the pages opened from them. */
@@ -198,6 +239,7 @@ enum class SettingsPage(@StringRes val title: Int) {
     DISPLAY(R.string.settings_group_language_display),
     WIDGETS(R.string.settings_group_widgets),
     ABOUT(R.string.settings_group_about),
+    BACKUP(R.string.backup_title),
     CREDITS(R.string.about_sources_title),
 }
 
@@ -276,6 +318,10 @@ fun SettingsHub(
                 },
                 icon = R.drawable.ic_widgets,
             ) { onOpen(SettingsRoute(SettingsPage.WIDGETS)) }
+            RowDivider()
+            NavRow(stringResource(R.string.backup_title), stringResource(R.string.backup_summary), icon = R.drawable.ic_log) {
+                onOpen(SettingsRoute(SettingsPage.BACKUP))
+            }
         }
         SectionTitle(stringResource(R.string.settings_section_help))
         Card {
@@ -359,6 +405,8 @@ fun SettingsPageScreen(
     actions: SettingsActions,
     widgetAppearance: WidgetAppearance,
     onNavigate: (SettingsRoute?) -> Unit,
+    /** Settings → Backup: when a Backup File was last exported; null before the first. */
+    lastBackupExport: Instant? = null,
 ) {
     val prayer = route.prayer ?: Prayer.FAJR
     val title = if (route.page == SettingsPage.PRAYER_ALERT) {
@@ -381,6 +429,7 @@ fun SettingsPageScreen(
             SettingsPage.WIDGETS -> WidgetsPage(widgetAppearance, actions)
             SettingsPage.ABOUT -> AboutPage(actions) { onNavigate(SettingsRoute(SettingsPage.CREDITS)) }
             SettingsPage.CREDITS -> CreditsPage()
+            SettingsPage.BACKUP -> BackupPage(lastBackupExport, actions)
         }
     }
 }

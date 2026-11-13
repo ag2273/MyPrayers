@@ -88,6 +88,8 @@
 
     <!-- Adhan Alerts (#18). %1$s is the Prayer name (Jumu'ah on Friday's Dhuhr). -->
     <string name="adhan_alert_title">It\'s time for %1$s</string>
+    <!-- Maghrib's Adhan Alert on a Fasting Day (#91) -->
+    <string name="adhan_alert_iftar_title">Time to break your fast</string>
     <string name="adhan_channel_name">Adhan Alerts</string>
     <string name="adhan_channel_description">An alert when each Prayer Time arrives</string>
     <!-- Adhan playback (#22). -->
@@ -511,4 +513,165 @@
     <string name="kahf_reminder_title">Read Surat Al-Kahf</string>
     <string name="kahf_reminder_text">Reading Surat Al-Kahf is a Sunnah of Friday</string>
     <string name="kahf_reminder_read">I read it</string>
+    <!-- Tools Row on Today (#88) -->
+    <string name="tool_qibla">Qibla</string>
+    <string name="tool_calendar">Calendar</string>
+    <string name="tool_mosques">Mosques</string>
+    <string name="mosques_query">mosque</string>
+    <string name="mosques_nearby">Nearby mosques</string>
+    <string name="mosques_opens_in_maps">Opens in your maps app</string>
+    <string name="mosques_no_maps_app">No maps app on this phone</string>
+    <!-- Qibla screen (#88) -->
+    <string name="qibla_waiting">Reading the compass…</string>
+    <string name="qibla_turn_right">Turn %1$s° right</string>
+    <string name="qibla_turn_left">Turn %1$s° left</string>
+    <string name="qibla_on_target">You are facing the Qibla</string>
+    <string name="qibla_bearing">Qibla %1$s° from true north</string>
+    <string name="qibla_distance">%1$s km to Makkah</string>
+    <string name="qibla_dial_description">Qibla compass</string>
+    <string name="qibla_kaaba">Kaaba</string>
+    <string name="qibla_dial_north">N</string>
+    <string name="qibla_dial_east">E</string>
+    <string name="qibla_dial_south">S</string>
+    <string name="qibla_dial_west">W</string>
+    <string name="qibla_calibrate_title">The compass needs calibrating</string>
+    <string name="qibla_calibrate">Move your phone through the air in a figure 8 a few times, away from metal and electronics, until the reading settles.</string>
+    <string name="qibla_no_sensor_title">This phone has no compass</string>
+    <string name="qibla_no_sensor">The Qibla is %1$s° from true north, to the %2$s. Use the sun or another compass to find north.</string>
+    <string name="qibla_no_location_title">No location set yet</string>
+    <string name="qibla_no_location">Set your location to find the Qibla from it.</string>
+    <string name="qibla_set_location">Set location</string>
+    <string name="compass_north">north</string>
+    <string name="compass_north_east">north-east</string>
+    <string name="compass_east">east</string>
+    <string name="compass_south_east">south-east</string>
+    <string name="compass_south">south</string>
+    <string name="compass_south_west">south-west</string>
+    <string name="compass_west">west</string>
+    <string name="compass_north_west">north-west</string>
+    <!-- Ramadan Mode on Today (#90): the Next Prayer card's fasting and suhoor forms. -->
+    <string name="ramadan_day">Ramadan · Day %1$s</string>
+    <string name="ramadan_imsak_at">Imsak %1$s</string>
+    <string name="ramadan_iftar_at">Iftar %1$s</string>
+    <string name="ramadan_suhoor">Suhoor</string>
+    <string name="ramadan_suhoor_ends_in">ends in %1$s</string>
+    <!-- The next Prayer inside the Ramadan card: name, time, then the time left ("1h 10m"). -->
+    <string name="ramadan_next_prayer">Next Prayer: %1$s %2$s · in %3$s</string>
+    <!-- Ramadan under Worship Reminders (#90) -->
+    <string name="ramadan">Ramadan</string>
+    <string name="ramadan_imsak">Imsak</string>
+    <string name="ramadan_imsak_summary">Before Fajr, shown on Today in Ramadan</string>
+    <string name="ramadan_imsak_closer">Imsak %1$s minutes closer to Fajr</string>
+    <string name="ramadan_imsak_earlier">Imsak %1$s minutes earlier</string>
+    <!-- Ramadan reminders (#91). %1$s is the minutes before Fajr. -->
+    <string name="suhoor_reminder">Suhoor reminder</string>
+    <string name="suhoor_reminder_description">%1$s minutes before Fajr on Ramadan days</string>
+    <string name="suhoor_reminder_title">Suhoor reminder</string>
+    <string name="suhoor_reminder_text">Time for suhoor: there is blessing in it</string>
+    <string name="imsak_alert">Imsak alert</string>
+    <string name="imsak_alert_description">At Imsak on Ramadan days</string>
+    <string name="imsak_alert_title">Time for Imsak</string>
+    <string name="imsak_alert_text">Stop eating and drinking: Fajr is near</string>
+    <string name="fast_reminders">Sunnah fasts</string>
+    <string name="fast_reminders_description">A reminder the night before, half an hour after Isha. Never for the days of Eid or Tashreeq.</string>
+    <string name="fast_switch_monday_thursday">Mondays and Thursdays</string>
+    <string name="fast_switch_monday_thursday_description">Every week, except in Ramadan</string>
+    <string name="fast_switch_white_days">The white days</string>
+    <string name="fast_switch_white_days_description">The 13th, 14th and 15th of each Hijri month, except in Ramadan</string>
+    <string name="fast_switch_arafah">Day of Arafah</string>
+    <string name="fast_switch_arafah_description">The 9th of Dhu al-Hijjah</string>
+    <string name="fast_switch_ashura">Tasu\'a and Ashura</string>
+    <string name="fast_switch_ashura_description">The 9th and 10th of Muharram</string>
+    <string name="fast_switch_six_of_shawwal">Six days of Shawwal</string>
+    <string name="fast_switch_six_of_shawwal_description">One reminder on the night of Eid al-Fitr</string>
+    <string name="fast_reminder_title">Sunnah fast</string>
+    <string name="fast_reminder_text">Tomorrow is %1$s. Fasting it is Sunnah.</string>
+    <string name="fast_reminder_and">%1$s and %2$s</string>
+    <string name="fast_reminder_monday">Monday</string>
+    <string name="fast_reminder_thursday">Thursday</string>
+    <string name="fast_reminder_white_days">one of the white days</string>
+    <string name="fast_reminder_arafah">the Day of Arafah</string>
+    <string name="fast_reminder_tasua">Tasu\'a</string>
+    <string name="fast_reminder_ashura">Ashura</string>
+    <string name="fast_reminder_six_of_shawwal">the first of the six days of Shawwal</string>
+    <string name="sunnah_prayer_reminders">Sunnah prayers</string>
+    <string name="duha_reminder">Duha prayer</string>
+    <string name="duha_reminder_description">%1$s minutes after Sunrise, and at least 10 minutes before Dhuhr</string>
+    <string name="duha_reminder_text">It is time for the Duha prayer</string>
+    <string name="qiyam_reminder">Night prayer (Qiyam)</string>
+    <string name="qiyam_reminder_description">When the last third of the night begins</string>
+    <string name="qiyam_reminder_text">The last third of the night has begun: a time for Qiyam</string>
+    <string name="qiyam_style_notification">Notification</string>
+    <string name="qiyam_style_alarm">Alarm</string>
+    <string name="qiyam_style_alarm_description">Shows over the lock screen with the alarm sound for one minute, never the adhan</string>
+    <string name="qiyam_alarm_channel_name">Night prayer alarm</string>
+    <string name="qiyam_alarm_channel_description">An alarm when the last third of the night begins, with the phone\'s alarm sound</string>
+    <string name="last_third_begins">Last third of the night begins %1$s</string>
+    <string name="last_third_began">Last third of the night began %1$s</string>
+    <string name="prayer_at">%1$s %2$s</string>
+    <string name="about_use_serialization">The backup file</string>
+
+    <!-- Settings → Backup (#98) -->
+    <string name="backup_title">Backup</string>
+    <string name="backup_summary">Keep your settings and records in a file</string>
+    <string name="backup_contents_section">What the file holds</string>
+    <string name="backup_contents_body">Every setting (alerts, reminders, display and widgets), your location and Calculation Method, the Prayer Log and the Adhkar Record.</string>
+    <string name="backup_contents_not_included">Custom Adhan files aren\'t included: choose them again after restoring.</string>
+    <string name="backup_privacy_title">Keep it private</string>
+    <string name="backup_privacy_body">The file holds your location and your worship record. The app never sends it anywhere and it never passes through us: it is saved only where you choose.</string>
+    <string name="backup_file_section">The file</string>
+    <string name="backup_last_export">Last export: %1$s</string>
+    <string name="backup_never_exported">No backup exported yet</string>
+    <string name="backup_export">Export a backup</string>
+    <string name="backup_export_failed">The file couldn\'t be saved. Nothing changed.</string>
+    <string name="backup_restore">Restore from a file</string>
+    <string name="backup_restore_soon">Restoring comes in an upcoming version.</string>
+
+    <!-- Hijri Calendar screen (#93) -->
+    <string name="calendar_upcoming">Upcoming</string>
+    <string name="calendar_note">Dates follow the Umm al-Qura calendar with your Hijri date adjustment, and may differ by a day from the moon sighting in your country.</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_tomorrow">Tomorrow</string>
+    <plurals name="calendar_in_days">
+        <item quantity="one">in %1$s day</item>
+        <item quantity="other">in %1$s days</item>
+    </plurals>
+    <string name="calendar_month">Month</string>
+    <string name="calendar_previous_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_in_this_month">In this month</string>
+    <string name="calendar_legend_occasion">Occasion</string>
+    <!-- Between the parts of a month-grid day's TalkBack label. -->
+    <string name="calendar_label_separator">", "</string>
+    <string name="calendar_open_description">Open the Hijri calendar</string>
+    <string name="occasion_hijri_new_year">Hijri New Year</string>
+    <string name="occasion_tasua">Tasu\'a</string>
+    <string name="occasion_ashura">Ashura</string>
+    <string name="occasion_mawlid">The Mawlid</string>
+    <string name="occasion_isra_and_miraj">Isra and Mi\'raj</string>
+    <string name="occasion_ramadan_start">Start of Ramadan</string>
+    <string name="occasion_last_ten_nights">Last ten nights of Ramadan</string>
+    <string name="occasion_eid_al_fitr">Eid al-Fitr</string>
+    <string name="occasion_first_ten_of_dhu_al_hijjah">First ten days of Dhu al-Hijjah</string>
+    <string name="occasion_arafah">Day of Arafah</string>
+    <string name="occasion_eid_al_adha">Eid al-Adha</string>
+    <string name="occasion_tashreeq">Days of Tashreeq</string>
+    <string name="fast_monday_thursday">Mondays and Thursdays</string>
+    <string name="fast_white_days">The white days</string>
+    <string name="fast_arafah">Fast of Arafah</string>
+    <string name="fast_ashura">Tasu\'a and Ashura</string>
+    <string name="fast_six_of_shawwal">Six days of Shawwal</string>
+    <string name="backup_restore_confirm_title">Restore from this file?</string>
+    <string name="backup_restore_confirm_body">The file\'s settings will replace your current settings, all of them. The Prayer Log and the Adhkar Record are merged with what\'s on your phone, so nothing you marked is deleted.</string>
+    <string name="backup_restore_confirm">Restore</string>
+    <string name="backup_restored">Restored. The file\'s settings are in place and your records are merged.</string>
+    <string name="backup_restored_check_alerts">The restored settings use Prayer Silence or alarm-clock mode: check that your phone lets alerts work.</string>
+    <string name="backup_restore_damaged">This file is damaged or isn\'t a Mawaqeet backup. Nothing changed.</string>
+    <string name="backup_restore_newer">This file is from a newer version of Mawaqeet. Update the app, then try again. Nothing changed.</string>
+    <string name="backup_restore_unreadable">The file couldn\'t be read. Nothing changed.</string>
+    <!-- Next Prayer widgets in Ramadan Mode (#92). -->
+    <string name="widget_iftar">Iftar</string>
+    <string name="widget_suhoor_ends">Suhoor ends</string>
+    <string name="widget_chip_imsak">Imsak alert</string>
+    <string name="widget_chip_imsak_off">No alert</string>
 </resources>

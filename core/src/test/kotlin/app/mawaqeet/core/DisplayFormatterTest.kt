@@ -44,6 +44,21 @@ class DisplayFormatterTest {
     }
 
     @Test
+    fun `a Hijri month's title is our month name and the year`() {
+        assertEquals("جمادى الآخرة ١٤٤٨ هـ", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).hijriMonth(HijriMonth(1448, 6)))
+        assertEquals("Dhu al-Hijjah 1448 AH", DisplayFormatter(ENGLISH, DigitStyle.WESTERN).hijriMonth(HijriMonth(1448, 12)))
+    }
+
+    @Test
+    fun `a Hijri month's Gregorian span names both months, and both years only across a new year`() {
+        val arabic = DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC)
+        val english = DisplayFormatter(ENGLISH, DigitStyle.WESTERN)
+        assertEquals("نوفمبر – ديسمبر ٢٠٢٦", arabic.monthSpan(LocalDate.of(2026, 11, 11), LocalDate.of(2026, 12, 9)))
+        assertEquals("December 2026 – January 2027", english.monthSpan(LocalDate.of(2026, 12, 10), LocalDate.of(2027, 1, 8)))
+        assertEquals("May – June 2027", english.monthSpan(LocalDate.of(2027, 5, 7), LocalDate.of(2027, 6, 5)))
+    }
+
+    @Test
     fun `a Prayer Time is hours and minutes in the chosen digits`() {
         assertEquals("٠٥:٠٩", DisplayFormatter(ARABIC, DigitStyle.ARABIC_INDIC).time(FAJR))
         assertEquals("05:09", DisplayFormatter(ARABIC, DigitStyle.WESTERN).time(FAJR))

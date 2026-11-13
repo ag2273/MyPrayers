@@ -24,6 +24,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.DigitStyle
@@ -311,6 +312,189 @@ class SettingsScreenTest {
             compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Surat Al-Kahf").assertIsOn() }.isSuccess }
         } finally {
             runBlocking { store.setKahfReminder(false) }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `the five Sunnah fast switches are off under Sunnah fasts, and each one stores only its own fast`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun fasts() = runBlocking { store.settings.first() }.alerts.worshipReminders.fasts.on
+        val switches = listOf(
+            "Mondays and Thursdays" to SunnahFast.MONDAY_THURSDAY,
+            "The white days" to SunnahFast.WHITE_DAYS,
+            "Day of Arafah" to SunnahFast.ARAFAH,
+            "Tasu'a and Ashura" to SunnahFast.ASHURA,
+            "Six days of Shawwal" to SunnahFast.SIX_OF_SHAWWAL,
+        )
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Sunnah fasts").performScrollTo().assertIsDisplayed()
+            switches.forEach { (title, _) -> compose.onNodeWithText(title).performScrollTo().assertIsOff() }
+
+            val chosen = mutableSetOf<SunnahFast>()
+            for ((title, fast) in switches) {
+                compose.onNodeWithText(title).performScrollTo().performClick()
+                chosen += fast
+                compose.waitUntil(timeoutMillis = 5_000) { fasts() == chosen }
+                compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText(title).assertIsOn() }.isSuccess }
+            }
+
+            compose.onNodeWithText("Day of Arafah").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { fasts() == chosen - SunnahFast.ARAFAH }
+        } finally {
+            runBlocking { SunnahFast.entries.forEach { store.setFastReminder(it, false) } }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `Duha and Qiyam are off under Sunnah prayers, Duha's minutes after Sunrise show once it is on, and each stores its own`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun sunnah() = runBlocking { store.settings.first() }.alerts.worshipReminders.sunnahPrayers
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Sunnah prayers").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Duha prayer").performScrollTo().assertIsOff()
+            compose.onNodeWithText("Night prayer (Qiyam)").performScrollTo().assertIsOff()
+            compose.onNodeWithText("60 minutes after Sunrise, and at least 10 minutes before Dhuhr").performScrollTo().assertIsDisplayed()
+            assertEquals(0, compose.onAllNodesWithText("90").fetchSemanticsNodes().size)
+
+            compose.onNodeWithText("Duha prayer").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { sunnah().duha.enabled }
+            compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText("90").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("60").performScrollTo().assertIsSelected()
+            compose.onNodeWithText("90").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { sunnah().duha.minutes == 90 }
+            compose.waitUntil(timeoutMillis = 5_000) {
+                compose.onAllNodesWithText("90 minutes after Sunrise, and at least 10 minutes before Dhuhr").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("90").assertIsSelected()
+            assertEquals(false, sunnah().qiyam.enabled)
+
+            compose.onNodeWithText("Night prayer (Qiyam)").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { sunnah().qiyam.enabled }
+            assertEquals(app.mawaqeet.core.DuhaReminder(enabled = true, minutes = 90), sunnah().duha)
+        } finally {
+            runBlocking {
+                store.setDuhaReminder(false)
+                store.setDuhaReminderMinutes(app.mawaqeet.core.DuhaReminder.DEFAULT_MINUTES)
+                store.setQiyamReminder(false)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `once Qiyam is on its style shows under it, a notification until Alarm is chosen`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun qiyam() = runBlocking { store.settings.first() }.alerts.worshipReminders.sunnahPrayers.qiyam
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            assertEquals(0, compose.onAllNodesWithText("Alarm").fetchSemanticsNodes().size)
+
+            compose.onNodeWithText("Night prayer (Qiyam)").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { qiyam().enabled }
+            compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText("Alarm").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("Notification").performScrollTo().assertIsSelected()
+
+            compose.onNodeWithText("Alarm").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { qiyam().style == app.mawaqeet.core.QiyamStyle.ALARM }
+            compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Alarm").assertIsSelected() }.isSuccess }
+            compose.onNodeWithText("Shows over the lock screen with the alarm sound for one minute, never the adhan")
+                .performScrollTo().assertIsDisplayed()
+        } finally {
+            runBlocking {
+                store.setQiyamReminder(false)
+                store.setQiyamStyle(app.mawaqeet.core.QiyamStyle.NOTIFICATION)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `Imsak is 10 minutes before Fajr under Ramadan in Worship reminders, and each tap moves it 5 minutes`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun imsak() = runBlocking { store.settings.first() }.alerts.ramadan.imsakMinutes
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Ramadan").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Imsak").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("10 minutes").performScrollTo().assertIsDisplayed()
+
+            compose.onNodeWithContentDescription("Imsak 5 minutes earlier").performScrollTo().performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { imsak() == 15 && shown("15 minutes") }
+            compose.onNodeWithContentDescription("Imsak 5 minutes closer to Fajr").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Imsak 5 minutes closer to Fajr").performClick()
+            compose.onNodeWithContentDescription("Imsak 5 minutes closer to Fajr").performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { imsak() == 0 }
+        } finally {
+            runBlocking { store.stepImsakMinutes(-100); store.stepImsakMinutes(+2) }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `the suhoor reminder and the Imsak alert are off under Ramadan, and switching them on stores them with the chosen minutes`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun ramadan() = runBlocking { store.settings.first() }.alerts.ramadan
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Suhoor reminder").performScrollTo().assertIsOff()
+            compose.onNodeWithText("Imsak alert").performScrollTo().assertIsOff()
+            compose.onNodeWithText("60 minutes before Fajr on Ramadan days").performScrollTo().assertIsDisplayed()
+            // The minutes only show once it is on.
+            assertEquals(false, shown("120 min"))
+
+            compose.onNodeWithText("Suhoor reminder").performScrollTo().performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { ramadan().suhoorReminder.enabled && shown("120 min") }
+            compose.onNodeWithText("60 min").performScrollTo().assertIsSelected()
+            compose.onNodeWithText("90 min").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { ramadan().suhoorReminder.minutes == 90 }
+            compose.waitUntil(timeoutMillis = 5_000) { shown("90 minutes before Fajr on Ramadan days") }
+
+            compose.onNodeWithText("Imsak alert").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { ramadan().imsakAlert }
+            compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Imsak alert").assertIsOn() }.isSuccess }
+        } finally {
+            runBlocking {
+                store.setSuhoorReminder(false)
+                store.setSuhoorReminderMinutes(60)
+                store.setImsakAlert(false)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `with every app alert off the Ramadan reminders are hidden but Imsak's minutes stay editable for Today`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun imsak() = runBlocking { store.settings.first() }.alerts.ramadan.imsakMinutes
+        runBlocking { store.setAlertsEnabled(false) }
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.waitUntil(timeoutMillis = 5_000) { !shown("Worship reminders") }
+            assertEquals(false, shown("Suhoor reminder"))
+            assertEquals(false, shown("Imsak alert"))
+            compose.onNodeWithText("Imsak").performScrollTo().assertIsDisplayed()
+
+            compose.onNodeWithContentDescription("Imsak 5 minutes earlier").performScrollTo().performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { imsak() == 15 && shown("15 minutes") }
+        } finally {
+            runBlocking {
+                store.stepImsakMinutes(-100)
+                store.stepImsakMinutes(+2)
+                store.setAlertsEnabled(true)
+            }
         }
     }
 

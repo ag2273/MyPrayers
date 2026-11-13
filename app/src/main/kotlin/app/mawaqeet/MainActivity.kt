@@ -30,6 +30,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.lifecycleScope
+import app.mawaqeet.alerts.AdhanNotification
 import app.mawaqeet.alerts.AlertPermissions
 import app.mawaqeet.alerts.AlertRescheduler
 import app.mawaqeet.alerts.AlertScheduler
@@ -37,11 +38,13 @@ import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhkarSlot
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.alerts.CustomAdhanFiles
+import app.mawaqeet.data.RestoreOutcome
 import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.HijriCalendar
 import app.mawaqeet.core.LocationChangeCheck
 import app.mawaqeet.core.LocationSource
 import app.mawaqeet.core.LocationUpdate
@@ -53,6 +56,11 @@ import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.components.MainScaffold
 import app.mawaqeet.ui.components.Tab
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.home.ToolsRow
+import app.mawaqeet.mosques.NearbyMosques
+import app.mawaqeet.qibla.SensorHeadings
+import app.mawaqeet.ui.qibla.QiblaScreen
+import app.mawaqeet.ui.calendar.CalendarScreen
 import app.mawaqeet.ui.fixalerts.FixAlerts
 import app.mawaqeet.ui.fixalerts.FixAlertsScreen
 import app.mawaqeet.ui.location.LocationScreen
@@ -122,6 +130,7 @@ class MainActivity : AppCompatActivity() {
                 val storedLocation by remember { settingsStore.savedLocation.map { listOfNotNull(it) } }.collectAsState(initial = null)
                 val onboarded by settingsStore.onboardingDone.collectAsState(initial = null)
                 val fixAlertsDone by settingsStore.fixAlertsDone.collectAsState(initial = true)
+                val lastBackupExport by settingsStore.lastBackupExport.collectAsState(initial = null)
                 val current = settings ?: return@MawaqeetTheme
                 val onboardingDone = onboarded ?: return@MawaqeetTheme
                 val digits = storedDigits ?: return@MawaqeetTheme
@@ -135,6 +144,11 @@ class MainActivity : AppCompatActivity() {
                 var settingsRoute by rememberSaveable { mutableStateOf<SettingsRoute?>(null) }
                 var showLocation by rememberSaveable { mutableStateOf(false) }
                 var showFixAlerts by rememberSaveable { mutableStateOf(false) }
+                // The Qibla screen, opened from the Tools Row on Today (#88).
+                var showQibla by rememberSaveable { mutableStateOf(false) }
+                // The Hijri Calendar, opened from the Tools Row and the Hijri date on Today (#93).
+                var showCalendar by rememberSaveable { mutableStateOf(false) }
+                val headings = remember { SensorHeadings(this@MainActivity) }
                 // The Adhkar Set an adhkar reminder's tap asked for, until the Adhkar tab opens it.
                 var adhkarToOpen by remember { mutableStateOf<AdhkarSlot?>(null) }
                 // A widget tap opens today's Prayer Times (Home) or the Prayer Log, from whatever screen was open.
@@ -142,6 +156,8 @@ class MainActivity : AppCompatActivity() {
                     val request = openRequest ?: return@LaunchedEffect
                     showLocation = false
                     showFixAlerts = false
+                    showQibla = false
+                    showCalendar = false
                     settingsRoute = null
                     tab = when (request.opens) {
                         Opens.PRAYER_LOG -> Tab.LOG
@@ -314,6 +330,42 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setKahfReminder(on) }
                             }
 
+                            override fun setFastReminder(fast: app.mawaqeet.core.SunnahFast, on: Boolean) {
+                                scope.launch { settingsStore.setFastReminder(fast, on) }
+                            }
+
+                            override fun setDuhaReminder(on: Boolean) {
+                                scope.launch { settingsStore.setDuhaReminder(on) }
+                            }
+
+                            override fun setDuhaReminderMinutes(minutes: Int) {
+                                scope.launch { settingsStore.setDuhaReminderMinutes(minutes) }
+                            }
+
+                            override fun setQiyamReminder(on: Boolean) {
+                                scope.launch { settingsStore.setQiyamReminder(on) }
+                            }
+
+                            override fun setQiyamStyle(style: app.mawaqeet.core.QiyamStyle) {
+                                scope.launch { settingsStore.setQiyamStyle(style) }
+                            }
+
+                            override fun stepImsakMinutes(step: Int) {
+                                scope.launch { settingsStore.stepImsakMinutes(step) }
+                            }
+
+                            override fun setSuhoorReminder(on: Boolean) {
+                                scope.launch { settingsStore.setSuhoorReminder(on) }
+                            }
+
+                            override fun setSuhoorReminderMinutes(minutes: Int) {
+                                scope.launch { settingsStore.setSuhoorReminderMinutes(minutes) }
+                            }
+
+                            override fun setImsakAlert(on: Boolean) {
+                                scope.launch { settingsStore.setImsakAlert(on) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {
@@ -345,9 +397,7 @@ class MainActivity : AppCompatActivity() {
                                 return true
                             }
 
-                            override fun canShowOverLockScreen(): Boolean =
-                                android.os.Build.VERSION.SDK_INT < 34 ||
-                                    getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
+                            override fun canShowOverLockScreen(): Boolean = AdhanNotification.canShowOverLockScreen(this@MainActivity)
 
                             override fun openLockScreenPermission() {
                                 if (android.os.Build.VERSION.SDK_INT >= 34) {
@@ -383,6 +433,24 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch(Dispatchers.IO) {
                                     val prayers = PrayerCore(settingsStore.settings.first(), clock, prayerLog)
                                     Adhkar(app.adhkarCatalog, prayers, app.adhkar).deleteRecord()
+                                }
+                            }
+
+                            override fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit) {
+                                scope.launch {
+                                    onResult(app.backup.export { contentResolver.openOutputStream(uri, "w") })
+                                }
+                            }
+
+                            override fun restoreBackup(uri: Uri, onResult: (RestoreOutcome) -> Unit) {
+                                scope.launch {
+                                    val outcome = app.backup.restore { contentResolver.openInputStream(uri) }
+                                    onResult(outcome)
+                                    // The restored language too: AppCompat holds it, so apply it (this recreates the screen).
+                                    val language = settingsStore.appLanguage.first()
+                                    if (outcome is RestoreOutcome.Restored && language != AppCompatDelegate.getApplicationLocales().toLanguageTags()) {
+                                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language))
+                                    }
                                 }
                             }
 
@@ -465,6 +533,21 @@ class MainActivity : AppCompatActivity() {
                         onBack = { showLocation = false },
                         readDevicePosition = { DeviceLocation.current(this@MainActivity) },
                     )
+                } else if (showQibla) {
+                    // Only the stored location: the Qibla screen never asks for a permission.
+                    QiblaScreen(
+                        savedLocation?.location,
+                        headings,
+                        onSetLocation = { showLocation = true },
+                        onMosques = { NearbyMosques.open(this@MainActivity) },
+                        onBack = { showQibla = false },
+                    )
+                } else if (showCalendar) {
+                    CalendarScreen(
+                        remember(current.hijriOffsetDays) { HijriCalendar(current.hijriOffsetDays) },
+                        today = core.calendarDate(),
+                        onBack = { showCalendar = false },
+                    )
                 } else if (settingsRoute != null) {
                     SettingsPageScreen(
                         settingsRoute ?: return@ProvideDisplayFormatter,
@@ -475,6 +558,7 @@ class MainActivity : AppCompatActivity() {
                         settingsActions,
                         widgetAppearance,
                         onNavigate = { settingsRoute = it },
+                        lastBackupExport = lastBackupExport,
                     )
                 } else {
                     MainScaffold(tab, onSelect = { tab = it }) {
@@ -508,6 +592,14 @@ class MainActivity : AppCompatActivity() {
                         showFixAlertsTip = !fixAlertsDone && FixAlerts.deviceBrand != null,
                         onOpenFixAlerts = { showFixAlerts = true },
                         onFixAlertsDone = { scope.launch { settingsStore.setFixAlertsDone(true) } },
+                        tools = {
+                            ToolsRow(
+                                onQibla = { showQibla = true },
+                                onCalendar = { showCalendar = true },
+                                onMosques = { NearbyMosques.open(this@MainActivity) },
+                            )
+                        },
+                        onOpenCalendar = { showCalendar = true },
                     )
                     }
                     }

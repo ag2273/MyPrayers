@@ -53,9 +53,12 @@ class WidgetDirectionTest {
 
     private val weekdays = listOf("الأحد", "الاثنين", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت")
 
-    /** The Gregorian date: it starts with the weekday (the Hijri date ends in هـ). */
+    /**
+     * The Gregorian date: it starts with the weekday and has no time in it, which keeps Friday's next-Prayer line
+     * («الجمعة ١٢:٠٥») out; the Hijri date ends in هـ.
+     */
     private fun gregorian(root: View): TextView =
-        widgetTexts(root).first { t -> weekdays.any { t.text.startsWith(it) } && "هـ" !in t.text }
+        widgetTexts(root).first { t -> weekdays.any { t.text.startsWith(it) } && "هـ" !in t.text && ':' !in t.text }
 
     private fun hijri(root: View): TextView = widgetTexts(root).first { "هـ" in it.text }
 

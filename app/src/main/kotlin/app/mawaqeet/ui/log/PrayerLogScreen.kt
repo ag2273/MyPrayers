@@ -128,7 +128,7 @@ fun PrayerLogScreen(core: PrayerCore, logChanges: StateFlow<Int>) {
     }
 }
 
-/** An outlined round arrow button for the previous or next week; [label] is read by TalkBack. Also the Adhkar Record's. */
+/** An outlined round arrow button for the previous or next week; [label] is read by TalkBack. Also the Adhkar Record's and the Calendar month's. */
 @Composable
 internal fun WeekButton(label: Int, mirrored: Boolean, enabled: Boolean, onClick: () -> Unit) {
     OutlinedIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp)) {

@@ -1,5 +1,7 @@
 package app.mawaqeet
 
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -13,7 +15,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * At the largest system font size (200%), Home, the Prayer Log and Settings show every word in both languages, and
+ * At the largest system font size (200%), Home, the Calendar (both tabs), the Prayer Log and Settings show every word in both languages, and
  * every tap target is at least 48×48dp (#33). A tall window shows each whole screen at once.
  */
 @RunWith(AndroidJUnit4::class)
@@ -33,9 +35,18 @@ class AccessibilityTest {
         compose.waitForIdle()
     }
 
-    private fun checkScreens(log: String, back: String, settings: String, fajr: String, pages: List<String>) {
+    private fun checkScreens(log: String, back: String, settings: String, fajr: String, calendar: List<String>, pages: List<String>) {
         compose.waitForIdle()
         compose.assertAccessible("Home", density)
+        // The Calendar opens from the Tools Row; its tabs follow.
+        compose.onNode(hasText(calendar[0]) and hasClickAction()).performClick()
+        compose.waitForIdle()
+        for (tab in calendar.drop(1)) {
+            open(tab)
+            compose.assertAccessible("Calendar $tab", density)
+        }
+        compose.onNodeWithContentDescription(back).performClick()
+        compose.waitForIdle()
         open(log)
         // The week loads off the main thread.
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription(fajr).fetchSemanticsNodes().isNotEmpty() }
@@ -50,12 +61,43 @@ class AccessibilityTest {
         }
     }
 
+    /** Alerts with the Qiyam reminder on in alarm style (#97): its style choice and the alarm's description. */
+    private fun checkQiyamAlarm(settings: String, alerts: String, alarm: String) {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        try {
+            kotlinx.coroutines.runBlocking {
+                store.setQiyamReminder(true)
+                store.setQiyamStyle(app.mawaqeet.core.QiyamStyle.ALARM)
+            }
+            open(settings)
+            open(alerts)
+            compose.waitUntil(5_000) { compose.onAllNodes(hasText(alarm)).fetchSemanticsNodes().isNotEmpty() }
+            compose.assertAccessible("$alerts with the Qiyam alarm", density)
+        } finally {
+            kotlinx.coroutines.runBlocking {
+                store.setQiyamReminder(false)
+                store.setQiyamStyle(app.mawaqeet.core.QiyamStyle.NOTIFICATION)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "ar-w360dp-h12000dp")
+    fun `in Arabic at 200% the Qiyam reminder's style choice is whole and big enough`() =
+        checkQiyamAlarm("الإعدادات", "التنبيهات والأذان", "منبّه")
+
+    @Test
+    @Config(qualifiers = "en-w360dp-h12000dp")
+    fun `in English at 200% the Qiyam reminder's style choice is whole and big enough`() =
+        checkQiyamAlarm("Settings", "Alerts & adhan", "Alarm")
+
     @Test
     @Config(qualifiers = "ar-w360dp-h12000dp")
     fun `in Arabic at 200% text nothing is cut off and every tap target is big enough`() =
         checkScreens(
             "سجل الصلاة", "رجوع", "الإعدادات", "الفجر",
-            listOf("الموقع وطريقة الحساب", "التنبيهات والأذان", "اللغة والعرض", "أدوات الشاشة الرئيسية", "حول مواقيت وبياناتك"),
+            listOf("التقويم", "القادم", "الشهر"),
+            listOf("الموقع وطريقة الحساب", "التنبيهات والأذان", "اللغة والعرض", "أدوات الشاشة الرئيسية", "النسخة الاحتياطية", "حول مواقيت وبياناتك"),
         )
 
     @Test
@@ -63,6 +105,7 @@ class AccessibilityTest {
     fun `in English at 200% text nothing is cut off and every tap target is big enough`() =
         checkScreens(
             "Prayer Log", "Back", "Settings", "Fajr",
-            listOf("Location & calculation", "Alerts & adhan", "Language & display", "Widgets", "About & your data"),
+            listOf("Calendar", "Upcoming", "Month"),
+            listOf("Location & calculation", "Alerts & adhan", "Language & display", "Widgets", "Backup", "About & your data"),
         )
 }

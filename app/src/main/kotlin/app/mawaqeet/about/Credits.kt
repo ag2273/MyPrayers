@@ -42,6 +42,11 @@ object Credits {
             modules = listOf("org.jetbrains.kotlinx:kotlinx-datetime"),
         ),
         Credit(
+            "kotlinx.serialization (JetBrains)", CreditKind.LIBRARY, "Apache 2.0",
+            "https://github.com/Kotlin/kotlinx.serialization", R.string.about_use_serialization,
+            modules = listOf("org.jetbrains.kotlinx:kotlinx-serialization"),
+        ),
+        Credit(
             "Android Jetpack (AndroidX): Core, AppCompat, Activity, Lifecycle, Compose, Material 3, Room, DataStore, Glance",
             CreditKind.LIBRARY, "Apache 2.0",
             "https://developer.android.com/jetpack/androidx", R.string.about_use_androidx,

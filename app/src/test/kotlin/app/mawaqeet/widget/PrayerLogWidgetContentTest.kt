@@ -72,16 +72,22 @@ class PrayerLogWidgetContentTest {
     }
 
     @Test
-    fun `after midnight the widget shows the new date, all not yet due, and nothing highlighted until Fajr is next`() {
+    fun `from midnight until Fajr the widget still shows the running Prayer Day, its date, times and marks`() {
+        // 00:17 on Friday 13 November: Thursday's Prayer Day runs until Friday's Fajr.
         val log = MemoryLog(firstUse = date("2026-10-01"))
-        val core = coreAt("2026-11-09T00:30", log)
-        core.mark(date("2026-11-08"), Prayer.ISHA)
+        val core = coreAt("2026-11-13T00:17", log)
+        core.mark(date("2026-11-12"), Prayer.ISHA)
 
         val content = todayAt(core, english)
+        val thursday = todayAt(coreAt("2026-11-12T12:00", log), english)
 
-        assertEquals("Mon 9 Nov", content.date.gregorian)
-        assertTrue(content.rows.all { it.state == LogState.NOT_YET_DUE })
-        assertEquals(listOf(Prayer.FAJR), content.rows.filter { it.isNext }.map { it.prayer })
+        assertEquals("Thu 12 Nov", content.date.gregorian)
+        assertEquals(thursday.rows.map { it.time }, content.rows.map { it.time })
+        assertEquals(R.string.prayer_dhuhr, content.rows[1].nameRes)
+        assertEquals(LogState.PRAYED, content.rows.last().state)
+        assertTrue(content.rows.dropLast(1).all { it.state == LogState.NOT_MARKED })
+        // The next Prayer is Friday's Fajr, not on this day: nothing is highlighted.
+        assertTrue(content.rows.none { it.isNext })
     }
 
     @Test
@@ -159,6 +165,7 @@ class PrayerLogWidgetContentTest {
         override fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean) {
             if (prayed) entries += prayerDay to prayer else entries -= prayerDay to prayer
         }
+        override fun hasAnyEntry() = entries.isNotEmpty()
         override fun firstUseDate() = firstUse
         override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {
             if (firstUse == null) firstUse = prayerDay

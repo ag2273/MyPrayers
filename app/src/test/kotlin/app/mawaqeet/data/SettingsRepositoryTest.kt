@@ -366,4 +366,147 @@ class SettingsRepositoryTest {
 
         assertEquals(app.mawaqeet.core.KahfReminder(enabled = true), kahf)
     }
+
+    @Test
+    fun `Imsak is 10 minutes before Fajr by default, and a stepped choice survives an app restart within 0 to 30`() {
+        assertEquals(10, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
+
+        withRepository { repo, _ -> repo.stepImsakMinutes(+2) }
+        assertEquals(20, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
+
+        withRepository { repo, _ -> repo.stepImsakMinutes(+100) }
+        assertEquals(30, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
+
+        withRepository { _, store -> store.edit { it[intPreferencesKey("ramadan_imsak_minutes")] = 45 } }
+        assertEquals(10, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.imsakMinutes)
+    }
+
+    @Test
+    fun `the Ramadan reminders are off by default, and their switches and the suhoor minutes survive an app restart`() {
+        val before = withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan
+        assertEquals(app.mawaqeet.core.SuhoorReminder(enabled = false, minutes = 60), before.suhoorReminder)
+        assertEquals(false, before.imsakAlert)
+
+        withRepository { repo, _ ->
+            repo.setSuhoorReminder(true)
+            repo.setSuhoorReminderMinutes(90)
+            repo.setImsakAlert(true)
+        }
+
+        val after = withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan
+        assertEquals(app.mawaqeet.core.SuhoorReminder(enabled = true, minutes = 90), after.suhoorReminder)
+        assertEquals(true, after.imsakAlert)
+        assertEquals(10, after.imsakMinutes)
+    }
+
+    @Test
+    fun `the Sunnah Fast reminders are off by default, and each switch survives an app restart and a backup`() {
+        assertEquals(emptySet<app.mawaqeet.core.SunnahFast>(), withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.fasts.on)
+
+        val backup = withRepository { repo, _ ->
+            repo.setFastReminder(app.mawaqeet.core.SunnahFast.ARAFAH, true)
+            repo.setFastReminder(app.mawaqeet.core.SunnahFast.SIX_OF_SHAWWAL, true)
+            repo.setFastReminder(app.mawaqeet.core.SunnahFast.MONDAY_THURSDAY, true)
+            repo.setFastReminder(app.mawaqeet.core.SunnahFast.MONDAY_THURSDAY, false)
+            repo.backupSettings()
+        }
+
+        val on = setOf(app.mawaqeet.core.SunnahFast.ARAFAH, app.mawaqeet.core.SunnahFast.SIX_OF_SHAWWAL)
+        assertEquals(on, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.fasts.on)
+        // Through a Backup File into a phone with none on, the same switches come back.
+        fun snapshot(settings: Map<String, app.mawaqeet.core.SettingValue>) = app.mawaqeet.core.BackupSnapshot(
+            settings, app.mawaqeet.core.PrayerLogBackup(null, emptyMap(), emptyList()), app.mawaqeet.core.AdhkarRecordBackup(null, emptyMap()),
+        )
+        val file = app.mawaqeet.core.Backup.export(snapshot(backup), java.time.Instant.parse("2026-11-13T00:00:00Z"))
+        val restored = (app.mawaqeet.core.Backup.restore(file, snapshot(emptyMap())) as app.mawaqeet.core.RestoreResult.Restored).snapshot
+        withRepository { repo, _ ->
+            repo.restoreSettings(emptyMap())
+            assertEquals(emptySet<app.mawaqeet.core.SunnahFast>(), repo.settings.first().alerts.worshipReminders.fasts.on)
+            repo.restoreSettings(restored.settings)
+            assertEquals(on, repo.settings.first().alerts.worshipReminders.fasts.on)
+        }
+    }
+
+    @Test
+    fun `the Duha and Qiyam reminders are off by default, and their switches and minutes survive a restart and a backup`() {
+        val defaults = app.mawaqeet.core.SunnahPrayerReminders()
+        assertEquals(defaults, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers)
+
+        val backup = withRepository { repo, _ ->
+            repo.setDuhaReminder(true)
+            repo.setDuhaReminderMinutes(45)
+            repo.setQiyamReminder(true)
+            repo.backupSettings()
+        }
+
+        val chosen = app.mawaqeet.core.SunnahPrayerReminders(
+            app.mawaqeet.core.DuhaReminder(enabled = true, minutes = 45),
+            app.mawaqeet.core.QiyamReminder(enabled = true),
+        )
+        assertEquals(chosen, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers)
+        // Through a Backup File into a phone with the defaults, the same choices come back.
+        fun snapshot(settings: Map<String, app.mawaqeet.core.SettingValue>) = app.mawaqeet.core.BackupSnapshot(
+            settings, app.mawaqeet.core.PrayerLogBackup(null, emptyMap(), emptyList()), app.mawaqeet.core.AdhkarRecordBackup(null, emptyMap()),
+        )
+        val file = app.mawaqeet.core.Backup.export(snapshot(backup), java.time.Instant.parse("2026-11-13T00:00:00Z"))
+        val restored = (app.mawaqeet.core.Backup.restore(file, snapshot(emptyMap())) as app.mawaqeet.core.RestoreResult.Restored).snapshot
+        withRepository { repo, _ ->
+            repo.restoreSettings(emptyMap())
+            assertEquals(defaults, repo.settings.first().alerts.worshipReminders.sunnahPrayers)
+            repo.restoreSettings(restored.settings)
+            assertEquals(chosen, repo.settings.first().alerts.worshipReminders.sunnahPrayers)
+        }
+    }
+
+    @Test
+    fun `the Qiyam reminder's style is a notification by default, and the alarm style survives a restart and a backup`() {
+        assertEquals(
+            app.mawaqeet.core.QiyamStyle.NOTIFICATION,
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers.qiyam.style,
+        )
+
+        val backup = withRepository { repo, _ ->
+            repo.setQiyamStyle(app.mawaqeet.core.QiyamStyle.ALARM)
+            repo.backupSettings()
+        }
+
+        // Kept while the reminder is off.
+        val chosen = app.mawaqeet.core.QiyamReminder(enabled = false, style = app.mawaqeet.core.QiyamStyle.ALARM)
+        assertEquals(chosen, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers.qiyam)
+        fun snapshot(settings: Map<String, app.mawaqeet.core.SettingValue>) = app.mawaqeet.core.BackupSnapshot(
+            settings, app.mawaqeet.core.PrayerLogBackup(null, emptyMap(), emptyList()), app.mawaqeet.core.AdhkarRecordBackup(null, emptyMap()),
+        )
+        val file = app.mawaqeet.core.Backup.export(snapshot(backup), java.time.Instant.parse("2026-11-13T00:00:00Z"))
+        val restored = (app.mawaqeet.core.Backup.restore(file, snapshot(emptyMap())) as app.mawaqeet.core.RestoreResult.Restored).snapshot
+        withRepository { repo, _ ->
+            repo.restoreSettings(emptyMap())
+            assertEquals(app.mawaqeet.core.QiyamReminder(), repo.settings.first().alerts.worshipReminders.sunnahPrayers.qiyam)
+            repo.restoreSettings(restored.settings)
+            assertEquals(chosen, repo.settings.first().alerts.worshipReminders.sunnahPrayers.qiyam)
+        }
+    }
+
+    @Test
+    fun `an unknown stored Qiyam style reads as a notification`() {
+        withRepository { _, store -> store.edit { it[androidx.datastore.preferences.core.stringPreferencesKey("worship_qiyam_style")] = "SIREN" } }
+
+        assertEquals(
+            app.mawaqeet.core.QiyamStyle.NOTIFICATION,
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers.qiyam.style,
+        )
+    }
+
+    @Test
+    fun `stored Duha minutes outside the choices read as an hour after Sunrise`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("worship_duha_minutes")] = 50 } }
+
+        assertEquals(60, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers.duha.minutes)
+    }
+
+    @Test
+    fun `stored suhoor minutes outside the choices read as the hour before Fajr`() {
+        withRepository { _, store -> store.edit { it[intPreferencesKey("ramadan_suhoor_minutes")] = 50 } }
+
+        assertEquals(60, withRepository { repo, _ -> repo.settings.first() }.alerts.ramadan.suhoorReminder.minutes)
+    }
 }

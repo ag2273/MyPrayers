@@ -60,6 +60,34 @@ _Avoid_: Pre-alert, warning
 An optional, gentle reminder for daily worship beyond the five Prayers, under «تذكيرات العبادة» in Settings → Alerts: sending salawat on the Prophet ﷺ every 1, 2 or 3 hours from Sunrise until Isha; reading Surat Al-Kahf on Friday at Sunrise + 1 hour (its «قرأتها» only dismisses it: no Quran text, no Kahf log); and the morning and evening adhkar 15, 30 (default), 45 or 60 minutes after Fajr and Asr, which open that Adhkar Set and are skipped once it is complete for that Prayer Day. Each is off by default, uses the normal notification sound, never an adhan, and is silenced by «كل تنبيهات التطبيق». Not a Prayer Reminder, which comes before a Prayer Time.
 _Avoid_: Dhikr reminder, nudge, Sunnah alert
 
+**Sunnah Prayer Reminder**:
+A Worship Reminder for a voluntary prayer of the Sunnah, under «تذكيرات العبادة» → «السنن»: «صلاة الضحى» 20, 30, 45, 60 (default) or 90 minutes after Sunrise, never later than 10 minutes before Dhuhr; and «قيام الليل» at the start of the Last Third of the Night, as a notification (default) or in the «منبّه» style: over the lock screen like alarm-clock mode, with the phone's default alarm sound (never an adhan) and Stop, ringing for at most 1 minute, and a plain notification where full-screen alarms are not allowed or inside a Silence Window. Each is off by default. Not the rawatib before or after the five Prayers, which have no reminder.
+_Avoid_: Nafl reminder, Duha alarm, Qiyam adhan
+
+**Last Third of the Night**:
+The last third of the night from Maghrib to the next Fajr, the best time for Qiyam. It starts at Maghrib + ⅔ × (next Fajr − Maghrib), counted in real time across a clock change, and belongs to the Prayer Day of that Maghrib. After Isha, Today's Next Prayer card shows its start in place of the bar's line.
+_Avoid_: Tahajjud time, midnight, Islamic midnight (that is half the night)
+
+**Ramadan Mode**:
+How the app behaves in Ramadan, by the app's Hijri date with the user's Hijri offset: it turns on by itself for every Fasting Day and the suhoor before it, and off after the last one. Today's Next Prayer card counts down to Iftar while fasting and to the end of Suhoor after Maghrib, keeping the next Prayer as one line inside.
+_Avoid_: Ramadan setting, fasting mode
+
+**Fasting Day**:
+A Prayer Day whose Hijri date (with the user's Hijri offset) is in Ramadan. Its fast runs from Imsak to Maghrib.
+_Avoid_: Ramadan day (in code), sawm day
+
+**Imsak**:
+The moment a Fasting Day's fast begins and Suhoor ends: Fajr minus a chosen number of minutes (10 by default, 0 to 30), set under «رمضان» in «تذكيرات العبادة».
+_Avoid_: Fajr (Imsak comes before it), dawn
+
+**Iftar**:
+Breaking the fast at Maghrib on a Fasting Day; the fasting card counts down to it from Imsak.
+_Avoid_: Sunset meal, Maghrib alert
+
+**Suhoor**:
+The pre-dawn meal before a Fasting Day: from Maghrib (or, on the Fasting Day itself, midnight) until that day's Imsak, and only when the next day is a Fasting Day, so never on the night before Eid.
+_Avoid_: Sahur, sehri
+
 **Adhan Alert**:
 The alert raised when a Prayer Time arrives, playing either the Short Adhan (default) or the Full Adhan.
 _Avoid_: Alarm, prayer notification
@@ -108,6 +136,10 @@ _Avoid_: Sebha, misbaha, tally, score
 Which Adhkar Sets the user completed (every dhikr said its full count) on each Prayer Day. It is not the Prayer Log, and a restart never removes a completed day. A set counts only when finished in its time: the morning adhkar from Fajr to Dhuhr, the evening adhkar from Asr to the next Fajr, the after-prayer adhkar once their Prayer's time has arrived. The after-prayer adhkar are recorded per Prayer, against the most recent Prayer whose time has arrived unless the user picks another before starting. Any set can be read at any time. It is shown as a week grid (a row per Prayer Day, a mark for the morning, the evening and after each Prayer) that counts only from the Adhkar first-use date, the Prayer Day of the first count; days before it are never shown as missed. It shares the Prayer Log's backup rules and is deleted separately («حذف سجل الأذكار»).
 _Avoid_: Adhkar log, streak, score
 
+**Backup File**:
+One JSON file «mawaqeet-backup-YYYY-MM-DD.json» the user exports from Settings → Backup «النسخة الاحتياطية» and saves wherever they choose with the system file picker. It holds every setting (alerts, reminders, display, widgets), the location and Calculation Method, the Prayer Log (with its first-use date and past places) and the Adhkar Record (with its first-use date); never Custom Adhan files, which the user picks again. Restoring one replaces every setting with the file's and merges its records with the phone's: anything marked on either side stays marked. It is made only when the user asks and the app never sends it anywhere. It is not Android's cloud backup or a device-to-device transfer, which follow the backup rules.
+_Avoid_: Backup (alone, for the file), export, archive, sync
+
 **Clock Widget**:
 A Widget Variant built around a big home-screen clock that also shows the interval between two Stops: the previous and next Stop with their times, a countdown in hours and minutes, a bar for how much of the interval has passed, and the Hijri and Gregorian dates. Big Clock «ساعة كبيرة», Gold Clock «ساعة ذهبية» and Clock & Prayer «ساعة وصلاة» are Clock Widgets.
 _Avoid_: Clock, digital clock widget
@@ -115,3 +147,27 @@ _Avoid_: Clock, digital clock widget
 **Stop**:
 One end of a Clock Widget's interval: one of the five Prayers or Sunrise (Fajr → Sunrise → Dhuhr). Before Fajr the previous Stop is the previous day's Isha; after Isha the next Stop is the next day's Fajr. Sunrise being a Stop never makes it a Prayer: it still never alerts and is never logged.
 _Avoid_: Waypoint, milestone, prayer (for Sunrise)
+
+**Qibla**:
+The direction of the Kaaba in Makkah (21.4225°N, 39.8262°E) from the app's stored location: the initial great-circle bearing in degrees from true north, with the great-circle distance to it. The Qibla screen («القبلة») turns a compass dial with the phone, corrected from magnetic to true north, and says when the phone faces it (within 3°). It never asks for a location of its own.
+_Avoid_: Kiblah, Mecca direction, prayer direction
+
+**Tools Row**:
+The single row of compact buttons on Today, under the Next Prayer card, that opens the app's tools: «القبلة», «التقويم», «المساجد». It is not a tab: the bottom bar stays Today, Prayer Log, Adhkar, Settings.
+_Avoid_: Shortcuts, quick actions, toolbar
+
+**Hijri Calendar**:
+The Umm al-Qura calendar shifted by the user's Hijri offset, day by day, with each day's Occasions, Sunnah Fasts and whether it is a Forbidden Fast Day. Its screen («التقويم», not a tab) opens from the Tools Row and from the Hijri date on Today; «القادم» lists the Occasions of the next 12 months with only the nearest Monday/Thursday fast and the next white days, and «الشهر» shows a Hijri month as a grid from Saturday. Dates may differ by a day from local moon sighting, and the screen says so.
+_Avoid_: Islamic calendar (in code), moon calendar, events
+
+**Occasion**:
+A fixed day, or run of days, of the Hijri year shown on the Hijri Calendar: Hijri New Year (1 Muharram), Tasu'a and Ashura (9–10 Muharram), the Mawlid (12 Rabi' al-Awwal), Isra and Mi'raj (27 Rajab), the start of Ramadan, the last ten nights (21 Ramadan to its end), Eid al-Fitr (1 Shawwal), the first ten of Dhu al-Hijjah (1–10), Arafah (9), Eid al-Adha (10) and the days of Tashreeq (11–13). The Mawlid and Isra and Mi'raj are dates only, with no reminder.
+_Avoid_: Event, holiday, feast
+
+**Sunnah Fast**:
+A voluntary fast of the Sunnah, by kind: Mondays and Thursdays, the white days (13–15 of each Hijri month), Arafah, Tasu'a with Ashura, and six of Shawwal (marked on 2–7 Shawwal). Never on a Forbidden Fast Day, and Mondays, Thursdays and the white days never in Ramadan. Its Worship Reminder («صيام السنة», a switch per kind) comes the night before, Isha + 30 minutes, one per night naming every kind switched on that day; six of Shawwal only on the night of Eid al-Fitr.
+_Avoid_: Voluntary fast (in code), nafl fast, optional fast
+
+**Forbidden Fast Day**:
+A day on which fasting is forbidden: Eid al-Fitr, Eid al-Adha and the three days of Tashreeq (1 Shawwal, 10–13 Dhu al-Hijjah). It is never a Sunnah Fast, so 13 Dhu al-Hijjah is no white day and a Monday of Tashreeq no Monday fast.
+_Avoid_: Eid days (Tashreeq is included), haram day
