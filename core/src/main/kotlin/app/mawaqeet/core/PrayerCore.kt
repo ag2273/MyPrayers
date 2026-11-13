@@ -137,7 +137,8 @@ class PrayerCore(
      * the chosen recording's Custom Adhan when one is set ([AlertSettings.customAdhans]). With the master switch off
      * ([AlertSettings.enabled]) the plan holds no alerts at all; the display alarm still moves at every Prayer Time.
      * With Prayer Silence on ([AlertSettings.prayerSilence]) it also holds a Silence Window per chosen Prayer, master switch or not.
-     * With the master switch on it holds the Worship Reminders switched on ([AlertSettings.worshipReminders]).
+     * With the master switch on it holds the Worship Reminders switched on ([AlertSettings.worshipReminders]), and on
+     * Fasting Days the Ramadan reminders switched on ([RamadanSettings]); Maghrib's Adhan Alert there is [PlannedAlert.isIftar].
      */
     fun alertPlan(): AlertPlan {
         val now = clock.instant()
@@ -148,7 +149,8 @@ class PrayerCore(
         val days = (-1L..2L).map { offset -> today.plusDays(offset).let { it to calculateDay(settings, it) } }
         val alertsOn = settings.alerts.enabled
         val alerts = if (!alertsOn) emptyList() else days.flatMap { (date, day) ->
-            day.prayerTimes.flatMap { time -> plannedAlerts(time, date, settings.alerts) }
+            val fasting = fastingDay(date) != null
+            day.prayerTimes.flatMap { time -> plannedAlerts(time, date, settings.alerts, iftar = fasting && time.prayer == Prayer.MAGHRIB) }
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
         val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
         // Prayer Times no Adhan Alert announces still move the display day's next Prayer (widgets).
@@ -173,8 +175,25 @@ class PrayerCore(
                 kahfReminders(reminders.kahf, date, day.sunrise.toInstant()) + listOfNotNull(
                 adhkarReminder(reminders.morningAdhkar, WorshipReminderKind.MORNING_ADHKAR, date, at(Prayer.FAJR)),
                 adhkarReminder(reminders.eveningAdhkar, WorshipReminderKind.EVENING_ADHKAR, date, at(Prayer.ASR)),
-            )
+            ) + ramadanReminders(date)
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
+    }
+
+    /** [date]'s suhoor reminder and Imsak alert, when they are on and [date] is a Fasting Day. */
+    private fun ramadanReminders(date: LocalDate): List<PlannedWorshipReminder> {
+        val ramadan = settings.alerts.ramadan
+        if (!ramadan.suhoorReminder.enabled && !ramadan.imsakAlert) return emptyList()
+        val fast = fastingDay(date) ?: return emptyList()
+        val imsak = fast.imsak.toInstant()
+        val fajr = imsak.plus(java.time.Duration.ofMinutes(ramadan.imsakMinutes.toLong()))
+        return listOfNotNull(
+            if (ramadan.suhoorReminder.enabled) {
+                PlannedWorshipReminder(WorshipReminderKind.SUHOOR, fajr.minus(java.time.Duration.ofMinutes(ramadan.suhoorReminder.minutes.toLong())), date)
+            } else {
+                null
+            },
+            if (ramadan.imsakAlert) PlannedWorshipReminder(WorshipReminderKind.IMSAK, imsak, date) else null,
+        )
     }
 
     private fun silenceWindows(days: List<Pair<LocalDate, CalculatedDay>>, now: Instant, end: Instant): List<SilenceWindow> {
@@ -195,7 +214,7 @@ class PrayerCore(
         }.filter { it.end.isAfter(now) && !it.start.isAfter(end) }.sortedBy { it.start }
     }
 
-    private fun plannedAlerts(time: PrayerTime, prayerDay: LocalDate, alerts: AlertSettings): List<PlannedAlert> {
+    private fun plannedAlerts(time: PrayerTime, prayerDay: LocalDate, alerts: AlertSettings, iftar: Boolean): List<PlannedAlert> {
         val prayer = alerts.of(time.prayer)
         val at = time.time.toInstant()
         fun alert(kind: AlertKind, instant: Instant, sound: AlertSound, mode: DeliveryMode) = PlannedAlert(
@@ -222,6 +241,7 @@ class PrayerCore(
             // A Custom Adhan replaces only its own recording: one for the Full Adhan never reaches Fajr's.
             val sound = AdhanRecording.of(time.prayer, prayer.sound)?.let { AlertSound.of(it, alerts) } ?: AlertSound.Silent
             alert(AlertKind.ADHAN_ALERT, at, sound, if (alerts.alarmClockMode) DeliveryMode.ALARM_CLOCK else DeliveryMode.EXACT)
+                .copy(isIftar = iftar)
         } else {
             null
         }

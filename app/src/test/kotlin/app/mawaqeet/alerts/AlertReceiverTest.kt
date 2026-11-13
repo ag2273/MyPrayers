@@ -58,6 +58,7 @@ class AlertReceiverTest {
         adhanVolume: AdhanVolume = AdhanVolume.ALARM,
         prayer: Prayer = Prayer.ASR,
         prayerDay: LocalDate = LocalDate.parse("2026-11-08"),
+        isIftar: Boolean = false,
     ): PlannedAlert {
         val now = Instant.ofEpochMilli(System.currentTimeMillis())
         return PlannedAlert(
@@ -72,6 +73,7 @@ class AlertReceiverTest {
             playOnSilent = playOnSilent,
             vibration = vibration,
             adhanVolume = adhanVolume,
+            isIftar = isIftar,
         )
     }
 
@@ -242,6 +244,17 @@ class AlertReceiverTest {
         val titles = n.builder(context).addAction(0, "إيقاف", null).build().actions.map { it.title.toString() }
 
         assertEquals(listOf("تمّت الصلاة", "إيقاف"), titles)
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `Maghrib's Adhan Alert on a Fasting Day is posted as Time to break your fast, and still offers Mark as prayed`() {
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        fire(alert(AlertSound.ShortAdhan, prayer = Prayer.MAGHRIB, isIftar = true))
+
+        val notification = notifications.single()
+        assertEquals("Time to break your fast", notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString())
+        assertEquals(listOf("Mark as prayed"), notification.actions.map { it.title.toString() })
     }
 
     @Test

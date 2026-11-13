@@ -338,6 +338,66 @@ class SettingsScreenTest {
         }
     }
 
+    @Test
+    @Config(qualifiers = "en")
+    fun `the suhoor reminder and the Imsak alert are off under Ramadan, and switching them on stores them with the chosen minutes`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun ramadan() = runBlocking { store.settings.first() }.alerts.ramadan
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Suhoor reminder").performScrollTo().assertIsOff()
+            compose.onNodeWithText("Imsak alert").performScrollTo().assertIsOff()
+            compose.onNodeWithText("60 minutes before Fajr on Ramadan days").performScrollTo().assertIsDisplayed()
+            // The minutes only show once it is on.
+            assertEquals(false, shown("120 min"))
+
+            compose.onNodeWithText("Suhoor reminder").performScrollTo().performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { ramadan().suhoorReminder.enabled && shown("120 min") }
+            compose.onNodeWithText("60 min").performScrollTo().assertIsSelected()
+            compose.onNodeWithText("90 min").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { ramadan().suhoorReminder.minutes == 90 }
+            compose.waitUntil(timeoutMillis = 5_000) { shown("90 minutes before Fajr on Ramadan days") }
+
+            compose.onNodeWithText("Imsak alert").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { ramadan().imsakAlert }
+            compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Imsak alert").assertIsOn() }.isSuccess }
+        } finally {
+            runBlocking {
+                store.setSuhoorReminder(false)
+                store.setSuhoorReminderMinutes(60)
+                store.setImsakAlert(false)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `with every app alert off the Ramadan reminders are hidden but Imsak's minutes stay editable for Today`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun imsak() = runBlocking { store.settings.first() }.alerts.ramadan.imsakMinutes
+        runBlocking { store.setAlertsEnabled(false) }
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.waitUntil(timeoutMillis = 5_000) { !shown("Worship reminders") }
+            assertEquals(false, shown("Suhoor reminder"))
+            assertEquals(false, shown("Imsak alert"))
+            compose.onNodeWithText("Imsak").performScrollTo().assertIsDisplayed()
+
+            compose.onNodeWithContentDescription("Imsak 5 minutes earlier").performScrollTo().performClick()
+
+            compose.waitUntil(timeoutMillis = 5_000) { imsak() == 15 && shown("15 minutes") }
+        } finally {
+            runBlocking {
+                store.stepImsakMinutes(-100)
+                store.stepImsakMinutes(+2)
+                store.setAlertsEnabled(true)
+            }
+        }
+    }
+
     /** Opens Settings → Alerts with Do Not Disturb access granted and Prayer Silence turned on, then runs [block]. */
     private fun withPrayerSilenceOn(block: (alerts: () -> app.mawaqeet.core.AlertSettings) -> Unit) {
         shadowOf(compose.activity.getSystemService(NotificationManager::class.java)).setNotificationPolicyAccessGranted(true)

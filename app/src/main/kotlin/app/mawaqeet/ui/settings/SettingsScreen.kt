@@ -158,6 +158,15 @@ interface SettingsActions {
     /** «الإمساك» under «رمضان» (#90): Imsak moved [step] taps of [app.mawaqeet.core.RamadanSettings.IMSAK_MINUTES_STEP] minutes. */
     fun stepImsakMinutes(step: Int)
 
+    /** «تذكير السحور» under «رمضان» (#91). */
+    fun setSuhoorReminder(on: Boolean)
+
+    /** The suhoor reminder's minutes before Fajr, one of [app.mawaqeet.core.SuhoorReminder.MINUTES]. */
+    fun setSuhoorReminderMinutes(minutes: Int)
+
+    /** «تنبيه الإمساك» under «رمضان» (#91). */
+    fun setImsakAlert(on: Boolean)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 
