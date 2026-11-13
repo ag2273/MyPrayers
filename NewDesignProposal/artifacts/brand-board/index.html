@@ -1,0 +1,247 @@
+<title>Mawaqeet Brand Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;700&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: a single-column brand board. Icon options first (the decision), then palette,
+   then type, then the Gemini prompts. Palette comes from the sky across the prayer day. */
+:root {
+  --night-teal: #1f6f66;
+  --deep-teal: #134a44;
+  --dawn-amber: #e0a246;
+  --day-mist: #f2f6f4;
+  --ink: #142421;
+  --bg: #f2f6f4;
+  --surface: #ffffff;
+  --fg: #142421;
+  --muted: #56706a;
+  --line: #d3dfdb;
+  --primary: #1f6f66;
+  --on-primary: #ffffff;
+  --accent: #e0a246;
+  --font-kufi: "Noto Kufi Arabic", "Noto Sans", system-ui, sans-serif;
+  --font-naskh: "Noto Naskh Arabic", "Noto Sans", serif;
+  --font-ui: "Noto Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1917; --surface: #15221f; --fg: #e4eeeb; --muted: #93aba5; --line: #263733;
+    --primary: #7fc9bc; --on-primary: #0b1f1b; --accent: #f2b65e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1917; --surface: #15221f; --fg: #e4eeeb; --muted: #93aba5; --line: #263733;
+  --primary: #7fc9bc; --on-primary: #0b1f1b; --accent: #f2b65e;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); }
+.page {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+  max-width: 760px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 32px;
+}
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.wordmark { font-family: var(--font-kufi); font-weight: 700; font-size: 44px; line-height: 1.3; color: var(--primary); margin: 0; }
+.wordmark small { font-family: var(--font-ui); font-weight: 600; font-size: 16px; color: var(--muted); margin-inline-start: 10px; }
+header p { margin: 0; color: var(--muted); line-height: 1.55; max-width: 62ch; }
+h2 { font-family: var(--font-ui); font-size: 18px; margin: 0; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.hint { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+/* icon options */
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+.opt { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.opt h3 { margin: 0; font-size: 15px; }
+.opt p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.icons { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.icons figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.icons svg { display: block; }
+.mask-circle { border-radius: 50%; overflow: hidden; width: 72px; height: 72px; }
+.mask-squircle { border-radius: 26%; overflow: hidden; width: 72px; height: 72px; }
+.mask-small { border-radius: 50%; overflow: hidden; width: 40px; height: 40px; }
+
+/* palette */
+.swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.sw { border-radius: 12px; border: 1px solid var(--line); overflow: hidden; background: var(--surface); }
+.sw .chip { height: 64px; }
+.sw .meta { padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.sw .meta b { font-size: 13px; }
+.sw .meta code { color: var(--muted); font-size: 11px; }
+.themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.screen { border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.screen.light { background: #f2f6f4; color: #142421; border: 1px solid #d3dfdb; }
+.screen.dark { background: #0e1917; color: #e4eeeb; border: 1px solid #263733; }
+.screen .lbl { font: 600 11px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; opacity: .6; direction: ltr; text-align: left; }
+.screen .next { font-family: var(--font-kufi); }
+.screen .next .n { font-size: 15px; opacity: .75; }
+.screen .next .t { font-size: 40px; font-weight: 700; line-height: 1.4; }
+.screen.light .next .t { color: #1f6f66; }
+.screen.dark .next .t { color: #7fc9bc; }
+.screen .cd { font-family: var(--font-naskh); font-size: 16px; }
+.screen .cd b { font-weight: 600; }
+.screen.light .cd b { color: #b07a22; }
+.screen.dark .cd b { color: #f2b65e; }
+.screen .btn { align-self: flex-start; border-radius: 999px; padding: 8px 16px; font: 600 14px var(--font-naskh); border: 0; }
+.screen.light .btn { background: #1f6f66; color: #fff; }
+.screen.dark .btn { background: #7fc9bc; color: #0b1f1b; }
+.screen .body { font-family: var(--font-naskh); font-size: 16px; line-height: 1.8; margin: 0; }
+
+/* type */
+.type { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.type .kufi { font-family: var(--font-kufi); font-weight: 700; font-size: 30px; line-height: 1.5; }
+.type .naskh { font-family: var(--font-naskh); font-size: 18px; line-height: 1.9; margin: 0; }
+.type .cap { font-size: 12px; color: var(--muted); direction: ltr; text-align: left; }
+
+/* prompts */
+.prompt { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.prompt h3 { margin: 0; font-size: 15px; }
+.prompt pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); border-radius: 10px; padding: 12px; user-select: all; }
+.copy { align-self: flex-start; border: 0; border-radius: 999px; padding: 8px 14px; background: var(--primary); color: var(--on-primary); font: 600 13px var(--font-ui); cursor: pointer; }
+.copy:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+footer { font-size: 12px; color: var(--muted); }
+</style>
+
+<div class="page">
+  <header>
+    <span class="eyebrow">MyPrayers · brand board · prototype</span>
+    <h1 class="wordmark" lang="ar" dir="rtl">مواقيت<small>MyPrayers</small></h1>
+    <p>Three icon directions drawn as rough vectors, the sky-based palette in light and dark, and the two Arabic fonts. Pick a direction, then use its Gemini prompt to generate polished versions to compare.</p>
+  </header>
+
+  <section>
+    <h2>Icon options</h2>
+    <p class="hint">Each option shown in a circle and a rounded-square launcher mask, at small size, and as the one-colour Android 13+ themed icon.</p>
+    <div class="options" id="options"></div>
+  </section>
+
+  <section>
+    <h2>Palette: the sky across the prayer day</h2>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#1f6f66"></div><div class="meta"><b>Night teal</b><span>Primary (light)</span><code>#1F6F66</code></div></div>
+      <div class="sw"><div class="chip" style="background:#7fc9bc"></div><div class="meta"><b>Teal glow</b><span>Primary (dark)</span><code>#7FC9BC</code></div></div>
+      <div class="sw"><div class="chip" style="background:#e0a246"></div><div class="meta"><b>Dawn amber</b><span>Accent</span><code>#E0A246</code></div></div>
+      <div class="sw"><div class="chip" style="background:#f2f6f4"></div><div class="meta"><b>Day mist</b><span>Background (light)</span><code>#F2F6F4</code></div></div>
+      <div class="sw"><div class="chip" style="background:#0e1917"></div><div class="meta"><b>Isha night</b><span>Background (dark)</span><code>#0E1917</code></div></div>
+      <div class="sw"><div class="chip" style="background:#142421"></div><div class="meta"><b>Ink</b><span>Text (light)</span><code>#142421</code></div></div>
+    </div>
+    <div class="themes">
+      <div class="screen light" dir="rtl" lang="ar">
+        <span class="lbl">Light</span>
+        <div class="next"><div class="n">الصلاة القادمة · العصر</div><div class="t">٢:٤٣ م</div></div>
+        <div class="cd">بعد <b>١ س ٢٣ د</b></div>
+        <p class="body">الأحد، ٨ نوفمبر · ٢٨ جمادى الأولى ١٤٤٨ هـ</p>
+        <button class="btn" type="button">صلّيتُ</button>
+      </div>
+      <div class="screen dark" dir="rtl" lang="ar">
+        <span class="lbl">Dark</span>
+        <div class="next"><div class="n">الصلاة القادمة · العصر</div><div class="t">٢:٤٣ م</div></div>
+        <div class="cd">بعد <b>١ س ٢٣ د</b></div>
+        <p class="body">الأحد، ٨ نوفمبر · ٢٨ جمادى الأولى ١٤٤٨ هـ</p>
+        <button class="btn" type="button">صلّيتُ</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Fonts</h2>
+    <div class="type" dir="rtl" lang="ar">
+      <span class="cap">Noto Kufi Arabic: headings and large times</span>
+      <div class="kufi">مواقيت · الفجر ٤:٤٨</div>
+      <span class="cap">Noto Naskh Arabic: running text</span>
+      <p class="naskh">اختر طريقة الحساب المناسبة لبلدك. نقترح الهيئة المصرية العامة للمساحة لأنك في مصر، ويمكنك تغييرها في أي وقت من الإعدادات.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Gemini prompts</h2>
+    <p class="hint">Paste one into Gemini's image generation. Ask for a few variations, then try the best on your home screen. Generated images are a starting point; the final icon gets redrawn as a clean vector.</p>
+    <div id="prompts" style="display:flex;flex-direction:column;gap:14px"></div>
+  </section>
+
+  <footer>Prototype. Sample content. Colours and fonts are proposals for the branding ticket.</footer>
+</div>
+
+<script>
+(function () {
+  const T = '#1f6f66', TD = '#134a44', A = '#e0a246', M = '#f2f6f4';
+
+  // All icons drawn on a 108×108 adaptive-icon canvas; artwork stays inside the central 66 unit safe zone.
+  function bg(id) {
+    return '<defs><linearGradient id="g' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + TD + '"/><stop offset="1" stop-color="' + T + '"/></linearGradient></defs>' +
+      '<rect width="108" height="108" fill="url(#g' + id + ')"/>';
+  }
+  // (b) Sun path: an arc over a horizon with five Prayer points, the next one in amber.
+  function sunPath(color, accent, mono) {
+    const pts = [[30, 66], [38, 47], [54, 40], [70, 47], [78, 66]];
+    let s = '<path d="M27 70 Q54 22 81 70" fill="none" stroke="' + color + '" stroke-width="3.5" stroke-linecap="round" opacity="' + (mono ? 1 : .55) + '"/>';
+    s += '<line x1="24" y1="74" x2="84" y2="74" stroke="' + color + '" stroke-width="3.5" stroke-linecap="round"/>';
+    pts.forEach((p, i) => { s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (i === 3 ? 6 : 4.2) + '" fill="' + (i === 3 && !mono ? accent : color) + '"/>'; });
+    return s;
+  }
+  // (c) Mihrab: a pointed arch outline with a small lamp of light.
+  function mihrab(color, accent, mono) {
+    return '<path d="M36 80 V54 Q36 38 54 28 Q72 38 72 54 V80" fill="none" stroke="' + color + '" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<line x1="30" y1="80" x2="78" y2="80" stroke="' + color + '" stroke-width="5" stroke-linecap="round"/>' +
+      '<circle cx="54" cy="56" r="7" fill="' + (mono ? color : accent) + '"/>' +
+      '<line x1="54" y1="40" x2="54" y2="49" stroke="' + (mono ? color : accent) + '" stroke-width="2.5" stroke-linecap="round"/>';
+  }
+  // (b+c) Mihrab holding the sun path: arch outline with five points rising inside.
+  function both(color, accent, mono) {
+    let s = '<path d="M34 80 V54 Q34 36 54 26 Q74 36 74 54 V80" fill="none" stroke="' + color + '" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<line x1="28" y1="80" x2="80" y2="80" stroke="' + color + '" stroke-width="4.5" stroke-linecap="round"/>';
+    const pts = [[42, 70], [46, 58], [54, 53], [62, 58], [66, 70]];
+    s += '<path d="M40 73 Q54 42 68 73" fill="none" stroke="' + color + '" stroke-width="2.2" opacity="' + (mono ? 1 : .5) + '"/>';
+    pts.forEach((p, i) => { s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (i === 2 ? 4.4 : 3) + '" fill="' + (i === 2 && !mono ? accent : color) + '"/>'; });
+    return s;
+  }
+  const OPTIONS = [
+    { key: 'b', name: 'B · Sun path', draw: sunPath, desc: "The sun's arc over a horizon, with five points for the day's Prayers and the next one lit in amber. About time, not architecture." },
+    { key: 'c', name: 'C · Mihrab', draw: mihrab, desc: 'A pointed mihrab arch with a small lamp. Reads as prayer instantly, and stays crisp as a one-colour themed icon.' },
+    { key: 'bc', name: 'B+C · Mihrab with sun path', draw: both, desc: 'The arch holding the five-point arc. Most meaningful, but busiest at small sizes; check the 40 px version.' }
+  ];
+  function svg(id, inner, size) {
+    return '<svg viewBox="0 0 108 108" width="' + size + '" height="' + size + '" role="img" aria-label="icon">' + inner + '</svg>';
+  }
+  let html = '';
+  OPTIONS.forEach((o, i) => {
+    const full = bg(o.key) + o.draw(M, A, false);
+    const mono = '<rect width="108" height="108" fill="#dfe9e6"/>' + o.draw('#1f4a44', A, true);
+    html += '<div class="opt"><h3>' + o.name + '</h3><div class="icons">' +
+      '<figure><div class="mask-circle">' + svg(o.key + 'c', full, 72) + '</div><figcaption>Circle</figcaption></figure>' +
+      '<figure><div class="mask-squircle">' + svg(o.key + 's', full.replace('id="g' + o.key, 'id="g' + o.key + 's').replace('#g' + o.key + ')', '#g' + o.key + 's)'), 72) + '</div><figcaption>Rounded</figcaption></figure>' +
+      '<figure><div class="mask-small">' + svg(o.key + 'm', full.replace('id="g' + o.key, 'id="g' + o.key + 'm').replace('#g' + o.key + ')', '#g' + o.key + 'm)'), 40) + '</div><figcaption>Small</figcaption></figure>' +
+      '<figure><div class="mask-circle">' + svg(o.key + 't', mono, 72) + '</div><figcaption>Themed</figcaption></figure>' +
+      '</div><p>' + o.desc + '</p></div>';
+  });
+  document.getElementById('options').innerHTML = html;
+
+  const COMMON = 'Android app launcher icon for a calm, minimal Islamic prayer-times app called "Mawaqeet" (مواقيت). Flat vector style, geometric, no gradients except a subtle vertical one in the background, no text or letters, no 3D, no photorealism, no mosque silhouette, no crescent. Square 1024×1024 canvas with a full-bleed background; keep all artwork inside the central 66% circle so it survives circular and rounded-square masks. Colours: background deep teal (#134A44 to #1F6F66), artwork in soft mist white (#F2F6F4), one small accent in dawn amber (#E0A246). Thick, even strokes that stay legible at 48 px. Generate 4 variations.';
+  const PROMPTS = [
+    { name: 'Option B · Sun path', text: COMMON + ' Subject: the sun\'s daily path drawn as a single shallow arc rising over a straight horizon line, with five small evenly spaced dots along the arc representing the five daily prayers; the fourth dot is slightly larger and amber, as if it is the next prayer. Symmetrical, lots of breathing room.' },
+    { name: 'Option C · Mihrab', text: COMMON + ' Subject: a single pointed mihrab arch drawn as a bold outline, standing on a short base line, with a small amber circle like a hanging lamp inside the upper part of the arch. Symmetrical, centred, simple enough to work as a one-colour silhouette.' },
+    { name: 'Option B+C · Mihrab with sun path', text: COMMON + ' Subject: a pointed mihrab arch outline; inside it, a small shallow arc with five dots for the five daily prayers, the middle dot amber. Keep the inner arc fine but clearly visible; the arch is the dominant shape.' },
+    { name: 'Themed (monochrome) version, any option', text: 'Take the chosen icon and produce a monochrome Android 13 themed-icon version: a single flat shape in pure black on a transparent background, no background tile, no accent colour, the same proportions, artwork inside the central 66% circle of a 1024×1024 canvas. Stroke weights unchanged so it stays legible at 48 px.' }
+  ];
+  const box = document.getElementById('prompts');
+  PROMPTS.forEach((p, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'prompt';
+    wrap.innerHTML = '<h3>' + p.name + '</h3>';
+    const pre = document.createElement('pre'); pre.id = 'prompt-' + i; pre.textContent = p.text;
+    const btn = document.createElement('button'); btn.className = 'copy'; btn.type = 'button'; btn.textContent = 'Copy prompt';
+    btn.addEventListener('click', () => {
+      const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy prompt'; }, 1600); };
+      const fallback = () => {
+        const r = document.createRange(); r.selectNodeContents(pre);
+        const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        btn.textContent = 'Selected: copy it';
+      };
+      try { navigator.clipboard.writeText(p.text).then(done, fallback); } catch (e) { fallback(); }
+    });
+    wrap.appendChild(pre); wrap.appendChild(btn); box.appendChild(wrap);
+  });
+})();
+</script>

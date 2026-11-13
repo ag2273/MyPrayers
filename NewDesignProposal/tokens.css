@@ -1,0 +1,116 @@
+/* ============================================================
+   Mawaqeet · "A Day That Breathes" — Design tokens
+   Proposal · Arabic-first, RTL by default
+   Copy the block(s) you need. Values match the reference build.
+   ============================================================ */
+
+:root {
+  /* Core / brand */
+  --teal:        #1F6F66;   /* primary (light)        */
+  --deep:        #134A44;   /* primary deep / gradient */
+  --amber:       #E0A246;   /* accent: next prayer, sun, focus */
+  --amber-dark:  #F2B65E;   /* accent (dark)          */
+  --rose:        #C97A6B;   /* dusk glow only         */
+  --mist:        #F2F6F4;   /* background (light)     */
+  --night:       #0E1917;   /* background (dark)      */
+  --ink:         #142421;   /* text (light)           */
+
+  /* Type */
+  --font-display: "Noto Kufi Arabic", system-ui, sans-serif;
+  --font-body:    "Noto Naskh Arabic", "Noto Sans", system-ui, sans-serif;
+  --font-ui:      "Noto Sans", "Noto Kufi Arabic", system-ui, sans-serif;
+
+  /* Motion */
+  --ease: cubic-bezier(.22, .61, .36, 1);
+}
+
+/* ------------------------------------------------------------ light */
+html[data-theme="light"] {
+  --bg:            var(--mist);
+  --surface:       rgba(255, 255, 255, .72);
+  --surface-strong:rgba(255, 255, 255, .94);
+  --line:          rgba(20, 36, 33, .12);
+  --text:          var(--ink);
+  --muted:         rgba(20, 36, 33, .62);
+  --shadow:        0 18px 48px rgba(19, 74, 68, .16);
+
+  --sky-1: #F6E7CE;
+  --sky-2: #F2F6F4;
+  --sky-3: #CFE6E1;
+
+  --accent:      var(--teal);
+  --accent-soft: rgba(31, 111, 102, .12);
+  --bar:         #FBFDFC;
+  --field:       rgba(255, 255, 255, .9);
+  --track:       rgba(20, 36, 33, .14);
+}
+
+/* ------------------------------------------------------------ dark */
+html[data-theme="dark"] {
+  --seed: #2F7A6B;
+
+  --bg:            var(--night);
+  --surface:       rgba(24, 44, 41, .6);
+  --surface-strong:rgba(20, 38, 36, .92);
+  --line:          rgba(255, 255, 255, .12);
+  --text:          #EAF3EF;
+  --muted:         rgba(234, 243, 239, .62);
+  --shadow:        0 18px 50px rgba(0, 0, 0, .5);
+
+  --sky-1: #123B36;
+  --sky-2: #0E1917;
+  --sky-3: #1B4B45;
+
+  --accent:      #8FD3C8;
+  --accent-soft: rgba(143, 211, 200, .14);
+  --bar:         #12201E;
+  --field:       rgba(255, 255, 255, .06);
+  --track:       rgba(255, 255, 255, .16);
+}
+
+/* ---------------------------------------------------- sky phases */
+/* The background gradient stops stay constant per theme; only the
+   ambient glow colours change with the phase.                 */
+html[data-sky="dawn"]  { --glow-a: rgba(224, 162, 70, .55); --glow-b: rgba(201, 122, 107, .35); }
+html[data-sky="day"]   { --glow-a: rgba(242, 246, 244, .85); --glow-b: rgba(31, 111, 102, .22); }
+html[data-sky="dusk"]  { --glow-a: rgba(31, 111, 102, .45);  --glow-b: rgba(224, 162, 70, .30); }
+html[data-sky="night"] { --glow-a: rgba(31, 111, 102, .40);  --glow-b: rgba(14, 25, 23, .85); }
+
+/* ----------------------------------------------------- widgets */
+.mode-12 .w { /* Android 12+ dynamic */
+  --w-bg:     color-mix(in srgb, var(--seed) 12%, var(--surface-strong));
+  --w-fg:     var(--text);
+  --w-muted:  var(--muted);
+  --w-accent: var(--teal);
+  --w-soft:   var(--accent-soft);
+  --w-on:     #fff;
+  --w-radius: 22px;
+}
+html[data-theme="dark"] .mode-12 .w {
+  --w-bg:     color-mix(in srgb, var(--seed) 26%, #101917);
+  --w-fg:     #EAF3EF;
+  --w-muted:  rgba(234, 243, 239, .62);
+  --w-accent: #8FD3C8;
+  --w-soft:   rgba(143, 211, 200, .16);
+  --w-on:     #0E1917;
+}
+.mode-8 .w { /* Android 8–11 fixed */
+  --w-bg:     var(--surface-strong);
+  --w-fg:     var(--text);
+  --w-muted:  var(--muted);
+  --w-accent: var(--teal);
+  --w-soft:   var(--accent-soft);
+  --w-on:     #fff;
+  --w-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+}
+html[data-theme="dark"] .mode-8 .w { --w-accent: #8FD3C8; --w-on: #0E1917; }
+
+/* Gold clock widget overrides */
+.clk-gold {
+  background: linear-gradient(150deg, #3a2a14, #6b4d22 45%, #2f2110) !important;
+  color: #FBF0DC !important;
+  --w-fg: #FBF0DC;
+  --w-muted: #E3CBA4;
+  --w-accent: #F2C879;
+}

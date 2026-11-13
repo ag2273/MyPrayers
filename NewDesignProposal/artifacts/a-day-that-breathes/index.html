@@ -1,0 +1,1515 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light" data-sky="dawn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>مواقيت — النموذج الكامل</title>
+<meta name="description" content="Mawaqeet — complete interactive prototype: home, prayer log, adhkar, settings and every home-screen widget." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;600;700&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Sans:wght@400;500;600&display=swap" />
+<style>
+/* ------------------------------------------------------------------ tokens */
+:root{
+  --teal:#1F6F66; --deep:#134A44; --amber:#E0A246; --amber-dark:#F2B65E;
+  --seed:#1F6F66;
+  --mist:#F2F6F4; --night:#0E1917; --ink:#142421; --rose:#C97A6B;
+  --font-display:"Noto Kufi Arabic", system-ui, sans-serif;
+  --font-body:"Noto Naskh Arabic", "Noto Sans", system-ui, sans-serif;
+  --font-ui:"Noto Sans", "Noto Kufi Arabic", system-ui, sans-serif;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+html[data-theme="light"]{
+  --bg:var(--mist); --surface:rgba(255,255,255,.72); --surface-strong:rgba(255,255,255,.94);
+  --line:rgba(20,36,33,.12); --text:var(--ink); --muted:rgba(20,36,33,.62);
+  --shadow:0 18px 48px rgba(19,74,68,.16);
+  --sky-1:#F6E7CE; --sky-2:#F2F6F4; --sky-3:#CFE6E1;
+  --accent:var(--teal); --accent-soft:rgba(31,111,102,.12); --bar:#FBFDFC; --field:rgba(255,255,255,.9);
+  --track:rgba(20,36,33,.14);
+}
+html[data-theme="dark"]{
+  --seed:#2F7A6B;
+  --bg:var(--night); --surface:rgba(24,44,41,.6); --surface-strong:rgba(20,38,36,.92);
+  --line:rgba(255,255,255,.12); --text:#EAF3EF; --muted:rgba(234,243,239,.62);
+  --shadow:0 18px 50px rgba(0,0,0,.5);
+  --sky-1:#123B36; --sky-2:#0E1917; --sky-3:#1B4B45;
+  --accent:#8FD3C8; --accent-soft:rgba(143,211,200,.14); --bar:#12201E; --field:rgba(255,255,255,.06);
+  --track:rgba(255,255,255,.16);
+}
+html[data-sky="dawn"]{ --glow-a:rgba(224,162,70,.55); --glow-b:rgba(201,122,107,.35); }
+html[data-sky="day"]{ --glow-a:rgba(242,246,244,.85); --glow-b:rgba(31,111,102,.22); }
+html[data-sky="dusk"]{ --glow-a:rgba(31,111,102,.45); --glow-b:rgba(224,162,70,.30); }
+html[data-sky="night"]{ --glow-a:rgba(31,111,102,.40); --glow-b:rgba(14,25,23,.85); }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:#0B1412; color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased;
+  display:grid; place-items:center; min-height:100dvh;
+}
+@media (min-width:481px){ body{background:radial-gradient(120% 90% at 50% 0%,#16302c 0%,#0B1412 60%);} }
+
+.stage{display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px 0}
+.phone{
+  position:relative; width:390px; height:844px; max-height:calc(100dvh - 96px);
+  border-radius:44px; overflow:hidden; background:var(--bg);
+  box-shadow:0 50px 100px rgba(0,0,0,.55), 0 0 0 10px #0e1a18, 0 0 0 11px rgba(255,255,255,.06);
+  isolation:isolate;
+}
+.caption{margin:0;font-size:12px;letter-spacing:.08em;color:rgba(234,243,239,.45)}
+@media (max-width:480px){
+  body{display:block;background:var(--bg)}
+  .stage{padding:0}
+  .phone{width:100%;height:100dvh;max-height:none;border-radius:0;box-shadow:none}
+  .caption{display:none}
+}
+
+/* --------------------------------------------------------------------- sky */
+.sky{position:absolute;inset:0;z-index:0;overflow:hidden;
+  background:linear-gradient(170deg,var(--sky-1) 0%,var(--sky-2) 52%,var(--sky-3) 100%);
+  transition:background 1200ms var(--ease);}
+.sky::after{content:"";position:absolute;inset:-30%;
+  background:radial-gradient(38% 30% at 24% 12%, var(--glow-a), transparent 70%),
+             radial-gradient(42% 34% at 82% 6%, var(--glow-b), transparent 72%);
+  filter:blur(6px);opacity:.9;animation:breathe 26s var(--ease) infinite alternate}
+.sky-glow{position:absolute;border-radius:50%;filter:blur(40px);opacity:.55;mix-blend-mode:screen}
+.g1{width:320px;height:320px;inset-inline-start:-90px;top:-70px;background:var(--glow-a);animation:float1 34s var(--ease) infinite alternate}
+.g2{width:280px;height:280px;inset-inline-end:-80px;top:120px;background:var(--glow-b);animation:float2 42s var(--ease) infinite alternate}
+.sun{position:absolute;width:170px;height:170px;border-radius:50%;inset-inline-start:-72px;top:-96px;
+  background:radial-gradient(circle at 40% 38%, #FFF3DF, var(--amber) 68%, rgba(224,162,70,0) 72%);
+  box-shadow:0 0 90px 30px rgba(224,162,70,.28);opacity:.55;animation:sunrise 18s var(--ease) infinite alternate}
+html[data-sky="night"] .sun,html[data-sky="dusk"] .sun{opacity:.35}
+html[data-sky="night"] .sun{background:radial-gradient(circle at 40% 38%, #F4F8F6, #BFD4CE 68%, rgba(191,212,206,0) 72%);box-shadow:0 0 44px 10px rgba(191,212,206,.25)}
+@keyframes breathe{from{transform:scale(1);opacity:.75}to{transform:scale(1.08) translate3d(1%,-2%,0);opacity:1}}
+@keyframes float1{from{transform:translate3d(0,0,0)}to{transform:translate3d(40px,26px,0)}}
+@keyframes float2{from{transform:translate3d(0,0,0)}to{transform:translate3d(-34px,18px,0)}}
+@keyframes sunrise{from{transform:translateY(10px) scale(.96)}to{transform:translateY(-14px) scale(1.04)}}
+
+.app{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}
+
+/* ------------------------------------------------------------------ topbar */
+.topbar{display:flex;align-items:center;gap:8px;padding:max(14px,env(safe-area-inset-top)) 18px 4px}
+.brand{display:flex;flex-direction:column;line-height:1.05}
+.brand b{font-family:var(--font-display);font-size:18px}
+.brand span{font-family:var(--font-ui);font-size:10px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.spacer{flex:1}
+.icon-btn{width:38px;height:38px;border-radius:13px;border:1px solid var(--line);background:var(--surface);color:var(--text);
+  display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:transform .18s var(--ease), background .2s}
+.icon-btn:hover{background:var(--surface-strong)}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.lang-btn{width:auto;padding:0 11px;font-size:12px;letter-spacing:.06em}
+
+main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 18px 104px;scrollbar-width:none}
+main::-webkit-scrollbar{display:none}
+.view{animation:viewIn .45s var(--ease) both}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* -------------------------------------------------------------------- hero */
+.hero{display:flex;flex-direction:column;align-items:center;padding-top:2px}
+.eyebrow{font-family:var(--font-ui);font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.next-name{font-family:var(--font-display);font-size:clamp(23px,7vw,29px);font-weight:700;margin:1px 0 0}
+.arc{position:relative;width:clamp(196px,58vw,244px);height:clamp(196px,58vw,244px);margin-top:2px}
+.arc svg{width:100%;height:100%}
+.track{fill:none;stroke:var(--line);stroke-width:7;stroke-linecap:round}
+.fill{fill:none;stroke:var(--amber);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .9s linear}
+html[data-theme="dark"] .fill{stroke:var(--amber-dark)}
+.sun-dot{filter:drop-shadow(0 0 6px rgba(224,162,70,.7))}
+.arc-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none}
+.countdown{font-family:var(--font-display);font-size:clamp(27px,8.2vw,34px);font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.arc-label{font-family:var(--font-ui);font-size:11.5px;letter-spacing:.12em;color:var(--muted)}
+.arc-at{font-family:var(--font-display);font-size:14px;margin-top:6px;color:var(--muted)}
+.dates{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:4px 0 10px}
+.date-chip{font-family:var(--font-ui);font-size:11.5px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+
+/* ---------------------------------------------------------------- timeline */
+.timeline{display:flex;flex-direction:column;gap:6px;padding:4px 0}
+.stop{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:18px;border:1px solid transparent;position:relative}
+.stop.current{background:var(--surface-strong);border-color:var(--line);box-shadow:var(--shadow)}
+.stop.past .t-name,.stop.past .t-time{opacity:.6}
+.dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--teal);flex:0 0 auto}
+html[data-theme="dark"] .dot{border-color:#8FD3C8}
+.stop.current .dot{background:var(--amber);border-color:var(--amber);box-shadow:0 0 0 5px rgba(224,162,70,.18)}
+.stop.done .dot{background:var(--teal);border-color:var(--teal)}
+.t-name{font-family:var(--font-display);font-size:15px;flex:1}
+.t-time{font-family:var(--font-display);font-size:15px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.stop.current .t-time{color:var(--text)}
+.line{position:absolute;inset-inline-start:17px;top:0;bottom:0;width:1px;background:var(--line);pointer-events:none}
+
+/* --------------------------------------------------------------------- log */
+.section-title{font-family:var(--font-display);font-size:18px;margin:6px 0 10px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px}
+.day{border-radius:16px;border:1px solid var(--line);background:var(--surface);padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.day.is-today{background:var(--surface-strong);box-shadow:var(--shadow);border-color:rgba(224,162,70,.55)}
+.day-name{font-family:var(--font-ui);font-size:10px;color:var(--muted)}
+.day-dots{display:flex;flex-direction:column;gap:3px}
+.pip{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.pip.on{background:var(--teal)}
+html[data-theme="dark"] .pip.on{background:#8FD3C8}
+.log-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.log-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px;border:1px solid var(--line);
+  background:var(--surface);cursor:pointer;transition:background .2s,transform .12s var(--ease);position:relative;overflow:hidden;
+  font-family:inherit;color:inherit;text-align:start;width:100%}
+.log-row:active{transform:scale(.985)}
+.log-row.prayed{background:var(--accent-soft);border-color:rgba(31,111,102,.35)}
+.log-row .check{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;flex:0 0 auto;transition:.25s var(--ease)}
+.log-row.prayed .check{background:var(--teal);border-color:var(--teal)}
+.log-row .check svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .2s}
+.log-row.prayed .check svg{opacity:1}
+.log-row .name{font-family:var(--font-display);font-size:15px;flex:1}
+.log-row .time{font-family:var(--font-ui);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.summary{display:flex;gap:10px;margin-bottom:14px}
+.stat{flex:1;border-radius:20px;border:1px solid var(--line);background:var(--surface);padding:12px 14px}
+.stat b{display:block;font-family:var(--font-display);font-size:24px;line-height:1.1}
+.stat span{font-family:var(--font-ui);font-size:11px;color:var(--muted);letter-spacing:.06em}
+
+/* ------------------------------------------------------------------ adhkar */
+.chips{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text);
+  padding:10px 15px;font-family:var(--font-ui);font-size:12.5px;cursor:pointer;transition:.2s var(--ease);min-height:40px}
+.chip[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+html[data-theme="dark"] .chip[aria-pressed="true"]{background:#8FD3C8;border-color:#8FD3C8;color:#0E1917}
+.set-head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.ring{width:64px;height:64px;position:relative;flex:0 0 auto}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .track{stroke-width:5}
+.ring .fill{stroke:var(--teal);stroke-width:5;transition:stroke-dashoffset .4s var(--ease)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-display);font-size:13px}
+.set-meta h3{margin:0;font-family:var(--font-display);font-size:17px}
+.set-meta p{margin:2px 0 0;font-size:11.5px;color:var(--muted)}
+.dhikr{border-radius:22px;border:1px solid var(--line);background:var(--surface);padding:16px;margin-bottom:10px;position:relative;overflow:hidden}
+.dhikr.done{background:var(--accent-soft);border-color:rgba(31,111,102,.35)}
+.dhikr-text{font-family:var(--font-body);font-size:17px;line-height:1.85;margin:0 0 12px}
+.dhikr-en{font-family:var(--font-ui);font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 12px}
+.dhikr-foot{display:flex;align-items:center;gap:10px}
+.count-pill{font-family:var(--font-display);font-size:13px;padding:6px 12px;border-radius:999px;background:var(--surface-strong);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.tap-btn{margin-inline-start:auto;border:0;border-radius:16px;background:var(--teal);color:#fff;font-family:var(--font-ui);
+  font-size:12.5px;padding:11px 18px;cursor:pointer;min-height:44px}
+html[data-theme="dark"] .tap-btn{background:#8FD3C8;color:#0E1917}
+.tap-btn:active{transform:scale(.95)}
+.dhikr.done .tap-btn{background:transparent;color:var(--teal);border:1px solid rgba(31,111,102,.4)}
+.tasbeeh{margin:18px 0 6px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.tasbeeh-btn{width:168px;height:168px;border-radius:50%;border:1px solid rgba(224,162,70,.5);
+  background:radial-gradient(circle at 38% 32%, rgba(255,255,255,.5), transparent 62%), var(--teal);
+  color:#fff;font-family:var(--font-display);font-size:44px;font-variant-numeric:tabular-nums;
+  display:grid;place-items:center;cursor:pointer;position:relative;overflow:hidden;
+  box-shadow:0 18px 40px rgba(19,74,68,.35), inset 0 0 0 6px rgba(255,255,255,.07);
+  transition:transform .1s var(--ease);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.tasbeeh-btn:active{transform:scale(.97)}
+.tasbeeh-btn small{position:absolute;bottom:26px;font-family:var(--font-ui);font-size:10.5px;letter-spacing:.16em;opacity:.75}
+.tasbeeh-row{display:flex;gap:8px}
+.ghost-btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:14px;padding:10px 14px;
+  font-family:var(--font-ui);font-size:12px;cursor:pointer;min-height:44px}
+
+/* ---------------------------------------------------------------- settings */
+.card{border-radius:22px;border:1px solid var(--line);background:var(--surface);margin-bottom:10px;overflow:hidden}
+.card-head{padding:14px 16px 6px;display:flex;align-items:center;gap:8px}
+.card-head h3{margin:0;font-family:var(--font-display);font-size:14px}
+.card-head span{font-family:var(--font-ui);font-size:10.5px;color:var(--muted)}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line);min-height:56px}
+.card-head + .row{border-top:0}
+.row .r-label{flex:1;min-width:0}
+.row .r-label b{display:block;font-family:var(--font-ui);font-size:13.5px;font-weight:500}
+.row .r-label span{display:block;font-family:var(--font-ui);font-size:11px;color:var(--muted);line-height:1.4;margin-top:2px}
+.row .r-value{font-family:var(--font-ui);font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.row.tap{cursor:pointer}
+.row.tap:hover{background:var(--field)}
+.row .chev{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round}
+.switch{position:relative;width:46px;height:28px;border-radius:999px;background:var(--track);border:0;cursor:pointer;flex:0 0 auto;transition:.22s var(--ease)}
+.switch::after{content:"";position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:3px;inset-inline-start:3px;transition:.22s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch[aria-checked="true"]{background:var(--teal)}
+html[data-theme="dark"] .switch[aria-checked="true"]{background:#8FD3C8}
+.switch[aria-checked="true"]::after{inset-inline-start:21px}
+html[dir="rtl"] .switch[aria-checked="true"]::after{inset-inline-start:3px;transform:translateX(-18px)}
+html[dir="ltr"] .switch[aria-checked="true"]::after{inset-inline-start:21px;transform:none}
+.seg{display:inline-flex;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;color:var(--muted);font-family:var(--font-ui);font-size:11.5px;padding:7px 10px;border-radius:9px;cursor:pointer;min-height:34px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--teal);color:#fff}
+html[data-theme="dark"] .seg button[aria-pressed="true"]{background:#8FD3C8;color:#0E1917}
+.stepper{display:inline-flex;align-items:center;gap:2px;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:3px}
+.stepper button{width:34px;height:34px;border:0;background:transparent;color:var(--text);font-size:17px;border-radius:9px;cursor:pointer}
+.stepper button:hover{background:var(--surface)}
+.stepper b{min-width:52px;text-align:center;font-family:var(--font-display);font-size:13px;font-variant-numeric:tabular-nums}
+input[type="range"]{-webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;cursor:pointer}
+input[type="range"]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:var(--track)}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--teal);border:2px solid #fff;margin-top:-7px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+html[data-theme="dark"] input[type="range"]::-webkit-slider-thumb{background:#8FD3C8;border-color:#0E1917}
+.slider-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--line)}
+.slider-row .val{font-family:var(--font-ui);font-size:12px;color:var(--muted);min-width:44px;text-align:end}
+.select{appearance:none;border:1px solid var(--line);background:var(--field) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23788' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat left 10px center;
+  color:var(--text);font-family:var(--font-ui);font-size:12.5px;border-radius:12px;padding:9px 12px;max-width:190px;min-height:40px;cursor:pointer}
+html[dir="rtl"] .select{padding-left:30px;padding-right:12px;background-position:left 10px center}
+.subpage-head{display:flex;align-items:center;gap:10px;padding:2px 0 10px}
+.subpage-head h2{margin:0;font-family:var(--font-display);font-size:18px;flex:1}
+.back-btn{width:38px;height:38px;border-radius:13px;border:1px solid var(--line);background:var(--surface);color:var(--text);display:grid;place-items:center;cursor:pointer}
+.back-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+html[dir="rtl"] .back-btn svg{transform:scaleX(-1)}
+.pill-note{margin:0 16px 14px;padding:10px 12px;border-radius:14px;background:var(--accent-soft);color:var(--text);font-family:var(--font-ui);font-size:11.5px;line-height:1.5}
+.prayer-adhan{display:flex;flex-direction:column;gap:8px;padding:10px 16px 14px;border-top:1px solid var(--line)}
+.adhan-line{display:flex;align-items:center;gap:10px}
+.adhan-line .n{flex:1;font-family:var(--font-display);font-size:13.5px}
+.adhan-line .seg{flex:0 0 auto}
+.adhan-line .seg button{padding:6px 9px;font-size:11px}
+.fine{font-family:var(--font-ui);font-size:10.5px;color:var(--muted);padding:0 16px 12px;margin:-4px 0 0}
+
+/* --------------------------------------------------------------- widgets */
+.wx-stage{display:flex;flex-direction:column;gap:12px;align-items:center}
+.wx-phone{width:100%;max-width:330px;border-radius:34px;padding:8px;background:#0b1210;box-shadow:0 24px 50px rgba(0,0,0,.35)}
+.wx-screen{border-radius:27px;overflow:hidden;padding:10px 8px 14px;min-height:340px;display:flex;flex-direction:column;gap:8px;
+  background:radial-gradient(120% 70% at 84% 8%, #2b4a44 0%, transparent 62%),
+             radial-gradient(90% 60% at 8% 88%, var(--wp-seed) 0%, transparent 70%),
+             linear-gradient(170deg,#14251f,#25423a 55%,#3d5548)}
+html[data-theme="dark"] .wx-screen{background:radial-gradient(120% 70% at 84% 8%, #1d3a35 0%, transparent 62%),
+  radial-gradient(90% 60% at 8% 88%, #2f5b50 0%, transparent 70%), linear-gradient(170deg,#0a1310,#132520 55%,#1e332c)}
+.wx-status{display:flex;justify-content:space-between;color:#eef3f0;font:600 11px var(--font-ui);padding:0 8px;direction:ltr}
+.wx-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:74px;gap:2px;direction:inherit;align-content:start}
+.wx-slot{display:flex;padding:4px;min-width:0}
+.wx-slot.w-1x1{grid-column:span 1;grid-row:span 1}
+.wx-dock{display:flex;justify-content:space-around;padding:6px 10px 0;margin-top:auto}
+.wx-icon{width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.16);display:grid;place-items:center;color:#eef3f0;font:600 13px var(--font-ui)}
+
+.w{flex:1;min-width:0;overflow:hidden;font-family:var(--font-ui);background:var(--w-bg);color:var(--w-fg);
+  border-radius:var(--w-radius);padding:9px 11px;display:flex;flex-direction:column;gap:3px;position:relative;font-variant-numeric:tabular-nums}
+.w .muted{color:var(--w-muted)}
+.mode-12 .w{--w-bg:color-mix(in srgb, var(--seed) 12%, var(--surface-strong));--w-fg:var(--text);--w-muted:var(--muted);
+  --w-accent:var(--teal);--w-soft:var(--accent-soft);--w-on:#fff;--w-radius:22px}
+html[data-theme="dark"] .mode-12 .w{--w-bg:color-mix(in srgb, var(--seed) 26%, #101917);--w-fg:#EAF3EF;--w-muted:rgba(234,243,239,.62);
+  --w-accent:#8FD3C8;--w-soft:rgba(143,211,200,.16);--w-on:#0E1917}
+.mode-8 .w{--w-bg:var(--surface-strong);--w-fg:var(--text);--w-muted:var(--muted);--w-accent:var(--teal);
+  --w-soft:var(--accent-soft);--w-on:#fff;--w-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+html[data-theme="dark"] .mode-8 .w{--w-accent:#8FD3C8;--w-on:#0E1917}
+.w .tag{position:absolute;inset-block-start:5px;inset-inline-end:8px;font:600 8px var(--font-ui);letter-spacing:.06em;color:var(--w-muted);opacity:.75;direction:ltr}
+.v1{justify-content:center;gap:1px}
+.v1 .label{font-size:11px}
+.v1 .name{font-size:22px;font-weight:700;line-height:1.15;color:var(--w-accent);font-family:var(--font-display)}
+.v1 .time{font-size:13px}
+.v1 .count{font-size:13px;font-weight:600;margin-top:2px}
+.v1.small{justify-content:center;padding:6px 11px;gap:1px}
+.v1.small .line1{display:flex;align-items:baseline;gap:8px;white-space:nowrap;min-width:0}
+.v1.small .name{font-size:16px;overflow:hidden;text-overflow:ellipsis}
+.v1.small .time{font-size:11.5px;flex:none}
+.v1.small .count{margin:0;font-size:12px;white-space:nowrap}
+.v1x1{justify-content:center;align-items:center;gap:0;padding:4px}
+.v1x1 .ring-s{position:relative;width:100%;height:100%;display:grid;place-items:center}
+.v1x1 svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.v1x1 .in{position:relative;text-align:center;line-height:1.1}
+.v1x1 .in b{display:block;font-family:var(--font-display);font-size:15px;color:var(--w-accent)}
+.v1x1 .in small{font-size:9px;color:var(--w-muted)}
+.v2 .date,.v3 .date,.v4 .date{font-size:10.5px;display:flex;flex-wrap:wrap;gap:0 6px}
+.cd{unicode-bidi:isolate;direction:ltr;display:inline-block}
+.v2 .row{flex:1;display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.v2 .cell{border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0}
+.mode-8 .v2 .cell{border-radius:5px}
+.v2 .cell .n{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.v2 .cell .t{font-size:11.5px;font-weight:600;white-space:nowrap}
+.v2 .cell.sun .n,.v2 .cell.sun .t{color:var(--w-muted);font-weight:400}
+.v2 .cell.next{background:var(--w-accent);color:var(--w-on)}
+.v2 .cell.next .n,.v2 .cell.next .t{color:var(--w-on)}
+.v3{gap:1px}
+.v3 .li{flex:1;display:grid;grid-template-columns:1fr auto 22px;align-items:center;gap:8px;padding-inline:6px;border-radius:10px}
+.mode-8 .v3 .li{border-radius:4px}
+.v3 .li .n{font-size:13px}
+.v3 .li .t{font-size:12px}
+.v3 .li.next{background:var(--w-soft)}
+.v3 .li .n{font-weight:600}
+.v3 .li.upcoming .n,.v3 .li.upcoming .t{color:var(--w-muted)}
+.mark{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700}
+.mark.prayed{background:var(--w-accent);color:var(--w-on)}
+.mark.due{border:2px solid var(--w-accent)}
+.mark.upcoming{border:1.5px dashed color-mix(in oklab, var(--w-muted) 60%, transparent)}
+.v3 .sun{margin-top:2px;font-size:10.5px}
+.v4 .head{display:flex;justify-content:space-between;font-size:11px}
+.v4 .tbl{flex:1;display:grid;grid-template-columns:auto repeat(7,1fr);gap:1px 3px;align-items:center}
+.v4 .tbl .rh{font-size:9.5px;color:var(--w-muted);white-space:nowrap;padding-inline-end:3px}
+.v4 .tbl .ch{font-size:9.5px;text-align:center;color:var(--w-muted)}
+.v4 .tbl .ch.today{color:var(--w-accent);font-weight:700}
+.v4 .dt{width:12px;height:12px;border-radius:50%;justify-self:center}
+.v4 .dt.prayed{background:var(--w-accent)}
+.v4 .dt.missed{border:1.5px solid color-mix(in oklab, var(--w-muted) 70%, transparent)}
+.v4 .dt.upcoming{background:color-mix(in oklab, var(--w-muted) 18%, transparent)}
+.v4 .dt.before{background:transparent}
+.v5{justify-content:center;gap:1px;padding:5px 12px;font-size:12px}
+.v5 .dates{display:flex;gap:6px;white-space:nowrap;min-width:0;overflow:hidden}
+.v5 .greg{font-weight:700;flex:none}
+.v5 .hijri{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.v5 .nx{white-space:nowrap;color:var(--w-accent);font-weight:600}
+.clk{align-items:center;justify-content:center;gap:0;text-align:center}
+.clk .big{font-family:var(--font-ui);font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.clk .dt{font-family:var(--font-ui);font-size:11px;color:var(--w-muted);margin-top:2px}
+.clk .nx{font-family:var(--font-ui);font-size:11.5px;color:var(--w-accent);font-weight:600;margin-top:4px}
+.clk-gold{background:linear-gradient(150deg,#3a2a14,#6b4d22 45%,#2f2110)!important;color:#FBF0DC!important;--w-fg:#FBF0DC;--w-muted:#E3CBA4;--w-accent:#F2C879}
+.clk-gold .big{color:#FFF6E4;text-shadow:0 2px 12px rgba(224,162,70,.45)}
+.clk-bar{height:5px;border-radius:999px;background:color-mix(in oklab,var(--w-muted) 30%,transparent);width:100%;margin-top:6px;overflow:hidden}
+.clk-bar i{display:block;height:100%;border-radius:999px;background:var(--w-accent);transition:width .9s linear}
+.wx-controls{width:100%;display:flex;flex-direction:column;gap:8px}
+.wx-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.wx-chips .chip{min-height:36px;padding:8px 11px;font-size:11.5px}
+.wx-row{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap}
+.wx-label{font-family:var(--font-ui);font-size:11px;color:var(--muted)}
+.wx-alpha{display:flex;align-items:center;gap:8px;width:100%;max-width:330px}
+
+/* ------------------------------------------------------------------ ripple */
+.ripple{position:absolute;border-radius:50%;transform:scale(0);background:rgba(255,255,255,.5);animation:ripple .62s ease-out forwards;pointer-events:none;mix-blend-mode:screen}
+html[data-theme="light"] .ripple{background:rgba(31,111,102,.22);mix-blend-mode:normal}
+@keyframes ripple{to{transform:scale(2.6);opacity:0}}
+
+/* -------------------------------------------------------------------- nav */
+.tabbar{position:absolute;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));
+  display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:5px;border-radius:22px;
+  background:var(--bar);border:1px solid var(--line);box-shadow:var(--shadow);z-index:3}
+.tab{border:0;background:transparent;color:var(--muted);border-radius:16px;padding:8px 2px;display:flex;flex-direction:column;
+  align-items:center;gap:3px;font-family:var(--font-ui);font-size:9.5px;cursor:pointer;transition:.22s var(--ease);min-height:48px}
+.tab svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-selected="true"]{color:var(--text);background:var(--accent-soft)}
+.tab[aria-selected="true"] svg{stroke:var(--teal)}
+html[data-theme="dark"] .tab[aria-selected="true"] svg{stroke:#8FD3C8}
+
+/* -------------------------------------------------------------- onboarding */
+.onb{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:flex-end;
+  background:linear-gradient(180deg,rgba(8,20,18,.15),rgba(8,20,18,.75));backdrop-filter:blur(3px)}
+.onb[hidden]{display:none}
+.onb-card{margin:14px;padding:22px 20px calc(20px + env(safe-area-inset-bottom));border-radius:26px;
+  background:var(--surface-strong);border:1px solid var(--line);box-shadow:0 30px 60px rgba(0,0,0,.4);animation:viewIn .5s var(--ease) both}
+.onb-art{width:56px;height:56px;border-radius:18px;background:var(--accent-soft);display:grid;place-items:center;margin-bottom:14px}
+.onb-art svg{width:26px;height:26px;stroke:var(--teal);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html[data-theme="dark"] .onb-art svg{stroke:#8FD3C8}
+.onb-card h2{margin:0 0 6px;font-family:var(--font-display);font-size:21px}
+.onb-card p{margin:0 0 16px;font-family:var(--font-ui);font-size:13px;line-height:1.6;color:var(--muted)}
+.onb-dots{display:flex;gap:6px;margin-bottom:16px}
+.onb-dots i{width:7px;height:7px;border-radius:50%;background:var(--track)}
+.onb-dots i.on{background:var(--amber);width:18px;border-radius:999px}
+.onb-actions{display:flex;gap:8px}
+.onb-actions .primary{flex:1;border:0;border-radius:14px;background:var(--teal);color:#fff;font-family:var(--font-ui);font-size:14px;padding:13px;cursor:pointer;min-height:48px}
+html[data-theme="dark"] .onb-actions .primary{background:#8FD3C8;color:#0E1917}
+.onb-actions .ghost{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:14px;padding:13px 18px;font-family:var(--font-ui);font-size:13px;cursor:pointer;min-height:48px}
+
+.demo-note{font-family:var(--font-ui);font-size:10.5px;color:var(--muted);text-align:center;margin:12px 0 4px;letter-spacing:.04em}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:10px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  .sky::after,.sky-glow,.sun{animation:none !important}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone" id="phone">
+    <div class="sky" aria-hidden="true">
+      <div class="sky-glow g1"></div><div class="sky-glow g2"></div><div class="sun"></div>
+    </div>
+
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <b data-i18n="appName">مواقيت</b>
+          <span data-i18n="appTag">MAWAQEET</span>
+        </div>
+        <div class="spacer"></div>
+        <button class="icon-btn lang-btn" id="langBtn" aria-label="Language">EN</button>
+        <button class="icon-btn" id="themeBtn" aria-label="Theme">
+          <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </header>
+
+      <main id="main">
+        <section class="view" id="view-home" role="tabpanel" data-view="home"></section>
+        <section class="view" id="view-log" role="tabpanel" data-view="log" hidden></section>
+        <section class="view" id="view-adhkar" role="tabpanel" data-view="adhkar" hidden></section>
+        <section class="view" id="view-settings" role="tabpanel" data-view="settings" hidden></section>
+        <section class="view" id="view-widgets" role="tabpanel" data-view="widgets" hidden></section>
+      </main>
+
+      <nav class="tabbar" role="tablist" aria-label="Navigation">
+        <button class="tab" role="tab" data-tab="home" aria-selected="true" aria-controls="view-home">
+          <svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10.5V20h12v-9.5"/><path d="M10 20v-5h4v5"/></svg>
+          <span data-i18n="tabHome">الرئيسية</span>
+        </button>
+        <button class="tab" role="tab" data-tab="log" aria-selected="false" aria-controls="view-log">
+          <svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8.5 9h7M8.5 13h7M8.5 17h4"/></svg>
+          <span data-i18n="tabLog">السجل</span>
+        </button>
+        <button class="tab" role="tab" data-tab="adhkar" aria-selected="false" aria-controls="view-adhkar">
+          <svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="4.2"/></svg>
+          <span data-i18n="tabAdhkar">الأذكار</span>
+        </button>
+        <button class="tab" role="tab" data-tab="settings" aria-selected="false" aria-controls="view-settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.2A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 2.6 14H2.4a2 2 0 1 1 0-4h.2A1.6 1.6 0 0 0 4 7.6a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 8.3 3h.2A2 2 0 1 1 12.5 3v.2a1.6 1.6 0 0 0 1.1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1.1h.2a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1z"/></svg>
+          <span data-i18n="tabSettings">الإعدادات</span>
+        </button>
+        <button class="tab" role="tab" data-tab="widgets" aria-selected="false" aria-controls="view-widgets">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+          <span data-i18n="tabWidgets">الأدوات</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="onb" id="onb" hidden>
+      <div class="onb-card" id="onbCard"></div>
+    </div>
+  </div>
+  <p class="caption">MAWAQEET · COMPLETE PROTOTYPE</p>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ------------------------------------------------------------------ i18n */
+  const DICT = {
+    ar: {
+      appName: "مواقيت", appTag: "MAWAQEET",
+      tabHome: "الرئيسية", tabLog: "السجل", tabAdhkar: "الأذكار", tabSettings: "الإعدادات", tabWidgets: "الأدوات",
+      nextPrayer: "الصلاة القادمة", untilAdhan: "حتى الأذان",
+      fajr: "الفجر", sunrise: "الشروق", dhuhr: "الظهر", jumuah: "الجمعة", asr: "العصر", maghrib: "المغرب", isha: "العشاء",
+      logTitle: "سجل الصلاة", logHint: "اضغط الصلاة بعد أدائها لتسجيلها",
+      streak: "سلسلة", streakUnit: "يوم", weekRate: "هذا الأسبوع", weekUnit: "٪", logToday: "اليوم",
+      adhkarTitle: "الأذكار", morning: "أذكار الصباح", evening: "أذكار المساء", afterPrayer: "بعد الصلاة",
+      setProgress: "من الأذكار", done: "تم", tapToCount: "اضغط للعدّ", tasbeeh: "المسبحة", reset: "تصفير",
+      resetHint: "اضغط مطولاً لتصفير المسبحة",
+      settingsTitle: "الإعدادات",
+      appearance: "المظهر", language: "اللغة", digits: "الأرقام", digitAuto: "تلقائي", digitArabic: "٠١٢", digitLatin: "123",
+      theme: "السمة", themeLight: "فاتح", themeDark: "داكن", themeAuto: "تلقائي",
+      location: "الموقع", locationAuto: "تلقائي", locationChange: "تغيير", locationCity: "المدينة",
+      locationSheet: "تغيير الموقع", locationMyLocation: "استخدام موقعي", locationSearch: "ابحث عن مدينة",
+      locationCoords: "إحداثيات يدوية", latitude: "خط العرض", longitude: "خط الطول", locationUse: "استخدام",
+      prayerTimes: "مواقيت الصلاة", method: "طريقة الحساب", asrConvention: "وقت العصر", asrStandard: "الجمهور", asrHanafi: "الحنفي",
+      adjustments: "تعديل المواقيت", adjustmentsHint: "دقائق تُضاف أو تُطرح لكل صلاة",
+      highLat: "قاعدة خطوط العرض العليا", highLatAuto: "تلقائي", highLatMid: "نصف الليل", highLatSeventh: "سُبع الليل", highLatTwilight: "زاوية الشفق",
+      minuteShort: "د",
+      alerts: "التنبيهات", alertsMaster: "كل تنبيهات التطبيق", alertsMasterSub: "الأذان والتذكير وتذكيرات العبادة",
+      adhanTitle: "الأذان لكل صلاة", adhanShort: "قصير", adhanFull: "كامل", adhanSilent: "صامت",
+      fajrNote: "أذان الفجر مع «الصلاة خير من النوم»",
+      reminder: "التذكير قبل الصلاة", reminderValue: "قبل ١٠ دقائق", reminderNone: "بلا تذكير",
+      alarmClock: "وضع المنبه", alarmClockSub: "الأذان على شاشة القفل كالمنبه",
+      playOnSilent: "تشغيل الأذان في الوضع الصامت", playOnSilentSub: "لا يشمل التذكير ولا المكالمات",
+      vibration: "الاهتزاز", vibrationSub: "اهتزاز قصير مع كل تنبيه",
+      adhanVolume: "مستوى صوت الأذان",
+      worship: "تذكيرات العبادة", salawat: "الصلاة على النبي", salawatSub: "تذكير لطيف كل ساعة",
+      kahf: "سورة الكهف", kahfSub: "تذكير يوم الجمعة صباحاً",
+      morningAdhkar: "أذكار الصباح", eveningAdhkar: "أذكار المساء",
+      silence: "الصمت عند الصلاة", silenceMode: "النمط", silentMode: "صامت", vibrateMode: "اهتزاز",
+      silenceWindow: "مدة الصمت", silenceDnd: "يتجاوز وضع عدم الإزعاج إذا سُمح له.",
+      widgetSettings: "الأدوات", transparency: "الشفافية", colors: "الألوان", appColors: "ألوان التطبيق", wallpaperColors: "ألوان الخلفية",
+      deepLook: "مظهر معمّق للصلاة القادمة", deepLookSub: "يطبّق على كل الأدوات",
+      about: "حول مواقيت", version: "الإصدار ٢٫٤٫٠", credits: "الصنع والتراخيص", privacy: "سياسة الخصوصية", contact: "راسلنا",
+      replayIntro: "إعادة عرض التقديم", aboutBody: "مواقيت الصلاة والتنبيهات وسجل الصلاة — كلها على جهازك.",
+      widgetsTitle: "أدوات الشاشة الرئيسية", widgetVariant: "النوع", widgetScenario: "الوقت", widgetAndroid: "أندرويد",
+      widgetAll: "كل الأدوات", onbSkip: "تخطّي", onbNext: "التالي", onbStart: "ابدأ",
+      onb1Title: "يوم يتنفّس", onb1Body: "كل شيء في مواقيت يتبع وقت اليوم: سماء الفجر، ضوء الظهر، وهدوء العشاء.",
+      onb2Title: "مواقيتك بدقّة", onb2Body: "نستخدم موقعك التقريبي لحساب المواقيت، ولا يغادر بياناتك هاتفك.",
+      onb3Title: "تنبيه واحد يكفي", onb3Body: "أذان وتذكير قبل الصلاة، ويمكنك ضبط كل صلاة على حدة من الإعدادات.",
+      demo: "أوقات وبيانات تجريبية للعرض",
+      days: ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"],
+      dayShort: ["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"]
+    },
+    en: {
+      appName: "Mawaqeet", appTag: "مواقيت",
+      tabHome: "Today", tabLog: "Log", tabAdhkar: "Adhkar", tabSettings: "Settings", tabWidgets: "Widgets",
+      nextPrayer: "Next prayer", untilAdhan: "until adhan",
+      fajr: "Fajr", sunrise: "Sunrise", dhuhr: "Dhuhr", jumuah: "Jumu'ah", asr: "Asr", maghrib: "Maghrib", isha: "Isha",
+      logTitle: "Prayer log", logHint: "Tap a prayer once you have prayed it",
+      streak: "Streak", streakUnit: "days", weekRate: "This week", weekUnit: "%", logToday: "Today",
+      adhkarTitle: "Adhkar", morning: "Morning", evening: "Evening", afterPrayer: "After prayer",
+      setProgress: "of the set", done: "done", tapToCount: "Tap to count", tasbeeh: "Tasbeeh", reset: "Reset",
+      resetHint: "Long-press the counter to reset",
+      settingsTitle: "Settings",
+      appearance: "Appearance", language: "Language", digits: "Digits", digitAuto: "Auto", digitArabic: "٠١٢", digitLatin: "123",
+      theme: "Theme", themeLight: "Light", themeDark: "Dark", themeAuto: "Auto",
+      location: "Location", locationAuto: "Automatic", locationChange: "Change", locationCity: "City",
+      locationSheet: "Change location", locationMyLocation: "Use my location", locationSearch: "Search a city",
+      locationCoords: "Manual coordinates", latitude: "Latitude", longitude: "Longitude", locationUse: "Use",
+      prayerTimes: "Prayer times", method: "Calculation method", asrConvention: "Asr convention", asrStandard: "Standard", asrHanafi: "Hanafi",
+      adjustments: "Time adjustments", adjustmentsHint: "Minutes added or removed per prayer",
+      highLat: "High-latitude rule", highLatAuto: "Automatic", highLatMid: "Middle of night", highLatSeventh: "Seventh of night", highLatTwilight: "Twilight angle",
+      minuteShort: "m",
+      alerts: "Alerts", alertsMaster: "All app alerts", alertsMasterSub: "Adhan, reminders and worship nudges",
+      adhanTitle: "Adhan per prayer", adhanShort: "Short", adhanFull: "Full", adhanSilent: "Silent",
+      fajrNote: "Fajr adhan includes “prayer is better than sleep”",
+      reminder: "Prayer reminder", reminderValue: "10 minutes before", reminderNone: "No reminder",
+      alarmClock: "Alarm-clock mode", alarmClockSub: "Adhan on the lock screen like an alarm",
+      playOnSilent: "Play adhan on silent", playOnSilentSub: "Not for reminders or calls",
+      vibration: "Vibration", vibrationSub: "A short pulse with every alert",
+      adhanVolume: "Adhan volume",
+      worship: "Worship reminders", salawat: "Salawat", salawatSub: "A gentle nudge every hour",
+      kahf: "Surat Al-Kahf", kahfSub: "Friday morning reminder",
+      morningAdhkar: "Morning adhkar", eveningAdhkar: "Evening adhkar",
+      silence: "Prayer silence", silenceMode: "Mode", silentMode: "Silent", vibrateMode: "Vibrate",
+      silenceWindow: "Silence window", silenceDnd: "Overrides Do Not Disturb when allowed.",
+      widgetSettings: "Widgets", transparency: "Transparency", colors: "Colours", appColors: "App colours", wallpaperColors: "Wallpaper",
+      deepLook: "Deep look for next prayer", deepLookSub: "Applies to every widget",
+      about: "About Mawaqeet", version: "Version 2.4.0", credits: "Credits and licences", privacy: "Privacy policy", contact: "Contact us",
+      replayIntro: "Replay the intro", aboutBody: "Prayer times, alerts and your log — all on your device.",
+      widgetsTitle: "Home-screen widgets", widgetVariant: "Variant", widgetScenario: "Time", widgetAndroid: "Android",
+      widgetAll: "All widgets", onbSkip: "Skip", onbNext: "Next", onbStart: "Start",
+      onb1Title: "A day that breathes", onb1Body: "Mawaqeet follows the day: dawn sky, midday light, quiet Isha.",
+      onb2Title: "Times that fit you", onb2Body: "Your rough location is used for the maths and never leaves the phone.",
+      onb3Title: "One alert is enough", onb3Body: "Adhan and a reminder before each prayer — tuned per prayer in Settings.",
+      demo: "Demo times and data",
+      days: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+      dayShort: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+    }
+  };
+
+  const CITIES = [
+    { ar: "القاهرة", en: "Cairo", offset: 0, lat: 30.04, lon: 31.24, countryAr: "مصر", countryEn: "Egypt" },
+    { ar: "الإسكندرية", en: "Alexandria", offset: -2, lat: 31.2, lon: 29.92, countryAr: "مصر", countryEn: "Egypt" },
+    { ar: "مكة المكرمة", en: "Makkah", offset: +3, lat: 21.42, lon: 39.83, countryAr: "السعودية", countryEn: "Saudi Arabia" },
+    { ar: "المدينة المنورة", en: "Madinah", offset: +2, lat: 24.47, lon: 39.61, countryAr: "السعودية", countryEn: "Saudi Arabia" },
+    { ar: "دبي", en: "Dubai", offset: +1, lat: 25.2, lon: 55.27, countryAr: "الإمارات", countryEn: "UAE" }
+  ];
+  const METHODS = [
+    { id: "egyptian", ar: "الهيئة المصرية العامة للمساحة", en: "Egyptian General Authority", off: 0 },
+    { id: "mwl", ar: "رابطة العالم الإسلامي", en: "Muslim World League", off: 2 },
+    { id: "umm", ar: "أم القرى", en: "Umm al-Qura", off: -3 },
+    { id: "karachi", ar: "جامعة كراتشي", en: "University of Karachi", off: 1 },
+    { id: "isna", ar: "الجمعية الإسلامية لأمريكا الشمالية", en: "ISNA", off: 4 }
+  ];
+
+  const S = Object.assign({
+    lang: "ar", theme: null, digits: "auto",
+    city: 0, locationMode: "auto",
+    method: "egyptian", asr: "standard", highLat: "auto",
+    adjust: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 },
+    alerts: { master: true, fajr: "full", dhuhr: "short", asr: "short", maghrib: "short", isha: "short",
+      reminder: 10, alarmClock: false, playOnSilent: true, vibration: true, volume: 70 },
+    worship: { salawat: 1, kahf: true, morning: 20, evening: 20 },
+    silence: { mode: "silent", window: 20 },
+    widgets: { alpha: 100, colors: "app", deepLook: false },
+    onboarded: false,
+    page: "root", tab: "home", set: "morning",
+    wVariant: "v1-4x2", wScenario: "asr", wMode: "12", wAlpha: 100, wLang: null, wDigits: null
+  }, JSON.parse(localStorage.getItem("mq.complete") || "{}"));
+
+  S.adjust = Object.assign({ fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 }, S.adjust || {});
+  S.alerts = Object.assign({}, DICT.ar && {}, S.alerts);
+  if (S.theme === null || S.theme === undefined) S.theme = new Date().getHours() >= 19 || new Date().getHours() < 5 ? "dark" : "light";
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const t = (k) => (DICT[S.lang] && DICT[S.lang][k] != null ? DICT[S.lang][k] : k);
+  const save = () => {
+    const copy = { ...S };
+    delete copy.wStarted;
+    delete copy.forceOnboard;
+    localStorage.setItem("mq.complete", JSON.stringify(copy));
+  };
+
+  function setPath(path, value) {
+    const parts = path.split(".");
+    let obj = S;
+    for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
+    obj[parts[parts.length - 1]] = value;
+  }
+
+  function arabicDigits() {
+    if (S.digits === "arabic") return true;
+    if (S.digits === "latin") return false;
+    return S.lang === "ar";
+  }
+  const num = (n) => {
+    const s = String(n);
+    return arabicDigits() ? s.replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]) : s;
+  };
+  const pad = (n) => String(n).padStart(2, "0");
+  const city = () => CITIES[S.city] || CITIES[0];
+  const method = () => METHODS.find((m) => m.id === S.method) || METHODS[0];
+
+  /* -------------------------------------------------------------- schedule */
+  // Sample times (Cairo): Fajr 04:48 · Sunrise 06:16 · Dhuhr 11:40 · Asr 14:43 · Maghrib 17:04 · Isha 18:23
+  const BASE = [
+    { key: "fajr", h: 4, m: 48 },
+    { key: "sunrise", h: 6, m: 16, stop: true },
+    { key: "dhuhr", h: 11, m: 40 },
+    { key: "asr", h: 14, m: 43 },
+    { key: "maghrib", h: 17, m: 4 },
+    { key: "isha", h: 18, m: 23 }
+  ];
+
+  function offsetMinutes(key) {
+    if (key === "sunrise") return method().off + city().offset;
+    let off = method().off + city().offset + (S.adjust[key] || 0);
+    if (key === "asr" && S.asr === "hanafi") off += 45;
+    return off;
+  }
+
+  function scheduleFor(date) {
+    return BASE.map((p) => {
+      const d = new Date(date);
+      d.setHours(p.h, p.m, 0, 0);
+      d.setMinutes(d.getMinutes() + offsetMinutes(p.key));
+      return { ...p, date: d };
+    });
+  }
+  const isFriday = (d) => d.getDay() === 5;
+
+  function nextPrayer(now) {
+    const today = scheduleFor(now);
+    const prayers = today.filter((p) => !p.stop);
+    const next = prayers.find((p) => p.date > now);
+    if (next) {
+      const idx = today.indexOf(next);
+      const prev = [...today.slice(0, idx)].reverse().find((p) => !p.stop) || null;
+      return { next, prev };
+    }
+    const tomorrow = scheduleFor(new Date(now.getTime() + 86400000));
+    return { next: tomorrow.find((p) => !p.stop), prev: prayers[prayers.length - 1] };
+  }
+  function skyFor(now) {
+    const h = now.getHours() + now.getMinutes() / 60;
+    if (h < 5.05 || h >= 19.5) return "night";
+    if (h < 6.4) return "dawn";
+    if (h < 17.6) return "day";
+    return "dusk";
+  }
+  function prayerLabel(key, d) {
+    return key === "dhuhr" && isFriday(d) ? "jumuah" : key;
+  }
+
+  /* ------------------------------------------------------------------ log */
+  const isoDay = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+  const LOG = JSON.parse(localStorage.getItem("mq.log") || "{}");
+  const dayLog = (d) => LOG[isoDay(d)] || {};
+  function togglePrayer(key) {
+    const k = isoDay(new Date());
+    LOG[k] = LOG[k] || {};
+    LOG[k][key] = !LOG[k][key];
+    if (!LOG[k][key]) delete LOG[k][key];
+    localStorage.setItem("mq.log", JSON.stringify(LOG));
+  }
+  function streak() {
+    let s = 0;
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(Date.now() - i * 86400000);
+      const full = PRAYERS.every((p) => dayLog(d)[p]);
+      if (full) s++;
+      else if (i > 0) break;
+    }
+    return s;
+  }
+  function weekRate() {
+    let done = 0;
+    for (let i = 0; i < 7; i++) {
+      const log = dayLog(new Date(Date.now() - i * 86400000));
+      done += PRAYERS.filter((p) => log[p]).length;
+    }
+    return Math.round((done / 35) * 100);
+  }
+
+  /* --------------------------------------------------------------- adhkar */
+  const ADHKAR = {
+    morning: [
+      { ar: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَه", en: "We have entered the morning and the dominion belongs to Allah; praise be to Allah.", count: 1 },
+      { ar: "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ", en: "O Allah, You are my Lord; there is no god but You. You created me and I am Your servant.", count: 1 },
+      { ar: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", en: "Glory be to Allah and praise be to Him.", count: 100 },
+      { ar: "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ", en: "Allah is sufficient for me; in Him I put my trust.", count: 7 }
+    ],
+    evening: [
+      { ar: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ", en: "We have entered the evening and the dominion belongs to Allah; praise be to Allah.", count: 1 },
+      { ar: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَق", en: "I seek refuge in Allah's perfect words from the evil of what He created.", count: 3 },
+      { ar: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", en: "Glory be to Allah and praise be to Him.", count: 100 },
+      { ar: "اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ", en: "O Allah, by You we enter the evening, by You we live and by You we die.", count: 1 }
+    ],
+    after: [
+      { ar: "أَسْتَغْفِرُ اللَّهَ", en: "I seek Allah's forgiveness.", count: 3 },
+      { ar: "سُبْحَانَ اللَّهِ", en: "Glory be to Allah.", count: 33 },
+      { ar: "الْحَمْدُ لِلَّهِ", en: "Praise be to Allah.", count: 33 },
+      { ar: "اللَّهُ أَكْبَرُ", en: "Allah is the Greatest.", count: 34 }
+    ]
+  };
+  const ADH = JSON.parse(localStorage.getItem("mq.adhkar") || "{}");
+  const adhKey = (set, i) => set + ":" + i;
+  const adhCount = (set, i) => ADH[adhKey(set, i)] || 0;
+  function bumpAdhkar(set, i) {
+    const k = adhKey(set, i);
+    ADH[k] = Math.min(ADHKAR[set][i].count, (ADH[k] || 0) + 1);
+    localStorage.setItem("mq.adhkar", JSON.stringify(ADH));
+    return ADH[k];
+  }
+  let TASBEEH = Number(localStorage.getItem("mq.tasbeeh") || 0);
+
+  /* ------------------------------------------------------------------ dom */
+  const main = $("#main");
+  const phone = $("#phone");
+  function ripple(ev, el) {
+    const r = el.getBoundingClientRect();
+    const span = document.createElement("span");
+    const size = Math.max(r.width, r.height) * 0.7;
+    span.className = "ripple";
+    span.style.cssText = `width:${size}px;height:${size}px;left:${ev.clientX - r.left - size / 2}px;top:${ev.clientY - r.top - size / 2}px;position:absolute;border-radius:50%;transform:scale(0);animation:ripple .62s ease-out forwards;pointer-events:none;`;
+    el.appendChild(span);
+    setTimeout(() => span.remove(), 650);
+  }
+  const buzz = (ms = 8) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
+
+  /* -------------------------------------------------------------- fragments */
+  function switchRow(label, sub, checked, action, path) {
+    return `<div class="row"><div class="r-label"><b>${label}</b>${sub ? `<span>${sub}</span>` : ""}</div>
+      <button class="switch" role="switch" aria-checked="${checked}" aria-label="${label}" data-act="toggle" data-path="${path}" data-key="${action}"></button></div>`;
+  }
+  function segRow(label, options, value, path) {
+    return `<div class="row"><div class="r-label"><b>${label}</b></div>
+      <div class="seg">${options.map((o) => `<button data-act="seg" data-path="${path}" data-val="${o.v}" aria-pressed="${String(o.v) === String(value)}">${o.l}</button>`).join("")}</div></div>`;
+  }
+  function tapRow(label, sub, value, act, page) {
+    return `<div class="row tap" data-act="${act}" data-page="${page || ""}"><div class="r-label"><b>${label}</b>${sub ? `<span>${sub}</span>` : ""}</div>
+      <span class="r-value">${value}</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>`;
+  }
+
+  /* --------------------------------------------------------------- render */
+  function renderHome() {
+    const now = new Date();
+    const { next, prev } = nextPrayer(now);
+    const start = prev ? prev.date : new Date(now.getTime() - 3600000);
+    const span = Math.max(1000, next.date - start);
+    const progress = Math.min(1, Math.max(0, (now - start) / span));
+    const label = prayerLabel(next.key, now);
+    const R = 92, CX = 135, CY = 135, isNight = skyFor(now) === "night";
+    const angle = -90 + 360 * progress;
+    const rad = (angle * Math.PI) / 180;
+
+    const today = scheduleFor(now);
+    const nextIdx = today.findIndex((p) => p.date.getTime() === next.date.getTime());
+
+    const stops = today.map((p, i) => {
+      const done = !p.stop && dayLog(now)[p.key];
+      const cls = ["stop"];
+      if (i === nextIdx) cls.push("current");
+      else if (p.date < now) cls.push("past");
+      if (done) cls.push("done");
+      return `<div class="${cls.join(" ")}"><div class="line"></div><span class="dot"></span>
+        <span class="t-name">${t(prayerLabel(p.key, now))}</span>
+        <span class="t-time">${num(pad(p.date.getHours()))}:${num(pad(p.date.getMinutes()))}</span></div>`;
+    }).join("");
+
+    const hijri = new Intl.DateTimeFormat(S.lang === "ar" ? "ar-SA-u-ca-islamic-umalqura" : "en-US-u-ca-islamic-umalqura",
+      { day: "numeric", month: "long", year: "numeric" }).format(now);
+    const greg = new Intl.DateTimeFormat(S.lang === "ar" ? "ar-EG" : "en-GB",
+      { weekday: "long", day: "numeric", month: "long" }).format(now);
+
+    $("#view-home").innerHTML = `
+      <div class="hero">
+        <p class="eyebrow">${t("nextPrayer")}</p>
+        <h1 class="next-name">${t(label)}</h1>
+        <div class="arc">
+          <svg viewBox="0 0 270 270" aria-hidden="true">
+            <circle class="track" cx="${CX}" cy="${CY}" r="${R}" pathLength="100" stroke-dasharray="100 100" transform="rotate(-90 ${CX} ${CY})"/>
+            <circle class="fill" id="arcFill" cx="${CX}" cy="${CY}" r="${R}" pathLength="100" stroke-dasharray="100"
+              stroke-dashoffset="${100 - progress * 100}" transform="rotate(-90 ${CX} ${CY})"/>
+            <circle class="sun-dot" id="arcDot" cx="${CX + R * Math.cos(rad)}" cy="${CY + R * Math.sin(rad)}" r="7" fill="${isNight ? "#CFE1DC" : "#E0A246"}"/>
+          </svg>
+          <div class="arc-center">
+            <div class="countdown" id="countdown">${countText(next.date - now)}</div>
+            <div class="arc-label">${t("untilAdhan")}</div>
+            <div class="arc-at">${num(pad(next.date.getHours()))}:${num(pad(next.date.getMinutes()))}</div>
+          </div>
+        </div>
+        <div class="dates">
+          <span class="date-chip">${greg}</span>
+          <span class="date-chip">${hijri}</span>
+        </div>
+      </div>
+      <div class="timeline">${stops}</div>
+      <p class="demo-note">${t("demo")} · ${S.lang === "ar" ? city().ar : city().en} · ${S.lang === "ar" ? method().ar : method().en}</p>`;
+  }
+
+  function countText(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    return `${num(pad(Math.floor(total / 3600)))}:${num(pad(Math.floor((total % 3600) / 60)))}:${num(pad(total % 60))}`;
+  }
+
+  function renderLog() {
+    const now = new Date();
+    const days = [];
+    for (let i = 6; i >= 0; i--) days.push(new Date(now.getTime() - i * 86400000));
+    const week = days.map((d) => {
+      const log = dayLog(d);
+      const pips = PRAYERS.map((p) => `<span class="pip ${log[p] ? "on" : ""}"></span>`).join("");
+      const isToday = isoDay(d) === isoDay(now);
+      return `<div class="day ${isToday ? "is-today" : ""}"><span class="day-name">${t("dayShort")[d.getDay()]}</span>
+        <div class="day-dots">${pips}</div></div>`;
+    }).join("");
+
+    const sched = scheduleFor(now);
+    const todays = PRAYERS.map((p) => {
+      const s = sched.find((x) => x.key === p);
+      const on = Boolean(dayLog(now)[p]);
+      return `<button class="log-row ${on ? "prayed" : ""}" data-prayer="${p}" aria-pressed="${on}">
+        <span class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7.5"/></svg></span>
+        <span class="name">${t(prayerLabel(p, now))}</span>
+        <span class="time">${num(pad(s.date.getHours()))}:${num(pad(s.date.getMinutes()))}</span></button>`;
+    }).join("");
+
+    $("#view-log").innerHTML = `
+      <h2 class="section-title">${t("logTitle")}</h2>
+      <p class="arc-label" style="margin:0 0 10px">${t("logHint")}</p>
+      <div class="week">${week}</div>
+      <div class="summary">
+        <div class="stat"><b>${num(streak())}</b><span>${t("streak")} · ${t("streakUnit")}</span></div>
+        <div class="stat"><b>${num(weekRate())}${t("weekUnit")}</b><span>${t("weekRate")}</span></div>
+      </div>
+      <div class="log-list">${todays}</div>`;
+  }
+
+  function renderAdhkar() {
+    const set = S.set;
+    const items = ADHKAR[set];
+    const doneCount = items.filter((_, i) => adhCount(set, i) >= items[i].count).length;
+    const pct = items.length ? doneCount / items.length : 0;
+    const chips = ["morning", "evening", "after"].map((k) =>
+      `<button class="chip" data-act="set" data-val="${k}" aria-pressed="${k === set}">${t(k === "after" ? "afterPrayer" : k)}</button>`).join("");
+
+    const cards = items.map((item, i) => {
+      const c = adhCount(set, i);
+      const done = c >= item.count;
+      return `<article class="dhikr ${done ? "done" : ""}">
+        <p class="dhikr-text">${item.ar}</p>
+        ${S.lang === "en" ? `<p class="dhikr-en">${item.en}</p>` : ""}
+        <div class="dhikr-foot">
+          <span class="count-pill">${S.lang === "ar" ? `${num(c)} من ${num(item.count)}` : `${c} / ${item.count}`}</span>
+          <button class="tap-btn" data-act="dhikr" data-i="${i}" ${done ? "disabled" : ""}>${done ? "✓ " + t("done") : t("tapToCount")}</button>
+        </div></article>`;
+    }).join("");
+
+    $("#view-adhkar").innerHTML = `
+      <h2 class="section-title">${t("adhkarTitle")}</h2>
+      <div class="chips">${chips}</div>
+      <div class="set-head">
+        <div class="ring"><svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle class="track" cx="32" cy="32" r="26" pathLength="100" stroke-dasharray="100 100"/>
+          <circle class="fill" cx="32" cy="32" r="26" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${100 - pct * 100}"/>
+        </svg><b>${num(doneCount)}/${num(items.length)}</b></div>
+        <div class="set-meta"><h3>${t(set === "after" ? "afterPrayer" : set)}</h3>
+          <p>${t("setProgress")} · ${num(doneCount)} ${t("done")}</p></div>
+      </div>
+      ${cards}
+      <div class="tasbeeh">
+        <button class="tasbeeh-btn" id="tasbeehBtn" aria-label="${t("tasbeeh")}">
+          <span id="tasbeehCount">${num(TASBEEH)}</span><small>${t("tasbeeh")}</small></button>
+        <div class="tasbeeh-row"><button class="ghost-btn" data-act="resetTasbeeh">${t("reset")}</button></div>
+        <p class="arc-label" style="margin:0">${t("resetHint")}</p>
+      </div>`;
+  }
+
+  /* -------------------------------------------------------------- settings */
+  function renderSettings() {
+    const host = $("#view-settings");
+    if (S.page === "alerts") return renderAlerts(host);
+    if (S.page === "about") return renderAbout(host);
+    if (S.page === "location") return renderLocation(host);
+    if (S.page === "widgets") return renderWidgetSettings(host);
+
+    const themeOpts = [{ v: "light", l: t("themeLight") }, { v: "dark", l: t("themeDark") }, { v: "auto", l: t("themeAuto") }];
+    const digitOpts = [{ v: "auto", l: t("digitAuto") }, { v: "arabic", l: t("digitArabic") }, { v: "latin", l: t("digitLatin") }];
+    const methodList = METHODS.map((m) => `<option value="${m.id}" ${m.id === S.method ? "selected" : ""}>${S.lang === "ar" ? m.ar : m.en}</option>`).join("");
+
+    host.innerHTML = `
+      <h2 class="section-title">${t("settingsTitle")}</h2>
+
+      <div class="card">
+        <div class="card-head"><h3>${t("appearance")}</h3></div>
+        ${segRow(t("language"), [{ v: "ar", l: "العربية" }, { v: "en", l: "English" }], S.lang, "lang")}
+        ${segRow(t("digits"), digitOpts, S.digits, "digits")}
+        ${segRow(t("theme"), themeOpts, S.theme, "theme")}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>${t("location")}</h3></div>
+        ${tapRow(S.lang === "ar" ? city().ar : city().en,
+          (S.locationMode === "auto" ? t("locationAuto") : t("locationCoords")) + " · " + (S.lang === "ar" ? city().countryAr : city().countryEn),
+          t("locationChange"), "page", "location")}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>${t("prayerTimes")}</h3></div>
+        <div class="row"><div class="r-label"><b>${t("method")}</b></div>
+          <select class="select" data-act="method">${methodList}</select></div>
+        ${segRow(t("asrConvention"), [{ v: "standard", l: t("asrStandard") }, { v: "hanafi", l: t("asrHanafi") }], S.asr, "asr")}
+        <div class="row"><div class="r-label"><b>${t("adjustments")}</b><span>${t("adjustmentsHint")}</span></div></div>
+        ${PRAYERS.map((p) => `<div class="row"><div class="r-label"><b>${t(p)}</b></div>
+          <div class="stepper">
+            <button data-act="step" data-key="${p}" data-d="-1" aria-label="−">−</button>
+            <b>${(S.adjust[p] > 0 ? "+" : "") + num(S.adjust[p])} ${t("minuteShort")}</b>
+            <button data-act="step" data-key="${p}" data-d="1" aria-label="+">+</button>
+          </div></div>`).join("")}
+        <div class="row"><div class="r-label"><b>${t("highLat")}</b></div>
+          <select class="select" data-act="highlat">
+            ${[["auto", t("highLatAuto")], ["mid", t("highLatMid")], ["seventh", t("highLatSeventh")], ["twilight", t("highLatTwilight")]]
+              .map(([v, l]) => `<option value="${v}" ${S.highLat === v ? "selected" : ""}>${l}</option>`).join("")}
+          </select></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>${t("alerts")}</h3></div>
+        ${tapRow(t("alertsMaster"), t("alertsMasterSub"), S.alerts.master ? "✓" : "—", "page", "alerts")}
+        ${tapRow(t("worship"), "", `${num(S.worship.salawat)}h`, "page", "alerts")}
+        ${tapRow(t("silence"), "", `${num(S.silence.window)} ${t("minuteShort")}`, "page", "alerts")}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>${t("widgetSettings")}</h3></div>
+        ${tapRow(t("widgetSettings"), `${t("transparency")} ${num(S.widgets.alpha)}% · ${S.widgets.colors === "app" ? t("appColors") : t("wallpaperColors")}`, "", "page", "widgets")}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>${t("about")}</h3></div>
+        ${tapRow(t("version"), "", "", "page", "about")}
+        ${tapRow(t("credits"), "", "", "page", "about")}
+        ${tapRow(t("privacy"), "", "", "page", "about")}
+        ${tapRow(t("replayIntro"), "", "", "act", "onboard")}
+      </div>
+      <p class="demo-note">${t("demo")}</p>`;
+  }
+
+  function renderWidgetSettings(host) {
+    host.innerHTML = `
+      <div class="subpage-head">
+        <button class="back-btn" data-act="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <h2>${t("widgetSettings")}</h2>
+      </div>
+      <div class="card">
+        <div class="row"><div class="r-label"><b>${t("transparency")}</b><span>${t("widgetsTitle")}</span></div>
+          <span class="r-value">${num(S.widgets.alpha)}%</span></div>
+        <div class="slider-row"><input type="range" min="0" max="100" step="5" value="${S.widgets.alpha}" data-act="widgetAlpha" aria-label="${t("transparency")}"></div>
+        ${segRow(t("colors"), [{ v: "app", l: t("appColors") }, { v: "wallpaper", l: t("wallpaperColors") }], S.widgets.colors, "widgets.colors")}
+        ${switchRow(t("deepLook"), t("deepLookSub"), S.widgets.deepLook, "", "widgets.deepLook")}
+      </div>
+      <p class="pill-note">${t("demo")}</p>`;
+  }
+
+  function renderLocation(host) {
+    host.innerHTML = `
+      <div class="subpage-head">
+        <button class="back-btn" data-act="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <h2>${t("locationSheet")}</h2>
+      </div>
+      <div class="card">
+        <div class="row"><input class="select" style="max-width:none;width:100%" data-act="locSearch"
+          placeholder="${t("locationSearch")}" aria-label="${t("locationSearch")}" value=""></div>
+        <div class="row tap" data-act="useLocation"><div class="r-label"><b>${t("locationMyLocation")}</b>
+          <span>${city().lat}° , ${city().lon}°</span></div>${S.locationMode === "auto" ? `<span class="r-value">✓</span>` : ""}</div>
+      </div>
+      <div class="card">
+        ${CITIES.map((c, i) => `<div class="row tap" data-act="city" data-i="${i}" data-name="${c.ar} ${c.en}">
+          <div class="r-label"><b>${S.lang === "ar" ? c.ar : c.en}</b><span>${S.lang === "ar" ? c.countryAr : c.countryEn} · ${c.lat}° , ${c.lon}°</span></div>
+          ${i === S.city ? `<span class="r-value">✓</span>` : ""}</div>`).join("")}
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>${t("locationCoords")}</h3></div>
+        <div class="row"><div class="r-label"><b>${t("latitude")}</b></div><span class="r-value">${city().lat}</span></div>
+        <div class="row"><div class="r-label"><b>${t("longitude")}</b></div><span class="r-value">${city().lon}</span></div>
+        <p class="pill-note">${t("locationAuto")} · ${S.lang === "ar" ? city().ar : city().en}</p>
+      </div>`;
+  }
+
+  function renderAlerts(host) {
+    const prayerRows = PRAYERS.map((p) => `
+      <div class="adhan-line"><span class="n">${t(p)}</span>
+        <div class="seg">
+          ${[["short", t("adhanShort")], ["full", t("adhanFull")], ["silent", t("adhanSilent")]]
+            .map(([v, l]) => `<button data-act="adhan" data-key="${p}" data-val="${v}" aria-pressed="${S.alerts[p] === v}">${l}</button>`).join("")}
+        </div></div>`).join("");
+
+    host.innerHTML = `
+      <div class="subpage-head">
+        <button class="back-btn" data-act="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <h2>${t("alerts")}</h2>
+      </div>
+      <div class="card">
+        ${switchRow(t("alertsMaster"), t("alertsMasterSub"), S.alerts.master, "master", "alerts.master")}
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>${t("adhanTitle")}</h3></div>
+        <div class="prayer-adhan">${prayerRows}</div>
+        <p class="fine">${t("fajrNote")}</p>
+      </div>
+      <div class="card">
+        ${segRow(t("reminder"), [{ v: "0", l: "0" }, { v: "5", l: "5" }, { v: "10", l: "10" }, { v: "15", l: "15" }, { v: "20", l: "20" }, { v: "30", l: "30" }], String(S.alerts.reminder), "alerts.reminder")}
+        ${switchRow(t("alarmClock"), t("alarmClockSub"), S.alerts.alarmClock, "", "alerts.alarmClock")}
+        ${switchRow(t("playOnSilent"), t("playOnSilentSub"), S.alerts.playOnSilent, "", "alerts.playOnSilent")}
+        ${switchRow(t("vibration"), t("vibrationSub"), S.alerts.vibration, "", "alerts.vibration")}
+        <div class="row"><div class="r-label"><b>${t("adhanVolume")}</b></div><span class="r-value">${num(S.alerts.volume)}%</span></div>
+        <div class="slider-row"><input type="range" min="0" max="100" step="5" value="${S.alerts.volume}" data-act="volume" aria-label="${t("adhanVolume")}"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>${t("worship")}</h3></div>
+        ${segRow(t("salawat"), [{ v: "0", l: "—" }, { v: "1", l: "1h" }, { v: "2", l: "2h" }, { v: "3", l: "3h" }], String(S.worship.salawat), "worship.salawat")}
+        ${switchRow(t("kahf"), t("kahfSub"), S.worship.kahf, "", "worship.kahf")}
+        ${segRow(t("morningAdhkar"), [{ v: "0", l: "—" }, { v: "20", l: "20" }, { v: "30", l: "30" }], String(S.worship.morning), "worship.morning")}
+        ${segRow(t("eveningAdhkar"), [{ v: "0", l: "—" }, { v: "20", l: "20" }, { v: "30", l: "30" }], String(S.worship.evening), "worship.evening")}
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>${t("silence")}</h3></div>
+        ${segRow(t("silenceMode"), [{ v: "silent", l: t("silentMode") }, { v: "vibrate", l: t("vibrateMode") }], S.silence.mode, "silence.mode")}
+        ${segRow(t("silenceWindow"), [{ v: "20", l: "20" }, { v: "45", l: "45" }], String(S.silence.window), "silence.window")}
+        <p class="fine">${t("silenceDnd")}</p>
+      </div>`;
+  }
+
+  function renderAbout(host) {
+    host.innerHTML = `
+      <div class="subpage-head">
+        <button class="back-btn" data-act="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <h2>${t("about")}</h2>
+      </div>
+      <div class="card">
+        <div class="row"><div class="r-label"><b>${t("version")}</b><span>${t("aboutBody")}</span></div></div>
+        <div class="row"><div class="r-label"><b>${t("credits")}</b><span>Noto Kufi Arabic · Noto Naskh Arabic · Noto Sans</span></div></div>
+        <div class="row"><div class="r-label"><b>${t("privacy")}</b><span>${S.lang === "ar" ? "لا شيء يغادر جهازك." : "Nothing leaves your device."}</span></div></div>
+        <div class="row"><div class="r-label"><b>${t("contact")}</b><span>contact@nileorbit.com</span></div></div>
+        <div class="row tap" data-act="onboard"><div class="r-label"><b>${t("replayIntro")}</b></div>
+          <svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      </div>`;
+  }
+
+  /* --------------------------------------------------------------- widgets */
+  const W_SCEN = {
+    asr: { now: [14, 20], day: 0, marked: ["fajr", "dhuhr"] },
+    night: { now: [0, 30], day: 0, marked: [] },
+    friday: { now: [11, 0], day: 5, marked: ["fajr"] },
+    evening: { now: [18, 50], day: 0, marked: ["fajr", "dhuhr", "asr", "maghrib"] }
+  };
+  const W_VARIANTS = [
+    { id: "v1-4x2", name: { ar: "الصلاة القادمة ٤×٢", en: "Next prayer 4×2" }, cls: "v1", cs: 4, rs: 2 },
+    { id: "v1-2x2", name: { ar: "الصلاة القادمة ٢×٢", en: "Next prayer 2×2" }, cls: "v1", cs: 2, rs: 2 },
+    { id: "v1-1x1", name: { ar: "حلقة ١×١", en: "Ring 1×1" }, cls: "v1x1", cs: 1, rs: 1 },
+    { id: "v2-4x2", name: { ar: "مواقيت اليوم ٤×٢", en: "Today's times 4×2" }, cls: "v2", cs: 4, rs: 2 },
+    { id: "v2-4x1", name: { ar: "مواقيت اليوم ٤×١", en: "Today's times 4×1" }, cls: "v2", cs: 4, rs: 1 },
+    { id: "v3-4x2", name: { ar: "اليوم مع السجل ٤×٢", en: "Today with log 4×2" }, cls: "v3", cs: 4, rs: 2 },
+    { id: "v3-4x1", name: { ar: "اليوم مع السجل ٤×١", en: "Today with log 4×1" }, cls: "v3", cs: 4, rs: 1 },
+    { id: "v4-4x3", name: { ar: "سجل الأسبوع ٤×٣", en: "Week log 4×3" }, cls: "v4", cs: 4, rs: 3 },
+    { id: "v4-4x2", name: { ar: "سجل الأسبوع ٤×٢", en: "Week log 4×2" }, cls: "v4", cs: 4, rs: 2 },
+    { id: "v5-4x1", name: { ar: "شريط التاريخ ٤×١", en: "Date strip 4×1" }, cls: "v5", cs: 4, rs: 1 },
+    { id: "clk-big", name: { ar: "ساعة كبيرة ٤×٢", en: "Big clock 4×2" }, cls: "clk", cs: 4, rs: 2 },
+    { id: "clk-gold", name: { ar: "ساعة ذهبية ٤×٢", en: "Gold clock 4×2" }, cls: "clk clk-gold", cs: 4, rs: 2 },
+    { id: "clk-prayer", name: { ar: "ساعة وصلاة ٤×٢", en: "Clock & prayer 4×2" }, cls: "clk", cs: 4, rs: 2 }
+  ];
+  const PAST = [[1,1,1,1,1],[1,0,1,1,1],[1,1,1,1,0],[0,1,1,1,1],[1,1,1,1,1],[1,1,0,1,1]];
+
+  function wModel() {
+    const sc = W_SCEN[S.wScenario] || W_SCEN.asr;
+    const now = new Date();
+    const day = new Date(now);
+    const dow = sc.day === 5 ? 5 : day.getDay();
+    day.setDate(day.getDate() + ((dow - day.getDay() + 7) % 7));
+    const at = (p, base) => {
+      const d = new Date(base || day);
+      d.setHours(p.h, p.m, 0, 0);
+      d.setMinutes(d.getMinutes() + offsetMinutes(p.key));
+      return d;
+    };
+    const list = BASE.map((p) => ({ ...p, date: at(p) }));
+    const five = list.filter((p) => !p.stop);
+    const fake = new Date(day);
+    fake.setHours(sc.now[0], sc.now[1], 0, 0);
+    if (!S.wStarted) S.wStarted = Date.now();
+    fake.setSeconds(fake.getSeconds() + Math.floor((Date.now() - S.wStarted) / 1000));
+    let next = five.find((p) => p.date > fake);
+    if (!next) {
+      const nd = new Date(day.getTime() + 86400000);
+      next = { ...BASE[0], date: at(BASE[0], nd) };
+    }
+    const prev = [...five].reverse().find((p) => p.date <= fake) || null;
+    const status = {};
+    five.forEach((p) => { status[p.key] = sc.marked.includes(p.key) ? "prayed" : (p.date <= fake ? "due" : "upcoming"); });
+    return { now: fake, day, list, next, prev, status, at };
+  }
+
+  function fmtTime(d) {
+    return new Intl.DateTimeFormat(S.lang === "ar" ? "ar-EG-u-nu-" + (arabicDigits() ? "arab" : "latn") : "en-US",
+      { hour: "numeric", minute: "2-digit", hour12: true }).format(d);
+  }
+  function fmtTimeShort(d) {
+    return fmtTime(d).replace(/\s?(ص|م|AM|PM)$/, "");
+  }
+  function fmtHijri(d) {
+    try {
+      return new Intl.DateTimeFormat(S.lang === "ar" ? "ar-SA-u-ca-islamic-umalqura" : "en-US-u-ca-islamic-umalqura",
+        { day: "numeric", month: "long", year: "numeric" }).format(d) + (S.lang === "ar" ? " هـ" : " AH");
+    } catch (e) { return ""; }
+  }
+  function fmtGreg(d, weekday) {
+    return new Intl.DateTimeFormat(S.lang === "ar" ? "ar-EG" : "en-GB",
+      weekday ? { weekday: "long", day: "numeric", month: "long" } : { day: "numeric", month: "long" }).format(d);
+  }
+  const wT = (ar, en) => (S.lang === "en" ? en : ar);
+
+  function widgetHtml(m) {
+    const v = W_VARIANTS.find((x) => x.id === S.wVariant) || W_VARIANTS[0];
+    const name = t(prayerLabel(m.next.key, m.day));
+    const cd = `<span class="cd" data-wcd="${m.next.date.getTime()}">${countText(m.next.date - m.now)}</span>`;
+    const dateLine = `<span>${fmtGreg(m.day, true)}</span><span class="muted">${fmtHijri(m.day)}</span>`;
+
+    if (v.id === "v1-4x2" || v.id === "v1-2x2") {
+      return `<div class="w ${v.cls}"><span class="tag">${v.cs}×${v.rs}</span>
+        <span class="label muted">${wT("الصلاة القادمة", "Next Prayer")}</span>
+        <span class="name">${name}</span><span class="time">${fmtTime(m.next.date)}</span>
+        <span class="count">${wT("بعد ", "in ")}${cd}</span></div>`;
+    }
+    if (v.id === "v1-1x1") {
+      const pct = 62;
+      return `<div class="w v1x1"><span class="tag">1×1</span><div class="ring-s">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width="9"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="9" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${100 - pct}" stroke-linecap="round"/></svg>
+        <div class="in"><b>${fmtTimeShort(m.next.date)}</b><small>${name}</small></div></div></div>`;
+    }
+    if (v.cls === "v2") {
+      const cells = m.list.map((p) => {
+        const isNext = !p.stop && p.key === m.next.key;
+        return `<div class="cell${p.stop ? " sun" : ""}${isNext ? " next" : ""}"><span class="n">${t(prayerLabel(p.key, m.day))}</span>
+          <span class="t">${fmtTimeShort(p.date)}</span></div>`;
+      }).join("");
+      return `<div class="w v2"><span class="tag">${v.cs}×${v.rs}</span><div class="date">${dateLine}</div>
+        <div class="row">${cells}</div></div>`;
+    }
+    if (v.cls === "v3") {
+      const rows = m.list.filter((p) => !p.stop).slice(0, v.rs === 1 ? 2 : 5).map((p) => {
+        const st = m.status[p.key];
+        const isNext = p.key === m.next.key;
+        return `<div class="li ${st}${isNext ? " next" : ""}"><span class="n">${t(prayerLabel(p.key, m.day))}</span>
+          <span class="t">${fmtTime(p.date)}</span><span class="mark ${st}">${st === "prayed" ? "✓" : ""}</span></div>`;
+      }).join("");
+      return `<div class="w v3"><span class="tag">${v.cs}×${v.rs}</span><div class="date">${dateLine}</div>${rows}</div>`;
+    }
+    if (v.cls === "v4") {
+      const days = [];
+      for (let i = 6; i >= 0; i--) { const d = new Date(m.day); d.setDate(d.getDate() - i); days.push(d); }
+      let html = `<div class="w v4"><span class="tag">${v.cs}×${v.rs}</span><div class="head"><span>${wT("سجل الأسبوع", "This week")}</span><span class="muted">${num(countWeek(m))}/35</span></div><div class="tbl"><span></span>`;
+      days.forEach((d, i) => { html += `<span class="ch${i === 6 ? " today" : ""}">${new Intl.DateTimeFormat(S.lang === "ar" ? "ar-EG" : "en-US", { weekday: "narrow" }).format(d)}</span>`; });
+      m.list.filter((p) => !p.stop).forEach((p, pi) => {
+        html += `<span class="rh">${t(prayerLabel(p.key, m.day))}</span>`;
+        days.forEach((d, di) => {
+          const cls = di < 6 ? (PAST[di][pi] ? "prayed" : "missed") : (m.status[p.key] === "prayed" ? "prayed" : (m.status[p.key] === "due" ? "missed" : "upcoming"));
+          html += `<span class="dt ${cls}"></span>`;
+        });
+      });
+      return html + "</div></div>";
+    }
+    if (v.cls === "v5") {
+      return `<div class="w v5"><span class="tag">4×1</span><div class="dates"><span class="greg">${fmtGreg(m.day, true)}</span><span class="hijri muted">${fmtHijri(m.day)}</span></div>
+        <span class="nx">${wT("القادمة: ", "Next: ")}${name} ${fmtTime(m.next.date)}</span></div>`;
+    }
+    // clock widgets
+    const clock = new Intl.DateTimeFormat(S.lang === "ar" ? "ar-EG-u-nu-" + (arabicDigits() ? "arab" : "latn") : "en-US",
+      { hour: "numeric", minute: "2-digit", hour12: false }).format(m.now);
+    const span = Math.max(1000, m.next.date - (m.prev ? m.prev.date : m.now));
+    const pct = Math.min(100, Math.max(0, ((m.now - (m.prev ? m.prev.date : m.now)) / span) * 100));
+    const nextLine = `${wT("بعد ", "in ")}${name} · ${cd}`;
+    if (v.id === "clk-gold") {
+      return `<div class="w clk clk-gold"><span class="tag">4×2</span><span class="big">${clock}</span>
+        <span class="dt">${fmtGreg(m.day, true)}</span><span class="dt" style="opacity:.8">${fmtHijri(m.day)}</span>
+        <span class="nx">${wT("القادمة: ", "Next: ")}${name} ${fmtTime(m.next.date)}</span></div>`;
+    }
+    if (v.id === "clk-prayer") {
+      return `<div class="w clk"><span class="tag">4×2</span><span class="big">${clock}</span>
+        <span class="dt">${fmtGreg(m.day, true)}</span>
+        <div class="clk-bar"><i style="width:${pct}%"></i></div>
+        <span class="nx">${nextLine}</span></div>`;
+    }
+    return `<div class="w clk"><span class="tag">4×2</span><span class="big">${clock}</span>
+      <span class="dt">${fmtGreg(m.day, true)} · ${fmtHijri(m.day)}</span>
+      <span class="nx">${wT("القادمة: ", "Next: ")}${name} ${fmtTime(m.next.date)}</span></div>`;
+  }
+
+  function countWeek(m) {
+    let done = 0;
+    PAST.forEach((r) => r.forEach((v) => (done += v)));
+    PRAYERS.forEach((p) => { if (m.status[p] === "prayed") done++; });
+    return done;
+  }
+
+  function renderWidgets() {
+    const m = wModel();
+    const v = W_VARIANTS.find((x) => x.id === S.wVariant) || W_VARIANTS[0];
+    const host = $("#view-widgets");
+    const alpha = S.wAlpha;
+    host.innerHTML = `
+      <h2 class="section-title">${t("widgetsTitle")}</h2>
+      <div class="wx-stage">
+        <div class="wx-phone"><div class="wx-screen mode-${S.wMode}" dir="${S.lang === "ar" ? "rtl" : "ltr"}">
+          <div class="wx-status"><span>${num(pad(m.now.getHours()))}:${num(pad(m.now.getMinutes()))}</span><span>▲ ● ▮</span></div>
+          <div class="wx-grid">
+            <div class="wx-slot" style="grid-column:span ${v.cs};grid-row:span ${v.rs}">
+              <div style="flex:1;display:flex;min-width:0;opacity:${alpha / 100}">${widgetHtml(m)}</div>
+            </div>
+          </div>
+          <div class="wx-dock">
+            <span class="wx-icon">☎</span><span class="wx-icon">✉</span><span class="wx-icon">◎</span><span class="wx-icon">▤</span>
+          </div>
+        </div></div>
+
+        <div class="wx-controls">
+          <div class="wx-chips">
+            ${W_VARIANTS.map((x) => `<button class="chip" data-act="wvariant" data-val="${x.id}" aria-pressed="${x.id === S.wVariant}">${S.lang === "ar" ? x.name.ar : x.name.en}</button>`).join("")}
+          </div>
+          <div class="wx-row">
+            <span class="wx-label">${t("widgetScenario")}</span>
+            ${[["asr", "14:20"], ["night", "00:30"], ["friday", S.lang === "ar" ? "جمعة" : "Fri"], ["evening", "18:50"]]
+              .map(([k, l]) => `<button class="chip" data-act="wscenario" data-val="${k}" aria-pressed="${S.wScenario === k}">${l}</button>`).join("")}
+          </div>
+          <div class="wx-row">
+            <span class="wx-label">${t("widgetAndroid")}</span>
+            <button class="chip" data-act="wmode" data-val="12" aria-pressed="${S.wMode === "12"}">12+</button>
+            <button class="chip" data-act="wmode" data-val="8" aria-pressed="${S.wMode === "8"}">8–11</button>
+            <button class="chip" data-act="wdigits" aria-pressed="${arabicDigits()}">${arabicDigits() ? "٠١٢" : "123"}</button>
+            <button class="chip" data-act="wlang" aria-pressed="${S.lang === "ar"}">${S.lang === "ar" ? "عربي" : "English"}</button>
+          </div>
+          <div class="wx-alpha">
+            <span class="wx-label">${t("transparency")}</span>
+            <input type="range" min="0" max="100" step="5" value="${alpha}" data-act="walpha" aria-label="${t("transparency")}">
+            <span class="wx-label">${num(alpha)}%</span>
+          </div>
+        </div>
+      </div>
+      <p class="demo-note">${t("demo")}</p>`;
+  }
+
+  /* ------------------------------------------------------------- onboarding */
+  let onbStep = 0;
+  function renderOnboard() {
+    const onb = $("#onb");
+    if (!onb) return;
+    if (S.onboarded && !S.forceOnboard) { onb.hidden = true; return; }
+    onb.hidden = false;
+    const steps = [
+      { icon: '<path d="M12 3v2M12 19v2M3 12h2M19 12h2"/><circle cx="12" cy="12" r="4"/>', title: t("onb1Title"), body: t("onb1Body") },
+      { icon: '<path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>', title: t("onb2Title"), body: t("onb2Body") },
+      { icon: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>', title: t("onb3Title"), body: t("onb3Body") }
+    ];
+    const s = steps[onbStep];
+    $("#onbCard").innerHTML = `
+      <div class="onb-art"><svg viewBox="0 0 24 24">${s.icon}</svg></div>
+      <h2>${s.title}</h2><p>${s.body}</p>
+      <div class="onb-dots">${steps.map((_, i) => `<i class="${i === onbStep ? "on" : ""}"></i>`).join("")}</div>
+      <div class="onb-actions">
+        <button class="ghost" data-act="onbSkip">${t("onbSkip")}</button>
+        <button class="primary" data-act="onbNext">${onbStep === steps.length - 1 ? t("onbStart") : t("onbNext")}</button>
+      </div>`;
+  }
+
+  /* ---------------------------------------------------------------- render */
+  function applyChrome() {
+    document.documentElement.lang = S.lang;
+    document.documentElement.dir = S.lang === "ar" ? "rtl" : "ltr";
+    if (S.theme === "auto") {
+      document.documentElement.dataset.theme = new Date().getHours() >= 19 || new Date().getHours() < 5 ? "dark" : "light";
+    } else {
+      document.documentElement.dataset.theme = S.theme;
+    }
+    const icon = $("#themeIcon");
+    if (icon) {
+      icon.innerHTML = document.documentElement.dataset.theme === "dark"
+        ? '<circle cx="12" cy="12" r="4.2"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>'
+        : '<path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/>';
+    }
+    $("#langBtn").textContent = S.lang === "ar" ? "EN" : "ع";
+    $$("[data-i18n]").forEach((el) => { const k = el.dataset.i18n; if (DICT[S.lang][k]) el.textContent = DICT[S.lang][k]; });
+    $$(".tab").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === S.tab ? "true" : "false"));
+    $$("[data-view]").forEach((v) => { v.hidden = v.dataset.view !== S.tab; });
+  }
+
+  function renderTab() {
+    if (S.tab === "home") renderHome();
+    else if (S.tab === "log") renderLog();
+    else if (S.tab === "adhkar") renderAdhkar();
+    else if (S.tab === "settings") renderSettings();
+    else renderWidgets();
+  }
+
+  function renderAll() {
+    applyChrome();
+    renderTab();
+    renderOnboard();
+    main.scrollTop = 0;
+  }
+
+  /* ----------------------------------------------------------------- clock */
+  let lastMin = -1;
+  function tick() {
+    const now = new Date();
+    const { next, prev } = nextPrayer(now);
+    const start = prev ? prev.date : new Date(now.getTime() - 3600000);
+    const span = Math.max(1000, next.date - start);
+    const progress = Math.min(1, Math.max(0, (now - start) / span));
+
+    const cd = $("#countdown");
+    if (cd) cd.textContent = countText(next.date - now);
+    const fill = $("#arcFill");
+    if (fill) fill.setAttribute("stroke-dashoffset", String(100 - progress * 100));
+    const dot = $("#arcDot");
+    if (dot) {
+      const rad = ((-90 + 360 * progress) * Math.PI) / 180;
+      dot.setAttribute("cx", String(135 + 92 * Math.cos(rad)));
+      dot.setAttribute("cy", String(135 + 92 * Math.sin(rad)));
+    }
+    const period = skyFor(now);
+    if (document.documentElement.dataset.sky !== period) document.documentElement.dataset.sky = period;
+
+    // widget countdowns (fixed timestamps from the widget model)
+    $$("[data-wcd]").forEach((el) => {
+      const target = Number(el.dataset.wcd);
+      const m = wModel();
+      el.textContent = countText(Math.max(0, target - m.now));
+    });
+
+    if (now.getMinutes() !== lastMin) {
+      lastMin = now.getMinutes();
+      if (S.tab === "home") renderHome();
+      else if (S.tab === "log") renderLog();
+    }
+    if (S.theme === "auto") applyChromeTheme();
+  }
+  function applyChromeTheme() {
+    const want = new Date().getHours() >= 19 || new Date().getHours() < 5 ? "dark" : "light";
+    if (document.documentElement.dataset.theme !== want) document.documentElement.dataset.theme = want;
+  }
+
+  /* ---------------------------------------------------------------- events */
+  document.addEventListener("click", (ev) => {
+    const tabBtn = ev.target.closest(".tab");
+    if (tabBtn) {
+      S.tab = tabBtn.dataset.tab;
+      S.page = "root";
+      save();
+      applyChrome();
+      renderTab();
+      main.scrollTop = 0;
+      return;
+    }
+    if (ev.target.closest("#themeBtn")) {
+      S.theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      save(); applyChrome();
+      if (S.tab === "settings") renderTab();
+      return;
+    }
+    if (ev.target.closest("#langBtn")) {
+      S.lang = S.lang === "ar" ? "en" : "ar";
+      save(); renderAll();
+      return;
+    }
+
+    const el = ev.target.closest("[data-act]");
+    if (!el) return;
+    const act = el.dataset.act;
+
+    if (act === "toggle") {
+      const path = el.dataset.path.split(".");
+      let obj = S;
+      for (let i = 0; i < path.length - 1; i++) obj = obj[path[i]];
+      obj[path[path.length - 1]] = !obj[path[path.length - 1]];
+      save(); renderTab();
+      return;
+    }
+    if (act === "seg") {
+      const path = el.dataset.path;
+      setPath(path, el.dataset.val);
+      save(); renderAll();
+      return;
+    }
+    if (act === "step") {
+      const k = el.dataset.key;
+      S.adjust[k] = Math.max(-30, Math.min(30, (S.adjust[k] || 0) + Number(el.dataset.d)));
+      save(); renderTab();
+      return;
+    }
+    if (act === "page") {
+      S.page = el.dataset.page;
+      renderTab();
+      main.scrollTop = 0;
+      return;
+    }
+    if (act === "back") { S.page = "root"; renderTab(); return; }
+    if (act === "city") { S.city = Number(el.dataset.i); S.locationMode = "auto"; save(); renderAll(); return; }
+    if (act === "useLocation") { S.locationMode = "auto"; save(); renderTab(); return; }
+    if (act === "adhan") { S.alerts[el.dataset.key] = el.dataset.val; save(); renderTab(); return; }
+    if (act === "set") { S.set = el.dataset.val; renderTab(); return; }
+    if (act === "dhikr") {
+      const i = Number(el.dataset.i);
+      const card = el.closest(".dhikr");
+      if (card) ripple(ev, card);
+      buzz(8);
+      bumpAdhkar(S.set, i);
+      renderAdhkar();
+      return;
+    }
+    if (act === "resetTasbeeh") { TASBEEH = 0; localStorage.setItem("mq.tasbeeh", "0"); renderAdhkar(); return; }
+    if (act === "onboard") { S.forceOnboard = true; onbStep = 0; renderOnboard(); return; }
+    if (act === "onbSkip") { S.onboarded = true; S.forceOnboard = false; save(); renderOnboard(); return; }
+    if (act === "onbNext") {
+      onbStep++;
+      if (onbStep > 2) { S.onboarded = true; S.forceOnboard = false; save(); renderOnboard(); }
+      else renderOnboard();
+      return;
+    }
+    if (act === "wvariant") { S.wVariant = el.dataset.val; save(); renderTab(); return; }
+    if (act === "wscenario") { S.wScenario = el.dataset.val; S.wStarted = Date.now(); save(); renderTab(); return; }
+    if (act === "wmode") { S.wMode = el.dataset.val; save(); renderTab(); return; }
+    if (act === "wdigits") { S.digits = arabicDigits() ? "latin" : "arabic"; save(); renderAll(); return; }
+    if (act === "wlang") { S.lang = S.lang === "ar" ? "en" : "ar"; save(); renderAll(); return; }
+    if (ev.target.closest("#tasbeehBtn")) {
+      const btn = $("#tasbeehBtn");
+      ripple(ev, btn); buzz(8);
+      TASBEEH += 1;
+      localStorage.setItem("mq.tasbeeh", String(TASBEEH));
+      $("#tasbeehCount").textContent = num(TASBEEH);
+      return;
+    }
+  });
+
+  document.addEventListener("click", (ev) => {
+    const row = ev.target.closest(".log-row");
+    if (row) {
+      ripple(ev, row); buzz(8);
+      togglePrayer(row.dataset.prayer);
+      renderLog();
+      return;
+    }
+    if (ev.target.closest("#tasbeehBtn")) return;
+  });
+
+  document.addEventListener("input", (ev) => {
+    const el = ev.target.closest("[data-act]");
+    if (!el) return;
+    if (el.dataset.act === "locSearch") {
+      const q = el.value.trim().toLowerCase();
+      $$('#view-settings .row[data-name]').forEach((row) => {
+        row.style.display = !q || row.dataset.name.toLowerCase().includes(q) ? "" : "none";
+      });
+      return;
+    }
+    if (el.dataset.act === "walpha") { S.wAlpha = Number(el.value); save(); renderWidgets(); }
+    if (el.dataset.act === "widgetAlpha") { S.widgets.alpha = Number(el.value); save(); renderTab(); }
+    if (el.dataset.act === "volume") { S.alerts.volume = Number(el.value); save(); renderTab(); }
+  });
+  document.addEventListener("change", (ev) => {
+    const el = ev.target.closest("[data-act]");
+    if (!el) return;
+    if (el.dataset.act === "method") { S.method = el.value; save(); renderTab(); }
+    if (el.dataset.act === "highlat") { S.highLat = el.value; save(); renderTab(); }
+  });
+
+  let pressTimer = null;
+  document.addEventListener("pointerdown", (ev) => {
+    if (!ev.target.closest("#tasbeehBtn")) return;
+    pressTimer = setTimeout(() => {
+      TASBEEH = 0; localStorage.setItem("mq.tasbeeh", "0");
+      const el = $("#tasbeehCount"); if (el) el.textContent = num(0);
+      buzz(20); pressTimer = null;
+    }, 650);
+  });
+  document.addEventListener("pointerup", () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } });
+  document.addEventListener("pointercancel", () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } });
+
+  /* ------------------------------------------------------------------ boot */
+  S.wStarted = Date.now();
+  renderAll();
+  tick();
+  setInterval(tick, 1000);
+
+  window.__mq = { S, nextPrayer, scheduleFor, streak, weekRate, wModel, W_VARIANTS, city, num };
+})();
+</script>
+</body>
+</html>
