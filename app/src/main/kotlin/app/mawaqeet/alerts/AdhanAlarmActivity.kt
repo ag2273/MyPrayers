@@ -70,6 +70,7 @@ class AdhanAlarmActivity : AppCompatActivity() {
             return
         }
         val jumuah = intent.getBooleanExtra(AlertReceiver.EXTRA_JUMUAH, false)
+        val iftar = intent.getBooleanExtra(AlertReceiver.EXTRA_IFTAR, false)
         val id = intent.getIntExtra(AlertReceiver.EXTRA_REQUEST_CODE, -1)
         val prayerTime = intent.getLongExtra(AlertReceiver.EXTRA_PRAYER_TIME, System.currentTimeMillis())
         val day = AlertReceiver.prayerDay(intent)
@@ -84,7 +85,7 @@ class AdhanAlarmActivity : AppCompatActivity() {
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Spacer(Modifier.weight(1f))
-                        Text(stringResource(R.string.adhan_alarm_label), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(if (iftar) R.string.adhan_alert_iftar_title else R.string.adhan_alarm_label), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             stringResource(if (jumuah) R.string.prayer_jumuah else nameRes(prayer)),
                             style = MaterialTheme.typography.displayMedium,
@@ -137,6 +138,7 @@ class AdhanAlarmActivity : AppCompatActivity() {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
                 .putExtra(AlertReceiver.EXTRA_PRAYER, n.prayer.name)
                 .putExtra(AlertReceiver.EXTRA_JUMUAH, n.isJumuah)
+                .putExtra(AlertReceiver.EXTRA_IFTAR, n.isIftar)
                 .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, n.id)
                 .putExtra(AlertReceiver.EXTRA_PRAYER_TIME, n.prayerTime)
                 .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, n.prayerDay?.toString()),

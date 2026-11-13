@@ -34,14 +34,16 @@ class DisplayDayTest {
             InMemoryPrayerLog(),
         ).displayDay()
 
-        val beforeFajr = dayAt("2026-10-25T03:00")
+        val sunday = dayAt("2026-10-25T12:00")
         val saturday = dayAt("2026-10-24T12:00")
 
-        assertEquals(saturday.timeOf(Prayer.ISHA).toInstant(), beforeFajr.previousIsha.time.toInstant())
-        assertEquals(Prayer.ISHA, beforeFajr.previousIsha.prayer)
+        assertEquals(saturday.timeOf(Prayer.ISHA).toInstant(), sunday.previousIsha.time.toInstant())
+        assertEquals(Prayer.ISHA, sunday.previousIsha.prayer)
         // Saturday's Isha was in the evening on Saturday's (summer) clock: after 19:00 BST.
-        assertEquals(LocalDate.of(2026, 10, 24), beforeFajr.previousIsha.time.toLocalDate())
-        kotlin.test.assertTrue(beforeFajr.previousIsha.time.toLocalTime().isAfter(LocalTime.of(19, 0)))
+        assertEquals(LocalDate.of(2026, 10, 24), sunday.previousIsha.time.toLocalDate())
+        kotlin.test.assertTrue(sunday.previousIsha.time.toLocalTime().isAfter(LocalTime.of(19, 0)))
+        // Before Sunday's Fajr the display day is still Saturday, with Saturday's own Isha.
+        assertEquals(saturday.prayerTimes, dayAt("2026-10-25T03:00").prayerTimes)
     }
 
     @Test
@@ -83,18 +85,36 @@ class DisplayDayTest {
     }
 
     @Test
-    fun `after local midnight the display day is the new date and the next Prayer is its Fajr`() {
-        val day = displayDayAt("2026-11-09T00:30")
+    fun `from midnight until Fajr the display day is the Prayer Day still running, with its own date and times`() {
+        // 00:17 on Friday 13 November 2026 in Makkah: Thursday's Prayer Day runs until Friday's Fajr.
+        val day = displayDayAt("2026-11-13T00:17")
+        val thursday = displayDayAt("2026-11-12T12:00")
 
-        assertEquals(LocalDate.of(2026, 11, 9), day.date)
+        assertEquals(LocalDate.of(2026, 11, 12), day.date)
+        assertEquals(thursday.prayerTimes, day.prayerTimes)
+        assertEquals(thursday.hijriDate, day.hijriDate)
+        assertEquals(false, day.isJumuah)
+        // The Next Prayer is the coming Fajr, Friday's.
         assertEquals(Prayer.FAJR, day.next.prayer)
-        assertEquals(day.timeOf(Prayer.FAJR), day.next.time)
+        assertEquals(displayDayAt("2026-11-13T12:00").timeOf(Prayer.FAJR), day.next.time)
     }
 
     @Test
-    fun `midnight is the location's midnight, not the device clock's`() {
-        // 21:30 UTC on 8 November is 00:30 on 9 November in Makkah.
-        val utcClock = Clock.fixed(java.time.Instant.parse("2026-11-08T21:30:00Z"), ZoneOffset.UTC)
+    fun `at Fajr the display day moves to the new Prayer Day, together with the Prayer Log`() {
+        val fajr = displayDayAt("2026-11-13T12:00").timeOf(Prayer.FAJR).toInstant()
+        fun at(instant: java.time.Instant) =
+            PrayerCore(PrayerSettings.Default, Clock.fixed(instant, ZoneOffset.UTC), InMemoryPrayerLog())
+
+        assertEquals(LocalDate.of(2026, 11, 12), at(fajr.minusSeconds(1)).displayDay().date)
+        assertEquals(LocalDate.of(2026, 11, 12), at(fajr.minusSeconds(1)).currentPrayerDay().date)
+        assertEquals(LocalDate.of(2026, 11, 13), at(fajr).displayDay().date)
+        assertEquals(LocalDate.of(2026, 11, 13), at(fajr).currentPrayerDay().date)
+    }
+
+    @Test
+    fun `the day is the location's, not the device clock's`() {
+        // 03:30 UTC on 9 November is 06:30 on 9 November in Makkah (after Fajr), still 8 November in UTC.
+        val utcClock = Clock.fixed(java.time.Instant.parse("2026-11-09T03:30:00Z"), ZoneOffset.UTC)
 
         val day = PrayerCore(PrayerSettings.Default, utcClock, InMemoryPrayerLog()).displayDay()
 
@@ -127,8 +147,9 @@ class DisplayDayTest {
     }
 
     @Test
-    fun `Jumu'ah follows the display day, so it starts at local midnight on Friday`() {
+    fun `Jumu'ah follows the display day, so it starts at Fajr on Friday, not at midnight`() {
         assertEquals(false, displayDayAt("2026-11-12T23:59").isJumuah)
-        assertEquals(true, displayDayAt("2026-11-13T00:00").isJumuah)
+        assertEquals(false, displayDayAt("2026-11-13T00:17").isJumuah)
+        assertEquals(true, displayDayAt("2026-11-13T06:00").isJumuah)
     }
 }

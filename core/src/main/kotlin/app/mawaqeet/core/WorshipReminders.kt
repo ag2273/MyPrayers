@@ -71,6 +71,12 @@ enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
     KAHF,
     MORNING_ADHKAR(AdhkarSetId.MORNING),
     EVENING_ADHKAR(AdhkarSetId.EVENING),
+
+    /** «تذكير السحور» (#91), on a Fasting Day before Fajr; its Prayer Day is that Fasting Day's date. */
+    SUHOOR,
+
+    /** «تنبيه الإمساك» (#91), at a Fasting Day's Imsak; its Prayer Day is that Fasting Day's date. */
+    IMSAK,
 }
 
 /**

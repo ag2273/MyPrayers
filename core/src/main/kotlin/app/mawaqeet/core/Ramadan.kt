@@ -2,10 +2,17 @@ package app.mawaqeet.core
 
 import java.time.ZonedDateTime
 
-/** Settings → Alerts → «تذكيرات العبادة» → «رمضان»: how Ramadan Mode reckons Imsak. */
+/**
+ * Settings → Alerts → «تذكيرات العبادة» → «رمضان»: how Ramadan Mode reckons Imsak, and the two Ramadan reminders (#91),
+ * each off by default and planned only on Fasting Days while the master switch is on.
+ */
 data class RamadanSettings(
     /** Imsak is this many minutes before Fajr, within [IMSAK_MINUTES_RANGE]. */
     val imsakMinutes: Int = DEFAULT_IMSAK_MINUTES,
+    /** «تذكير السحور»: [SuhoorReminder.minutes] before Fajr. */
+    val suhoorReminder: SuhoorReminder = SuhoorReminder(),
+    /** «تنبيه الإمساك»: at Imsak. */
+    val imsakAlert: Boolean = false,
 ) {
     init {
         require(imsakMinutes in IMSAK_MINUTES_RANGE) { "Imsak is $IMSAK_MINUTES_RANGE minutes before Fajr, not $imsakMinutes" }
@@ -21,6 +28,22 @@ data class RamadanSettings(
         /** One tap of the − or + button in Settings. */
         const val IMSAK_MINUTES_STEP = 5
         val IMSAK_MINUTES_RANGE = 0..30
+    }
+}
+
+/** «تذكير السحور» (#91): a gentle reminder [minutes] before Fajr on each Fasting Day, to wake for suhoor. */
+data class SuhoorReminder(
+    val enabled: Boolean = false,
+    /** One of [MINUTES]; kept while the reminder is off. */
+    val minutes: Int = DEFAULT_MINUTES,
+) {
+    init {
+        require(minutes in MINUTES) { "The suhoor reminder comes $MINUTES minutes before Fajr, not $minutes" }
+    }
+
+    companion object {
+        const val DEFAULT_MINUTES = 60
+        val MINUTES = listOf(30, 45, 60, 90, 120)
     }
 }
 

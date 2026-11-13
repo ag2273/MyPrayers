@@ -33,6 +33,8 @@ data class AdhanNotification(
     val prayerDay: LocalDate? = null,
     /** Alarm-clock mode: the Adhan Alert also opens [AdhanAlarmActivity] over the lock screen, like an alarm. */
     val fullScreen: Boolean = false,
+    /** Maghrib's Adhan Alert on a Fasting Day (#91): titled «حان وقت الإفطار» instead of the Prayer's name. */
+    val isIftar: Boolean = false,
 ) {
 
     /**
@@ -58,7 +60,7 @@ data class AdhanNotification(
                 .setTimeoutAfter((prayerTime - System.currentTimeMillis()).coerceAtLeast(60_000))
         } else {
             builder
-                .setContentTitle(text.getString(R.string.adhan_alert_title, name))
+                .setContentTitle(if (isIftar) text.getString(R.string.adhan_alert_iftar_title) else text.getString(R.string.adhan_alert_title, name))
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .apply { if (fullScreen) setFullScreenIntent(AdhanAlarmActivity.pendingIntent(context, this@AdhanNotification), true) }

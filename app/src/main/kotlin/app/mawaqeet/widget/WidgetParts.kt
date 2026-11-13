@@ -304,7 +304,7 @@ internal fun textStep(minWidth: Float, minHeight: Float): Float {
 }
 
 /** Which of the style's colours a piece of widget text takes. */
-internal enum class Tone { TEXT, MUTED, ACCENT, ON_ACCENT, ON_SOFT }
+internal enum class Tone { TEXT, MUTED, ACCENT, ON_ACCENT, ON_SOFT, COUNTDOWN }
 
 @ColorRes
 internal fun WidgetStyle.colorOf(tone: Tone): Int = when (tone) {
@@ -313,6 +313,7 @@ internal fun WidgetStyle.colorOf(tone: Tone): Int = when (tone) {
     Tone.ACCENT -> accent
     Tone.ON_ACCENT -> onAccent
     Tone.ON_SOFT -> onAccentSoft
+    Tone.COUNTDOWN -> countdown
 }
 
 /** The style's colour as a Glance tint, for the white shape drawables (backgrounds, marks, dots). */

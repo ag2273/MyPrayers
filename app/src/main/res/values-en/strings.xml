@@ -88,6 +88,8 @@
 
     <!-- Adhan Alerts (#18). %1$s is the Prayer name (Jumu'ah on Friday's Dhuhr). -->
     <string name="adhan_alert_title">It\'s time for %1$s</string>
+    <!-- Maghrib's Adhan Alert on a Fasting Day (#91) -->
+    <string name="adhan_alert_iftar_title">Time to break your fast</string>
     <string name="adhan_channel_name">Adhan Alerts</string>
     <string name="adhan_channel_description">An alert when each Prayer Time arrives</string>
     <!-- Adhan playback (#22). -->
@@ -561,6 +563,15 @@
     <string name="ramadan_imsak_summary">Before Fajr, shown on Today in Ramadan</string>
     <string name="ramadan_imsak_closer">Imsak %1$s minutes closer to Fajr</string>
     <string name="ramadan_imsak_earlier">Imsak %1$s minutes earlier</string>
+    <!-- Ramadan reminders (#91). %1$s is the minutes before Fajr. -->
+    <string name="suhoor_reminder">Suhoor reminder</string>
+    <string name="suhoor_reminder_description">%1$s minutes before Fajr on Ramadan days</string>
+    <string name="suhoor_reminder_title">Suhoor reminder</string>
+    <string name="suhoor_reminder_text">Time for suhoor: there is blessing in it</string>
+    <string name="imsak_alert">Imsak alert</string>
+    <string name="imsak_alert_description">At Imsak on Ramadan days</string>
+    <string name="imsak_alert_title">Time for Imsak</string>
+    <string name="imsak_alert_text">Stop eating and drinking: Fajr is near</string>
     <string name="about_use_serialization">The backup file</string>
 
     <!-- Settings → Backup (#98) -->

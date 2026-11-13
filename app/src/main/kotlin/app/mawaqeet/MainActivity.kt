@@ -328,6 +328,18 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.stepImsakMinutes(step) }
                             }
 
+                            override fun setSuhoorReminder(on: Boolean) {
+                                scope.launch { settingsStore.setSuhoorReminder(on) }
+                            }
+
+                            override fun setSuhoorReminderMinutes(minutes: Int) {
+                                scope.launch { settingsStore.setSuhoorReminderMinutes(minutes) }
+                            }
+
+                            override fun setImsakAlert(on: Boolean) {
+                                scope.launch { settingsStore.setImsakAlert(on) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {
