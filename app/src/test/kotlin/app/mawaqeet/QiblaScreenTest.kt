@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.DigitStyle
 import app.mawaqeet.core.Location
@@ -52,11 +53,16 @@ class QiblaScreenTest {
 
     private var vibrations = 0
 
-    private fun show(location: Location? = CAIRO, source: HeadingSource = headings, onSetLocation: () -> Unit = {}) {
+    private fun show(
+        location: Location? = CAIRO,
+        source: HeadingSource = headings,
+        onSetLocation: () -> Unit = {},
+        onMosques: () -> Unit = {},
+    ) {
         compose.setContent {
             MawaqeetTheme {
                 ProvideDisplayFormatter(DigitStyle.AUTOMATIC) {
-                    QiblaScreen(location, source, onSetLocation = onSetLocation, onBack = {}, onFacingQibla = { vibrations++ })
+                    QiblaScreen(location, source, onSetLocation = onSetLocation, onMosques = onMosques, onBack = {}, onFacingQibla = { vibrations++ })
                 }
             }
         }
@@ -145,6 +151,25 @@ class QiblaScreenTest {
         compose.onNodeWithText("لم يُحدَّد موقعك بعد").assertIsDisplayed()
         compose.onNodeWithText("تحديد الموقع").performClick()
         assertTrue(asked)
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `nearby mosques under the compass says it opens in the maps app and opens it`() {
+        var opened = 0
+        show(onMosques = { opened++ })
+        compose.onNodeWithText("تُفتح في تطبيق الخرائط عندك").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("المساجد القريبة").performClick()
+        assertEquals(1, opened)
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `nearby mosques shows even with no location set, since the maps app finds its own`() {
+        var opened = 0
+        show(location = null, onMosques = { opened++ })
+        compose.onNodeWithText("المساجد القريبة").performClick()
+        assertEquals(1, opened)
     }
 
     @Test

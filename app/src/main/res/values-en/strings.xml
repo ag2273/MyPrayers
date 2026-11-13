@@ -517,6 +517,10 @@
     <string name="tool_qibla">Qibla</string>
     <string name="tool_calendar">Calendar</string>
     <string name="tool_mosques">Mosques</string>
+    <string name="mosques_query">mosque</string>
+    <string name="mosques_nearby">Nearby mosques</string>
+    <string name="mosques_opens_in_maps">Opens in your maps app</string>
+    <string name="mosques_no_maps_app">No maps app on this phone</string>
     <!-- Qibla screen (#88) -->
     <string name="qibla_waiting">Reading the compass…</string>
     <string name="qibla_turn_right">Turn %1$s° right</string>
