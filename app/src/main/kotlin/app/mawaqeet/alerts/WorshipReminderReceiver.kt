@@ -62,6 +62,9 @@ class WorshipReminderReceiver : BroadcastReceiver() {
         private const val EXTRA_AT = "at"
         private const val EXTRA_SLOT = "slot"
 
+        /** A Sunnah Fast reminder's [app.mawaqeet.core.FastDay] (#95), as [encodeFastDay] writes it. */
+        private const val EXTRA_FAST = "fast"
+
         /** A reminder's «قرأتها» (#64): dismisses its notification, nothing else. */
         const val ACTION_DISMISS = "app.mawaqeet.action.WORSHIP_REMINDER_DISMISS"
         private const val EXTRA_NOTIFICATION_ID = "notification_id"
@@ -82,6 +85,7 @@ class WorshipReminderReceiver : BroadcastReceiver() {
                 .putExtra(EXTRA_PRAYER_DAY, reminder.prayerDay.toString())
                 .putExtra(EXTRA_AT, reminder.instant.toEpochMilli())
                 .putExtra(EXTRA_SLOT, reminder.slot)
+                .putExtra(EXTRA_FAST, encodeFastDay(reminder.fast))
 
         private fun reminder(intent: Intent): PlannedWorshipReminder? = runCatching {
             PlannedWorshipReminder(
@@ -89,6 +93,7 @@ class WorshipReminderReceiver : BroadcastReceiver() {
                 instant = Instant.ofEpochMilli(intent.getLongExtra(EXTRA_AT, 0)),
                 prayerDay = LocalDate.parse(intent.getStringExtra(EXTRA_PRAYER_DAY)!!),
                 slot = intent.getIntExtra(EXTRA_SLOT, 0),
+                fast = decodeFastDay(intent.getStringExtra(EXTRA_FAST).orEmpty()),
             )
         }.getOrNull()
     }

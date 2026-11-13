@@ -155,6 +155,9 @@ interface SettingsActions {
     /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64). */
     fun setKahfReminder(on: Boolean)
 
+    /** «صيام السنة» under «تذكيرات العبادة» (#95): [fast]'s reminder the night before. */
+    fun setFastReminder(fast: app.mawaqeet.core.SunnahFast, on: Boolean)
+
     /** «الإمساك» under «رمضان» (#90): Imsak moved [step] taps of [app.mawaqeet.core.RamadanSettings.IMSAK_MINUTES_STEP] minutes. */
     fun stepImsakMinutes(step: Int)
 

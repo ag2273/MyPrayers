@@ -329,6 +329,10 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setKahfReminder(on) }
                             }
 
+                            override fun setFastReminder(fast: app.mawaqeet.core.SunnahFast, on: Boolean) {
+                                scope.launch { settingsStore.setFastReminder(fast, on) }
+                            }
+
                             override fun stepImsakMinutes(step: Int) {
                                 scope.launch { settingsStore.stepImsakMinutes(step) }
                             }

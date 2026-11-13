@@ -572,6 +572,28 @@
     <string name="imsak_alert_description">At Imsak on Ramadan days</string>
     <string name="imsak_alert_title">Time for Imsak</string>
     <string name="imsak_alert_text">Stop eating and drinking: Fajr is near</string>
+    <string name="fast_reminders">Sunnah fasts</string>
+    <string name="fast_reminders_description">A reminder the night before, half an hour after Isha. Never for the days of Eid or Tashreeq.</string>
+    <string name="fast_switch_monday_thursday">Mondays and Thursdays</string>
+    <string name="fast_switch_monday_thursday_description">Every week, except in Ramadan</string>
+    <string name="fast_switch_white_days">The white days</string>
+    <string name="fast_switch_white_days_description">The 13th, 14th and 15th of each Hijri month, except in Ramadan</string>
+    <string name="fast_switch_arafah">Day of Arafah</string>
+    <string name="fast_switch_arafah_description">The 9th of Dhu al-Hijjah</string>
+    <string name="fast_switch_ashura">Tasu\'a and Ashura</string>
+    <string name="fast_switch_ashura_description">The 9th and 10th of Muharram</string>
+    <string name="fast_switch_six_of_shawwal">Six days of Shawwal</string>
+    <string name="fast_switch_six_of_shawwal_description">One reminder on the night of Eid al-Fitr</string>
+    <string name="fast_reminder_title">Sunnah fast</string>
+    <string name="fast_reminder_text">Tomorrow is %1$s. Fasting it is Sunnah.</string>
+    <string name="fast_reminder_and">%1$s and %2$s</string>
+    <string name="fast_reminder_monday">Monday</string>
+    <string name="fast_reminder_thursday">Thursday</string>
+    <string name="fast_reminder_white_days">one of the white days</string>
+    <string name="fast_reminder_arafah">the Day of Arafah</string>
+    <string name="fast_reminder_tasua">Tasu\'a</string>
+    <string name="fast_reminder_ashura">Ashura</string>
+    <string name="fast_reminder_six_of_shawwal">the first of the six days of Shawwal</string>
     <string name="about_use_serialization">The backup file</string>
 
     <!-- Settings → Backup (#98) -->

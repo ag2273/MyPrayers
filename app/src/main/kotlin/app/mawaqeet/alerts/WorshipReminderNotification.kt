@@ -12,7 +12,9 @@ import app.mawaqeet.MainActivity
 import app.mawaqeet.R
 import app.mawaqeet.core.AdhkarSlot
 import app.mawaqeet.core.PlannedWorshipReminder
+import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.WorshipReminderKind
+import java.time.DayOfWeek
 
 /**
  * A Worship Reminder's gentle notification (#63) on its own «تذكيرات العبادة» channel, with the system's default
@@ -40,8 +42,10 @@ internal object WorshipReminderNotification {
             WorshipReminderKind.EVENING_ADHKAR -> R.string.adhkar_evening to R.string.adhkar_evening_reminder_text
             WorshipReminderKind.SUHOOR -> R.string.suhoor_reminder_title to R.string.suhoor_reminder_text
             WorshipReminderKind.IMSAK -> R.string.imsak_alert_title to R.string.imsak_alert_text
+            WorshipReminderKind.SUNNAH_FAST -> R.string.fast_reminder_title to R.string.fast_reminder_text
         }
         val strings = alertText(context)
+        val body = if (reminder.kind == WorshipReminderKind.SUNNAH_FAST) fastText(strings, reminder) else strings.getString(text)
         val id = id(reminder.kind)
         val tap = reminder.kind.adhkarSet?.let { set ->
             PendingIntent.getActivity(
@@ -54,7 +58,8 @@ internal object WorshipReminderNotification {
         val builder = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(strings.getString(title))
-            .setContentText(strings.getString(text))
+            .setContentText(body)
+            .apply { if (reminder.fast != null) setStyle(NotificationCompat.BigTextStyle().bigText(body)) }
             .setContentIntent(tap)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
@@ -68,6 +73,29 @@ internal object WorshipReminderNotification {
         }
         NotificationManagerCompat.from(context).notify(id, builder.build())
     }
+
+    /**
+     * A Sunnah Fast reminder's text (#95): tomorrow's names, in [SunnahFast] order, e.g. «غدًا يوم الاثنين ومن الأيام
+     * البيض، يُسنّ صيامه». Tomorrow is the day after the reminder's Prayer Day; Tasu'a or Ashura by its Hijri day.
+     */
+    private fun fastText(strings: Context, reminder: PlannedWorshipReminder): String {
+        val fast = reminder.fast ?: return strings.getString(R.string.fast_reminder_title)
+        val names = fast.kinds.sorted().map { kind ->
+            when (kind) {
+                SunnahFast.MONDAY_THURSDAY ->
+                    if (reminder.prayerDay.plusDays(1).dayOfWeek == DayOfWeek.MONDAY) R.string.fast_reminder_monday else R.string.fast_reminder_thursday
+                SunnahFast.WHITE_DAYS -> R.string.fast_reminder_white_days
+                SunnahFast.ARAFAH -> R.string.fast_reminder_arafah
+                SunnahFast.ASHURA -> if (fast.hijri.day == TASUA_DAY) R.string.fast_reminder_tasua else R.string.fast_reminder_ashura
+                SunnahFast.SIX_OF_SHAWWAL -> R.string.fast_reminder_six_of_shawwal
+            }.let(strings::getString)
+        }
+        val day = names.reduce { joined, name -> strings.getString(R.string.fast_reminder_and, joined, name) }
+        return strings.getString(R.string.fast_reminder_text, day)
+    }
+
+    /** 9 Muharram. */
+    private const val TASUA_DAY = 9
 
     /** The notification id of [kind]'s reminders: one per kind, so a new one replaces the last. */
     fun id(kind: WorshipReminderKind): Int = ID_BASE + kind.ordinal

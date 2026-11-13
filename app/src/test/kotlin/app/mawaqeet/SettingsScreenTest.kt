@@ -24,6 +24,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.PrayerAlertSettings
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.DigitStyle
@@ -311,6 +312,39 @@ class SettingsScreenTest {
             compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Surat Al-Kahf").assertIsOn() }.isSuccess }
         } finally {
             runBlocking { store.setKahfReminder(false) }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
+    fun `the five Sunnah fast switches are off under Sunnah fasts, and each one stores only its own fast`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun fasts() = runBlocking { store.settings.first() }.alerts.worshipReminders.fasts.on
+        val switches = listOf(
+            "Mondays and Thursdays" to SunnahFast.MONDAY_THURSDAY,
+            "The white days" to SunnahFast.WHITE_DAYS,
+            "Day of Arafah" to SunnahFast.ARAFAH,
+            "Tasu'a and Ashura" to SunnahFast.ASHURA,
+            "Six days of Shawwal" to SunnahFast.SIX_OF_SHAWWAL,
+        )
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Sunnah fasts").performScrollTo().assertIsDisplayed()
+            switches.forEach { (title, _) -> compose.onNodeWithText(title).performScrollTo().assertIsOff() }
+
+            val chosen = mutableSetOf<SunnahFast>()
+            for ((title, fast) in switches) {
+                compose.onNodeWithText(title).performScrollTo().performClick()
+                chosen += fast
+                compose.waitUntil(timeoutMillis = 5_000) { fasts() == chosen }
+                compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText(title).assertIsOn() }.isSuccess }
+            }
+
+            compose.onNodeWithText("Day of Arafah").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { fasts() == chosen - SunnahFast.ARAFAH }
+        } finally {
+            runBlocking { SunnahFast.entries.forEach { store.setFastReminder(it, false) } }
         }
     }
 

@@ -157,7 +157,7 @@ A fixed day, or run of days, of the Hijri year shown on the Hijri Calendar: Hijr
 _Avoid_: Event, holiday, feast
 
 **Sunnah Fast**:
-A voluntary fast of the Sunnah, by kind: Mondays and Thursdays, the white days (13–15 of each Hijri month), Arafah, Tasu'a with Ashura, and six of Shawwal (marked on 2–7 Shawwal). Never on a Forbidden Fast Day, and Mondays, Thursdays and the white days never in Ramadan.
+A voluntary fast of the Sunnah, by kind: Mondays and Thursdays, the white days (13–15 of each Hijri month), Arafah, Tasu'a with Ashura, and six of Shawwal (marked on 2–7 Shawwal). Never on a Forbidden Fast Day, and Mondays, Thursdays and the white days never in Ramadan. Its Worship Reminder («صيام السنة», a switch per kind) comes the night before, Isha + 30 minutes, one per night naming every kind switched on that day; six of Shawwal only on the night of Eid al-Fitr.
 _Avoid_: Voluntary fast (in code), nafl fast, optional fast
 
 **Forbidden Fast Day**:

@@ -625,6 +625,30 @@
     <string name="imsak_alert_description">عند الإمساك في أيام رمضان</string>
     <string name="imsak_alert_title">حان وقت الإمساك</string>
     <string name="imsak_alert_text">أمسِك عن الطعام والشراب، الفجر قريب</string>
+    <!-- Sunnah Fast reminders under Worship Reminders (#95) -->
+    <string name="fast_reminders">صيام السنة</string>
+    <string name="fast_reminders_description">تذكير في الليلة السابقة بعد العشاء بنصف ساعة، ولا تذكير لأيام العيد والتشريق.</string>
+    <string name="fast_switch_monday_thursday">الاثنين والخميس</string>
+    <string name="fast_switch_monday_thursday_description">كل أسبوع، إلا في رمضان</string>
+    <string name="fast_switch_white_days">الأيام البيض</string>
+    <string name="fast_switch_white_days_description">الثالث عشر والرابع عشر والخامس عشر من كل شهر هجري، إلا في رمضان</string>
+    <string name="fast_switch_arafah">يوم عرفة</string>
+    <string name="fast_switch_arafah_description">التاسع من ذي الحجة</string>
+    <string name="fast_switch_ashura">تاسوعاء وعاشوراء</string>
+    <string name="fast_switch_ashura_description">التاسع والعاشر من محرم</string>
+    <string name="fast_switch_six_of_shawwal">الست من شوال</string>
+    <string name="fast_switch_six_of_shawwal_description">تذكير واحد ليلة عيد الفطر</string>
+    <!-- The notification: «غدًا» + the day's names joined by fast_reminder_and, e.g. «غدًا يوم الاثنين ومن الأيام البيض، يُسنّ صيامه». -->
+    <string name="fast_reminder_title">صيام السنة</string>
+    <string name="fast_reminder_text">غدًا %1$s، يُسنّ صيامه</string>
+    <string name="fast_reminder_and">%1$s و%2$s</string>
+    <string name="fast_reminder_monday">يوم الاثنين</string>
+    <string name="fast_reminder_thursday">يوم الخميس</string>
+    <string name="fast_reminder_white_days">من الأيام البيض</string>
+    <string name="fast_reminder_arafah">يوم عرفة</string>
+    <string name="fast_reminder_tasua">يوم تاسوعاء</string>
+    <string name="fast_reminder_ashura">يوم عاشوراء</string>
+    <string name="fast_reminder_six_of_shawwal">أول الست من شوال</string>
     <string name="about_use_serialization">ملف النسخة الاحتياطية</string>
 
     <!-- Settings → Backup (#98) -->
