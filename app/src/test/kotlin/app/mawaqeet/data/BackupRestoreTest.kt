@@ -159,6 +159,16 @@ class BackupRestoreTest {
         )
     }
 
+    @Test
+    fun `a restored Qiyam reminder in alarm style needs the full-screen alarm permission`() {
+        val qiyam = { style: String ->
+            otherPhone.replace("\"prayer_silence_enabled\": true", "\"worship_qiyam_enabled\": true, \"worship_qiyam_style\": \"$style\"")
+        }
+
+        assertEquals(RestoreOutcome.Restored(usesAlertPermissions = true), restore(qiyam("ALARM")))
+        assertEquals(RestoreOutcome.Restored(usesAlertPermissions = false), restore(qiyam("NOTIFICATION")))
+    }
+
     private fun assertUntouched() {
         assertEquals(setOf(Prayer.DHUHR), read { log.prayedOn(day8) })
         assertEquals(LocalDate.parse("2026-10-20"), read { log.firstUseDate() })

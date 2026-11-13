@@ -2,6 +2,7 @@ package app.mawaqeet.data
 
 import app.mawaqeet.core.Backup
 import app.mawaqeet.core.BackupSnapshot
+import app.mawaqeet.core.QiyamStyle
 import app.mawaqeet.core.RestoreResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -15,7 +16,8 @@ import java.time.Clock
 sealed interface RestoreOutcome {
     /**
      * The file's settings replaced the phone's and its records were merged in. [usesAlertPermissions]: the
-     * restored settings use Prayer Silence or alarm-clock mode, so the app offers Fix Alerts.
+     * restored settings use Prayer Silence, alarm-clock mode or the Qiyam reminder in alarm style (a full-screen
+     * alarm, #97), so the app offers Fix Alerts.
      */
     data class Restored(val usesAlertPermissions: Boolean) : RestoreOutcome
 
@@ -91,7 +93,11 @@ class BackupFiles(
         val released = settings.restoreSettings(merged.settings)
         afterRestore(released)
         val alerts = settings.settings.first().alerts
-        RestoreOutcome.Restored(usesAlertPermissions = alerts.alarmClockMode || alerts.prayerSilence.enabled)
+        val qiyam = alerts.worshipReminders.sunnahPrayers.qiyam
+        RestoreOutcome.Restored(
+            usesAlertPermissions = alerts.alarmClockMode || alerts.prayerSilence.enabled ||
+                (qiyam.enabled && qiyam.style == QiyamStyle.ALARM),
+        )
     }
 
     /** The file's bytes, or null when it can't be opened or read. A file far larger than any backup counts as unreadable. */
