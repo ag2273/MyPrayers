@@ -574,4 +574,32 @@
     <string name="backup_export_failed">The file couldn\'t be saved. Nothing changed.</string>
     <string name="backup_restore">Restore from a file</string>
     <string name="backup_restore_soon">Restoring comes in an upcoming version.</string>
+
+    <!-- Hijri Calendar screen (#93) -->
+    <string name="calendar_upcoming">Upcoming</string>
+    <string name="calendar_note">Dates follow the Umm al-Qura calendar with your Hijri date adjustment, and may differ by a day from the moon sighting in your country.</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_tomorrow">Tomorrow</string>
+    <plurals name="calendar_in_days">
+        <item quantity="one">in %1$s day</item>
+        <item quantity="other">in %1$s days</item>
+    </plurals>
+    <string name="calendar_open_description">Open the Hijri calendar</string>
+    <string name="occasion_hijri_new_year">Hijri New Year</string>
+    <string name="occasion_tasua">Tasu\'a</string>
+    <string name="occasion_ashura">Ashura</string>
+    <string name="occasion_mawlid">The Mawlid</string>
+    <string name="occasion_isra_and_miraj">Isra and Mi\'raj</string>
+    <string name="occasion_ramadan_start">Start of Ramadan</string>
+    <string name="occasion_last_ten_nights">Last ten nights of Ramadan</string>
+    <string name="occasion_eid_al_fitr">Eid al-Fitr</string>
+    <string name="occasion_first_ten_of_dhu_al_hijjah">First ten days of Dhu al-Hijjah</string>
+    <string name="occasion_arafah">Day of Arafah</string>
+    <string name="occasion_eid_al_adha">Eid al-Adha</string>
+    <string name="occasion_tashreeq">Days of Tashreeq</string>
+    <string name="fast_monday_thursday">Mondays and Thursdays</string>
+    <string name="fast_white_days">The white days</string>
+    <string name="fast_arafah">Fast of Arafah</string>
+    <string name="fast_ashura">Tasu\'a and Ashura</string>
+    <string name="fast_six_of_shawwal">Six days of Shawwal</string>
 </resources>

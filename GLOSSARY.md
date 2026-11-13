@@ -147,3 +147,19 @@ _Avoid_: Kiblah, Mecca direction, prayer direction
 **Tools Row**:
 The single row of compact buttons on Today, under the Next Prayer card, that opens the app's tools: «القبلة», «التقويم», «المساجد». It is not a tab: the bottom bar stays Today, Prayer Log, Adhkar, Settings.
 _Avoid_: Shortcuts, quick actions, toolbar
+
+**Hijri Calendar**:
+The Umm al-Qura calendar shifted by the user's Hijri offset, day by day, with each day's Occasions, Sunnah Fasts and whether it is a Forbidden Fast Day. Its screen («التقويم», not a tab) opens from the Tools Row and from the Hijri date on Today; «القادم» lists the Occasions of the next 12 months with only the nearest Monday/Thursday fast and the next white days. Dates may differ by a day from local moon sighting, and the screen says so.
+_Avoid_: Islamic calendar (in code), moon calendar, events
+
+**Occasion**:
+A fixed day, or run of days, of the Hijri year shown on the Hijri Calendar: Hijri New Year (1 Muharram), Tasu'a and Ashura (9–10 Muharram), the Mawlid (12 Rabi' al-Awwal), Isra and Mi'raj (27 Rajab), the start of Ramadan, the last ten nights (21 Ramadan to its end), Eid al-Fitr (1 Shawwal), the first ten of Dhu al-Hijjah (1–10), Arafah (9), Eid al-Adha (10) and the days of Tashreeq (11–13). The Mawlid and Isra and Mi'raj are dates only, with no reminder.
+_Avoid_: Event, holiday, feast
+
+**Sunnah Fast**:
+A voluntary fast of the Sunnah, by kind: Mondays and Thursdays, the white days (13–15 of each Hijri month), Arafah, Tasu'a with Ashura, and six of Shawwal (marked on 2–7 Shawwal). Never on a Forbidden Fast Day, and Mondays, Thursdays and the white days never in Ramadan.
+_Avoid_: Voluntary fast (in code), nafl fast, optional fast
+
+**Forbidden Fast Day**:
+A day on which fasting is forbidden: Eid al-Fitr, Eid al-Adha and the three days of Tashreeq (1 Shawwal, 10–13 Dhu al-Hijjah). It is never a Sunnah Fast, so 13 Dhu al-Hijjah is no white day and a Monday of Tashreeq no Monday fast.
+_Avoid_: Eid days (Tashreeq is included), haram day

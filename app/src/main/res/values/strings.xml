@@ -626,4 +626,36 @@
     <string name="backup_export_failed">تعذّر حفظ الملف، ولم يتغير شيء.</string>
     <string name="backup_restore">استعادة من ملف</string>
     <string name="backup_restore_soon">الاستعادة قادمة في إصدار قريب.</string>
+
+    <!-- Hijri Calendar screen (#93) -->
+    <string name="calendar_upcoming">القادم</string>
+    <string name="calendar_note">التواريخ وفق تقويم أم القرى مع تعديل التاريخ الهجري في إعداداتك، وقد تختلف يومًا عن رؤية الهلال في بلدك.</string>
+    <string name="calendar_today">اليوم</string>
+    <string name="calendar_tomorrow">غدًا</string>
+    <plurals name="calendar_in_days">
+        <item quantity="zero">بعد %1$s يوم</item>
+        <item quantity="one">بعد يوم واحد</item>
+        <item quantity="two">بعد يومين</item>
+        <item quantity="few">بعد %1$s أيام</item>
+        <item quantity="many">بعد %1$s يومًا</item>
+        <item quantity="other">بعد %1$s يوم</item>
+    </plurals>
+    <string name="calendar_open_description">فتح التقويم الهجري</string>
+    <string name="occasion_hijri_new_year">رأس السنة الهجرية</string>
+    <string name="occasion_tasua">يوم تاسوعاء</string>
+    <string name="occasion_ashura">يوم عاشوراء</string>
+    <string name="occasion_mawlid">المولد النبوي</string>
+    <string name="occasion_isra_and_miraj">الإسراء والمعراج</string>
+    <string name="occasion_ramadan_start">بداية رمضان</string>
+    <string name="occasion_last_ten_nights">العشر الأواخر من رمضان</string>
+    <string name="occasion_eid_al_fitr">عيد الفطر</string>
+    <string name="occasion_first_ten_of_dhu_al_hijjah">العشر الأوائل من ذي الحجة</string>
+    <string name="occasion_arafah">يوم عرفة</string>
+    <string name="occasion_eid_al_adha">عيد الأضحى</string>
+    <string name="occasion_tashreeq">أيام التشريق</string>
+    <string name="fast_monday_thursday">صيام الاثنين والخميس</string>
+    <string name="fast_white_days">الأيام البيض</string>
+    <string name="fast_arafah">صيام يوم عرفة</string>
+    <string name="fast_ashura">صيام تاسوعاء وعاشوراء</string>
+    <string name="fast_six_of_shawwal">ست من شوال</string>
 </resources>

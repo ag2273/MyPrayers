@@ -101,7 +101,7 @@ class HomeFitTest {
                         MainScaffold(Tab.TODAY, onSelect = {}) {
                             HomeScreen(
                                 core, clock, log.changes, "مكة المكرمة",
-                                tools = if (withToolsRow) { { ToolsRow(onQibla = {}) } } else null,
+                                tools = if (withToolsRow) { { ToolsRow(onQibla = {}, onCalendar = {}) } } else null,
                             )
                         }
                     }

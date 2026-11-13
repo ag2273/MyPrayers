@@ -42,6 +42,7 @@ import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.DigitStyle
+import app.mawaqeet.core.HijriCalendar
 import app.mawaqeet.core.LocationChangeCheck
 import app.mawaqeet.core.LocationSource
 import app.mawaqeet.core.LocationUpdate
@@ -56,6 +57,7 @@ import app.mawaqeet.ui.home.HomeScreen
 import app.mawaqeet.ui.home.ToolsRow
 import app.mawaqeet.qibla.SensorHeadings
 import app.mawaqeet.ui.qibla.QiblaScreen
+import app.mawaqeet.ui.calendar.CalendarScreen
 import app.mawaqeet.ui.fixalerts.FixAlerts
 import app.mawaqeet.ui.fixalerts.FixAlertsScreen
 import app.mawaqeet.ui.location.LocationScreen
@@ -141,6 +143,8 @@ class MainActivity : AppCompatActivity() {
                 var showFixAlerts by rememberSaveable { mutableStateOf(false) }
                 // The Qibla screen, opened from the Tools Row on Today (#88).
                 var showQibla by rememberSaveable { mutableStateOf(false) }
+                // The Hijri Calendar, opened from the Tools Row and the Hijri date on Today (#93).
+                var showCalendar by rememberSaveable { mutableStateOf(false) }
                 val headings = remember { SensorHeadings(this@MainActivity) }
                 // The Adhkar Set an adhkar reminder's tap asked for, until the Adhkar tab opens it.
                 var adhkarToOpen by remember { mutableStateOf<AdhkarSlot?>(null) }
@@ -150,6 +154,7 @@ class MainActivity : AppCompatActivity() {
                     showLocation = false
                     showFixAlerts = false
                     showQibla = false
+                    showCalendar = false
                     settingsRoute = null
                     tab = when (request.opens) {
                         Opens.PRAYER_LOG -> Tab.LOG
@@ -491,6 +496,12 @@ class MainActivity : AppCompatActivity() {
                         onSetLocation = { showLocation = true },
                         onBack = { showQibla = false },
                     )
+                } else if (showCalendar) {
+                    CalendarScreen(
+                        remember(current.hijriOffsetDays) { HijriCalendar(current.hijriOffsetDays) },
+                        today = core.displayDay().date,
+                        onBack = { showCalendar = false },
+                    )
                 } else if (settingsRoute != null) {
                     SettingsPageScreen(
                         settingsRoute ?: return@ProvideDisplayFormatter,
@@ -535,7 +546,8 @@ class MainActivity : AppCompatActivity() {
                         showFixAlertsTip = !fixAlertsDone && FixAlerts.deviceBrand != null,
                         onOpenFixAlerts = { showFixAlerts = true },
                         onFixAlertsDone = { scope.launch { settingsStore.setFixAlertsDone(true) } },
-                        tools = { ToolsRow(onQibla = { showQibla = true }) },
+                        tools = { ToolsRow(onQibla = { showQibla = true }, onCalendar = { showCalendar = true }) },
+                        onOpenCalendar = { showCalendar = true },
                     )
                     }
                     }

@@ -103,6 +103,8 @@ fun HomeScreen(
     onFixAlertsDone: () -> Unit = {},
     /** The tools row under the Next Prayer card, or null for none. */
     tools: (@Composable () -> Unit)? = null,
+    /** Opens the Hijri Calendar, from the date line; null leaves the date line plain. */
+    onOpenCalendar: (() -> Unit)? = null,
 ) {
     // Re-query the core every second: the countdown ticks and the display day switches at local midnight.
     var now by remember { mutableStateOf(clock.instant()) }
@@ -133,6 +135,7 @@ fun HomeScreen(
     HomeContent(
         day, now, ramadan, prayerDay, locationName, alerts, onOpenLocation, locationHint, onLocationHint, tip, tools,
         showLogHint = hasAnyMark == false,
+        onOpenCalendar = onOpenCalendar,
     ) { prayer ->
         val logDay = prayerDay
         if (logDay != null && logDay.isMarkable(prayer)) {
@@ -161,11 +164,12 @@ private fun HomeContent(
     tip: (@Composable () -> Unit)?,
     tools: (@Composable () -> Unit)?,
     showLogHint: Boolean,
+    onOpenCalendar: (() -> Unit)?,
     onToggle: (Prayer) -> Unit,
 ) {
     FillingPage {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            DateLine(day, Modifier.weight(1f))
+            DateLine(day, onOpenCalendar, Modifier.weight(1f))
             LocationChip(locationName, onOpenLocation)
         }
         if (locationHint != null) {
@@ -346,11 +350,19 @@ private fun FixAlertsTip(onOpen: () -> Unit, onDone: () -> Unit) {
     }
 }
 
-/** The display day's Gregorian date, then its Hijri date (with the user's offset). */
+/** The display day's Gregorian date, then its Hijri date (with the user's offset); tapping it opens [onOpen]. */
 @Composable
-private fun DateLine(day: DisplayDay, modifier: Modifier = Modifier) {
+private fun DateLine(day: DisplayDay, onOpen: (() -> Unit)?, modifier: Modifier = Modifier) {
     val format = LocalDisplayFormatter.current
-    Column(modifier) {
+    val tappable = if (onOpen == null) {
+        Modifier
+    } else {
+        Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClickLabel = stringResource(R.string.calendar_open_description), role = Role.Button, onClick = onOpen)
+            .heightIn(min = 48.dp)
+    }
+    Column(modifier.then(tappable), verticalArrangement = Arrangement.Center) {
         Text(format.gregorianDate(day.date), style = MaterialTheme.typography.titleMedium)
         Text(
             format.hijriDate(day.hijriDate),
