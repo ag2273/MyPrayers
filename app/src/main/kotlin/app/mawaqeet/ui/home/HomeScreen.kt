@@ -14,7 +14,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
@@ -167,9 +170,13 @@ private fun HomeContent(
     onOpenCalendar: (() -> Unit)?,
     onToggle: (Prayer) -> Unit,
 ) {
-    FillingPage {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            DateLine(day, onOpenCalendar, Modifier.weight(1f))
+    FillingPage { size ->
+        Row(
+            Modifier.semantics { todaySize = size },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            DateLine(day, size, onOpenCalendar, Modifier.weight(1f))
             LocationChip(locationName, onOpenLocation)
         }
         if (locationHint != null) {
@@ -177,7 +184,7 @@ private fun HomeContent(
         }
         tip?.invoke()
         day.highLatitude?.let { HighLatitudeNote(it) }
-        val cardSizes = NextPrayerCardSizes.regular()
+        val cardSizes = NextPrayerCardSizes.of(size)
         when (ramadan) {
             RamadanState.None -> NextPrayerCard(day, now, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
             else -> RamadanCard(ramadan, day.next, now, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
@@ -216,6 +223,16 @@ private fun HomeContent(
     }
 }
 
+/**
+ * Today's size class (#101), chosen from the height Today has: [REGULAR] is the original design, kept on normal and big
+ * phones; [COMPACT] tightens the header and the Next Prayer card so a short screen still fits without scrolling.
+ */
+enum class TodaySize { REGULAR, COMPACT }
+
+/** The size class Today chose, on its header (for tests). */
+val TodaySizeKey = SemanticsPropertyKey<TodaySize>("TodaySize")
+private var SemanticsPropertyReceiver.todaySize by TodaySizeKey
+
 /** How a child of [FillingPage] takes the page's spare height. Children without one keep their own height. */
 private sealed interface Fill {
     /** The Prayer Time rows: they share the spare height evenly, up to [MAX_ROW_HEIGHT] each. */
@@ -227,27 +244,37 @@ private sealed interface Fill {
 
 private val MAX_ROW_HEIGHT = 64.dp
 private val PAGE_GAP = 10.dp
+private val PAGE_GAP_COMPACT = 6.dp
 private val PAGE_PADDING_H = 16.dp
 private val PAGE_PADDING_V = 8.dp
 
 /**
  * Today's page: a column that fills its viewport exactly when its content fits. Spare height goes first to the
- * [Fill.Rows] child (each row up to [MAX_ROW_HEIGHT]), then to the [Fill.TakesTheRest] child. When the content is
- * taller than the viewport (a large font), nothing grows and the page scrolls.
+ * [Fill.Rows] child (each row up to [MAX_ROW_HEIGHT]), then to the [Fill.TakesTheRest] child.
+ *
+ * The content starts at [TodaySize.REGULAR] and switches to [TodaySize.COMPACT] when that is taller than the viewport;
+ * it switches back once the regular content would fit again (a taller window, the log hint gone). When even the compact
+ * content does not fit (a large font, a landscape phone), nothing grows and the page scrolls.
  */
 @Composable
-private fun FillingPage(content: @Composable () -> Unit) {
+private fun FillingPage(content: @Composable (TodaySize) -> Unit) {
+    var size by remember { mutableStateOf(TodaySize.REGULAR) }
+    // What the last measures found, to know when the regular content fits again.
+    val memory = remember { FitMemory() }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val viewport = constraints.maxHeight
+        // The size the children were composed at; the measure below must not read the state, which can be ahead of them.
+        val composed = size
         Layout(
-            content,
+            { content(composed) },
             Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = PAGE_PADDING_H, vertical = PAGE_PADDING_V),
+                .padding(horizontal = PAGE_PADDING_H, vertical = PAGE_PADDING_V)
+                .onPlaced { memory.switchTo?.let { size = it } },
         ) { children, constraints ->
             val width = constraints.maxWidth
-            val gap = PAGE_GAP.roundToPx()
+            val gap = (if (composed == TodaySize.REGULAR) PAGE_GAP else PAGE_GAP_COMPACT).roundToPx()
             val own = Constraints(maxWidth = width)
             val rows = children.firstOrNull { it.layoutId is Fill.Rows }
             val rest = children.firstOrNull { it.layoutId == Fill.TakesTheRest }
@@ -256,6 +283,20 @@ private fun FillingPage(content: @Composable () -> Unit) {
             val fixed = children.filter { it !== rows && it !== rest }.associateWith { it.measure(own) }
             val used = fixed.values.sumOf { it.height } + rowsMin + restMin + gap * (children.size - 1).coerceAtLeast(0)
             val target = if (viewport == Constraints.Infinity) 0 else viewport - PAGE_PADDING_V.roundToPx() * 2
+            val switchTo = when {
+                viewport == Constraints.Infinity -> null
+                composed == TodaySize.REGULAR -> {
+                    memory.regularHeight = used
+                    memory.extra = null
+                    if (used > target) TodaySize.COMPACT else null
+                }
+                else -> {
+                    val extra = memory.extra ?: (memory.regularHeight - used).coerceAtLeast(0).also { memory.extra = it }
+                    if (used + extra <= target) TodaySize.REGULAR else null
+                }
+            }
+            // Switched once placed (a state write in the measure would loop): the next frame is at the other size.
+            memory.switchTo = switchTo
             val spare = (target - used).coerceAtLeast(0)
             val rowsCap = (rows?.layoutId as? Fill.Rows)?.let { (MAX_ROW_HEIGHT.roundToPx() * it.count + 8.dp.roundToPx() - rowsMin).coerceAtLeast(0) } ?: 0
             val rowsExtra = if (rest == null) spare else spare.coerceAtMost(rowsCap)
@@ -277,6 +318,18 @@ private fun FillingPage(content: @Composable () -> Unit) {
             }
         }
     }
+}
+
+/** What [FillingPage] measured, kept across passes (not state: changing it must not relayout). */
+private class FitMemory {
+    /** The height the content last needed at the regular sizes. */
+    var regularHeight = 0
+
+    /** How much taller the regular content is than the compact one, measured once after each switch. */
+    var extra: Int? = null
+
+    /** The size the last measure found the page should be at, if not the one it was composed at. */
+    var switchTo: TodaySize? = null
 }
 
 /**
@@ -352,8 +405,12 @@ private fun FixAlertsTip(onOpen: () -> Unit, onDone: () -> Unit) {
 
 /** The display day's Gregorian date, then its Hijri date (with the user's offset); tapping it opens [onOpen]. */
 @Composable
-private fun DateLine(day: DisplayDay, onOpen: (() -> Unit)?, modifier: Modifier = Modifier) {
+private fun DateLine(day: DisplayDay, size: TodaySize, onOpen: (() -> Unit)?, modifier: Modifier = Modifier) {
     val format = LocalDisplayFormatter.current
+    val style = when (size) {
+        TodaySize.REGULAR -> MaterialTheme.typography.titleLarge
+        TodaySize.COMPACT -> MaterialTheme.typography.titleMedium
+    }
     val tappable = if (onOpen == null) {
         Modifier
     } else {
@@ -363,7 +420,7 @@ private fun DateLine(day: DisplayDay, onOpen: (() -> Unit)?, modifier: Modifier 
             .heightIn(min = 48.dp)
     }
     Column(modifier.then(tappable), verticalArrangement = Arrangement.Center) {
-        Text(format.gregorianDate(day.date), style = MaterialTheme.typography.titleMedium)
+        Text(format.gregorianDate(day.date), style = style)
         Text(
             format.hijriDate(day.hijriDate),
             style = MaterialTheme.typography.bodyMedium,
@@ -387,8 +444,8 @@ private fun HighLatitudeNote(adjustment: HighLatitudeAdjustment) {
 private data class LogCell(val state: LogState, val markable: Boolean)
 
 /**
- * The Next Prayer card's type sizes and spacing, shared by its usual and Ramadan forms so one size class can set
- * both. [regular] is the card's own design.
+ * The Next Prayer card's type sizes and spacing, shared by its usual and Ramadan forms so one size class sets both.
+ * The regular sizes are the card's own design; the compact ones are for short screens.
  */
 @Immutable
 private data class NextPrayerCardSizes(
@@ -403,13 +460,33 @@ private data class NextPrayerCardSizes(
     val paddingVertical: Dp,
     val barGap: Dp,
     val barHeight: Dp,
+    /** The gap above the bar's ends and the Ramadan card's next Prayer line. */
+    val smallGap: Dp,
+    /** The label and the countdown each on their own line (regular), or sharing the label's line (compact). */
+    val stacked: Boolean,
 ) {
     companion object {
         @Composable
+        fun of(size: TodaySize) = when (size) {
+            TodaySize.REGULAR -> regular()
+            TodaySize.COMPACT -> compact()
+        }
+
+        @Composable
         fun regular() = MaterialTheme.typography.let {
             NextPrayerCardSizes(
-                label = it.bodyMedium, headline = it.headlineMedium, countdown = it.titleMedium, small = it.bodySmall,
-                paddingHorizontal = 22.dp, paddingVertical = 12.dp, barGap = 8.dp, barHeight = 6.dp,
+                label = it.bodyMedium, headline = it.headlineLarge, countdown = it.titleLarge, small = it.bodySmall,
+                paddingHorizontal = 22.dp, paddingVertical = 20.dp, barGap = 14.dp, barHeight = 6.dp, smallGap = 6.dp,
+                stacked = true,
+            )
+        }
+
+        @Composable
+        fun compact() = MaterialTheme.typography.let {
+            NextPrayerCardSizes(
+                label = it.bodyMedium, headline = it.headlineSmall, countdown = it.titleMedium, small = it.bodySmall,
+                paddingHorizontal = 20.dp, paddingVertical = 8.dp, barGap = 6.dp, barHeight = 6.dp, smallGap = 2.dp,
+                stacked = false,
             )
         }
     }
@@ -434,26 +511,24 @@ private fun NextPrayerCard(day: DisplayDay, now: Instant, sizes: NextPrayerCardS
         // When the page gives it spare height, the content stays in the middle.
         verticalArrangement = Arrangement.Center,
     ) {
-        // The label and the countdown share a line, so Today fits a small phone (#87).
+        val countdown = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant())))
+        // On a short screen the label and the countdown share a line (#87).
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.next_prayer), style = sizes.label, color = onCard, modifier = Modifier.weight(1f))
-            Text(
-                text = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant()))),
-                style = sizes.countdown,
-                color = colors.tertiary,
-            )
+            if (!sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
         }
         Row(verticalAlignment = Alignment.Bottom) {
             Text(prayerName(next), style = sizes.headline, color = onCard, modifier = Modifier.weight(1f))
             Text(format.time(next.time), style = sizes.headline, color = onCard)
         }
+        if (sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
         val previous = day.prayerTimes.lastOrNull { !it.time.toInstant().isAfter(now) }
         if (previous != null && next.time.toLocalDate() == day.date) {
             val total = Duration.between(previous.time, next.time).seconds.coerceAtLeast(1)
             val passed = Duration.between(previous.time.toInstant(), now).seconds.coerceIn(0, total)
             Spacer(Modifier.height(sizes.barGap))
             ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {}) {
+            Row(Modifier.fillMaxWidth().padding(top = sizes.smallGap).clearAndSetSemantics {}) {
                 Text("${prayerName(previous)} ${format.time(previous.time)}", style = sizes.small, color = onCard, modifier = Modifier.weight(1f))
                 Text("${prayerName(next)} ${format.time(next.time)}", style = sizes.small, color = onCard)
             }
@@ -488,16 +563,18 @@ private fun RamadanCard(state: RamadanState, next: PrayerTime, now: Instant, siz
             Text(stringResource(R.string.ramadan_day, format.number(day)), style = sizes.label, color = onCard, modifier = Modifier.weight(1f))
             Text(stringResource(R.string.ramadan_imsak_at, format.time(imsak)), style = sizes.label, color = onCard)
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val (title, countdown) = when (state) {
-                is RamadanState.Fasting -> stringResource(R.string.ramadan_iftar_at, format.time(state.maghrib)) to
-                    stringResource(R.string.countdown, format.countdown(Duration.between(now, state.maghrib.toInstant())))
-                else -> stringResource(R.string.ramadan_suhoor) to
-                    stringResource(R.string.ramadan_suhoor_ends_in, format.countdown(Duration.between(now, imsak.toInstant())))
-            }
-            Text(title, style = sizes.headline, color = onCard, modifier = Modifier.weight(1f))
-            Text(countdown, style = sizes.countdown, color = colors.tertiary)
+        val (title, countdown) = when (state) {
+            is RamadanState.Fasting -> stringResource(R.string.ramadan_iftar_at, format.time(state.maghrib)) to
+                stringResource(R.string.countdown, format.countdown(Duration.between(now, state.maghrib.toInstant())))
+            else -> stringResource(R.string.ramadan_suhoor) to
+                stringResource(R.string.ramadan_suhoor_ends_in, format.countdown(Duration.between(now, imsak.toInstant())))
         }
+        // As on the usual card: the countdown has its own line, or shares the title's on a short screen.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = sizes.headline, color = onCard, modifier = Modifier.weight(1f))
+            if (!sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
+        }
+        if (sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
         if (state is RamadanState.Fasting) {
             val total = Duration.between(state.imsak, state.maghrib).seconds.coerceAtLeast(1)
             val passed = Duration.between(state.imsak.toInstant(), now).seconds.coerceIn(0, total)
@@ -513,7 +590,7 @@ private fun RamadanCard(state: RamadanState, next: PrayerTime, now: Instant, siz
             ),
             style = sizes.small,
             color = onCard,
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.padding(top = sizes.smallGap),
         )
     }
 }
