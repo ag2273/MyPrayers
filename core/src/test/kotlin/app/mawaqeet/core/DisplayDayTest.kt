@@ -152,4 +152,13 @@ class DisplayDayTest {
         assertEquals(false, displayDayAt("2026-11-13T00:17").isJumuah)
         assertEquals(true, displayDayAt("2026-11-13T06:00").isJumuah)
     }
+
+    @Test
+    fun `between midnight and Fajr the calendar date has moved on while the display day has not`() {
+        // The Calendar screen counts days from the calendar date, as the Sunnah Fast reminders' «غدًا» does.
+        val core = PrayerCore(PrayerSettings.Default, makkahClockAt("2026-11-10T00:30"), InMemoryPrayerLog())
+
+        assertEquals(LocalDate.of(2026, 11, 9), core.displayDay().date)
+        assertEquals(LocalDate.of(2026, 11, 10), core.calendarDate())
+    }
 }

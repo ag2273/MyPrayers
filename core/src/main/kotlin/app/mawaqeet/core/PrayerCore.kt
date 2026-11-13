@@ -22,6 +22,12 @@ class PrayerCore(
     fun alerts(): AlertSettings = settings.alerts
 
     /**
+     * Today's date on the calendar at the location. Unlike [displayDay] it moves on at midnight: the Calendar screen's
+     * today and its day counts use it, as the Sunnah Fast reminders do.
+     */
+    fun calendarDate(): LocalDate = LocalDate.ofInstant(clock.instant(), settings.location.zone)
+
+    /**
      * The Prayer Day running now (from midnight until Fajr, still the previous one), at the location, with its
      * Prayer Times (after the user's adjustments) and Sunrise, and whether a high-latitude rule was applied to them.
      * It moves on at Fajr, together with [currentPrayerDay].

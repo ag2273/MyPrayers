@@ -42,8 +42,8 @@ enum class CalendarTab(@StringRes val label: Int) {
 
 /**
  * The Hijri Calendar screen (not a tab), opened from «التقويم» on the Tools Row and from the Hijri date on Today:
- * the coming Occasions and Sunnah Fasts of [calendar] from [today] (the display day) or a Hijri month as a grid, and
- * the note that the dates follow Umm al-Qura with the user's offset.
+ * the coming Occasions and Sunnah Fasts of [calendar] from [today] (the calendar date, which moves on at midnight, not
+ * the display day) or a Hijri month as a grid, and the note that the dates follow Umm al-Qura with the user's offset.
  */
 @Composable
 fun CalendarScreen(calendar: HijriCalendar, today: LocalDate, onBack: () -> Unit) {

@@ -545,7 +545,7 @@ class MainActivity : AppCompatActivity() {
                 } else if (showCalendar) {
                     CalendarScreen(
                         remember(current.hijriOffsetDays) { HijriCalendar(current.hijriOffsetDays) },
-                        today = core.displayDay().date,
+                        today = core.calendarDate(),
                         onBack = { showCalendar = false },
                     )
                 } else if (settingsRoute != null) {
