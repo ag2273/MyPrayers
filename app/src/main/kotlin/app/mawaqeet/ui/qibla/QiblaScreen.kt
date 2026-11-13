@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,13 +62,15 @@ import kotlin.math.sin
  * The Qibla from the stored [location] (never a new permission): a compass dial turning with the phone, the bearing
  * from true north, the distance to Makkah and a turn hint. Facing it (within 3°) says so and calls [onFacingQibla]
  * once on entering, a light vibration by default. Without a location it offers [onSetLocation]; without a heading
- * sensor it shows the bearing only. [headings] is collected only while the screen is visible.
+ * sensor it shows the bearing only. [headings] is collected only while the screen is visible. «المساجد القريبة»
+ * calls [onMosques] in every case, since the maps app finds the user itself (#89).
  */
 @Composable
 fun QiblaScreen(
     location: Location?,
     headings: HeadingSource,
     onSetLocation: () -> Unit,
+    onMosques: () -> Unit,
     onBack: () -> Unit,
     onFacingQibla: () -> Unit = rememberLightVibration(),
 ) {
@@ -76,6 +80,24 @@ fun QiblaScreen(
             !headings.hasSensor -> NoSensorCard(Qibla.from(location.latitude, location.longitude))
             else -> Compass(location, headings, onFacingQibla)
         }
+        NearbyMosquesButton(onMosques)
+    }
+}
+
+/** «المساجد القريبة» and the line saying it opens in the maps app. */
+@Composable
+private fun NearbyMosquesButton(onMosques: () -> Unit) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        OutlinedButton(onClick = onMosques, modifier = Modifier.heightIn(min = 48.dp)) {
+            Icon(painterResource(R.drawable.ic_pin), contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(stringResource(R.string.mosques_nearby), modifier = Modifier.padding(start = 8.dp))
+        }
+        Text(
+            stringResource(R.string.mosques_opens_in_maps),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
