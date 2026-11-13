@@ -579,5 +579,12 @@
     <string name="backup_export">تصدير نسخة احتياطية</string>
     <string name="backup_export_failed">تعذّر حفظ الملف، ولم يتغير شيء.</string>
     <string name="backup_restore">استعادة من ملف</string>
-    <string name="backup_restore_soon">الاستعادة قادمة في إصدار قريب.</string>
+    <string name="backup_restore_confirm_title">الاستعادة من هذا الملف؟</string>
+    <string name="backup_restore_confirm_body">ستحلّ إعدادات الملف محل إعداداتك الحالية كلها. ويُدمج سجل الصلاة وسجل الأذكار مع ما على هاتفك، فلا يُحذف شيء مما علّمته.</string>
+    <string name="backup_restore_confirm">استعادة</string>
+    <string name="backup_restored">تمت الاستعادة. طُبّقت إعدادات الملف ودُمجت سجلاتك.</string>
+    <string name="backup_restored_check_alerts">تستخدم الإعدادات المستعادة إسكات الصلاة أو وضع المنبّه، فتأكّد من أن هاتفك يسمح للتنبيهات بالعمل.</string>
+    <string name="backup_restore_damaged">هذا الملف تالف أو ليس نسخة احتياطية من مواقيت. لم يتغير شيء.</string>
+    <string name="backup_restore_newer">هذا الملف من إصدار أحدث من مواقيت. حدّث التطبيق ثم أعد المحاولة. لم يتغير شيء.</string>
+    <string name="backup_restore_unreadable">تعذّرت قراءة الملف. لم يتغير شيء.</string>
 </resources>

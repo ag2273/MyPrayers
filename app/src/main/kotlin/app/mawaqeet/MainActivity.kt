@@ -37,6 +37,7 @@ import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhkarSlot
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.alerts.CustomAdhanFiles
+import app.mawaqeet.data.RestoreOutcome
 import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
@@ -390,6 +391,18 @@ class MainActivity : AppCompatActivity() {
                             override fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit) {
                                 scope.launch {
                                     onResult(app.backup.export { contentResolver.openOutputStream(uri, "w") })
+                                }
+                            }
+
+                            override fun restoreBackup(uri: Uri, onResult: (RestoreOutcome) -> Unit) {
+                                scope.launch {
+                                    val outcome = app.backup.restore { contentResolver.openInputStream(uri) }
+                                    onResult(outcome)
+                                    // The restored language too: AppCompat holds it, so apply it (this recreates the screen).
+                                    val language = settingsStore.appLanguage.first()
+                                    if (outcome is RestoreOutcome.Restored && language != AppCompatDelegate.getApplicationLocales().toLanguageTags()) {
+                                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language))
+                                    }
                                 }
                             }
 

@@ -89,6 +89,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.text.BidiFormatter
 import androidx.core.text.TextDirectionHeuristicsCompat
+import app.mawaqeet.data.RestoreOutcome
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -194,6 +195,12 @@ interface SettingsActions {
      * picker; [onResult] gets false when it couldn't be written (nothing changes then).
      */
     fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit)
+
+    /**
+     * Settings → Backup (#99): restores the Backup File at [uri], the document the user just opened with the system
+     * picker and confirmed; [onResult] gets how it ended (only [RestoreOutcome.Restored] changed anything).
+     */
+    fun restoreBackup(uri: Uri, onResult: (RestoreOutcome) -> Unit)
 }
 
 /** The Settings sections, each its own page, plus the pages opened from them. */

@@ -527,5 +527,12 @@
     <string name="backup_export">Export a backup</string>
     <string name="backup_export_failed">The file couldn\'t be saved. Nothing changed.</string>
     <string name="backup_restore">Restore from a file</string>
-    <string name="backup_restore_soon">Restoring comes in an upcoming version.</string>
+    <string name="backup_restore_confirm_title">Restore from this file?</string>
+    <string name="backup_restore_confirm_body">The file\'s settings will replace your current settings, all of them. The Prayer Log and the Adhkar Record are merged with what\'s on your phone, so nothing you marked is deleted.</string>
+    <string name="backup_restore_confirm">Restore</string>
+    <string name="backup_restored">Restored. The file\'s settings are in place and your records are merged.</string>
+    <string name="backup_restored_check_alerts">The restored settings use Prayer Silence or alarm-clock mode: check that your phone lets alerts work.</string>
+    <string name="backup_restore_damaged">This file is damaged or isn\'t a Mawaqeet backup. Nothing changed.</string>
+    <string name="backup_restore_newer">This file is from a newer version of Mawaqeet. Update the app, then try again. Nothing changed.</string>
+    <string name="backup_restore_unreadable">The file couldn\'t be read. Nothing changed.</string>
 </resources>
