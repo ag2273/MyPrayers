@@ -91,6 +91,8 @@
 
     <!-- Adhan Alerts (#18). %1$s is the Prayer name (الجمعة on Friday's Dhuhr). -->
     <string name="adhan_alert_title">حان الآن وقت صلاة %1$s</string>
+    <!-- Maghrib's Adhan Alert on a Fasting Day (#91) -->
+    <string name="adhan_alert_iftar_title">حان وقت الإفطار</string>
     <string name="adhan_channel_name">تنبيهات الأذان</string>
     <string name="adhan_channel_description">تنبيه عند حلول وقت كل صلاة</string>
     <!-- Adhan playback (#22). -->
@@ -609,6 +611,15 @@
     <string name="ramadan_imsak_summary">قبل الفجر، يظهر على بطاقة اليوم في رمضان</string>
     <string name="ramadan_imsak_closer">تقريب الإمساك من الفجر %1$s دقائق</string>
     <string name="ramadan_imsak_earlier">تبكير الإمساك %1$s دقائق</string>
+    <!-- Ramadan reminders (#91). %1$s is the minutes before Fajr. -->
+    <string name="suhoor_reminder">تذكير السحور</string>
+    <string name="suhoor_reminder_description">قبل الفجر بـ%1$s دقيقة في أيام رمضان</string>
+    <string name="suhoor_reminder_title">تذكير السحور</string>
+    <string name="suhoor_reminder_text">حان وقت السحور، تسحّروا فإن في السحور بركة</string>
+    <string name="imsak_alert">تنبيه الإمساك</string>
+    <string name="imsak_alert_description">عند الإمساك في أيام رمضان</string>
+    <string name="imsak_alert_title">حان وقت الإمساك</string>
+    <string name="imsak_alert_text">أمسِك عن الطعام والشراب، الفجر قريب</string>
     <string name="about_use_serialization">ملف النسخة الاحتياطية</string>
 
     <!-- Settings → Backup (#98) -->
@@ -658,4 +669,12 @@
     <string name="fast_arafah">صيام يوم عرفة</string>
     <string name="fast_ashura">صيام تاسوعاء وعاشوراء</string>
     <string name="fast_six_of_shawwal">ست من شوال</string>
+    <string name="backup_restore_confirm_title">الاستعادة من هذا الملف؟</string>
+    <string name="backup_restore_confirm_body">ستحلّ إعدادات الملف محل إعداداتك الحالية كلها. ويُدمج سجل الصلاة وسجل الأذكار مع ما على هاتفك، فلا يُحذف شيء مما علّمته.</string>
+    <string name="backup_restore_confirm">استعادة</string>
+    <string name="backup_restored">تمت الاستعادة. طُبّقت إعدادات الملف ودُمجت سجلاتك.</string>
+    <string name="backup_restored_check_alerts">تستخدم الإعدادات المستعادة إسكات الصلاة أو وضع المنبّه، فتأكّد من أن هاتفك يسمح للتنبيهات بالعمل.</string>
+    <string name="backup_restore_damaged">هذا الملف تالف أو ليس نسخة احتياطية من مواقيت. لم يتغير شيء.</string>
+    <string name="backup_restore_newer">هذا الملف من إصدار أحدث من مواقيت. حدّث التطبيق ثم أعد المحاولة. لم يتغير شيء.</string>
+    <string name="backup_restore_unreadable">تعذّرت قراءة الملف. لم يتغير شيء.</string>
 </resources>

@@ -57,6 +57,7 @@ class AdhanPlayerService : Service() {
             intent.getIntExtra(AlertReceiver.EXTRA_REQUEST_CODE, 1),
             prayerDay = AlertReceiver.prayerDay(intent),
             fullScreen = intent.getBooleanExtra(AlertReceiver.EXTRA_FULL_SCREEN, false),
+            isIftar = intent.getBooleanExtra(AlertReceiver.EXTRA_IFTAR, false),
         )
         stopPlayback() // A new alert replaces one still playing.
         val volume = AlertReceiver.adhanVolume(intent)
@@ -184,6 +185,7 @@ class AdhanPlayerService : Service() {
                 .setAction(ACTION_PLAY)
                 .putExtra(AlertReceiver.EXTRA_PRAYER, n.prayer.name)
                 .putExtra(AlertReceiver.EXTRA_JUMUAH, n.isJumuah)
+                .putExtra(AlertReceiver.EXTRA_IFTAR, n.isIftar)
                 .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, n.id)
                 .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(sound))
                 .putExtra(AlertReceiver.EXTRA_PRAYER_DAY, n.prayerDay?.toString())

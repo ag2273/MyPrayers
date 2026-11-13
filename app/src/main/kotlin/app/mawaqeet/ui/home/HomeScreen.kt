@@ -106,7 +106,7 @@ fun HomeScreen(
     /** Opens the Hijri Calendar, from the date line; null leaves the date line plain. */
     onOpenCalendar: (() -> Unit)? = null,
 ) {
-    // Re-query the core every second: the countdown ticks and the display day switches at local midnight.
+    // Re-query the core every second: the countdown ticks and the display day moves on at Fajr.
     var now by remember { mutableStateOf(clock.instant()) }
     LaunchedEffect(core, clock) {
         while (true) {

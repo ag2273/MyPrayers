@@ -72,7 +72,7 @@ internal class AlertPlanStore(context: Context) {
                 listOf(
                     a.instant.toEpochMilli(), a.prayer.name, a.kind.name, encodeAlertSound(a.sound),
                     a.deliveryMode.name, a.prayerDay, a.isJumuah, a.prayerTime.toEpochMilli(), a.playOnSilent, a.vibration,
-                    a.adhanVolume.name,
+                    a.adhanVolume.name, a.isIftar,
                 ).joinToString("\t"),
             )
         }
@@ -84,8 +84,8 @@ internal class AlertPlanStore(context: Context) {
     }
 
     private fun decode(lines: List<String>): AlertPlan {
-        // v6 differs only in having no style line.
-        require(lines.firstOrNull() == VERSION || lines.firstOrNull() == PREVIOUS_VERSION)
+        // v7 differs only in having no Iftar field on an alert's line, v6 also in having no style line.
+        require(lines.firstOrNull() in READABLE_VERSIONS)
         val midnight = Instant.ofEpochMilli(lines[1].toLong())
         val (worshipLines, otherLines) = lines.drop(2).partition { it.startsWith(WORSHIP + "\t") }
         val (silenceLines, alertLines) = otherLines.partition { it.startsWith(SILENCE + "\t") }
@@ -102,7 +102,7 @@ internal class AlertPlanStore(context: Context) {
         val silenceWindows = silenceLines.map { decodeSilenceWindow(it.removePrefix(SILENCE + "\t")) }
         val alerts = alertLines.map { line ->
             val f = line.split('\t')
-            require(f.size == 11)
+            require(f.size == 11 || f.size == 12)
             PlannedAlert(
                 instant = Instant.ofEpochMilli(f[0].toLong()),
                 prayer = Prayer.valueOf(f[1]),
@@ -115,6 +115,7 @@ internal class AlertPlanStore(context: Context) {
                 playOnSilent = f[8].toBooleanStrict(),
                 vibration = f[9].toBooleanStrict(),
                 adhanVolume = AdhanVolume.valueOf(f[10]),
+                isIftar = f.getOrNull(11)?.toBooleanStrict() ?: false,
             )
         }
         return AlertPlan(alerts, midnight, silenceWindows = silenceWindows, worshipReminders = worshipReminders)
@@ -122,8 +123,9 @@ internal class AlertPlanStore(context: Context) {
 
     companion object {
         const val FILE_NAME = "alert_plan.txt"
-        private const val VERSION = "alert-plan-v7"
-        private const val PREVIOUS_VERSION = "alert-plan-v6"
+        /** v8 (#91) adds the Iftar field at the end of an alert's line. */
+        private const val VERSION = "alert-plan-v8"
+        private val READABLE_VERSIONS = setOf(VERSION, "alert-plan-v7", "alert-plan-v6")
 
         /** First field of a Silence Window's line (#61). */
         private const val SILENCE = "silence"

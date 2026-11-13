@@ -24,7 +24,7 @@ data class TodayTimesContent(
         @param:StringRes val nameRes: Int,
         /** Its time, in the user's digits and with no ص/م suffix (always `HH:mm`). */
         val time: String,
-        /** The next Prayer, when it is on the displayed date. After Isha nothing is highlighted until midnight. */
+        /** The next Prayer, when it is on the displayed date. After Isha nothing is highlighted until Fajr, when the next Prayer Day begins. */
         val isNext: Boolean,
         /** Its time has passed today. */
         val isPast: Boolean = false,

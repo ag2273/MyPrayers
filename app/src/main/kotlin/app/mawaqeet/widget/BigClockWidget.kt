@@ -317,7 +317,7 @@ internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = C
             )
         }
         StopsRow(view, scale, tones, GlanceModifier.fillMaxWidth().padding(top = gap)) {
-            WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true)
+            WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.COUNTDOWN, bold = true)
         }
         ClockBar(view, across, rtl, GlanceModifier.padding(top = gap * 2))
         Box(GlanceModifier.fillMaxWidth().padding(top = gap), contentAlignment = Alignment.Center) {
@@ -350,7 +350,7 @@ private fun BigClockCompactLayout(view: ClockView, rtl: Boolean, tones: ClockTon
                 },
                 cell {
                     Column(GlanceModifier.defaultWeight().then(direction.paddingStart((BigClockMetrics.SIDE_GAP_DP * scale).dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                        val countdown = @Composable { WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true) }
+                        val countdown = @Composable { WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.COUNTDOWN, bold = true) }
                         if (fit.stops) StopsRow(view, scale, tones, GlanceModifier.fillMaxWidth(), countdown) else countdown()
                         ClockBar(view, fit.sideWidth, rtl, GlanceModifier.padding(top = gap * 2))
                     }

@@ -64,6 +64,8 @@ data class PlannedAlert(
     val vibration: Boolean = true,
     /** [AlertSettings.adhanVolume], carried for the same reason: the stream the adhan player uses. */
     val adhanVolume: AdhanVolume = AdhanVolume.ALARM,
+    /** Maghrib's Adhan Alert on a Fasting Day (#91), announced as «حان وقت الإفطار». Never on a Prayer Reminder. */
+    val isIftar: Boolean = false,
 )
 
 /**

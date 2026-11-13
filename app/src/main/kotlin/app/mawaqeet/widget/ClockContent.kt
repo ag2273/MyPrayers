@@ -91,7 +91,8 @@ data class ClockContent(
                 if (time.prayer == Prayer.FAJR) listOf(stop(time), Stop(R.string.sunrise, "", day.sunrise, null)) else listOf(stop(time))
             }
             val tomorrow = day.next.takeIf { it.time.isAfter(isha.time) }?.let(::stop)
-            // Before Fajr the previous Stop is yesterday's Isha, from yesterday's own Prayer Times (the core's).
+            // Before Fajr the display day is still the previous Prayer Day, so the previous Stop is its own Isha; the
+            // day before's Isha (the core's, from that day's own Prayer Times) only leads the list.
             return listOf(stop(day.previousIsha)) + today + listOfNotNull(tomorrow)
         }
     }

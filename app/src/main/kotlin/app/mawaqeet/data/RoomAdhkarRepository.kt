@@ -55,6 +55,16 @@ class RoomAdhkarRepository(private val db: PrayerLogDatabase) : AdhkarRepository
         version.update { it + 1 }
     }
 
+    /**
+     * Stores a restore's merged Adhkar Record ([app.mawaqeet.core.Backup.restore]): it holds everything already
+     * here, so only adds. Call it inside the restore's transaction ([BackupFiles.restore]). Blocks.
+     */
+    internal fun restore(merged: AdhkarRecordBackup) {
+        merged.completed.forEach { (day, slots) -> slots.forEach { dao.insertRecord(AdhkarRecordEntry(day.toString(), it)) } }
+        merged.firstUse?.let { dao.replaceFirstUse(AdhkarFirstUse(prayerDay = it.toString())) }
+        version.update { it + 1 }
+    }
+
     /** The whole Adhkar Record as a Backup File holds it (not today's counts), read in one transaction. Blocks. */
     fun backup(): AdhkarRecordBackup = db.runInTransaction<AdhkarRecordBackup> {
         AdhkarRecordBackup(
