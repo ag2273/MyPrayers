@@ -20,9 +20,13 @@ import app.mawaqeet.widget.Widgets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Clock
 
 /** DataStore allows only one instance per file per process, so it is created once, here. */
@@ -98,6 +102,16 @@ class MawaqeetApplication : Application() {
             // widgets, which only display the log.
             appScope.launch { prayerLog.changes.drop(1).collect { Widgets.refreshAll(this@MawaqeetApplication) } }
         }
+    }
+
+    /**
+     * Never called on a phone (the process is simply killed), but Robolectric calls it after every test. Each test has
+     * its own Application while the settings DataStore is one per JVM, so without this an old Application's [appScope]
+     * kept collecting it, rescheduling into the previous test's deleted folders and failing a later test.
+     */
+    override fun onTerminate() {
+        runBlocking { withTimeoutOrNull(5_000) { appScope.coroutineContext.job.cancelAndJoin() } }
+        super.onTerminate()
     }
 }
 
