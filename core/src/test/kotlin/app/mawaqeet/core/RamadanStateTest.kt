@@ -100,6 +100,30 @@ class RamadanStateTest {
         assertEquals(RamadanState.None, core.ramadanState(makkah("2027-03-09", "12:00").toInstant()))
     }
 
+    /** A core whose clock reads [time] on [date] in Makkah, asked about now. */
+    private fun stateNow(date: String, time: String) =
+        PrayerCore(PrayerSettings.Default, Clock.fixed(makkah(date, time).toInstant(), riyadh), InMemoryPrayerLog()).let { it to it.ramadanState() }
+
+    @Test
+    fun `at 00_30 on 1 Ramadan it is the first suhoor, though the display day is still Sha'ban's last`() {
+        val (core, state) = stateNow("2027-02-08", "00:30")
+
+        // Ramadan Mode follows the instant; the display day stays on the previous Prayer Day until Fajr.
+        assertEquals(LocalDate.parse("2027-02-07"), core.displayDay().date)
+        assertEquals(
+            RamadanState.Suhoor(1, core.timeOn("2027-02-08", Prayer.FAJR).minusMinutes(10), core.timeOn("2027-02-08", Prayer.MAGHRIB)),
+            state,
+        )
+    }
+
+    @Test
+    fun `at 00_30 on 1 Shawwal there is no suhoor, though the display day is still 29 Ramadan`() {
+        val (core, state) = stateNow("2027-03-09", "00:30")
+
+        assertEquals(LocalDate.parse("2027-03-08"), core.displayDay().date)
+        assertEquals(RamadanState.None, state)
+    }
+
     @Test
     fun `outside Ramadan the state is none`() {
         assertEquals(RamadanState.None, state(makkah("2026-11-12", "12:00")))
