@@ -1,7 +1,9 @@
 package app.mawaqeet.data
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
@@ -14,6 +16,7 @@ import app.mawaqeet.core.AdhanSoundChoice
 import app.mawaqeet.core.AdhanVolume
 import app.mawaqeet.core.AlertSettings
 import app.mawaqeet.core.AsrConvention
+import app.mawaqeet.core.Backup
 import app.mawaqeet.core.CalculationMethod
 import app.mawaqeet.core.CityRef
 import app.mawaqeet.core.DigitStyle
@@ -31,6 +34,7 @@ import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
 import app.mawaqeet.core.RamadanSettings
+import app.mawaqeet.core.SuhoorReminder
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.core.SettingValue
 import app.mawaqeet.widget.WidgetAppearance
@@ -51,24 +55,26 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
 
     /** The current settings, emitted again on every change. Build a new PrayerCore from each value. */
     val settings: Flow<PrayerSettings> = store.data
-        .map { prefs ->
-            val default = PrayerSettings.Default
-            default.copy(
-                location = prefs.savedLocation()?.location ?: default.location,
-                method = prefs[METHOD].toEnum(default.method),
-                asrConvention = prefs[ASR].toEnum(default.asrConvention),
-                hijriOffsetDays = prefs[HIJRI_OFFSET]?.takeIf { it in PrayerSettings.HIJRI_OFFSET_RANGE }
-                    ?: default.hijriOffsetDays,
-                alerts = prefs.alertSettings(),
-                adjustments = Prayer.entries
-                    .mapNotNull { prayer ->
-                        prefs[adjustmentKey(prayer)]?.takeIf { it != 0 && it in PrayerSettings.ADJUSTMENT_RANGE }?.let { prayer to it }
-                    }
-                    .toMap(),
-                highLatitudeRule = prefs[HIGH_LATITUDE_RULE].toEnum(default.highLatitudeRule),
-            )
-        }
+        .map { it.prayerSettings() }
         .distinctUntilChanged()
+
+    private fun Preferences.prayerSettings(): PrayerSettings {
+        val default = PrayerSettings.Default
+        return default.copy(
+            location = savedLocation()?.location ?: default.location,
+            method = this[METHOD].toEnum(default.method),
+            asrConvention = this[ASR].toEnum(default.asrConvention),
+            hijriOffsetDays = this[HIJRI_OFFSET]?.takeIf { it in PrayerSettings.HIJRI_OFFSET_RANGE }
+                ?: default.hijriOffsetDays,
+            alerts = alertSettings(),
+            adjustments = Prayer.entries
+                .mapNotNull { prayer ->
+                    this[adjustmentKey(prayer)]?.takeIf { it != 0 && it in PrayerSettings.ADJUSTMENT_RANGE }?.let { prayer to it }
+                }
+                .toMap(),
+            highLatitudeRule = this[HIGH_LATITUDE_RULE].toEnum(default.highLatitudeRule),
+        )
+    }
 
     /** The location the user set (city, coordinates or, from #24, automatic); null until they set one. */
     val savedLocation: Flow<SavedLocation?> = store.data
@@ -77,8 +83,10 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
 
     /** App-only display preference (not core input): how digits look everywhere, for [app.mawaqeet.core.DisplayFormatter]. */
     val digitStyle: Flow<DigitStyle> = store.data
-        .map { it[DIGITS].toEnum(DigitStyle.AUTOMATIC) }
+        .map { it.digitStyle() }
         .distinctUntilChanged()
+
+    private fun Preferences.digitStyle(): DigitStyle = this[DIGITS].toEnum(DigitStyle.AUTOMATIC)
 
     suspend fun setLocation(saved: SavedLocation) {
         store.edit {
@@ -196,14 +204,14 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
     val appLanguage: Flow<String> = store.data.map { it[APP_LANGUAGE] ?: "" }.distinctUntilChanged()
 
     /** Settings → Widgets (#32): one appearance for every Widget Variant. Unknown or off-step values read as the default. */
-    val widgetAppearance: Flow<WidgetAppearance> = store.data.map { prefs ->
-        WidgetAppearance(
-            transparency = prefs[WIDGET_TRANSPARENCY]
-                ?.takeIf { it in WidgetAppearance.TRANSPARENCY_RANGE && it % WidgetAppearance.TRANSPARENCY_STEP == 0 } ?: 0,
-            colors = prefs[WIDGET_COLORS]?.let { name -> WidgetColors.entries.firstOrNull { it.name == name } } ?: WidgetColors.APP,
-            nextPrayerLook = prefs[WIDGET_NEXT_PRAYER_LOOK] ?: false,
-        )
-    }.distinctUntilChanged()
+    val widgetAppearance: Flow<WidgetAppearance> = store.data.map { it.widgetAppearance() }.distinctUntilChanged()
+
+    private fun Preferences.widgetAppearance() = WidgetAppearance(
+        transparency = this[WIDGET_TRANSPARENCY]
+            ?.takeIf { it in WidgetAppearance.TRANSPARENCY_RANGE && it % WidgetAppearance.TRANSPARENCY_STEP == 0 } ?: 0,
+        colors = this[WIDGET_COLORS]?.let { name -> WidgetColors.entries.firstOrNull { it.name == name } } ?: WidgetColors.APP,
+        nextPrayerLook = this[WIDGET_NEXT_PRAYER_LOOK] ?: false,
+    )
 
     suspend fun setWidgetTransparency(percent: Int) {
         WidgetAppearance(transparency = percent) // validates
@@ -283,6 +291,22 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[RAMADAN_IMSAK_MINUTES] = it.alertSettings().ramadan.stepped(step).imsakMinutes }
     }
 
+    /** «تذكير السحور» under «رمضان» (#91); planned only on Fasting Days while the master switch is on. */
+    suspend fun setSuhoorReminder(on: Boolean) {
+        store.edit { it[RAMADAN_SUHOOR_ENABLED] = on }
+    }
+
+    /** The suhoor reminder's [minutes] before Fajr, one of [SuhoorReminder.MINUTES]; kept while it is off. */
+    suspend fun setSuhoorReminderMinutes(minutes: Int) {
+        require(minutes in SuhoorReminder.MINUTES)
+        store.edit { it[RAMADAN_SUHOOR_MINUTES] = minutes }
+    }
+
+    /** «تنبيه الإمساك» under «رمضان» (#91); planned only on Fasting Days while the master switch is on. */
+    suspend fun setImsakAlert(on: Boolean) {
+        store.edit { it[RAMADAN_IMSAK_ALERT] = on }
+    }
+
     /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63); planned only while the master switch is on. */
     suspend fun setSalawatReminder(on: Boolean) {
         store.edit { it[SALAWAT_ENABLED] = on }
@@ -352,11 +376,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
 
     /**
      * Every stored setting by its key, for the Backup File (#86): the location and Calculation Method, alerts,
-     * reminders, display and widgets. Keys in [THIS_PHONE_ONLY] (and every Custom Adhan file) stay out. A restore
-     * writes each value back with its key's own type (an Int key reads a [SettingValue.Whole] as an Int).
+     * reminders, display and widgets. Keys about this phone only (and every Custom Adhan file) stay out
+     * ([Backup.restorable]). [restoreSettings] writes each value back with its key's own type.
      */
     suspend fun backupSettings(): Map<String, SettingValue> = store.data.first().asMap()
-        .filterKeys { key -> key.name !in THIS_PHONE_ONLY && !key.name.startsWith(CUSTOM_ADHAN_PREFIX) }
+        .filterKeys { key -> Backup.restorable(key.name) }
         .mapNotNull { (key, value) ->
             val setting = when (value) {
                 is Boolean -> SettingValue.Flag(value)
@@ -371,6 +395,61 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             setting?.let { key.name to it }
         }
         .toMap()
+
+    /**
+     * Whether [restored] (a restore's settings) can be stored as they are: every value of the kind its setting
+     * reads. Check it before writing anything else of a restore, so a bad file changes nothing.
+     */
+    fun canRestore(restored: Map<String, SettingValue>): Boolean = try {
+        mutablePreferencesOf().replaceWith(restored)
+        true
+    } catch (_: IllegalArgumentException) {
+        false
+    }
+
+    /**
+     * A restore (#99): [restored] replaces every setting at once, Custom Adhan files included (the bundled
+     * recordings play again); only the keys about this phone (the last export date, onboarding, Fix Alerts) stay.
+     * Returns the Custom Adhan references no recording uses any more, whose permissions the caller should release.
+     * Throws [IllegalArgumentException], storing nothing, when [canRestore] is false.
+     */
+    suspend fun restoreSettings(restored: Map<String, SettingValue>): Set<String> {
+        var released = emptySet<String>()
+        store.edit { prefs ->
+            released = prefs.alertSettings().customAdhans.values.toSet()
+            prefs.replaceWith(restored)
+        }
+        return released
+    }
+
+    /** Replaces every setting but this phone's own with [restored]; throws [IllegalArgumentException] on a clash. */
+    private fun MutablePreferences.replaceWith(restored: Map<String, SettingValue>) {
+        asMap().keys.filter { Backup.restorable(it.name) || it.name.startsWith(CUSTOM_ADHAN_PREFIX) }.forEach { remove(it) }
+        for ((name, value) in restored.filterKeys(Backup::restorable)) {
+            when (value) {
+                is SettingValue.Flag -> this[booleanPreferencesKey(name)] = value.value
+                is SettingValue.Whole -> if (name in LONG_KEYS) {
+                    this[longPreferencesKey(name)] = value.value
+                } else {
+                    require(value.value in Int.MIN_VALUE..Int.MAX_VALUE) { "$name is out of range" }
+                    this[intPreferencesKey(name)] = value.value.toInt()
+                }
+                is SettingValue.Decimal -> this[doublePreferencesKey(name)] = value.value
+                is SettingValue.Text -> this[stringPreferencesKey(name)] = value.value
+                is SettingValue.TextSet -> this[stringSetPreferencesKey(name)] = value.value
+            }
+        }
+        // Read everything as the app will: a value of the wrong kind (a flag where a name belongs) fails here.
+        try {
+            prayerSettings()
+            savedLocation()
+            digitStyle()
+            widgetAppearance()
+            this[APP_LANGUAGE]?.length
+        } catch (e: ClassCastException) {
+            throw IllegalArgumentException("a restored setting has the wrong kind", e)
+        }
+    }
 
     private fun Preferences.alertSettings(): AlertSettings {
         val default = AlertSettings()
@@ -397,6 +476,12 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             ramadan = RamadanSettings(
                 imsakMinutes = this[RAMADAN_IMSAK_MINUTES]?.takeIf { it in RamadanSettings.IMSAK_MINUTES_RANGE }
                     ?: default.ramadan.imsakMinutes,
+                suhoorReminder = SuhoorReminder(
+                    enabled = this[RAMADAN_SUHOOR_ENABLED] ?: default.ramadan.suhoorReminder.enabled,
+                    minutes = this[RAMADAN_SUHOOR_MINUTES]?.takeIf { it in SuhoorReminder.MINUTES }
+                        ?: default.ramadan.suhoorReminder.minutes,
+                ),
+                imsakAlert = this[RAMADAN_IMSAK_ALERT] ?: default.ramadan.imsakAlert,
             ),
             prayerSilence = PrayerSilence(
                 enabled = this[PRAYER_SILENCE_ENABLED] ?: default.prayerSilence.enabled,
@@ -442,15 +527,12 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         /** The DataStore file name, for `preferencesDataStore(name = ...)` and the backup rules (#25). */
         const val FILE_NAME = "settings"
 
-        private const val CUSTOM_ADHAN_PREFIX = "custom_adhan_"
+        /** Custom Adhan files are content URIs on this phone: never in a Backup File ([Backup.restorable]). */
+        private const val CUSTOM_ADHAN_PREFIX = Backup.CUSTOM_ADHAN_PREFIX
         private val LAST_BACKUP_EXPORT = longPreferencesKey("backup_last_export")
 
-        /**
-         * Keys about this phone or this install, never in a Backup File: the last export date, the possibly-stale
-         * location hint, onboarding, and the Fix Alerts steps (they depend on the phone). Custom Adhan files are
-         * left out by their prefix: they are content URIs on this phone.
-         */
-        private val THIS_PHONE_ONLY = setOf("backup_last_export", "location_maybe_stale", "onboarding_done", "fix_alerts_done")
+        /** The only settings stored as a Long; every other [SettingValue.Whole] is an Int. */
+        private val LONG_KEYS = setOf("location_city_id", "backup_last_export")
 
         private val METHOD = stringPreferencesKey("calculation_method")
         private val ASR = stringPreferencesKey("asr_convention")
@@ -503,6 +585,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         /** Worship Reminders (#64): «سورة الكهف» on or off. */
         private val KAHF_ENABLED = booleanPreferencesKey("worship_kahf_enabled")
         private val RAMADAN_IMSAK_MINUTES = intPreferencesKey("ramadan_imsak_minutes")
+
+        /** Ramadan reminders (#91): «تذكير السحور» on or off and its minutes before Fajr, «تنبيه الإمساك» on or off. */
+        private val RAMADAN_SUHOOR_ENABLED = booleanPreferencesKey("ramadan_suhoor_enabled")
+        private val RAMADAN_SUHOOR_MINUTES = intPreferencesKey("ramadan_suhoor_minutes")
+        private val RAMADAN_IMSAK_ALERT = booleanPreferencesKey("ramadan_imsak_alert")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

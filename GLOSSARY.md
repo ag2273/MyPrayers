@@ -129,7 +129,7 @@ Which Adhkar Sets the user completed (every dhikr said its full count) on each P
 _Avoid_: Adhkar log, streak, score
 
 **Backup File**:
-One JSON file «mawaqeet-backup-YYYY-MM-DD.json» the user exports from Settings → Backup «النسخة الاحتياطية» and saves wherever they choose with the system file picker. It holds every setting (alerts, reminders, display, widgets), the location and Calculation Method, the Prayer Log (with its first-use date and past places) and the Adhkar Record (with its first-use date); never Custom Adhan files, which the user picks again. It is made only when the user asks and the app never sends it anywhere. It is not Android's cloud backup or a device-to-device transfer, which follow the backup rules.
+One JSON file «mawaqeet-backup-YYYY-MM-DD.json» the user exports from Settings → Backup «النسخة الاحتياطية» and saves wherever they choose with the system file picker. It holds every setting (alerts, reminders, display, widgets), the location and Calculation Method, the Prayer Log (with its first-use date and past places) and the Adhkar Record (with its first-use date); never Custom Adhan files, which the user picks again. Restoring one replaces every setting with the file's and merges its records with the phone's: anything marked on either side stays marked. It is made only when the user asks and the app never sends it anywhere. It is not Android's cloud backup or a device-to-device transfer, which follow the backup rules.
 _Avoid_: Backup (alone, for the file), export, archive, sync
 
 **Clock Widget**:
@@ -139,3 +139,11 @@ _Avoid_: Clock, digital clock widget
 **Stop**:
 One end of a Clock Widget's interval: one of the five Prayers or Sunrise (Fajr → Sunrise → Dhuhr). Before Fajr the previous Stop is the previous day's Isha; after Isha the next Stop is the next day's Fajr. Sunrise being a Stop never makes it a Prayer: it still never alerts and is never logged.
 _Avoid_: Waypoint, milestone, prayer (for Sunrise)
+
+**Qibla**:
+The direction of the Kaaba in Makkah (21.4225°N, 39.8262°E) from the app's stored location: the initial great-circle bearing in degrees from true north, with the great-circle distance to it. The Qibla screen («القبلة») turns a compass dial with the phone, corrected from magnetic to true north, and says when the phone faces it (within 3°). It never asks for a location of its own.
+_Avoid_: Kiblah, Mecca direction, prayer direction
+
+**Tools Row**:
+The single row of compact buttons on Today, under the Next Prayer card, that opens the app's tools: «القبلة», «التقويم», «المساجد». It is not a tab: the bottom bar stays Today, Prayer Log, Adhkar, Settings.
+_Avoid_: Shortcuts, quick actions, toolbar

@@ -63,6 +63,17 @@ class RoomPrayerLogRepository(private val db: PrayerLogDatabase) : PrayerLogRepo
         version.update { it + 1 }
     }
 
+    /**
+     * Stores a restore's merged Prayer Log ([app.mawaqeet.core.Backup.restore]): it holds everything already here,
+     * so only adds. Call it inside the restore's transaction ([BackupFiles.restore]). Blocks.
+     */
+    internal fun restore(merged: PrayerLogBackup) {
+        merged.prayed.forEach { (day, prayers) -> prayers.forEach { dao.insert(PrayerLogEntry(day.toString(), it.name)) } }
+        merged.firstUse?.let { dao.replaceFirstUse(FirstUse(prayerDay = it.toString())) }
+        merged.pastPlaces.forEach(::addPastPlace)
+        version.update { it + 1 }
+    }
+
     /** The whole Prayer Log as a Backup File holds it, read in one transaction. Blocks. */
     fun backup(): PrayerLogBackup = db.runInTransaction<PrayerLogBackup> {
         PrayerLogBackup(

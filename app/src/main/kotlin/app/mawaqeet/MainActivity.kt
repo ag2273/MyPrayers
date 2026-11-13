@@ -37,6 +37,7 @@ import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AdhkarSlot
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.alerts.CustomAdhanFiles
+import app.mawaqeet.data.RestoreOutcome
 import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.core.AsrConvention
 import app.mawaqeet.core.CalculationMethod
@@ -53,6 +54,9 @@ import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.components.MainScaffold
 import app.mawaqeet.ui.components.Tab
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.home.ToolsRow
+import app.mawaqeet.qibla.SensorHeadings
+import app.mawaqeet.ui.qibla.QiblaScreen
 import app.mawaqeet.ui.fixalerts.FixAlerts
 import app.mawaqeet.ui.fixalerts.FixAlertsScreen
 import app.mawaqeet.ui.location.LocationScreen
@@ -136,6 +140,9 @@ class MainActivity : AppCompatActivity() {
                 var settingsRoute by rememberSaveable { mutableStateOf<SettingsRoute?>(null) }
                 var showLocation by rememberSaveable { mutableStateOf(false) }
                 var showFixAlerts by rememberSaveable { mutableStateOf(false) }
+                // The Qibla screen, opened from the Tools Row on Today (#88).
+                var showQibla by rememberSaveable { mutableStateOf(false) }
+                val headings = remember { SensorHeadings(this@MainActivity) }
                 // The Adhkar Set an adhkar reminder's tap asked for, until the Adhkar tab opens it.
                 var adhkarToOpen by remember { mutableStateOf<AdhkarSlot?>(null) }
                 // A widget tap opens today's Prayer Times (Home) or the Prayer Log, from whatever screen was open.
@@ -143,6 +150,7 @@ class MainActivity : AppCompatActivity() {
                     val request = openRequest ?: return@LaunchedEffect
                     showLocation = false
                     showFixAlerts = false
+                    showQibla = false
                     settingsRoute = null
                     tab = when (request.opens) {
                         Opens.PRAYER_LOG -> Tab.LOG
@@ -319,6 +327,18 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.stepImsakMinutes(step) }
                             }
 
+                            override fun setSuhoorReminder(on: Boolean) {
+                                scope.launch { settingsStore.setSuhoorReminder(on) }
+                            }
+
+                            override fun setSuhoorReminderMinutes(minutes: Int) {
+                                scope.launch { settingsStore.setSuhoorReminderMinutes(minutes) }
+                            }
+
+                            override fun setImsakAlert(on: Boolean) {
+                                scope.launch { settingsStore.setImsakAlert(on) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {
@@ -394,6 +414,18 @@ class MainActivity : AppCompatActivity() {
                             override fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit) {
                                 scope.launch {
                                     onResult(app.backup.export { contentResolver.openOutputStream(uri, "w") })
+                                }
+                            }
+
+                            override fun restoreBackup(uri: Uri, onResult: (RestoreOutcome) -> Unit) {
+                                scope.launch {
+                                    val outcome = app.backup.restore { contentResolver.openInputStream(uri) }
+                                    onResult(outcome)
+                                    // The restored language too: AppCompat holds it, so apply it (this recreates the screen).
+                                    val language = settingsStore.appLanguage.first()
+                                    if (outcome is RestoreOutcome.Restored && language != AppCompatDelegate.getApplicationLocales().toLanguageTags()) {
+                                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language))
+                                    }
                                 }
                             }
 
@@ -476,6 +508,14 @@ class MainActivity : AppCompatActivity() {
                         onBack = { showLocation = false },
                         readDevicePosition = { DeviceLocation.current(this@MainActivity) },
                     )
+                } else if (showQibla) {
+                    // Only the stored location: the Qibla screen never asks for a permission.
+                    QiblaScreen(
+                        savedLocation?.location,
+                        headings,
+                        onSetLocation = { showLocation = true },
+                        onBack = { showQibla = false },
+                    )
                 } else if (settingsRoute != null) {
                     SettingsPageScreen(
                         settingsRoute ?: return@ProvideDisplayFormatter,
@@ -520,6 +560,7 @@ class MainActivity : AppCompatActivity() {
                         showFixAlertsTip = !fixAlertsDone && FixAlerts.deviceBrand != null,
                         onOpenFixAlerts = { showFixAlerts = true },
                         onFixAlertsDone = { scope.launch { settingsStore.setFixAlertsDone(true) } },
+                        tools = { ToolsRow(onQibla = { showQibla = true }) },
                     )
                     }
                     }

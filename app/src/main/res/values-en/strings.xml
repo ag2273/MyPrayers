@@ -88,6 +88,8 @@
 
     <!-- Adhan Alerts (#18). %1$s is the Prayer name (Jumu'ah on Friday's Dhuhr). -->
     <string name="adhan_alert_title">It\'s time for %1$s</string>
+    <!-- Maghrib's Adhan Alert on a Fasting Day (#91) -->
+    <string name="adhan_alert_iftar_title">Time to break your fast</string>
     <string name="adhan_channel_name">Adhan Alerts</string>
     <string name="adhan_channel_description">An alert when each Prayer Time arrives</string>
     <!-- Adhan playback (#22). -->
@@ -511,6 +513,38 @@
     <string name="kahf_reminder_title">Read Surat Al-Kahf</string>
     <string name="kahf_reminder_text">Reading Surat Al-Kahf is a Sunnah of Friday</string>
     <string name="kahf_reminder_read">I read it</string>
+    <!-- Tools Row on Today (#88) -->
+    <string name="tool_qibla">Qibla</string>
+    <string name="tool_calendar">Calendar</string>
+    <string name="tool_mosques">Mosques</string>
+    <!-- Qibla screen (#88) -->
+    <string name="qibla_waiting">Reading the compass…</string>
+    <string name="qibla_turn_right">Turn %1$s° right</string>
+    <string name="qibla_turn_left">Turn %1$s° left</string>
+    <string name="qibla_on_target">You are facing the Qibla</string>
+    <string name="qibla_bearing">Qibla %1$s° from true north</string>
+    <string name="qibla_distance">%1$s km to Makkah</string>
+    <string name="qibla_dial_description">Qibla compass</string>
+    <string name="qibla_kaaba">Kaaba</string>
+    <string name="qibla_dial_north">N</string>
+    <string name="qibla_dial_east">E</string>
+    <string name="qibla_dial_south">S</string>
+    <string name="qibla_dial_west">W</string>
+    <string name="qibla_calibrate_title">The compass needs calibrating</string>
+    <string name="qibla_calibrate">Move your phone through the air in a figure 8 a few times, away from metal and electronics, until the reading settles.</string>
+    <string name="qibla_no_sensor_title">This phone has no compass</string>
+    <string name="qibla_no_sensor">The Qibla is %1$s° from true north, to the %2$s. Use the sun or another compass to find north.</string>
+    <string name="qibla_no_location_title">No location set yet</string>
+    <string name="qibla_no_location">Set your location to find the Qibla from it.</string>
+    <string name="qibla_set_location">Set location</string>
+    <string name="compass_north">north</string>
+    <string name="compass_north_east">north-east</string>
+    <string name="compass_east">east</string>
+    <string name="compass_south_east">south-east</string>
+    <string name="compass_south">south</string>
+    <string name="compass_south_west">south-west</string>
+    <string name="compass_west">west</string>
+    <string name="compass_north_west">north-west</string>
     <!-- Ramadan Mode on Today (#90): the Next Prayer card's fasting and suhoor forms. -->
     <string name="ramadan_day">Ramadan · Day %1$s</string>
     <string name="ramadan_imsak_at">Imsak %1$s</string>
@@ -525,6 +559,15 @@
     <string name="ramadan_imsak_summary">Before Fajr, shown on Today in Ramadan</string>
     <string name="ramadan_imsak_closer">Imsak %1$s minutes closer to Fajr</string>
     <string name="ramadan_imsak_earlier">Imsak %1$s minutes earlier</string>
+    <!-- Ramadan reminders (#91). %1$s is the minutes before Fajr. -->
+    <string name="suhoor_reminder">Suhoor reminder</string>
+    <string name="suhoor_reminder_description">%1$s minutes before Fajr on Ramadan days</string>
+    <string name="suhoor_reminder_title">Suhoor reminder</string>
+    <string name="suhoor_reminder_text">Time for suhoor: there is blessing in it</string>
+    <string name="imsak_alert">Imsak alert</string>
+    <string name="imsak_alert_description">At Imsak on Ramadan days</string>
+    <string name="imsak_alert_title">Time for Imsak</string>
+    <string name="imsak_alert_text">Stop eating and drinking: Fajr is near</string>
     <string name="about_use_serialization">The backup file</string>
 
     <!-- Settings → Backup (#98) -->
@@ -541,5 +584,12 @@
     <string name="backup_export">Export a backup</string>
     <string name="backup_export_failed">The file couldn\'t be saved. Nothing changed.</string>
     <string name="backup_restore">Restore from a file</string>
-    <string name="backup_restore_soon">Restoring comes in an upcoming version.</string>
+    <string name="backup_restore_confirm_title">Restore from this file?</string>
+    <string name="backup_restore_confirm_body">The file\'s settings will replace your current settings, all of them. The Prayer Log and the Adhkar Record are merged with what\'s on your phone, so nothing you marked is deleted.</string>
+    <string name="backup_restore_confirm">Restore</string>
+    <string name="backup_restored">Restored. The file\'s settings are in place and your records are merged.</string>
+    <string name="backup_restored_check_alerts">The restored settings use Prayer Silence or alarm-clock mode: check that your phone lets alerts work.</string>
+    <string name="backup_restore_damaged">This file is damaged or isn\'t a Mawaqeet backup. Nothing changed.</string>
+    <string name="backup_restore_newer">This file is from a newer version of Mawaqeet. Update the app, then try again. Nothing changed.</string>
+    <string name="backup_restore_unreadable">The file couldn\'t be read. Nothing changed.</string>
 </resources>

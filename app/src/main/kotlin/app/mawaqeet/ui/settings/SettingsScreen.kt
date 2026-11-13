@@ -89,6 +89,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.text.BidiFormatter
 import androidx.core.text.TextDirectionHeuristicsCompat
+import app.mawaqeet.data.RestoreOutcome
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -157,6 +158,15 @@ interface SettingsActions {
     /** «الإمساك» under «رمضان» (#90): Imsak moved [step] taps of [app.mawaqeet.core.RamadanSettings.IMSAK_MINUTES_STEP] minutes. */
     fun stepImsakMinutes(step: Int)
 
+    /** «تذكير السحور» under «رمضان» (#91). */
+    fun setSuhoorReminder(on: Boolean)
+
+    /** The suhoor reminder's minutes before Fajr, one of [app.mawaqeet.core.SuhoorReminder.MINUTES]. */
+    fun setSuhoorReminderMinutes(minutes: Int)
+
+    /** «تنبيه الإمساك» under «رمضان» (#91). */
+    fun setImsakAlert(on: Boolean)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 
@@ -197,6 +207,12 @@ interface SettingsActions {
      * picker; [onResult] gets false when it couldn't be written (nothing changes then).
      */
     fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit)
+
+    /**
+     * Settings → Backup (#99): restores the Backup File at [uri], the document the user just opened with the system
+     * picker and confirmed; [onResult] gets how it ended (only [RestoreOutcome.Restored] changed anything).
+     */
+    fun restoreBackup(uri: Uri, onResult: (RestoreOutcome) -> Unit)
 }
 
 /** The Settings sections, each its own page, plus the pages opened from them. */

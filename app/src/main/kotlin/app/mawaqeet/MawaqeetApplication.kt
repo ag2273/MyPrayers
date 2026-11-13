@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.core.os.UserManagerCompat
 import androidx.datastore.preferences.preferencesDataStore
 import app.mawaqeet.alerts.AlertRescheduler
+import app.mawaqeet.alerts.CustomAdhanFiles
 import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.core.AdhkarCatalog
 import app.mawaqeet.core.CityDirectory
@@ -52,8 +53,17 @@ class MawaqeetApplication : Application() {
     /** Every location change goes through it, so past Prayer Days keep their place (see [LocationUpdater]). */
     val locationUpdater: LocationUpdater by lazy { LocationUpdater(settings, prayerLog, Clock.systemUTC()) { cities } }
 
-    /** Settings → Backup: exports (and, from #99, restores) the Backup File. */
-    val backup: BackupFiles by lazy { BackupFiles(settings, prayerLog, adhkar, Clock.systemUTC()) }
+    /**
+     * Settings → Backup: exports and restores the Backup File. After a restore, the Custom Adhan files it let go
+     * lose their permission, and the alerts and every widget follow the restored settings and records at once.
+     */
+    val backup: BackupFiles by lazy {
+        BackupFiles(settings, prayerLog, adhkar, database, Clock.systemUTC()) { released ->
+            CustomAdhanFiles.release(this, released)
+            AlertRescheduler.reschedule(this)
+            Widgets.refreshAll(this)
+        }
+    }
 
     /** A move the user declined to apply to their manual location, so it is not asked again in this process. */
     @Volatile

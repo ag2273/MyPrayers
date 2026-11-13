@@ -69,6 +69,7 @@ import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.RamadanSettings
+import app.mawaqeet.core.SuhoorReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.ui.components.Segment
 import app.mawaqeet.ui.components.SegmentedChoice
@@ -99,7 +100,11 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
         )
     }
     PrayerSilenceRows(alerts, actions)
-    if (!alerts.enabled) return
+    if (!alerts.enabled) {
+        // Today's Ramadan card uses Imsak whatever the alerts: it stays editable with the master switch off (#91).
+        RamadanRows(alerts.ramadan, actions, reminders = false)
+        return
+    }
     SectionTitle(stringResource(R.string.alerts_each_prayer))
     Card {
         Prayer.entries.forEachIndexed { index, prayer ->
@@ -308,14 +313,47 @@ private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions)
         RowDivider()
         AdhkarReminderRows(AdhkarSetId.EVENING, alerts.worshipReminders.eveningAdhkar, actions)
     }
-    RamadanRows(alerts.ramadan, actions)
+    RamadanRows(alerts.ramadan, actions, reminders = true)
 }
 
-/** «رمضان» under «تذكيرات العبادة» (#90): how many minutes before Fajr Imsak comes, for Ramadan Mode on Today. */
+/**
+ * «رمضان» under «تذكيرات العبادة»: with [reminders], the suhoor reminder and the Imsak alert (#91), each off by
+ * default, shown with the other Worship Reminders only while the master switch is on; then how many minutes before Fajr
+ * Imsak comes (#90), which Today's Ramadan card uses, so it is shown with the master switch off too.
+ */
 @Composable
-private fun RamadanRows(ramadan: RamadanSettings, actions: SettingsActions) {
+private fun RamadanRows(ramadan: RamadanSettings, actions: SettingsActions, reminders: Boolean) {
+    val format = LocalDisplayFormatter.current
     SectionTitle(stringResource(R.string.ramadan))
     Card {
+        if (reminders) {
+            val suhoor = ramadan.suhoorReminder
+            SwitchRow(
+                title = stringResource(R.string.suhoor_reminder),
+                description = stringResource(R.string.suhoor_reminder_description, format.number(suhoor.minutes)),
+                checked = suhoor.enabled,
+                onChange = actions::setSuhoorReminder,
+            )
+            if (suhoor.enabled) {
+                RowDivider()
+                SegmentedChoice(
+                    SuhoorReminder.MINUTES.map { minutes ->
+                        Segment(stringResource(R.string.adhkar_reminder_minutes, format.number(minutes)), suhoor.minutes == minutes) {
+                            actions.setSuhoorReminderMinutes(minutes)
+                        }
+                    },
+                    Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                )
+            }
+            RowDivider()
+            SwitchRow(
+                title = stringResource(R.string.imsak_alert),
+                description = stringResource(R.string.imsak_alert_description),
+                checked = ramadan.imsakAlert,
+                onChange = actions::setImsakAlert,
+            )
+            RowDivider()
+        }
         SilenceDurationRow(
             title = stringResource(R.string.ramadan_imsak),
             summary = stringResource(R.string.ramadan_imsak_summary),
