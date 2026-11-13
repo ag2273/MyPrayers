@@ -32,7 +32,7 @@ fun GrantScreen(
     onGrantNotifications: () -> Unit,
     onGrantExactAlarms: () -> Unit,
 ) {
-    Scaffold { padding ->
+    Scaffold(containerColor = androidx.compose.ui.graphics.Color.Transparent) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

@@ -3,6 +3,7 @@ package app.mawaqeet.data
 import app.mawaqeet.core.Location
 import app.mawaqeet.core.PastPlace
 import app.mawaqeet.core.Prayer
+import app.mawaqeet.core.PrayerLogBackup
 import app.mawaqeet.core.PrayerLogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +37,8 @@ class RoomPrayerLogRepository(private val db: PrayerLogDatabase) : PrayerLogRepo
         version.update { it + 1 }
     }
 
+    override fun hasAnyEntry(): Boolean = dao.hasAnyEntry()
+
     override fun firstUseDate(): LocalDate? = dao.firstUse()?.let(LocalDate::parse)
 
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) {
@@ -58,5 +61,28 @@ class RoomPrayerLogRepository(private val db: PrayerLogDatabase) : PrayerLogRepo
             dao.replaceFirstUse(FirstUse(prayerDay = firstUseFrom.toString()))
         }
         version.update { it + 1 }
+    }
+
+    /**
+     * Stores a restore's merged Prayer Log ([app.mawaqeet.core.Backup.restore]): it holds everything already here,
+     * so only adds. Call it inside the restore's transaction ([BackupFiles.restore]). Blocks.
+     */
+    internal fun restore(merged: PrayerLogBackup) {
+        merged.prayed.forEach { (day, prayers) -> prayers.forEach { dao.insert(PrayerLogEntry(day.toString(), it.name)) } }
+        merged.firstUse?.let { dao.replaceFirstUse(FirstUse(prayerDay = it.toString())) }
+        merged.pastPlaces.forEach(::addPastPlace)
+        version.update { it + 1 }
+    }
+
+    /** The whole Prayer Log as a Backup File holds it, read in one transaction. Blocks. */
+    fun backup(): PrayerLogBackup = db.runInTransaction<PrayerLogBackup> {
+        PrayerLogBackup(
+            firstUse = firstUseDate(),
+            prayed = dao.allEntries()
+                .mapNotNull { entry -> Prayer.entries.firstOrNull { it.name == entry.prayer }?.let { LocalDate.parse(entry.prayerDay) to it } }
+                .groupBy({ it.first }, { it.second })
+                .mapValues { it.value.toSet() },
+            pastPlaces = pastPlaces(),
+        )
     }
 }

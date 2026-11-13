@@ -44,4 +44,34 @@ class WidgetLanguageTest {
         assertEquals("بعد %s ساعة", format(Duration.ofHours(1)))
         assertEquals("بعد %s ساعة", format(Duration.ofHours(3)))
     }
+
+    @Test
+    fun `in Ramadan Mode the label names the day of Ramadan and the place, and the iftar line runs from Imsak`() {
+        val arabic = localizedContext(context, Locale.forLanguageTag("ar"))
+        val text = WidgetText(DisplayFormatter(Locale.forLanguageTag("ar"), DigitStyle.ARABIC_INDIC), arabic, rtl = true, place = "مكة")
+        val iftar = NextPrayerContent(
+            R.string.widget_iftar, "١٧:٤١", Duration.ofHours(4),
+            previousNameRes = R.string.ramadan_imsak, previousTime = "٠٤:٥٩", fastingDayNumber = 15,
+        )
+
+        val view = NextPrayerView.of(iftar, text)
+
+        assertEquals("رمضان · اليوم ١٥ · مكة", view.label)
+        assertEquals("رمضان", view.shortLabel)
+        assertEquals("الإفطار", view.name)
+        assertEquals("الإمساك ٠٤:٥٩", view.from)
+        assertEquals("الإفطار ١٧:٤١", view.to)
+    }
+
+    @Test
+    fun `in English the suhoor widget reads Suhoor ends`() {
+        val english = localizedContext(context, Locale.ENGLISH)
+        val text = WidgetText(DisplayFormatter(Locale.ENGLISH, DigitStyle.WESTERN), english, rtl = false)
+        val suhoor = NextPrayerContent(R.string.widget_suhoor_ends, "04:59", Duration.ofHours(8), fastingDayNumber = 15)
+
+        val view = NextPrayerView.of(suhoor, text)
+
+        assertEquals("Ramadan · Day 15", view.label)
+        assertEquals("Suhoor ends", view.name)
+    }
 }

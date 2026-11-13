@@ -49,6 +49,13 @@ internal interface PrayerLogDao {
     @Query("SELECT prayer FROM prayer_log WHERE prayer_day = :prayerDay")
     fun prayedOn(prayerDay: String): List<String>
 
+    /** Every prayed entry, for the Backup File. */
+    @Query("SELECT * FROM prayer_log")
+    fun allEntries(): List<PrayerLogEntry>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM prayer_log)")
+    fun hasAnyEntry(): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(entry: PrayerLogEntry)
 
@@ -118,6 +125,10 @@ internal interface AdhkarDao {
 
     @Query("SELECT slot FROM adhkar_record WHERE prayer_day = :prayerDay")
     fun completedOn(prayerDay: String): List<String>
+
+    /** The whole Adhkar Record, for the Backup File. */
+    @Query("SELECT * FROM adhkar_record")
+    fun allRecords(): List<AdhkarRecordEntry>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertRecord(entry: AdhkarRecordEntry)

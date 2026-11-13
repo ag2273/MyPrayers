@@ -4,6 +4,8 @@
   requireFlags="deviceToDeviceTransfer" is copied only in a direct transfer to a new phone, never to the cloud.
   Once any <include> is listed only included files are backed up, so the rest of the app's files are listed too.
   prayer_log.db holds the Prayer Log and the Adhkar Record (#74).
+  The Backup File (#98) the user exports by hand from Settings → Backup is not covered by these rules: it is saved
+  only where they choose with the system file picker.
 -->
 <full-backup-content>
     <include domain="database" path="prayer_log.db" requireFlags="deviceToDeviceTransfer" />

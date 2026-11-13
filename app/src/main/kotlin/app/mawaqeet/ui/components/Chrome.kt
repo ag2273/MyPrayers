@@ -3,6 +3,7 @@ package app.mawaqeet.ui.components
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +32,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import app.mawaqeet.ui.theme.LocalSkin
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -59,7 +62,7 @@ fun TabPage(title: String?, modifier: Modifier = Modifier, content: @Composable 
         if (title != null) {
             Text(
                 title,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                 modifier = Modifier.padding(top = 8.dp, start = 4.dp).semantics { heading() },
             )
         }
@@ -76,19 +79,28 @@ fun SubPage(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     BackHandler(onBack = onBack)
-    Scaffold(bottomBar = bottomBar) { padding ->
+    // Transparent: the living sky (MainActivity) shows behind every page.
+    Scaffold(bottomBar = bottomBar, containerColor = Color.Transparent) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             Row(
                 Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(painterResource(R.drawable.ic_back), contentDescription = stringResource(R.string.back))
+                val skin = LocalSkin.current
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(skin.surface)
+                        .border(1.dp, skin.line, RoundedCornerShape(14.dp)),
+                ) {
+                    Icon(painterResource(R.drawable.ic_back), contentDescription = stringResource(R.string.back), modifier = Modifier.size(20.dp))
                 }
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f).semantics { heading() },
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                    modifier = Modifier.weight(1f).padding(start = 8.dp).semantics { heading() },
                 )
             }
             Column(
@@ -109,32 +121,34 @@ fun SectionTitle(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 6.dp, top = 6.dp).semantics { heading() },
     )
 }
 
-/** A white (dark: raised) card holding rows, separated by thin dividers when [divided]. */
+/** A translucent card on the sky (the design's `--surface` with a hairline), holding rows separated by [RowDivider]. */
 @Composable
 fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val skin = LocalSkin.current
     Column(
         modifier
             .fillMaxWidth()
             .clip(CardShape)
-            .background(MaterialTheme.colorScheme.surfaceContainer),
+            .background(skin.surface)
+            .border(1.dp, skin.line, CardShape),
         content = content,
     )
 }
 
 /** The thin line between two rows of a card. */
 @Composable
-fun RowDivider() = HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+fun RowDivider() = HorizontalDivider(color = LocalSkin.current.line)
 
 /** An icon on a soft teal tile, at the start of a navigation row. */
 @Composable
 fun IconTile(@DrawableRes icon: Int) {
     Box(
-        Modifier.size(38.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp)),
+        Modifier.size(40.dp).background(LocalSkin.current.accentSoft, RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
@@ -200,10 +214,12 @@ data class Segment(val label: String, val selected: Boolean, val onSelect: () ->
 @Composable
 fun SegmentedChoice(segments: List<Segment>, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
+    val skin = LocalSkin.current
     Row(
         modifier
             .fillMaxWidth()
-            .background(colors.surfaceContainerHigh, RoundedCornerShape(14.dp))
+            .background(skin.track.copy(alpha = skin.track.alpha * 0.5f), RoundedCornerShape(14.dp))
+            .border(1.dp, skin.line, RoundedCornerShape(14.dp))
             .padding(4.dp)
             .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -213,7 +229,7 @@ fun SegmentedChoice(segments: List<Segment>, modifier: Modifier = Modifier) {
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (segment.selected) colors.surfaceContainer else colors.surfaceContainerHigh)
+                    .background(if (segment.selected) colors.primary else Color.Transparent)
                     .selectable(selected = segment.selected, role = Role.RadioButton, onClick = segment.onSelect)
                     .heightIn(min = 44.dp)
                     .padding(horizontal = 8.dp, vertical = 8.dp),
@@ -222,7 +238,7 @@ fun SegmentedChoice(segments: List<Segment>, modifier: Modifier = Modifier) {
                 Text(
                     segment.label,
                     style = MaterialTheme.typography.titleSmall,
-                    color = if (segment.selected) colors.onSurface else colors.onSurfaceVariant,
+                    color = if (segment.selected) colors.onPrimary else colors.onSurfaceVariant,
                 )
             }
         }

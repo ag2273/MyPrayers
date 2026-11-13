@@ -22,7 +22,7 @@
 
     <!-- Settings (#16). Groups in the order the spec lists them; later tickets fill the empty ones. -->
     <!-- Bottom navigation (redesign). -->
-    <string name="home_log_hint">اضغط الصلاة بعد أدائها لتسجيلها. الجرس يبيّن نوع التنبيه.</string>
+    <string name="home_log_hint">اضغط الدائرة بعد أداء الصلاة لتسجيلها. الجرس يبيّن نوع التنبيه.</string>
     <string name="tab_today">اليوم</string>
     <string name="settings">الإعدادات</string>
     <string name="back">رجوع</string>
@@ -91,6 +91,8 @@
 
     <!-- Adhan Alerts (#18). %1$s is the Prayer name (الجمعة on Friday's Dhuhr). -->
     <string name="adhan_alert_title">حان الآن وقت صلاة %1$s</string>
+    <!-- Maghrib's Adhan Alert on a Fasting Day (#91) -->
+    <string name="adhan_alert_iftar_title">حان وقت الإفطار</string>
     <string name="adhan_channel_name">تنبيهات الأذان</string>
     <string name="adhan_channel_description">تنبيه عند حلول وقت كل صلاة</string>
     <!-- Adhan playback (#22). -->
@@ -563,4 +565,209 @@
     <string name="kahf_reminder_title">اقرأ سورة الكهف</string>
     <string name="kahf_reminder_text">من سنن يوم الجمعة قراءة سورة الكهف</string>
     <string name="kahf_reminder_read">قرأتها</string>
+    <!-- Tools Row on Today (#88) -->
+    <string name="tool_qibla">القبلة</string>
+    <string name="tool_calendar">التقويم</string>
+    <string name="tool_mosques">المساجد</string>
+    <!-- Nearby mosques (#89): the maps app's search query, the Qibla screen's button and its line, no maps app -->
+    <string name="mosques_query">مسجد</string>
+    <string name="mosques_nearby">المساجد القريبة</string>
+    <string name="mosques_opens_in_maps">تُفتح في تطبيق الخرائط عندك</string>
+    <string name="mosques_no_maps_app">لا يوجد تطبيق خرائط على هذا الهاتف</string>
+    <!-- Qibla screen (#88) -->
+    <string name="qibla_waiting">جارٍ قراءة البوصلة…</string>
+    <string name="qibla_turn_right">لفّ %1$s° يمينًا</string>
+    <string name="qibla_turn_left">لفّ %1$s° يسارًا</string>
+    <string name="qibla_on_target">أنت في اتجاه القبلة</string>
+    <string name="qibla_bearing">القبلة %1$s° من الشمال الحقيقي</string>
+    <string name="qibla_distance">%1$s كم إلى مكة المكرمة</string>
+    <string name="qibla_dial_description">بوصلة القبلة</string>
+    <string name="qibla_kaaba">الكعبة</string>
+    <string name="qibla_dial_north">ش</string>
+    <string name="qibla_dial_east">ق</string>
+    <string name="qibla_dial_south">ج</string>
+    <string name="qibla_dial_west">غ</string>
+    <string name="qibla_calibrate_title">البوصلة تحتاج إلى معايرة</string>
+    <string name="qibla_calibrate">حرّك الهاتف في الهواء على شكل الرقم ٨ بضع مرات، بعيدًا عن المعادن والأجهزة، حتى تستقر القراءة.</string>
+    <string name="qibla_no_sensor_title">لا توجد بوصلة في هذا الهاتف</string>
+    <string name="qibla_no_sensor">القبلة على %1$s° من الشمال الحقيقي، نحو %2$s. استعن بالشمس أو ببوصلة أخرى لتحديد الشمال.</string>
+    <string name="qibla_no_location_title">لم يُحدَّد موقعك بعد</string>
+    <string name="qibla_no_location">حدّد موقعك لمعرفة اتجاه القبلة منه.</string>
+    <string name="qibla_set_location">تحديد الموقع</string>
+    <string name="compass_north">الشمال</string>
+    <string name="compass_north_east">الشمال الشرقي</string>
+    <string name="compass_east">الشرق</string>
+    <string name="compass_south_east">الجنوب الشرقي</string>
+    <string name="compass_south">الجنوب</string>
+    <string name="compass_south_west">الجنوب الغربي</string>
+    <string name="compass_west">الغرب</string>
+    <string name="compass_north_west">الشمال الغربي</string>
+    <!-- Ramadan Mode on Today (#90): the Next Prayer card's fasting and suhoor forms. -->
+    <string name="ramadan_day">رمضان · اليوم %1$s</string>
+    <string name="ramadan_imsak_at">الإمساك %1$s</string>
+    <string name="ramadan_iftar_at">الإفطار %1$s</string>
+    <string name="ramadan_suhoor">السحور</string>
+    <string name="ramadan_suhoor_ends_in">ينتهي بعد %1$s</string>
+    <!-- The next Prayer inside the Ramadan card: name, time, then the time left ("١ س ١٠ د"). -->
+    <string name="ramadan_next_prayer">الصلاة القادمة: %1$s %2$s · بعد %3$s</string>
+    <!-- Ramadan under Worship Reminders (#90) -->
+    <string name="ramadan">رمضان</string>
+    <string name="ramadan_imsak">الإمساك</string>
+    <string name="ramadan_imsak_summary">قبل الفجر، يظهر على بطاقة اليوم في رمضان</string>
+    <string name="ramadan_imsak_closer">تقريب الإمساك من الفجر %1$s دقائق</string>
+    <string name="ramadan_imsak_earlier">تبكير الإمساك %1$s دقائق</string>
+    <!-- Ramadan reminders (#91). %1$s is the minutes before Fajr. -->
+    <string name="suhoor_reminder">تذكير السحور</string>
+    <string name="suhoor_reminder_description">قبل الفجر بـ%1$s دقيقة في أيام رمضان</string>
+    <string name="suhoor_reminder_title">تذكير السحور</string>
+    <string name="suhoor_reminder_text">حان وقت السحور، تسحّروا فإن في السحور بركة</string>
+    <string name="imsak_alert">تنبيه الإمساك</string>
+    <string name="imsak_alert_description">عند الإمساك في أيام رمضان</string>
+    <string name="imsak_alert_title">حان وقت الإمساك</string>
+    <string name="imsak_alert_text">أمسِك عن الطعام والشراب، الفجر قريب</string>
+    <!-- Sunnah Fast reminders under Worship Reminders (#95) -->
+    <string name="fast_reminders">صيام السنة</string>
+    <string name="fast_reminders_description">تذكير في الليلة السابقة بعد العشاء بنصف ساعة، ولا تذكير لأيام العيد والتشريق.</string>
+    <string name="fast_switch_monday_thursday">الاثنين والخميس</string>
+    <string name="fast_switch_monday_thursday_description">كل أسبوع، إلا في رمضان</string>
+    <string name="fast_switch_white_days">الأيام البيض</string>
+    <string name="fast_switch_white_days_description">الثالث عشر والرابع عشر والخامس عشر من كل شهر هجري، إلا في رمضان</string>
+    <string name="fast_switch_arafah">يوم عرفة</string>
+    <string name="fast_switch_arafah_description">التاسع من ذي الحجة</string>
+    <string name="fast_switch_ashura">تاسوعاء وعاشوراء</string>
+    <string name="fast_switch_ashura_description">التاسع والعاشر من محرم</string>
+    <string name="fast_switch_six_of_shawwal">الست من شوال</string>
+    <string name="fast_switch_six_of_shawwal_description">تذكير واحد ليلة عيد الفطر</string>
+    <!-- The notification: «غدًا» + the day's names joined by fast_reminder_and, e.g. «غدًا يوم الاثنين ومن الأيام البيض، يُسنّ صيامه». -->
+    <string name="fast_reminder_title">صيام السنة</string>
+    <string name="fast_reminder_text">غدًا %1$s، يُسنّ صيامه</string>
+    <string name="fast_reminder_and">%1$s و%2$s</string>
+    <string name="fast_reminder_monday">يوم الاثنين</string>
+    <string name="fast_reminder_thursday">يوم الخميس</string>
+    <string name="fast_reminder_white_days">من الأيام البيض</string>
+    <string name="fast_reminder_arafah">يوم عرفة</string>
+    <string name="fast_reminder_tasua">يوم تاسوعاء</string>
+    <string name="fast_reminder_ashura">يوم عاشوراء</string>
+    <string name="fast_reminder_six_of_shawwal">أول الست من شوال</string>
+    <!-- Sunnah Prayer Reminders under Worship Reminders, and the Last Third of the Night on Today (#96) -->
+    <string name="sunnah_prayer_reminders">السنن</string>
+    <string name="duha_reminder">صلاة الضحى</string>
+    <string name="duha_reminder_description">بعد الشروق بـ%1$s دقيقة، وقبل الظهر بعشر دقائق على الأكثر</string>
+    <string name="duha_reminder_text">حان وقت صلاة الضحى</string>
+    <string name="qiyam_reminder">قيام الليل</string>
+    <string name="qiyam_reminder_description">عند بدء الثلث الأخير من الليل</string>
+    <string name="qiyam_reminder_text">بدأ الثلث الأخير من الليل، وقت قيام الليل</string>
+    <string name="qiyam_style_notification">إشعار</string>
+    <string name="qiyam_style_alarm">منبّه</string>
+    <string name="qiyam_style_alarm_description">يظهر فوق شاشة القفل بصوت المنبّه دقيقةً واحدة، لا بالأذان</string>
+    <string name="qiyam_alarm_channel_name">منبّه قيام الليل</string>
+    <string name="qiyam_alarm_channel_description">منبّه عند بدء الثلث الأخير من الليل، بصوت منبّه الهاتف</string>
+    <string name="last_third_begins">الثلث الأخير من الليل يبدأ %1$s</string>
+    <string name="last_third_began">الثلث الأخير من الليل بدأ %1$s</string>
+    <!-- A Prayer and its time on the Next Prayer card: «العشاء ٧:٠٦ م». -->
+    <string name="prayer_at">%1$s %2$s</string>
+    <string name="about_use_serialization">ملف النسخة الاحتياطية</string>
+
+    <!-- Settings → Backup (#98) -->
+    <string name="backup_title">النسخة الاحتياطية</string>
+    <string name="backup_summary">احفظ إعداداتك وسجلّاتك في ملف</string>
+    <string name="backup_contents_section">ما يحتويه الملف</string>
+    <string name="backup_contents_body">كل الإعدادات (التنبيهات والتذكيرات والعرض والأدوات)، والموقع وطريقة الحساب، وسجل الصلاة، وسجل الأذكار.</string>
+    <string name="backup_contents_not_included">لا يشمل ملفات الأذان المخصص، فاخترها مرة أخرى بعد الاستعادة.</string>
+    <string name="backup_privacy_title">احفظه في مكان خاص</string>
+    <string name="backup_privacy_body">يحتوي الملف على موقعك وسجل عبادتك. لا يرسله التطبيق إلى أي مكان، ولا يمر بنا؛ يُحفظ حيث تختار فقط.</string>
+    <string name="backup_file_section">الملف</string>
+    <string name="backup_last_export">آخر تصدير: %1$s</string>
+    <string name="backup_never_exported">لم تُصدَّر نسخة احتياطية بعد</string>
+    <string name="backup_export">تصدير نسخة احتياطية</string>
+    <string name="backup_export_failed">تعذّر حفظ الملف، ولم يتغير شيء.</string>
+    <string name="backup_restore">استعادة من ملف</string>
+    <string name="backup_restore_soon">الاستعادة قادمة في إصدار قريب.</string>
+
+    <!-- Hijri Calendar screen (#93) -->
+    <string name="calendar_upcoming">القادم</string>
+    <string name="calendar_note">التواريخ وفق تقويم أم القرى مع تعديل التاريخ الهجري في إعداداتك، وقد تختلف يومًا عن رؤية الهلال في بلدك.</string>
+    <string name="calendar_today">اليوم</string>
+    <string name="calendar_tomorrow">غدًا</string>
+    <plurals name="calendar_in_days">
+        <item quantity="zero">بعد %1$s يوم</item>
+        <item quantity="one">بعد يوم واحد</item>
+        <item quantity="two">بعد يومين</item>
+        <item quantity="few">بعد %1$s أيام</item>
+        <item quantity="many">بعد %1$s يومًا</item>
+        <item quantity="other">بعد %1$s يوم</item>
+    </plurals>
+    <string name="calendar_month">الشهر</string>
+    <string name="calendar_previous_month">الشهر السابق</string>
+    <string name="calendar_next_month">الشهر التالي</string>
+    <string name="calendar_in_this_month">في هذا الشهر</string>
+    <string name="calendar_legend_occasion">مناسبة</string>
+    <!-- Between the parts of a month-grid day's TalkBack label. -->
+    <string name="calendar_label_separator">"، "</string>
+    <string name="calendar_open_description">فتح التقويم الهجري</string>
+    <string name="occasion_hijri_new_year">رأس السنة الهجرية</string>
+    <string name="occasion_tasua">يوم تاسوعاء</string>
+    <string name="occasion_ashura">يوم عاشوراء</string>
+    <string name="occasion_mawlid">المولد النبوي</string>
+    <string name="occasion_isra_and_miraj">الإسراء والمعراج</string>
+    <string name="occasion_ramadan_start">بداية رمضان</string>
+    <string name="occasion_last_ten_nights">العشر الأواخر من رمضان</string>
+    <string name="occasion_eid_al_fitr">عيد الفطر</string>
+    <string name="occasion_first_ten_of_dhu_al_hijjah">العشر الأوائل من ذي الحجة</string>
+    <string name="occasion_arafah">يوم عرفة</string>
+    <string name="occasion_eid_al_adha">عيد الأضحى</string>
+    <string name="occasion_tashreeq">أيام التشريق</string>
+    <string name="fast_monday_thursday">صيام الاثنين والخميس</string>
+    <string name="fast_white_days">الأيام البيض</string>
+    <string name="fast_arafah">صيام يوم عرفة</string>
+    <string name="fast_ashura">صيام تاسوعاء وعاشوراء</string>
+    <string name="fast_six_of_shawwal">ست من شوال</string>
+    <string name="backup_restore_confirm_title">الاستعادة من هذا الملف؟</string>
+    <string name="backup_restore_confirm_body">ستحلّ إعدادات الملف محل إعداداتك الحالية كلها. ويُدمج سجل الصلاة وسجل الأذكار مع ما على هاتفك، فلا يُحذف شيء مما علّمته.</string>
+    <string name="backup_restore_confirm">استعادة</string>
+    <string name="backup_restored">تمت الاستعادة. طُبّقت إعدادات الملف ودُمجت سجلاتك.</string>
+    <string name="backup_restored_check_alerts">تستخدم الإعدادات المستعادة إسكات الصلاة أو وضع المنبّه، فتأكّد من أن هاتفك يسمح للتنبيهات بالعمل.</string>
+    <string name="backup_restore_damaged">هذا الملف تالف أو ليس نسخة احتياطية من مواقيت. لم يتغير شيء.</string>
+    <string name="backup_restore_newer">هذا الملف من إصدار أحدث من مواقيت. حدّث التطبيق ثم أعد المحاولة. لم يتغير شيء.</string>
+    <string name="backup_restore_unreadable">تعذّرت قراءة الملف. لم يتغير شيء.</string>
+    <!-- Next Prayer widgets in Ramadan Mode (#92). -->
+    <string name="widget_iftar">الإفطار</string>
+    <string name="widget_suhoor_ends">السحور ينتهي</string>
+    <string name="widget_chip_imsak">تنبيه الإمساك</string>
+    <string name="widget_chip_imsak_off">بلا تنبيه</string>
+    <!-- 1.4 "A Day That Breathes" -->
+    <string name="weather_search_query">الطقس</string>
+    <string name="weather_open">فتح تطبيق الطقس</string>
+    <string name="tab_log">السجل</string>
+    <string name="theme">المظهر</string>
+    <string name="theme_system">حسب الهاتف</string>
+    <string name="theme_light">فاتح</string>
+    <string name="theme_dark">داكن</string>
+    <string name="home_until_adhan">حتى الأذان</string>
+    <string name="home_until_iftar">حتى الإفطار</string>
+    <string name="home_until_suhoor_end">حتى نهاية السحور</string>
+    <string name="home_iftar">الإفطار</string>
+    <string name="home_last_third">الثلث الأخير %1$s</string>
+    <string name="home_last_third_began">بدأ الثلث الأخير %1$s</string>
+    <string name="home_arc_description">%1$s، %2$s %3$s</string>
+    <string name="tasbeeh_section">السبحة</string>
+    <string name="tasbeeh_hand">التسبيح باليد</string>
+    <string name="tasbeeh_hand_right">اليمنى</string>
+    <string name="tasbeeh_hand_left">اليسرى</string>
+    <string name="tasbeeh_hand_hint">زر التسبيح يكون تحت إصبعك، والعدد في الناحية الأخرى ليبقى ظاهرًا.</string>
+    <string name="tasbeeh_set_right">للتسبيح باليد اليمنى</string>
+    <string name="tasbeeh_set_left">للتسبيح باليد اليسرى</string>
+    <string name="tasbeeh_hand_change">تغيير</string>
+    <string name="tasbeeh_today">مجموع اليوم</string>
+    <string name="log_day_hint">%1$s\nاضغط الصلاة بعد أدائها لتسجيلها</string>
+    <string name="log_legend_prayed">صلّيت</string>
+    <string name="log_legend_missed">فاتت</string>
+    <string name="log_legend_not_yet">لم يحن</string>
+    <string name="log_total_of">من %1$s</string>
+    <string name="log_status_prayed">صلّيت</string>
+    <string name="log_status_not_marked">لم تُسجَّل</string>
+    <string name="log_status_not_yet">لم يحن وقتها بعد</string>
+    <string name="log_status_line">%1$s · %2$s</string>
+    <string name="log_day_description">%1$s، %2$s</string>
+    <string name="log_week_percent">ملخص الأسبوع</string>
 </resources>

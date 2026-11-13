@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget surface in the "A Day That Breathes" colours (1.4): the night sky. The root sets its opacity from Settings -> Widgets (#32). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="#FF123B36"
+        android:centerColor="#FF0E1917"
+        android:endColor="#FF1B4B45"
+        android:type="linear" />
+    <corners android:radius="@dimen/widget_radius" />
+</shape>

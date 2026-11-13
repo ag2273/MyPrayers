@@ -53,6 +53,9 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
         .ofPattern(if (arabic) "d MMMM" else "d MMM", locale)
         .withDecimalStyle(decimalStyle)
 
+    private val monthFormatter = DateTimeFormatter.ofPattern("LLLL", locale)
+    private val monthYearFormatter = DateTimeFormatter.ofPattern("LLLL y", locale).withDecimalStyle(decimalStyle)
+
     private val shortGregorianFormatter = DateTimeFormatter
         .ofPattern(if (arabic) "EEEE d MMMM" else "EEE d MMM", locale)
         .withDecimalStyle(decimalStyle)
@@ -123,6 +126,22 @@ class DisplayFormatter(locale: Locale, digits: DigitStyle) {
     fun hijriDayMonth(date: HijriDate): String {
         val month = (if (arabic) ARABIC_HIJRI_MONTHS else ENGLISH_HIJRI_MONTHS)[date.month - 1]
         return "${number(date.day)} $month"
+    }
+
+    /** A Hijri month's title, our month name and the year: `جمادى الآخرة ١٤٤٨ هـ` / `Dhu al-Hijjah 1448 AH`. */
+    fun hijriMonth(month: HijriMonth): String {
+        val name = (if (arabic) ARABIC_HIJRI_MONTHS else ENGLISH_HIJRI_MONTHS)[month.month - 1]
+        return "$name ${number(month.year)} ${if (arabic) "هـ" else "AH"}"
+    }
+
+    /**
+     * The Gregorian months a Hijri month spans, from its [first] to its [last] day: `نوفمبر – ديسمبر ٢٠٢٦`, or
+     * `December 2026 – January 2027` across a new year.
+     */
+    fun monthSpan(first: LocalDate, last: LocalDate): String = when {
+        first.year != last.year -> "${monthYearFormatter.format(first)} – ${monthYearFormatter.format(last)}"
+        first.month != last.month -> "${monthFormatter.format(first)} – ${monthYearFormatter.format(last)}"
+        else -> monthYearFormatter.format(last)
     }
 
     /** The Hijri year and era: `١٤٤٨ هـ` / `1448 AH`. */

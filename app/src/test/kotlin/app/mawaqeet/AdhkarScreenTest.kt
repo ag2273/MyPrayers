@@ -110,6 +110,7 @@ internal class FakeAdhkarRepository : AdhkarRepository {
 internal object EmptyLog : PrayerLogRepository {
     override fun prayedOn(prayerDay: LocalDate) = emptySet<Prayer>()
     override fun setPrayed(prayerDay: LocalDate, prayer: Prayer, prayed: Boolean) = Unit
+    override fun hasAnyEntry() = false
     override fun firstUseDate(): LocalDate? = null
     override fun recordFirstUseIfAbsent(prayerDay: LocalDate) = Unit
     override fun pastPlaces() = emptyList<PastPlace>()
@@ -145,12 +146,12 @@ class AdhkarScreenTest {
         repo,
     )
 
-    private fun show() {
+    private fun show(hand: app.mawaqeet.ui.adhkar.TasbeehHand = app.mawaqeet.ui.adhkar.TasbeehHand.RIGHT, onChangeHand: () -> Unit = {}) {
         compose.setContent {
             MawaqeetTheme {
                 ProvideDisplayFormatter(DigitStyle.WESTERN) {
                     CompositionLocalProvider(LocalHapticFeedback provides haptics) {
-                        AdhkarScreen(adhkar, repo.changes)
+                        AdhkarScreen(adhkar, repo.changes, tasbeehHand = hand, onChangeHand = onChangeHand)
                     }
                 }
             }
@@ -299,22 +300,22 @@ class AdhkarScreenTest {
 
     @Test
     @Config(qualifiers = "ar")
-    fun `the Tasbeeh at the top counts each tap with a vibration and resets to zero`() {
+    fun `the Tasbeeh at the end of the list counts each tap with a vibration and resets to zero`() {
         show()
         waitForText("التسبيح")
         waitForTotal("مجموع اليوم: 0")
 
         // The first tap waits for the screen: each tap re-reads the total off the main thread.
         for (n in 1..3) {
-            compose.onNodeWithText("اضغط للتسبيح").performClick()
+            compose.onNodeWithText("اضغط للتسبيح").performScrollTo().performClick()
             waitForTotal("مجموع اليوم: $n")
         }
-        compose.onNodeWithText("3").assertIsDisplayed()
+        compose.onNodeWithText("3", useUnmergedTree = true).assertIsDisplayed()
         assertEquals(3, haptics.count)
         assertEquals(3, adhkar.tasbeeh())
         assertFalse(adhkar.isComplete(AdhkarSetId.MORNING))
 
-        compose.onNodeWithText("تصفير").performClick()
+        compose.onNodeWithText("تصفير").performScrollTo().performClick()
         waitForTotal("مجموع اليوم: 0")
         assertEquals(0, adhkar.tasbeeh())
     }
@@ -325,7 +326,38 @@ class AdhkarScreenTest {
         repeat(33) { adhkar.countTasbeeh() }
         show()
         waitForTotal("مجموع اليوم: 33")
-        compose.onNodeWithText("33").assertIsDisplayed()
+        compose.onNodeWithText("تصفير").performScrollTo()
+        compose.onNodeWithText("33", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /** The count button's centre across the screen, and the screen's middle (the total sits on the other half). */
+    private fun tasbeehPositions(): Pair<Float, Float> {
+        compose.onNodeWithText("تصفير").performScrollTo()
+        val button = compose.onNodeWithText("اضغط للتسبيح").fetchSemanticsNode().boundsInRoot.center.x
+        return button to compose.onRoot().fetchSemanticsNode().boundsInRoot.center.x
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `for the right hand the count button is on the right and the total on the left, even in Arabic`() {
+        show(hand = app.mawaqeet.ui.adhkar.TasbeehHand.RIGHT)
+        waitForTotal("مجموع اليوم: 0")
+        val (button, total) = tasbeehPositions()
+        assertTrue("button at $button on the right of the middle $total", button > total)
+        compose.onNodeWithText("للتسبيح باليد اليمنى").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
+    fun `for the left hand the sides swap, and Change opens the setting`() {
+        var changed = false
+        show(hand = app.mawaqeet.ui.adhkar.TasbeehHand.LEFT, onChangeHand = { changed = true })
+        waitForTotal("مجموع اليوم: 0")
+        val (button, total) = tasbeehPositions()
+        assertTrue("button at $button on the left of the middle $total", button < total)
+        compose.onNodeWithText("للتسبيح باليد اليسرى").assertIsDisplayed()
+        compose.onNodeWithText("تغيير").performClick()
+        assertTrue(changed)
     }
 
     private fun waitForTotal(state: String) = compose.waitUntil(5_000) {
@@ -343,14 +375,14 @@ class AdhkarScreenTest {
 
         val counter = compose.onNode(hasStateDescription("Today's total: 1")).fetchSemanticsNode()
         val texts = counter.config[SemanticsProperties.Text].map { it.text }
-        assertTrue("reads $texts", "Tasbeeh" in texts)
+        assertTrue("reads $texts", "Tap to count" in texts)
         assertEquals("Count one", counter.config[androidx.compose.ui.semantics.SemanticsActions.OnClick].label)
 
-        compose.onNode(hasStateDescription("Today's total: 1")).performClick()
+        compose.onNode(hasStateDescription("Today's total: 1")).performScrollTo().performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodes(hasStateDescription("Today's total: 2")).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Reset").assertIsDisplayed()
+        compose.onNodeWithText("Reset").performScrollTo().assertIsDisplayed()
     }
 }
 

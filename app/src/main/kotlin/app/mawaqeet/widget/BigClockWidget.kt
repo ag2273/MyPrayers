@@ -16,6 +16,9 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.action.actionStartActivity
+import app.mawaqeet.weather.WeatherApp
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
@@ -317,7 +320,7 @@ internal fun BigClockLayout(view: ClockView, rtl: Boolean, tones: ClockTones = C
             )
         }
         StopsRow(view, scale, tones, GlanceModifier.fillMaxWidth().padding(top = gap)) {
-            WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true)
+            WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.COUNTDOWN, bold = true)
         }
         ClockBar(view, across, rtl, GlanceModifier.padding(top = gap * 2))
         Box(GlanceModifier.fillMaxWidth().padding(top = gap), contentAlignment = Alignment.Center) {
@@ -350,7 +353,7 @@ private fun BigClockCompactLayout(view: ClockView, rtl: Boolean, tones: ClockTon
                 },
                 cell {
                     Column(GlanceModifier.defaultWeight().then(direction.paddingStart((BigClockMetrics.SIDE_GAP_DP * scale).dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                        val countdown = @Composable { WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.ACCENT, bold = true) }
+                        val countdown = @Composable { WidgetLine(view.countdown, BigClockMetrics.COUNTDOWN_SP * scale, Tone.COUNTDOWN, bold = true) }
                         if (fit.stops) StopsRow(view, scale, tones, GlanceModifier.fillMaxWidth(), countdown) else countdown()
                         ClockBar(view, fit.sideWidth, rtl, GlanceModifier.padding(top = gap * 2))
                     }
@@ -512,7 +515,7 @@ private fun WeatherDetails(w: ClockWeather, sizes: WeatherSizes, s: Float, modif
 /** Beside the clock: the temperature, and under it the humidity and the chance of rain. */
 @Composable
 internal fun WeatherBlock(w: ClockWeather, sizes: WeatherSizes, s: Float) {
-    Column(horizontalAlignment = LocalWidgetDirection.current.start) {
+    Column(GlanceModifier.opensWeatherApp(), horizontalAlignment = LocalWidgetDirection.current.start) {
         Temperature(w, sizes, s)
         WeatherDetails(w, sizes, s, GlanceModifier.padding(top = (sizes.lineGapDp * s).dp))
     }
@@ -523,7 +526,7 @@ internal fun WeatherBlock(w: ClockWeather, sizes: WeatherSizes, s: Float) {
 internal fun WeatherLine(w: ClockWeather, sizes: WeatherSizes, s: Float, modifier: GlanceModifier = GlanceModifier) {
     val direction = LocalWidgetDirection.current
     ReadingRow(
-        modifier,
+        modifier.opensWeatherApp(),
         Alignment.CenterVertically,
         listOf(
             cell { Temperature(w, sizes, s) },
@@ -538,11 +541,22 @@ internal fun CompactTemperature(w: ClockWeather, sp: Float, modifier: GlanceModi
     val style = LocalWidgetStyle.current
     val direction = LocalWidgetDirection.current
     ReadingRow(
-        modifier,
+        modifier.opensWeatherApp(),
         Alignment.CenterVertically,
         listOf(
             cell { Image(ImageProvider(R.drawable.widget_weather_sun), null, GlanceModifier.size((sp * 0.8f).dp), colorFilter = tint(style.accent)) },
             cell { WidgetLine(w.temperature, sp, Tone.TEXT, modifier = direction.paddingStart(2.dp)) },
         ),
     )
+}
+
+/**
+ * A tap on the weather opens the phone's weather app (1.4, [WeatherApp]); when it has none, the modifier is unchanged
+ * and the tap opens Mawaqeet like the rest of the widget.
+ */
+@Composable
+private fun GlanceModifier.opensWeatherApp(): GlanceModifier {
+    val context = LocalContext.current
+    val intent = WeatherApp.intent(context) ?: return this
+    return clickable(actionStartActivity(intent))
 }

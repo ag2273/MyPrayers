@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Next Prayer's deep surface (1.4): deep teal (light enough at its top for the amber countdown at 4.5:1), the same by day and night. The root sets its opacity from Settings -> Widgets (#32). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="315"
+        android:startColor="#FF165650"
+        android:centerColor="#FF134A44"
+        android:endColor="#FF0F3B36"
+        android:type="linear" />
+    <corners android:radius="@dimen/widget_radius" />
+</shape>

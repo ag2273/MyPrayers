@@ -22,7 +22,8 @@ import java.time.Instant
  * `setAlarmClock` in alarm-clock mode) plus one display alarm ([AlertPlan.nextDisplayChange]: local midnight, or a Prayer
  * Time with no Adhan Alert), plus a start and an end alarm per Silence Window ([SilenceReceiver]; the start only while
  * it is still ahead, so re-planning during a window never silences twice, and only when no Adhan Alert opens it), plus
- * one exact alarm per Worship Reminder ([WorshipReminderReceiver]). Applying a plan reconciles: alarms of the previously
+ * one exact alarm per Worship Reminder ([WorshipReminderReceiver]; an alarm clock for an alarm-style Qiyam reminder).
+ * Applying a plan reconciles: alarms of the previously
  * applied plan that the new one lacks
  * are cancelled, the rest are (re)set. The applied plan is stored in device-protected storage ([AlertPlanStore]) for
  * [rearmStoredPlan] after a locked boot; the stored copy keeps only midnight, so its display alarm is midnight.
@@ -67,13 +68,21 @@ class AlertScheduler(context: Context) {
         armWorship(stored.worshipReminders, now)
     }
 
-    /** Each Worship Reminder still after [now], as an exact alarm (never an alarm clock: it is not an alarm). */
+    /**
+     * Each Worship Reminder still after [now], as an exact alarm; an alarm-style Qiyam reminder (#97) as an alarm clock,
+     * like alarm-clock mode, so it shows as the phone's next alarm and rings on time in deep sleep.
+     */
     private fun armWorship(reminders: List<PlannedWorshipReminder>, now: Instant) {
         if (!canScheduleExact(alarmManager)) return
         for (reminder in reminders) {
             if (!reminder.instant.isAfter(now)) continue
             val operation = worshipIntent(reminder, PendingIntent.FLAG_UPDATE_CURRENT)!!
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminder.instant.toEpochMilli(), operation)
+            val at = reminder.instant.toEpochMilli()
+            if (reminder.alarm) {
+                alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(at, openAppIntent(context)), operation)
+            } else {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, operation)
+            }
         }
     }
 
@@ -166,6 +175,7 @@ class AlertScheduler(context: Context) {
         .setAction(AlertReceiver.ACTION_ALERT)
         .putExtra(AlertReceiver.EXTRA_PRAYER, alert.prayer.name)
         .putExtra(AlertReceiver.EXTRA_JUMUAH, alert.isJumuah)
+        .putExtra(AlertReceiver.EXTRA_IFTAR, alert.isIftar)
         .putExtra(AlertReceiver.EXTRA_REQUEST_CODE, alert.requestCode)
         .putExtra(AlertReceiver.EXTRA_SOUND, encodeAlertSound(alert.sound))
         .putExtra(AlertReceiver.EXTRA_AT, alert.instant.toEpochMilli())
@@ -249,10 +259,28 @@ class AlertScheduler(context: Context) {
         /** Worship Reminders' request codes sit above every Silence Window's. */
         private const val WORSHIP_REQUEST_CODE_BASE = 4_000_000
 
-        /** Stable and distinct per (Prayer Day, kind, slot): 128 codes a day, [PlannedWorshipReminder.MAX_SLOTS] per kind. */
+        /**
+         * Stable and distinct per (Prayer Day, kind, slot). The first [SLOTTED_KINDS] kinds take 128 codes a day,
+         * [PlannedWorshipReminder.MAX_SLOTS] per kind (unchanged since #63, so alarms set by older versions are still
+         * found). Later kinds come once a day: one code each per day from [ONCE_A_DAY_REQUEST_CODE_BASE], room for
+         * [ONCE_A_DAY_KINDS] (before #95 they ran into the next day's codes).
+         */
         internal val PlannedWorshipReminder.requestCode: Int
-            get() = WORSHIP_REQUEST_CODE_BASE + (prayerDay.toEpochDay().mod(100_000L)).toInt() * 128 +
-                kind.ordinal * PlannedWorshipReminder.MAX_SLOTS + slot
+            get() {
+                val day = (prayerDay.toEpochDay().mod(100_000L)).toInt()
+                return if (kind.ordinal < SLOTTED_KINDS) {
+                    WORSHIP_REQUEST_CODE_BASE + day * 128 + kind.ordinal * PlannedWorshipReminder.MAX_SLOTS + slot
+                } else {
+                    ONCE_A_DAY_REQUEST_CODE_BASE + day * ONCE_A_DAY_KINDS + (kind.ordinal - SLOTTED_KINDS)
+                }
+            }
+
+        /** Salawat, Kahf and the two adhkar reminders. */
+        private const val SLOTTED_KINDS = 4
+
+        /** Above every slotted kind's code (4,000,000 + 100,000 days × 128). */
+        private const val ONCE_A_DAY_REQUEST_CODE_BASE = 20_000_000
+        private const val ONCE_A_DAY_KINDS = 32
 
         /** Exact alarms are always allowed before Android 12; from 12 the user can revoke them (14+: off by default). */
         fun canScheduleExact(alarmManager: AlarmManager): Boolean =

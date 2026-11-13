@@ -21,6 +21,28 @@
     <!-- Automatic location (#24): approximate only, read only while the app is open. Never FINE or BACKGROUND. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- A tap on a widget's weather opens the phone's weather app (weather/WeatherApp.kt): its makers' apps, then a web search. -->
+    <queries>
+        <package android:name="com.sec.android.daemonapp" />
+        <package android:name="com.google.android.apps.weather" />
+        <package android:name="com.miui.weather2" />
+        <package android:name="com.huawei.android.totemweather" />
+        <package android:name="com.hihonor.android.totemweather" />
+        <package android:name="com.oplus.weather.service" />
+        <package android:name="com.coloros.weather2" />
+        <package android:name="com.coloros.weather.service" />
+        <package android:name="net.oneplus.weather" />
+        <package android:name="com.vivo.weather" />
+        <package android:name="com.transsion.weather" />
+        <package android:name="com.motorola.timeweatherwidget" />
+        <package android:name="com.asus.weathertime" />
+        <package android:name="com.sonymobile.xperiaweather" />
+        <package android:name="com.lge.sizechangable.weather" />
+        <intent>
+            <action android:name="android.intent.action.WEB_SEARCH" />
+        </intent>
+    </queries>
+
     <application
         android:name=".MawaqeetApplication"
         android:allowBackup="true"
@@ -44,6 +66,16 @@
         <!-- The Adhan Alert as an alarm over the lock screen (alarm-clock mode). It reads no storage, so it can run before the first unlock. -->
         <activity
             android:name=".alerts.AdhanAlarmActivity"
+            android:directBootAware="true"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:turnScreenOn="true" />
+        <!-- The Qiyam reminder in alarm style (#97), over the lock screen the same way. -->
+        <activity
+            android:name=".alerts.QiyamAlarmActivity"
             android:directBootAware="true"
             android:excludeFromRecents="true"
             android:exported="false"

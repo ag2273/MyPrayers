@@ -218,7 +218,13 @@ internal fun WidgetFrame(
     val context = LocalContext.current
     val style = LocalWidgetStyle.current
     val root = RemoteViews(context.packageName, if (rtl) R.layout.widget_root_rtl else R.layout.widget_root_ltr).apply {
-        setColor(context, R.id.widget_bg, "setImageTintList", "setColorFilter", style.background)
+        val art = style.backgroundArt
+        if (art != null) {
+            // The design's gradient surface, untinted.
+            setImageViewResource(R.id.widget_bg, art)
+        } else {
+            setColor(context, R.id.widget_bg, "setImageTintList", "setColorFilter", style.background)
+        }
         setInt(R.id.widget_bg, "setImageAlpha", style.backgroundAlpha)
     }
     AndroidRemoteViews(root, R.id.widget_root, GlanceModifier.fillMaxSize()) {
@@ -304,7 +310,7 @@ internal fun textStep(minWidth: Float, minHeight: Float): Float {
 }
 
 /** Which of the style's colours a piece of widget text takes. */
-internal enum class Tone { TEXT, MUTED, ACCENT, ON_ACCENT, ON_SOFT }
+internal enum class Tone { TEXT, MUTED, ACCENT, ON_ACCENT, ON_SOFT, COUNTDOWN }
 
 @ColorRes
 internal fun WidgetStyle.colorOf(tone: Tone): Int = when (tone) {
@@ -313,6 +319,7 @@ internal fun WidgetStyle.colorOf(tone: Tone): Int = when (tone) {
     Tone.ACCENT -> accent
     Tone.ON_ACCENT -> onAccent
     Tone.ON_SOFT -> onAccentSoft
+    Tone.COUNTDOWN -> countdown
 }
 
 /** The style's colour as a Glance tint, for the white shape drawables (backgrounds, marks, dots). */

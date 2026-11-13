@@ -69,3 +69,18 @@ internal fun assertNothingClipped(root: View, allowEllipsis: (String) -> Boolean
 internal fun clickableViews(view: View): List<View> =
     (if (view.hasOnClickListeners()) listOf(view) else emptyList()) +
         (if (view is ViewGroup) (0 until view.childCount).flatMap { clickableViews(view.getChildAt(it)) } else emptyList())
+
+/**
+ * The colours a rendered widget's background shows: its tint when it is a flat colour, or the stops of its gradient art
+ * (1.4: the app's sky and the deep Next Prayer surface).
+ */
+internal fun backgroundColours(root: View): List<Int> {
+    val bg = root.findViewById<android.widget.ImageView>(app.mawaqeet.R.id.widget_bg)
+    bg.imageTintList?.let { return listOf(it.defaultColor) }
+    val art = bg.drawable as? android.graphics.drawable.GradientDrawable ?: return emptyList()
+    return art.colors?.toList().orEmpty()
+}
+
+/** The stops of a gradient drawable resource, as [backgroundColours] reads them off a widget. */
+internal fun artColours(context: Context, @androidx.annotation.DrawableRes art: Int): List<Int> =
+    (androidx.core.content.ContextCompat.getDrawable(context, art) as android.graphics.drawable.GradientDrawable).colors!!.toList()

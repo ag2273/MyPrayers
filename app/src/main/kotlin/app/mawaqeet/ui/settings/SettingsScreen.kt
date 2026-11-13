@@ -1,5 +1,6 @@
 package app.mawaqeet.ui.settings
 
+import androidx.compose.foundation.border
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -89,6 +90,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.text.BidiFormatter
 import androidx.core.text.TextDirectionHeuristicsCompat
+import app.mawaqeet.data.RestoreOutcome
+import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -100,6 +103,12 @@ interface SettingsActions {
     /** Switches the whole app to [languageTag] (`ar` or `en`) through the per-app language API. */
     fun setLanguage(languageTag: String)
     fun setDigitStyle(style: DigitStyle)
+
+    /** Settings → Language and display → Theme (1.4). */
+    fun setThemeMode(mode: app.mawaqeet.ui.theme.ThemeMode) {}
+
+    /** Settings → Language and display → Tasbeeh (1.4): the hand that counts. */
+    fun setTasbeehHand(hand: app.mawaqeet.ui.adhkar.TasbeehHand) {}
 
     /** Settings → Widgets (#32): every widget's background transparency, 0–100 in steps of 10. */
     fun setWidgetTransparency(percent: Int)
@@ -153,6 +162,33 @@ interface SettingsActions {
     /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64). */
     fun setKahfReminder(on: Boolean)
 
+    /** «صيام السنة» under «تذكيرات العبادة» (#95): [fast]'s reminder the night before. */
+    fun setFastReminder(fast: app.mawaqeet.core.SunnahFast, on: Boolean)
+
+    /** «صلاة الضحى» under «تذكيرات العبادة» → «السنن» (#96). */
+    fun setDuhaReminder(on: Boolean)
+
+    /** The Duha reminder's minutes after Sunrise, one of [app.mawaqeet.core.DuhaReminder.MINUTES]. */
+    fun setDuhaReminderMinutes(minutes: Int)
+
+    /** «قيام الليل» under «تذكيرات العبادة» → «السنن» (#96). */
+    fun setQiyamReminder(on: Boolean)
+
+    /** The Qiyam reminder's style (#97): «إشعار» or «منبّه». */
+    fun setQiyamStyle(style: app.mawaqeet.core.QiyamStyle)
+
+    /** «الإمساك» under «رمضان» (#90): Imsak moved [step] taps of [app.mawaqeet.core.RamadanSettings.IMSAK_MINUTES_STEP] minutes. */
+    fun stepImsakMinutes(step: Int)
+
+    /** «تذكير السحور» under «رمضان» (#91). */
+    fun setSuhoorReminder(on: Boolean)
+
+    /** The suhoor reminder's minutes before Fajr, one of [app.mawaqeet.core.SuhoorReminder.MINUTES]. */
+    fun setSuhoorReminderMinutes(minutes: Int)
+
+    /** «تنبيه الإمساك» under «رمضان» (#91). */
+    fun setImsakAlert(on: Boolean)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 
@@ -187,6 +223,18 @@ interface SettingsActions {
 
     /** Settings → your data (#74): permanently deletes the Adhkar Record. Called only after confirmation. */
     fun deleteAdhkarRecord()
+
+    /**
+     * Settings → Backup (#98): writes a Backup File to [uri], the document the user just created with the system
+     * picker; [onResult] gets false when it couldn't be written (nothing changes then).
+     */
+    fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit)
+
+    /**
+     * Settings → Backup (#99): restores the Backup File at [uri], the document the user just opened with the system
+     * picker and confirmed; [onResult] gets how it ended (only [RestoreOutcome.Restored] changed anything).
+     */
+    fun restoreBackup(uri: Uri, onResult: (RestoreOutcome) -> Unit)
 }
 
 /** The Settings sections, each its own page, plus the pages opened from them. */
@@ -198,6 +246,7 @@ enum class SettingsPage(@StringRes val title: Int) {
     DISPLAY(R.string.settings_group_language_display),
     WIDGETS(R.string.settings_group_widgets),
     ABOUT(R.string.settings_group_about),
+    BACKUP(R.string.backup_title),
     CREDITS(R.string.about_sources_title),
 }
 
@@ -266,7 +315,7 @@ fun SettingsHub(
                     resources.getString(if (arabic) R.string.language_arabic else R.string.language_english),
                     resources.getString(digitStyle.label),
                 ),
-                icon = R.drawable.ic_globe,
+                icon = R.drawable.ic_type,
             ) { onOpen(SettingsRoute(SettingsPage.DISPLAY)) }
             RowDivider()
             NavRow(
@@ -274,8 +323,12 @@ fun SettingsHub(
                 resources.getString(R.string.widget_transparency_value, format.number(widgetAppearance.transparency)).let {
                     resources.getString(R.string.settings_widgets_summary, it)
                 },
-                icon = R.drawable.ic_widgets,
+                icon = R.drawable.ic_grid,
             ) { onOpen(SettingsRoute(SettingsPage.WIDGETS)) }
+            RowDivider()
+            NavRow(stringResource(R.string.backup_title), stringResource(R.string.backup_summary), icon = R.drawable.ic_file) {
+                onOpen(SettingsRoute(SettingsPage.BACKUP))
+            }
         }
         SectionTitle(stringResource(R.string.settings_section_help))
         Card {
@@ -301,8 +354,8 @@ private fun AlertStatusCard(alertsOn: Boolean, atRisk: Boolean, onClick: () -> U
             icon = R.drawable.ic_bell_off,
             title = stringResource(R.string.settings_alerts_off),
             summary = stringResource(R.string.settings_alerts_off_summary),
-            background = MaterialTheme.colorScheme.surfaceVariant,
-            content = MaterialTheme.colorScheme.onSurfaceVariant,
+            background = app.mawaqeet.ui.theme.LocalSkin.current.surface,
+            content = MaterialTheme.colorScheme.onSurface,
             iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = onClick,
         )
@@ -310,12 +363,12 @@ private fun AlertStatusCard(alertsOn: Boolean, atRisk: Boolean, onClick: () -> U
     }
     val colors = MaterialTheme.colorScheme
     StatusCard(
-        icon = if (atRisk) R.drawable.ic_warning else R.drawable.ic_check,
+        icon = if (atRisk) R.drawable.ic_warning else R.drawable.ic_shield,
         title = stringResource(if (atRisk) R.string.settings_alerts_at_risk else R.string.settings_alerts_ready),
         summary = stringResource(if (atRisk) R.string.fix_alerts_tip else R.string.settings_alerts_ready_summary),
-        background = if (atRisk) colors.secondaryContainer else colors.tertiaryContainer,
-        content = if (atRisk) colors.onSecondaryContainer else colors.onTertiaryContainer,
-        iconTint = if (atRisk) colors.onSecondaryContainer else colors.tertiary,
+        background = if (atRisk) colors.secondaryContainer else app.mawaqeet.ui.theme.LocalSkin.current.surfaceStrong,
+        content = if (atRisk) colors.onSecondaryContainer else colors.onSurface,
+        iconTint = if (atRisk) colors.onSecondaryContainer else colors.primary,
         onClick = onClick,
     )
 }
@@ -330,21 +383,29 @@ private fun StatusCard(
     iconTint: Color,
     onClick: () -> Unit,
 ) {
+    val skin = app.mawaqeet.ui.theme.LocalSkin.current
     Row(
         Modifier
             .fillMaxWidth()
             .clip(CardShape)
             .background(background)
+            .border(1.dp, skin.line, CardShape)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
+        Box(
+            Modifier.size(44.dp).background(skin.accentSoft, RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(painterResource(icon), contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
+        }
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = content)
-            Text(summary, style = MaterialTheme.typography.bodyMedium, color = content)
+            Text(summary, style = MaterialTheme.typography.bodyMedium, color = if (background == skin.surfaceStrong || background == skin.surface) MaterialTheme.colorScheme.onSurfaceVariant else content)
         }
+        Icon(painterResource(R.drawable.ic_chevron), contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -359,6 +420,10 @@ fun SettingsPageScreen(
     actions: SettingsActions,
     widgetAppearance: WidgetAppearance,
     onNavigate: (SettingsRoute?) -> Unit,
+    /** Settings → Backup: when a Backup File was last exported; null before the first. */
+    lastBackupExport: Instant? = null,
+    themeMode: app.mawaqeet.ui.theme.ThemeMode = app.mawaqeet.ui.theme.ThemeMode.SYSTEM,
+    tasbeehHand: app.mawaqeet.ui.adhkar.TasbeehHand = app.mawaqeet.ui.adhkar.TasbeehHand.RIGHT,
 ) {
     val prayer = route.prayer ?: Prayer.FAJR
     val title = if (route.page == SettingsPage.PRAYER_ALERT) {
@@ -377,10 +442,11 @@ fun SettingsPageScreen(
             SettingsPage.PRAYER_ALERT -> PrayerAlertPage(prayer, settings.alerts.of(prayer), settings.alerts.customAdhans.keys) { change ->
                 actions.updatePrayerAlert(prayer, change)
             }
-            SettingsPage.DISPLAY -> DisplayPage(settings, digitStyle, today, actions)
+            SettingsPage.DISPLAY -> DisplayPage(settings, digitStyle, today, actions, themeMode, tasbeehHand)
             SettingsPage.WIDGETS -> WidgetsPage(widgetAppearance, actions)
             SettingsPage.ABOUT -> AboutPage(actions) { onNavigate(SettingsRoute(SettingsPage.CREDITS)) }
             SettingsPage.CREDITS -> CreditsPage()
+            SettingsPage.BACKUP -> BackupPage(lastBackupExport, actions)
         }
     }
 }
@@ -628,7 +694,14 @@ private fun WidgetPreview(appearance: WidgetAppearance) {
 
 /** Language & display: the app language, digits, and the Hijri offset with a preview of today's Hijri date. */
 @Composable
-private fun DisplayPage(settings: PrayerSettings, digitStyle: DigitStyle, today: LocalDate, actions: SettingsActions) {
+private fun DisplayPage(
+    settings: PrayerSettings,
+    digitStyle: DigitStyle,
+    today: LocalDate,
+    actions: SettingsActions,
+    themeMode: app.mawaqeet.ui.theme.ThemeMode = app.mawaqeet.ui.theme.ThemeMode.SYSTEM,
+    tasbeehHand: app.mawaqeet.ui.adhkar.TasbeehHand = app.mawaqeet.ui.adhkar.TasbeehHand.RIGHT,
+) {
     val format = LocalDisplayFormatter.current
     SectionTitle(stringResource(R.string.language))
     Card {
@@ -642,6 +715,46 @@ private fun DisplayPage(settings: PrayerSettings, digitStyle: DigitStyle, today:
             )
             Text(
                 stringResource(R.string.language_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    SectionTitle(stringResource(R.string.theme))
+    Card {
+        Column(Modifier.padding(16.dp)) {
+            SegmentedChoice(
+                app.mawaqeet.ui.theme.ThemeMode.entries.map { mode ->
+                    Segment(
+                        stringResource(
+                            when (mode) {
+                                app.mawaqeet.ui.theme.ThemeMode.SYSTEM -> R.string.theme_system
+                                app.mawaqeet.ui.theme.ThemeMode.LIGHT -> R.string.theme_light
+                                app.mawaqeet.ui.theme.ThemeMode.DARK -> R.string.theme_dark
+                            },
+                        ),
+                        mode == themeMode,
+                    ) { actions.setThemeMode(mode) }
+                },
+            )
+        }
+    }
+    SectionTitle(stringResource(R.string.tasbeeh_section))
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.tasbeeh_hand), style = MaterialTheme.typography.titleMedium)
+            SegmentedChoice(
+                listOf(
+                    Segment(stringResource(R.string.tasbeeh_hand_right), tasbeehHand == app.mawaqeet.ui.adhkar.TasbeehHand.RIGHT) {
+                        actions.setTasbeehHand(app.mawaqeet.ui.adhkar.TasbeehHand.RIGHT)
+                    },
+                    Segment(stringResource(R.string.tasbeeh_hand_left), tasbeehHand == app.mawaqeet.ui.adhkar.TasbeehHand.LEFT) {
+                        actions.setTasbeehHand(app.mawaqeet.ui.adhkar.TasbeehHand.LEFT)
+                    },
+                ),
+            )
+            Text(
+                stringResource(R.string.tasbeeh_hand_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

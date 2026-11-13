@@ -5,10 +5,12 @@ import android.content.Context
 import androidx.core.os.UserManagerCompat
 import androidx.datastore.preferences.preferencesDataStore
 import app.mawaqeet.alerts.AlertRescheduler
+import app.mawaqeet.alerts.CustomAdhanFiles
 import app.mawaqeet.alerts.PrayerSilencer
 import app.mawaqeet.core.AdhkarCatalog
 import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.Location
+import app.mawaqeet.data.BackupFiles
 import app.mawaqeet.data.LocationUpdater
 import app.mawaqeet.data.PrayerLogDatabase
 import app.mawaqeet.data.RoomAdhkarRepository
@@ -18,9 +20,13 @@ import app.mawaqeet.widget.Widgets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Clock
 
 /** DataStore allows only one instance per file per process, so it is created once, here. */
@@ -50,6 +56,18 @@ class MawaqeetApplication : Application() {
 
     /** Every location change goes through it, so past Prayer Days keep their place (see [LocationUpdater]). */
     val locationUpdater: LocationUpdater by lazy { LocationUpdater(settings, prayerLog, Clock.systemUTC()) { cities } }
+
+    /**
+     * Settings → Backup: exports and restores the Backup File. After a restore, the Custom Adhan files it let go
+     * lose their permission, and the alerts and every widget follow the restored settings and records at once.
+     */
+    val backup: BackupFiles by lazy {
+        BackupFiles(settings, prayerLog, adhkar, database, Clock.systemUTC()) { released ->
+            CustomAdhanFiles.release(this, released)
+            AlertRescheduler.reschedule(this)
+            Widgets.refreshAll(this)
+        }
+    }
 
     /** A move the user declined to apply to their manual location, so it is not asked again in this process. */
     @Volatile
@@ -84,6 +102,16 @@ class MawaqeetApplication : Application() {
             // widgets, which only display the log.
             appScope.launch { prayerLog.changes.drop(1).collect { Widgets.refreshAll(this@MawaqeetApplication) } }
         }
+    }
+
+    /**
+     * Never called on a phone (the process is simply killed), but Robolectric calls it after every test. Each test has
+     * its own Application while the settings DataStore is one per JVM, so without this an old Application's [appScope]
+     * kept collecting it, rescheduling into the previous test's deleted folders and failing a later test.
+     */
+    override fun onTerminate() {
+        runBlocking { withTimeoutOrNull(5_000) { appScope.coroutineContext.job.cancelAndJoin() } }
+        super.onTerminate()
     }
 }
 

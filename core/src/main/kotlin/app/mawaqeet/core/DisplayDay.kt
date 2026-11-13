@@ -15,8 +15,8 @@ data class PrayerTime(
 }
 
 /**
- * What the home screen and widgets show: the calendar date at the location (switching at local midnight)
- * with its Prayer Times and Sunrise.
+ * What the home screen and widgets show: the Prayer Day running now at the location (switching at Fajr, so from
+ * midnight until Fajr it is still the previous date) with its Prayer Times and Sunrise.
  */
 data class DisplayDay(
     val date: LocalDate,
@@ -34,6 +34,14 @@ data class DisplayDay(
      * sets it; the default (today's Isha a day earlier) is for days built by hand in tests.
      */
     val previousIsha: PrayerTime = prayerTimes.last().let { it.copy(time = it.time.minusDays(1)) },
+    /**
+     * The start of the Last Third of the Night after [date]'s Maghrib (#96), from the next day's own Fajr: Today shows
+     * it after Isha. The core always sets it; the default (today's Fajr a day later) is for days built by hand in tests.
+     */
+    val lastThirdOfNight: ZonedDateTime = lastThirdOfNight(
+        prayerTimes.first { it.prayer == Prayer.MAGHRIB }.time,
+        prayerTimes.first { it.prayer == Prayer.FAJR }.time.plusDays(1),
+    ),
 ) {
     /** Whether a high-latitude rule was applied to [date]'s Prayer Times. */
     val highLatitudeRuleApplied: Boolean

@@ -16,6 +16,10 @@ data class WorshipReminders(
     val morningAdhkar: AdhkarReminder = AdhkarReminder(),
     /** «أذكار المساء» (#75): [AdhkarReminder.minutes] after Asr; opens the evening set, skipped once it is complete. */
     val eveningAdhkar: AdhkarReminder = AdhkarReminder(),
+    /** «صيام السنة» (#95): a reminder the night before each Sunnah Fast switched on. */
+    val fasts: FastReminders = FastReminders(),
+    /** «السنن» (#96): the Duha and Qiyam reminders. */
+    val sunnahPrayers: SunnahPrayerReminders = SunnahPrayerReminders(),
 )
 
 /** The morning or evening adhkar reminder: once a Prayer Day, [minutes] after Fajr (morning) or Asr (evening). */
@@ -71,21 +75,47 @@ enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
     KAHF,
     MORNING_ADHKAR(AdhkarSetId.MORNING),
     EVENING_ADHKAR(AdhkarSetId.EVENING),
+
+    /** «تذكير السحور» (#91), on a Fasting Day before Fajr; its Prayer Day is that Fasting Day's date. */
+    SUHOOR,
+
+    /** «تنبيه الإمساك» (#91), at a Fasting Day's Imsak; its Prayer Day is that Fasting Day's date. */
+    IMSAK,
+
+    /**
+     * «صيام السنة» (#95), the night before a Sunnah Fast; its Prayer Day is the day before the fast, and
+     * [PlannedWorshipReminder.fast] says which.
+     */
+    SUNNAH_FAST,
+
+    /** «صلاة الضحى» (#96), after Sunrise; its Prayer Day is that Sunrise's. */
+    DUHA,
+
+    /**
+     * «قيام الليل» (#96), at the start of the Last Third of the Night; its Prayer Day is that night's Maghrib's, so a
+     * reminder after midnight still belongs to the day before. A notification, or an alarm in [QiyamStyle.ALARM] (#97).
+     */
+    QIYAM,
 }
 
 /**
- * One Worship Reminder the scheduler must raise: a gentle notification at [instant], never an adhan. Identified by
+ * One Worship Reminder the scheduler must raise at [instant]: a gentle notification, never an adhan. Identified by
  * [kind], [prayerDay] and [slot] (its place among that kind's reminders on that Prayer Day, from 0; always 0 for a
- * kind that comes once a day).
+ * kind that comes once a day). [fast] is what a [WorshipReminderKind.SUNNAH_FAST] reminder announces, null for the others.
+ * [alarm] marks a [WorshipReminderKind.QIYAM] reminder in [QiyamStyle.ALARM] (#97): it rings like an alarm, with the
+ * phone's alarm sound, still never an adhan.
  */
 data class PlannedWorshipReminder(
     val kind: WorshipReminderKind,
     val instant: Instant,
     val prayerDay: LocalDate,
     val slot: Int = 0,
+    val fast: SunnahFastDay? = null,
+    val alarm: Boolean = false,
 ) {
     init {
         require(slot in 0 until MAX_SLOTS) { "A Worship Reminder's slot is below $MAX_SLOTS, not $slot" }
+        require(!alarm || kind == WorshipReminderKind.QIYAM) { "Only the Qiyam reminder can be an alarm, not $kind" }
     }
 
     companion object {

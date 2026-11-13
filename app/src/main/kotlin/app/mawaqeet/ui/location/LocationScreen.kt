@@ -103,7 +103,7 @@ fun LocationScreen(
         results = cities?.let { withContext(Dispatchers.Default) { it.search(query) } } ?: emptyList()
     }
 
-    Scaffold { padding ->
+    Scaffold(containerColor = androidx.compose.ui.graphics.Color.Transparent) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

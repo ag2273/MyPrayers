@@ -68,6 +68,13 @@ import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.SalawatReminder
+import app.mawaqeet.core.RamadanSettings
+import app.mawaqeet.core.SuhoorReminder
+import app.mawaqeet.core.DuhaReminder
+import app.mawaqeet.core.QiyamStyle
+import app.mawaqeet.core.FastReminders
+import app.mawaqeet.core.SunnahPrayerReminders
+import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.ui.components.Segment
 import app.mawaqeet.ui.components.SegmentedChoice
@@ -98,7 +105,11 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
         )
     }
     PrayerSilenceRows(alerts, actions)
-    if (!alerts.enabled) return
+    if (!alerts.enabled) {
+        // Today's Ramadan card uses Imsak whatever the alerts: it stays editable with the master switch off (#91).
+        RamadanRows(alerts.ramadan, actions, reminders = false)
+        return
+    }
     SectionTitle(stringResource(R.string.alerts_each_prayer))
     Card {
         Prayer.entries.forEachIndexed { index, prayer ->
@@ -307,6 +318,148 @@ private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions)
         RowDivider()
         AdhkarReminderRows(AdhkarSetId.EVENING, alerts.worshipReminders.eveningAdhkar, actions)
     }
+    SunnahPrayerRows(alerts.worshipReminders.sunnahPrayers, actions)
+    FastReminderRows(alerts.worshipReminders.fasts, actions)
+    RamadanRows(alerts.ramadan, actions, reminders = true)
+}
+
+/**
+ * «السنن» under «تذكيرات العبادة» (#96): «صلاة الضحى» (its minutes after Sunrise once on) and «قيام الليل», each off
+ * by default. Shown with the other Worship Reminders, only while the master switch is on.
+ */
+@Composable
+private fun SunnahPrayerRows(sunnah: SunnahPrayerReminders, actions: SettingsActions) {
+    val format = LocalDisplayFormatter.current
+    SectionTitle(stringResource(R.string.sunnah_prayer_reminders))
+    Card {
+        SwitchRow(
+            title = stringResource(R.string.duha_reminder),
+            description = stringResource(R.string.duha_reminder_description, format.number(sunnah.duha.minutes)),
+            checked = sunnah.duha.enabled,
+            onChange = actions::setDuhaReminder,
+        )
+        if (sunnah.duha.enabled) {
+            RowDivider()
+            // Five choices side by side: the numbers alone, the description says they are minutes after Sunrise.
+            SegmentedChoice(
+                DuhaReminder.MINUTES.map { minutes ->
+                    Segment(format.number(minutes), sunnah.duha.minutes == minutes) { actions.setDuhaReminderMinutes(minutes) }
+                },
+                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+        RowDivider()
+        SwitchRow(
+            title = stringResource(R.string.qiyam_reminder),
+            description = stringResource(R.string.qiyam_reminder_description),
+            checked = sunnah.qiyam.enabled,
+            onChange = actions::setQiyamReminder,
+        )
+        if (sunnah.qiyam.enabled) {
+            RowDivider()
+            // «إشعار» or «منبّه» (#97); the alarm's description says what it does, and that it is never the adhan.
+            SegmentedChoice(
+                listOf(QiyamStyle.NOTIFICATION to R.string.qiyam_style_notification, QiyamStyle.ALARM to R.string.qiyam_style_alarm)
+                    .map { (style, label) -> Segment(stringResource(label), sunnah.qiyam.style == style) { actions.setQiyamStyle(style) } },
+                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            if (sunnah.qiyam.style == QiyamStyle.ALARM) {
+                Text(
+                    stringResource(R.string.qiyam_style_alarm_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                )
+                // Without it the alarm arrives as a notification only.
+                LockScreenPermissionRow(actions)
+            }
+        }
+    }
+}
+
+/** Each Sunnah Fast's switch title and description, in the order Settings lists them. */
+private val FAST_REMINDER_ROWS = listOf(
+    SunnahFast.MONDAY_THURSDAY to (R.string.fast_switch_monday_thursday to R.string.fast_switch_monday_thursday_description),
+    SunnahFast.WHITE_DAYS to (R.string.fast_switch_white_days to R.string.fast_switch_white_days_description),
+    SunnahFast.ARAFAH to (R.string.fast_switch_arafah to R.string.fast_switch_arafah_description),
+    SunnahFast.ASHURA to (R.string.fast_switch_ashura to R.string.fast_switch_ashura_description),
+    SunnahFast.SIX_OF_SHAWWAL to (R.string.fast_switch_six_of_shawwal to R.string.fast_switch_six_of_shawwal_description),
+)
+
+/**
+ * «صيام السنة» under «تذكيرات العبادة» (#95): one switch per Sunnah Fast, all off by default, each a reminder the night
+ * before, half an hour after Isha. Shown with the other Worship Reminders, only while the master switch is on.
+ */
+@Composable
+private fun FastReminderRows(fasts: FastReminders, actions: SettingsActions) {
+    SectionTitle(stringResource(R.string.fast_reminders))
+    Text(
+        stringResource(R.string.fast_reminders_description),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 6.dp),
+    )
+    Card {
+        FAST_REMINDER_ROWS.forEachIndexed { index, (fast, text) ->
+            if (index > 0) RowDivider()
+            SwitchRow(
+                title = stringResource(text.first),
+                description = stringResource(text.second),
+                checked = fasts.isOn(fast),
+                onChange = { on -> actions.setFastReminder(fast, on) },
+            )
+        }
+    }
+}
+
+/**
+ * «رمضان» under «تذكيرات العبادة»: with [reminders], the suhoor reminder and the Imsak alert (#91), each off by
+ * default, shown with the other Worship Reminders only while the master switch is on; then how many minutes before Fajr
+ * Imsak comes (#90), which Today's Ramadan card uses, so it is shown with the master switch off too.
+ */
+@Composable
+private fun RamadanRows(ramadan: RamadanSettings, actions: SettingsActions, reminders: Boolean) {
+    val format = LocalDisplayFormatter.current
+    SectionTitle(stringResource(R.string.ramadan))
+    Card {
+        if (reminders) {
+            val suhoor = ramadan.suhoorReminder
+            SwitchRow(
+                title = stringResource(R.string.suhoor_reminder),
+                description = stringResource(R.string.suhoor_reminder_description, format.number(suhoor.minutes)),
+                checked = suhoor.enabled,
+                onChange = actions::setSuhoorReminder,
+            )
+            if (suhoor.enabled) {
+                RowDivider()
+                SegmentedChoice(
+                    SuhoorReminder.MINUTES.map { minutes ->
+                        Segment(stringResource(R.string.adhkar_reminder_minutes, format.number(minutes)), suhoor.minutes == minutes) {
+                            actions.setSuhoorReminderMinutes(minutes)
+                        }
+                    },
+                    Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                )
+            }
+            RowDivider()
+            SwitchRow(
+                title = stringResource(R.string.imsak_alert),
+                description = stringResource(R.string.imsak_alert_description),
+                checked = ramadan.imsakAlert,
+                onChange = actions::setImsakAlert,
+            )
+            RowDivider()
+        }
+        SilenceDurationRow(
+            title = stringResource(R.string.ramadan_imsak),
+            summary = stringResource(R.string.ramadan_imsak_summary),
+            minutes = ramadan.imsakMinutes,
+            range = RamadanSettings.IMSAK_MINUTES_RANGE,
+            shorter = R.string.ramadan_imsak_closer,
+            longer = R.string.ramadan_imsak_earlier,
+            step = RamadanSettings.IMSAK_MINUTES_STEP,
+        ) { step -> actions.stepImsakMinutes(step) }
+    }
 }
 
 /** «أذكار الصباح» or «أذكار المساء» (#75): its switch, then its minutes after Fajr or Asr once it is on. */
@@ -336,7 +489,7 @@ private fun AdhkarReminderRows(set: AdhkarSetId, reminder: AdhkarReminder, actio
     }
 }
 
-/** A Silence Window's duration: its title and summary, then −, the minutes and +, [PrayerSilence.MINUTES_STEP] per tap. */
+/** A duration in minutes (a Silence Window's, Imsak's): its title and summary, then −, the minutes and +, [step] per tap. */
 @Composable
 private fun SilenceDurationRow(
     title: String,
@@ -345,17 +498,18 @@ private fun SilenceDurationRow(
     range: IntRange,
     @StringRes shorter: Int,
     @StringRes longer: Int,
+    step: Int = PrayerSilence.MINUTES_STEP,
     onStep: (Int) -> Unit,
 ) {
     val format = LocalDisplayFormatter.current
-    val step = format.number(PrayerSilence.MINUTES_STEP)
+    val stepText = format.number(step)
     Row(
         Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         RowText(title, summary)
-        StepButton(R.drawable.ic_minus, stringResource(shorter, step), enabled = minutes > range.first) { onStep(-1) }
+        StepButton(R.drawable.ic_minus, stringResource(shorter, stepText), enabled = minutes > range.first) { onStep(-1) }
         Text(
             pluralStringResource(R.plurals.prayer_silence_minutes, minutes, format.number(minutes)),
             style = MaterialTheme.typography.bodyLarge,
@@ -363,7 +517,7 @@ private fun SilenceDurationRow(
             textAlign = TextAlign.Center,
             modifier = Modifier.widthIn(min = 80.dp),
         )
-        StepButton(R.drawable.ic_plus, stringResource(longer, step), enabled = minutes < range.last) { onStep(+1) }
+        StepButton(R.drawable.ic_plus, stringResource(longer, stepText), enabled = minutes < range.last) { onStep(+1) }
     }
 }
 

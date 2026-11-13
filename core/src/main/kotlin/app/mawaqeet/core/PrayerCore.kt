@@ -22,22 +22,65 @@ class PrayerCore(
     fun alerts(): AlertSettings = settings.alerts
 
     /**
-     * The calendar date to display now, at the location, with its Prayer Times (after the user's adjustments) and
-     * Sunrise, and whether a high-latitude rule was applied to them.
+     * Today's date on the calendar at the location. Unlike [displayDay] it moves on at midnight: the Calendar screen's
+     * today and its day counts use it, as the Sunnah Fast reminders do.
+     */
+    fun calendarDate(): LocalDate = LocalDate.ofInstant(clock.instant(), settings.location.zone)
+
+    /**
+     * The Prayer Day running now (from midnight until Fajr, still the previous one), at the location, with its
+     * Prayer Times (after the user's adjustments) and Sunrise, and whether a high-latitude rule was applied to them.
+     * It moves on at Fajr, together with [currentPrayerDay].
      */
     fun displayDay(): DisplayDay {
         val now = clock.instant()
-        val date = LocalDate.ofInstant(now, settings.location.zone)
-        val day = calculateDay(settings, date)
-        val next = day.prayerTimes.firstOrNull { it.time.toInstant().isAfter(now) }
-            ?: calculateDay(settings, date.plusDays(1)).prayerTimes.first()
+        val calendarDate = LocalDate.ofInstant(now, settings.location.zone)
+        val calendarDay = calculateDay(settings, calendarDate)
+        val beforeFajr = calendarDay.prayerTimes.first().time.toInstant().isAfter(now)
+        val date = if (beforeFajr) calendarDate.minusDays(1) else calendarDate
+        val day = if (beforeFajr) calculateDay(settings, date) else calendarDay
+        val nextFajr = calculateDay(settings, date.plusDays(1)).prayerTimes.first()
+        val next = day.prayerTimes.firstOrNull { it.time.toInstant().isAfter(now) } ?: nextFajr
         return DisplayDay(
             date = date, prayerTimes = day.prayerTimes, sunrise = day.sunrise, next = next,
             hijriDate = HijriDate.of(date, settings.hijriOffsetDays),
             highLatitude = day.highLatitude,
             previousIsha = calculateDay(settings, date.minusDays(1)).prayerTimes.last(),
+            lastThirdOfNight = lastThirdOfNight(day.at(Prayer.MAGHRIB), nextFajr.time),
         )
     }
+
+    /**
+     * Where [instant] falls in Ramadan Mode: fasting from a Fasting Day's Imsak to its Maghrib, suhoor from Maghrib to
+     * the next Imsak when the next day is a Fasting Day (and before Imsak on a Fasting Day), otherwise none.
+     */
+    fun ramadanState(instant: Instant = clock.instant()): RamadanState {
+        val date = LocalDate.ofInstant(instant, settings.location.zone)
+        val today = fastingDay(date)
+        return when {
+            today != null && instant.isBefore(today.imsak.toInstant()) -> today.suhoor()
+            today != null && instant.isBefore(today.maghrib.toInstant()) -> today
+            !instant.isBefore(calculateDay(settings, date).at(Prayer.MAGHRIB).toInstant()) ->
+                fastingDay(date.plusDays(1))?.suhoor() ?: RamadanState.None
+            else -> RamadanState.None
+        }
+    }
+
+    /** [date]'s fast, or null when it is not a Fasting Day. */
+    private fun fastingDay(date: LocalDate): RamadanState.Fasting? {
+        val hijri = HijriDate.of(date, settings.hijriOffsetDays)
+        if (hijri.month != RAMADAN_MONTH) return null
+        val day = calculateDay(settings, date)
+        return RamadanState.Fasting(
+            fastingDayNumber = hijri.day,
+            imsak = day.at(Prayer.FAJR).minusMinutes(settings.alerts.ramadan.imsakMinutes.toLong()),
+            maghrib = day.at(Prayer.MAGHRIB),
+        )
+    }
+
+    private fun CalculatedDay.at(prayer: Prayer) = prayerTimes.single { it.prayer == prayer }.time
+
+    private fun RamadanState.Fasting.suhoor() = RamadanState.Suhoor(fastingDayNumber, imsak, maghrib)
 
     /** The Prayer Day now falls in. */
     fun currentPrayerDay(): PrayerDay = places().let { prayerDay(prayerDayDateAt(clock.instant(), it), it) }
@@ -90,6 +133,9 @@ class PrayerCore(
      */
     fun deletePrayerLog() = log.deleteAllEntries(firstUseFrom = prayerDayDateAt(clock.instant(), places()))
 
+    /** Whether the Prayer Log holds any mark at all, on any Prayer Day. Today shows its log hint until it does. */
+    fun hasAnyMark(): Boolean = log.hasAnyEntry()
+
     /** Marks [prayer] on the Prayer Day [date] as prayed, unless it isn't markable yet or the day is read-only. */
     fun mark(date: LocalDate, prayer: Prayer): LogCommandResult = setPrayed(date, prayer, true)
 
@@ -102,7 +148,9 @@ class PrayerCore(
      * the chosen recording's Custom Adhan when one is set ([AlertSettings.customAdhans]). With the master switch off
      * ([AlertSettings.enabled]) the plan holds no alerts at all; the display alarm still moves at every Prayer Time.
      * With Prayer Silence on ([AlertSettings.prayerSilence]) it also holds a Silence Window per chosen Prayer, master switch or not.
-     * With the master switch on it holds the Worship Reminders switched on ([AlertSettings.worshipReminders]).
+     * With the master switch on it holds the Worship Reminders switched on ([AlertSettings.worshipReminders]), and on
+     * Fasting Days the Ramadan reminders switched on ([RamadanSettings]); Maghrib's Adhan Alert there is [PlannedAlert.isIftar].
+     * On Fasting Days the display alarm also goes off at Imsak, master switch or not.
      */
     fun alertPlan(): AlertPlan {
         val now = clock.instant()
@@ -113,13 +161,16 @@ class PrayerCore(
         val days = (-1L..2L).map { offset -> today.plusDays(offset).let { it to calculateDay(settings, it) } }
         val alertsOn = settings.alerts.enabled
         val alerts = if (!alertsOn) emptyList() else days.flatMap { (date, day) ->
-            day.prayerTimes.flatMap { time -> plannedAlerts(time, date, settings.alerts) }
+            val fasting = fastingDay(date) != null
+            day.prayerTimes.flatMap { time -> plannedAlerts(time, date, settings.alerts, iftar = fasting && time.prayer == Prayer.MAGHRIB) }
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
         val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
-        // Prayer Times no Adhan Alert announces still move the display day's next Prayer (widgets).
+        // Prayer Times no Adhan Alert announces still move the display day's next Prayer (widgets), and a Fasting
+        // Day's Imsak moves the Next Prayer widgets from suhoor to iftar (Ramadan Mode, #92).
         val unannounced = days.flatMap { (_, day) -> day.prayerTimes }
             .filter { !alertsOn || !settings.alerts.of(it.prayer).adhanAlert }
             .map { it.time.toInstant() }
+            .plus(days.mapNotNull { (date, _) -> fastingDay(date)?.imsak?.toInstant() })
             .filter { it.isAfter(now) && it.isBefore(midnight) }
         return AlertPlan(
             alerts,
@@ -132,14 +183,36 @@ class PrayerCore(
 
     private fun worshipReminders(days: List<Pair<LocalDate, CalculatedDay>>, now: Instant, end: Instant): List<PlannedWorshipReminder> {
         val reminders = settings.alerts.worshipReminders
+        val calendar = HijriCalendar(settings.hijriOffsetDays)
         return days.flatMap { (date, day) ->
             fun at(prayer: Prayer) = day.prayerTimes.single { it.prayer == prayer }.time.toInstant()
             salawatReminders(reminders.salawat, date, day.sunrise.toInstant(), at(Prayer.ISHA)) +
                 kahfReminders(reminders.kahf, date, day.sunrise.toInstant()) + listOfNotNull(
                 adhkarReminder(reminders.morningAdhkar, WorshipReminderKind.MORNING_ADHKAR, date, at(Prayer.FAJR)),
                 adhkarReminder(reminders.eveningAdhkar, WorshipReminderKind.EVENING_ADHKAR, date, at(Prayer.ASR)),
-            )
+                sunnahFastReminder(reminders.fasts, calendar, date, at(Prayer.ISHA)),
+                duhaReminder(reminders.sunnahPrayers.duha, date, day.sunrise.toInstant(), at(Prayer.DHUHR)),
+                // The night after this day's Maghrib runs to the next day's own Fajr.
+                qiyamReminder(reminders.sunnahPrayers.qiyam, date, day.at(Prayer.MAGHRIB)) { calculateDay(settings, date.plusDays(1)).at(Prayer.FAJR) },
+            ) + ramadanReminders(date)
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
+    }
+
+    /** [date]'s suhoor reminder and Imsak alert, when they are on and [date] is a Fasting Day. */
+    private fun ramadanReminders(date: LocalDate): List<PlannedWorshipReminder> {
+        val ramadan = settings.alerts.ramadan
+        if (!ramadan.suhoorReminder.enabled && !ramadan.imsakAlert) return emptyList()
+        val fast = fastingDay(date) ?: return emptyList()
+        val imsak = fast.imsak.toInstant()
+        val fajr = calculateDay(settings, date).at(Prayer.FAJR).toInstant()
+        return listOfNotNull(
+            if (ramadan.suhoorReminder.enabled) {
+                PlannedWorshipReminder(WorshipReminderKind.SUHOOR, fajr.minus(java.time.Duration.ofMinutes(ramadan.suhoorReminder.minutes.toLong())), date)
+            } else {
+                null
+            },
+            if (ramadan.imsakAlert) PlannedWorshipReminder(WorshipReminderKind.IMSAK, imsak, date) else null,
+        )
     }
 
     private fun silenceWindows(days: List<Pair<LocalDate, CalculatedDay>>, now: Instant, end: Instant): List<SilenceWindow> {
@@ -160,7 +233,7 @@ class PrayerCore(
         }.filter { it.end.isAfter(now) && !it.start.isAfter(end) }.sortedBy { it.start }
     }
 
-    private fun plannedAlerts(time: PrayerTime, prayerDay: LocalDate, alerts: AlertSettings): List<PlannedAlert> {
+    private fun plannedAlerts(time: PrayerTime, prayerDay: LocalDate, alerts: AlertSettings, iftar: Boolean): List<PlannedAlert> {
         val prayer = alerts.of(time.prayer)
         val at = time.time.toInstant()
         fun alert(kind: AlertKind, instant: Instant, sound: AlertSound, mode: DeliveryMode) = PlannedAlert(
@@ -187,6 +260,7 @@ class PrayerCore(
             // A Custom Adhan replaces only its own recording: one for the Full Adhan never reaches Fajr's.
             val sound = AdhanRecording.of(time.prayer, prayer.sound)?.let { AlertSound.of(it, alerts) } ?: AlertSound.Silent
             alert(AlertKind.ADHAN_ALERT, at, sound, if (alerts.alarmClockMode) DeliveryMode.ALARM_CLOCK else DeliveryMode.EXACT)
+                .copy(isIftar = iftar)
         } else {
             null
         }
