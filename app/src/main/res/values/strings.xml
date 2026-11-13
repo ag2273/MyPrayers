@@ -649,6 +649,16 @@
     <string name="fast_reminder_tasua">يوم تاسوعاء</string>
     <string name="fast_reminder_ashura">يوم عاشوراء</string>
     <string name="fast_reminder_six_of_shawwal">أول الست من شوال</string>
+    <!-- Sunnah Prayer Reminders under Worship Reminders, and the Last Third of the Night on Today (#96) -->
+    <string name="sunnah_prayer_reminders">السنن</string>
+    <string name="duha_reminder">صلاة الضحى</string>
+    <string name="duha_reminder_description">بعد الشروق بـ%1$s دقيقة، وقبل الظهر بعشر دقائق على الأكثر</string>
+    <string name="duha_reminder_text">حان وقت صلاة الضحى</string>
+    <string name="qiyam_reminder">قيام الليل</string>
+    <string name="qiyam_reminder_description">عند بدء الثلث الأخير من الليل</string>
+    <string name="qiyam_reminder_text">بدأ الثلث الأخير من الليل، وقت قيام الليل</string>
+    <string name="last_third_begins">الثلث الأخير من الليل يبدأ %1$s</string>
+    <string name="last_third_began">الثلث الأخير من الليل بدأ %1$s</string>
     <string name="about_use_serialization">ملف النسخة الاحتياطية</string>
 
     <!-- Settings → Backup (#98) -->

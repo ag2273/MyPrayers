@@ -158,6 +158,15 @@ interface SettingsActions {
     /** «صيام السنة» under «تذكيرات العبادة» (#95): [fast]'s reminder the night before. */
     fun setFastReminder(fast: app.mawaqeet.core.SunnahFast, on: Boolean)
 
+    /** «صلاة الضحى» under «تذكيرات العبادة» → «السنن» (#96). */
+    fun setDuhaReminder(on: Boolean)
+
+    /** The Duha reminder's minutes after Sunrise, one of [app.mawaqeet.core.DuhaReminder.MINUTES]. */
+    fun setDuhaReminderMinutes(minutes: Int)
+
+    /** «قيام الليل» under «تذكيرات العبادة» → «السنن» (#96). */
+    fun setQiyamReminder(on: Boolean)
+
     /** «الإمساك» under «رمضان» (#90): Imsak moved [step] taps of [app.mawaqeet.core.RamadanSettings.IMSAK_MINUTES_STEP] minutes. */
     fun stepImsakMinutes(step: Int)
 

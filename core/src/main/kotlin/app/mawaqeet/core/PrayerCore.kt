@@ -33,13 +33,14 @@ class PrayerCore(
         val beforeFajr = calendarDay.prayerTimes.first().time.toInstant().isAfter(now)
         val date = if (beforeFajr) calendarDate.minusDays(1) else calendarDate
         val day = if (beforeFajr) calculateDay(settings, date) else calendarDay
-        val next = day.prayerTimes.firstOrNull { it.time.toInstant().isAfter(now) }
-            ?: calculateDay(settings, date.plusDays(1)).prayerTimes.first()
+        val nextFajr = calculateDay(settings, date.plusDays(1)).prayerTimes.first()
+        val next = day.prayerTimes.firstOrNull { it.time.toInstant().isAfter(now) } ?: nextFajr
         return DisplayDay(
             date = date, prayerTimes = day.prayerTimes, sunrise = day.sunrise, next = next,
             hijriDate = HijriDate.of(date, settings.hijriOffsetDays),
             highLatitude = day.highLatitude,
             previousIsha = calculateDay(settings, date.minusDays(1)).prayerTimes.last(),
+            lastThirdOfNight = lastThirdOfNight(day.at(Prayer.MAGHRIB), nextFajr.time),
         )
     }
 
@@ -184,6 +185,13 @@ class PrayerCore(
                 adhkarReminder(reminders.morningAdhkar, WorshipReminderKind.MORNING_ADHKAR, date, at(Prayer.FAJR)),
                 adhkarReminder(reminders.eveningAdhkar, WorshipReminderKind.EVENING_ADHKAR, date, at(Prayer.ASR)),
                 sunnahFastReminder(reminders.fasts, calendar, date, at(Prayer.ISHA)),
+                duhaReminder(reminders.sunnahPrayers.duha, date, day.sunrise.toInstant(), at(Prayer.DHUHR)),
+                // The night after this day's Maghrib runs to the next day's own Fajr.
+                if (reminders.sunnahPrayers.qiyam.enabled) {
+                    qiyamReminder(reminders.sunnahPrayers.qiyam, date, day.at(Prayer.MAGHRIB), calculateDay(settings, date.plusDays(1)).at(Prayer.FAJR))
+                } else {
+                    null
+                },
             ) + ramadanReminders(date)
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
     }

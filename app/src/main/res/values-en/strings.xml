@@ -594,6 +594,15 @@
     <string name="fast_reminder_tasua">Tasu\'a</string>
     <string name="fast_reminder_ashura">Ashura</string>
     <string name="fast_reminder_six_of_shawwal">the first of the six days of Shawwal</string>
+    <string name="sunnah_prayer_reminders">Sunnah prayers</string>
+    <string name="duha_reminder">Duha prayer</string>
+    <string name="duha_reminder_description">%1$s minutes after Sunrise, and at least 10 minutes before Dhuhr</string>
+    <string name="duha_reminder_text">It is time for the Duha prayer</string>
+    <string name="qiyam_reminder">Night prayer (Qiyam)</string>
+    <string name="qiyam_reminder_description">When the last third of the night begins</string>
+    <string name="qiyam_reminder_text">The last third of the night has begun: a time for Qiyam</string>
+    <string name="last_third_begins">Last third of the night begins %1$s</string>
+    <string name="last_third_began">Last third of the night began %1$s</string>
     <string name="about_use_serialization">The backup file</string>
 
     <!-- Settings → Backup (#98) -->

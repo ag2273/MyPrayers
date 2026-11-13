@@ -333,6 +333,18 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setFastReminder(fast, on) }
                             }
 
+                            override fun setDuhaReminder(on: Boolean) {
+                                scope.launch { settingsStore.setDuhaReminder(on) }
+                            }
+
+                            override fun setDuhaReminderMinutes(minutes: Int) {
+                                scope.launch { settingsStore.setDuhaReminderMinutes(minutes) }
+                            }
+
+                            override fun setQiyamReminder(on: Boolean) {
+                                scope.launch { settingsStore.setQiyamReminder(on) }
+                            }
+
                             override fun stepImsakMinutes(step: Int) {
                                 scope.launch { settingsStore.stepImsakMinutes(step) }
                             }

@@ -43,6 +43,9 @@ internal object WorshipReminderNotification {
             WorshipReminderKind.SUHOOR -> R.string.suhoor_reminder_title to R.string.suhoor_reminder_text
             WorshipReminderKind.IMSAK -> R.string.imsak_alert_title to R.string.imsak_alert_text
             WorshipReminderKind.SUNNAH_FAST -> R.string.fast_reminder_title to R.string.fast_reminder_text
+            WorshipReminderKind.DUHA -> R.string.duha_reminder to R.string.duha_reminder_text
+            // A normal notification; #97 adds the alarm style, which the receiver will route here or to the alarm.
+            WorshipReminderKind.QIYAM -> R.string.qiyam_reminder to R.string.qiyam_reminder_text
         }
         val strings = alertText(context)
         val body = if (reminder.kind == WorshipReminderKind.SUNNAH_FAST) fastText(strings, reminder) else strings.getString(text)

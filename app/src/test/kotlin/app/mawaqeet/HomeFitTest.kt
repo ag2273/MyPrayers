@@ -50,6 +50,7 @@ import java.time.ZoneOffset
 private const val HINT = "اضغط الصلاة بعد أدائها لتسجيلها. الجرس يبيّن نوع التنبيه."
 private const val ISHA = "العشاء"
 private const val QIBLA = "القبلة"
+private const val LAST_THIRD = "الثلث الأخير من الليل يبدأ"
 
 /** A Prayer Log in memory that tells the screen when it changes, as the Room one does. */
 private class WatchedLog : PrayerLogRepository {
@@ -97,6 +98,12 @@ class HomeFitTest {
 
     /** 15:00 in Makkah on 15 Ramadan 1448 (2027-02-22): the fasting card, with its Imsak → Maghrib bar. */
     private val ramadanClock = Clock.fixed(LocalDateTime.parse("2027-02-22T15:00").atZone(ZoneId.of("Asia/Riyadh")).toInstant(), ZoneOffset.UTC)
+
+    /** 21:00 in Makkah on 9 November 2026: after Isha, so the card names the Last Third of the Night (#96). */
+    private val nightClock = Clock.fixed(LocalDateTime.parse("2026-11-09T21:00").atZone(ZoneId.of("Asia/Riyadh")).toInstant(), ZoneOffset.UTC)
+
+    /** 21:00 in Makkah on 15 Ramadan 1448: the suhoor card, after Isha. */
+    private val ramadanNightClock = Clock.fixed(LocalDateTime.parse("2027-02-22T21:00").atZone(ZoneId.of("Asia/Riyadh")).toInstant(), ZoneOffset.UTC)
 
     private fun show(withToolsRow: Boolean = false, clock: Clock = this.clock) {
         val core = if (clock == this.clock) core else PrayerCore(PrayerSettings.Default, clock, log)
@@ -186,15 +193,21 @@ class HomeFitTest {
     }
 
     /**
-     * Shows Today as the app does, with the Tools Row, on a normal day or in Ramadan, with the log hint (an empty
-     * Prayer Log) or without it (Fajr marked).
+     * Shows Today as the app does, with the Tools Row, on a normal day or in Ramadan, by day or after Isha ([night], the
+     * Last Third on the card, #96), with the log hint (an empty Prayer Log) or without it (Fajr marked).
      */
-    private fun showToday(ramadan: Boolean, hint: Boolean) {
-        val clock = if (ramadan) ramadanClock else clock
+    private fun showToday(ramadan: Boolean, hint: Boolean, night: Boolean = false) {
+        val clock = when {
+            night && ramadan -> ramadanNightClock
+            night -> nightClock
+            ramadan -> ramadanClock
+            else -> clock
+        }
         if (!hint) log.setPrayed(if (ramadan) LocalDate.of(2027, 2, 22) else LocalDate.of(2026, 11, 9), Prayer.FAJR, true)
         show(withToolsRow = true, clock = clock)
         if (hint) waitForHint()
-        if (ramadan) compose.onNodeWithText("رمضان · اليوم ١٥", useUnmergedTree = true).assertIsDisplayed()
+        // From Maghrib the suhoor card counts to the next Fasting Day: the 16th.
+        if (ramadan) compose.onNodeWithText(if (night) "رمضان · اليوم ١٦" else "رمضان · اليوم ١٥", useUnmergedTree = true).assertIsDisplayed()
         compose.waitForIdle()
     }
 
@@ -336,6 +349,42 @@ class HomeFitTest {
     fun `412x915 at font scale 1_5 scrolls without clipping in Ramadan, with the hint`() {
         showToday(ramadan = true, hint = true)
         assertScrollsWithoutClipping(hint = true)
+    }
+
+    // After Isha the card swaps its bar for the Last Third of the Night (#96): no taller, so Today still fits.
+    private fun assertLastThirdShown() =
+        compose.onNodeWithText(LAST_THIRD, substring = true, useUnmergedTree = true).assertIsDisplayed()
+
+    @Test @Config(qualifiers = "ar-w360dp-h740dp")
+    fun `360x740 after Isha fits at the compact sizes with the Last Third, with the hint`() {
+        showToday(ramadan = false, hint = true, night = true)
+        assertLastThirdShown()
+        assertFillsTheScreen(hint = true)
+        assertEquals(TodaySize.COMPACT, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w393dp-h852dp")
+    fun `393x852 after Isha fits at the regular sizes with the Last Third`() {
+        showToday(ramadan = false, hint = false, night = true)
+        assertLastThirdShown()
+        assertFillsTheScreen(hint = false)
+        assertEquals(TodaySize.REGULAR, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w360dp-h740dp")
+    fun `360x740 during suhoor fits with the Last Third on the Ramadan card, with the hint`() {
+        showToday(ramadan = true, hint = true, night = true)
+        assertLastThirdShown()
+        assertFillsTheScreen(hint = true)
+        assertEquals(TodaySize.COMPACT, todaySize())
+    }
+
+    @Test @Config(qualifiers = "ar-w393dp-h852dp")
+    fun `393x852 during suhoor fits at the regular sizes with the Last Third on the Ramadan card`() {
+        showToday(ramadan = true, hint = false, night = true)
+        assertLastThirdShown()
+        assertFillsTheScreen(hint = false)
+        assertEquals(TodaySize.REGULAR, todaySize())
     }
 
     /** The size class Today chose (#101). */

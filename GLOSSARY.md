@@ -60,6 +60,14 @@ _Avoid_: Pre-alert, warning
 An optional, gentle reminder for daily worship beyond the five Prayers, under «تذكيرات العبادة» in Settings → Alerts: sending salawat on the Prophet ﷺ every 1, 2 or 3 hours from Sunrise until Isha; reading Surat Al-Kahf on Friday at Sunrise + 1 hour (its «قرأتها» only dismisses it: no Quran text, no Kahf log); and the morning and evening adhkar 15, 30 (default), 45 or 60 minutes after Fajr and Asr, which open that Adhkar Set and are skipped once it is complete for that Prayer Day. Each is off by default, uses the normal notification sound, never an adhan, and is silenced by «كل تنبيهات التطبيق». Not a Prayer Reminder, which comes before a Prayer Time.
 _Avoid_: Dhikr reminder, nudge, Sunnah alert
 
+**Sunnah Prayer Reminder**:
+A Worship Reminder for a voluntary prayer of the Sunnah, under «تذكيرات العبادة» → «السنن»: «صلاة الضحى» 20, 30, 45, 60 (default) or 90 minutes after Sunrise, never later than 10 minutes before Dhuhr; and «قيام الليل» at the start of the Last Third of the Night. Each is off by default. Not the rawatib before or after the five Prayers, which have no reminder.
+_Avoid_: Nafl reminder, Duha alarm, Qiyam alarm (until the alarm style exists)
+
+**Last Third of the Night**:
+The last third of the night from Maghrib to the next Fajr, the best time for Qiyam. It starts at Maghrib + ⅔ × (next Fajr − Maghrib), counted in real time across a clock change, and belongs to the Prayer Day of that Maghrib. After Isha, Today's Next Prayer card shows its start in place of the bar's line.
+_Avoid_: Tahajjud time, midnight, Islamic midnight (that is half the night)
+
 **Ramadan Mode**:
 How the app behaves in Ramadan, by the app's Hijri date with the user's Hijri offset: it turns on by itself for every Fasting Day and the suhoor before it, and off after the last one. Today's Next Prayer card counts down to Iftar while fasting and to the end of Suhoor after Maghrib, keeping the next Prayer as one line inside.
 _Avoid_: Ramadan setting, fasting mode

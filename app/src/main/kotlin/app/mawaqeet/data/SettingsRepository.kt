@@ -29,7 +29,10 @@ import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
+import app.mawaqeet.core.DuhaReminder
 import app.mawaqeet.core.FastReminders
+import app.mawaqeet.core.QiyamReminder
+import app.mawaqeet.core.SunnahPrayerReminders
 import app.mawaqeet.core.KahfReminder
 import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.SalawatReminder
@@ -344,6 +347,22 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[fastReminderKey(fast)] = on }
     }
 
+    /** «صلاة الضحى» under «تذكيرات العبادة» → «السنن» (#96); planned only while the master switch is on. */
+    suspend fun setDuhaReminder(on: Boolean) {
+        store.edit { it[DUHA_ENABLED] = on }
+    }
+
+    /** [minutes] after Sunrise, one of [DuhaReminder.MINUTES]; kept while the Duha reminder is off. */
+    suspend fun setDuhaReminderMinutes(minutes: Int) {
+        require(minutes in DuhaReminder.MINUTES)
+        store.edit { it[DUHA_MINUTES] = minutes }
+    }
+
+    /** «قيام الليل» under «تذكيرات العبادة» → «السنن» (#96); planned only while the master switch is on. */
+    suspend fun setQiyamReminder(on: Boolean) {
+        store.edit { it[QIYAM_ENABLED] = on }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -514,6 +533,15 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                 fasts = FastReminders(
                     SunnahFast.entries.filterTo(mutableSetOf()) { this[fastReminderKey(it)] ?: default.worshipReminders.fasts.isOn(it) },
                 ),
+                sunnahPrayers = default.worshipReminders.sunnahPrayers.let { sunnah ->
+                    SunnahPrayerReminders(
+                        duha = DuhaReminder(
+                            enabled = this[DUHA_ENABLED] ?: sunnah.duha.enabled,
+                            minutes = this[DUHA_MINUTES]?.takeIf { it in DuhaReminder.MINUTES } ?: sunnah.duha.minutes,
+                        ),
+                        qiyam = QiyamReminder(enabled = this[QIYAM_ENABLED] ?: sunnah.qiyam.enabled),
+                    )
+                },
             ),
         )
     }
@@ -599,6 +627,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
 
         /** Worship Reminders (#64): «سورة الكهف» on or off. */
         private val KAHF_ENABLED = booleanPreferencesKey("worship_kahf_enabled")
+
+        /** Sunnah Prayer Reminders (#96): «صلاة الضحى» on or off and its minutes after Sunrise, «قيام الليل» on or off. */
+        private val DUHA_ENABLED = booleanPreferencesKey("worship_duha_enabled")
+        private val DUHA_MINUTES = intPreferencesKey("worship_duha_minutes")
+        private val QIYAM_ENABLED = booleanPreferencesKey("worship_qiyam_enabled")
         private val RAMADAN_IMSAK_MINUTES = intPreferencesKey("ramadan_imsak_minutes")
 
         /** Ramadan reminders (#91): «تذكير السحور» on or off and its minutes before Fajr, «تنبيه الإمساك» on or off. */

@@ -18,6 +18,8 @@ data class WorshipReminders(
     val eveningAdhkar: AdhkarReminder = AdhkarReminder(),
     /** «صيام السنة» (#95): a reminder the night before each Sunnah Fast switched on. */
     val fasts: FastReminders = FastReminders(),
+    /** «السنن» (#96): the Duha and Qiyam reminders. */
+    val sunnahPrayers: SunnahPrayerReminders = SunnahPrayerReminders(),
 )
 
 /** The morning or evening adhkar reminder: once a Prayer Day, [minutes] after Fajr (morning) or Asr (evening). */
@@ -85,6 +87,15 @@ enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
      * [PlannedWorshipReminder.fast] says which.
      */
     SUNNAH_FAST,
+
+    /** «صلاة الضحى» (#96), after Sunrise; its Prayer Day is that Sunrise's. */
+    DUHA,
+
+    /**
+     * «قيام الليل» (#96), at the start of the Last Third of the Night; its Prayer Day is that night's Maghrib's, so a
+     * reminder after midnight still belongs to the day before. A normal notification for now (the alarm style is #97).
+     */
+    QIYAM,
 }
 
 /**

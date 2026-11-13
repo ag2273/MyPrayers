@@ -70,7 +70,9 @@ import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SuhoorReminder
+import app.mawaqeet.core.DuhaReminder
 import app.mawaqeet.core.FastReminders
+import app.mawaqeet.core.SunnahPrayerReminders
 import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.ui.components.Segment
@@ -315,8 +317,44 @@ private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions)
         RowDivider()
         AdhkarReminderRows(AdhkarSetId.EVENING, alerts.worshipReminders.eveningAdhkar, actions)
     }
+    SunnahPrayerRows(alerts.worshipReminders.sunnahPrayers, actions)
     FastReminderRows(alerts.worshipReminders.fasts, actions)
     RamadanRows(alerts.ramadan, actions, reminders = true)
+}
+
+/**
+ * «السنن» under «تذكيرات العبادة» (#96): «صلاة الضحى» (its minutes after Sunrise once on) and «قيام الليل», each off
+ * by default. Shown with the other Worship Reminders, only while the master switch is on.
+ */
+@Composable
+private fun SunnahPrayerRows(sunnah: SunnahPrayerReminders, actions: SettingsActions) {
+    val format = LocalDisplayFormatter.current
+    SectionTitle(stringResource(R.string.sunnah_prayer_reminders))
+    Card {
+        SwitchRow(
+            title = stringResource(R.string.duha_reminder),
+            description = stringResource(R.string.duha_reminder_description, format.number(sunnah.duha.minutes)),
+            checked = sunnah.duha.enabled,
+            onChange = actions::setDuhaReminder,
+        )
+        if (sunnah.duha.enabled) {
+            RowDivider()
+            // Five choices side by side: the numbers alone, the description says they are minutes after Sunrise.
+            SegmentedChoice(
+                DuhaReminder.MINUTES.map { minutes ->
+                    Segment(format.number(minutes), sunnah.duha.minutes == minutes) { actions.setDuhaReminderMinutes(minutes) }
+                },
+                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+        RowDivider()
+        SwitchRow(
+            title = stringResource(R.string.qiyam_reminder),
+            description = stringResource(R.string.qiyam_reminder_description),
+            checked = sunnah.qiyam.enabled,
+            onChange = actions::setQiyamReminder,
+        )
+    }
 }
 
 /** Each Sunnah Fast's switch title and description, in the order Settings lists them. */

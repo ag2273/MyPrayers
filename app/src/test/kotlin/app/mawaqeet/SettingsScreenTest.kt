@@ -350,6 +350,44 @@ class SettingsScreenTest {
 
     @Test
     @Config(qualifiers = "en")
+    fun `Duha and Qiyam are off under Sunnah prayers, Duha's minutes after Sunrise show once it is on, and each stores its own`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun sunnah() = runBlocking { store.settings.first() }.alerts.worshipReminders.sunnahPrayers
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            compose.onNodeWithText("Sunnah prayers").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Duha prayer").performScrollTo().assertIsOff()
+            compose.onNodeWithText("Night prayer (Qiyam)").performScrollTo().assertIsOff()
+            compose.onNodeWithText("60 minutes after Sunrise, and at least 10 minutes before Dhuhr").performScrollTo().assertIsDisplayed()
+            assertEquals(0, compose.onAllNodesWithText("90").fetchSemanticsNodes().size)
+
+            compose.onNodeWithText("Duha prayer").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { sunnah().duha.enabled }
+            compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText("90").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("60").performScrollTo().assertIsSelected()
+            compose.onNodeWithText("90").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { sunnah().duha.minutes == 90 }
+            compose.waitUntil(timeoutMillis = 5_000) {
+                compose.onAllNodesWithText("90 minutes after Sunrise, and at least 10 minutes before Dhuhr").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("90").assertIsSelected()
+            assertEquals(false, sunnah().qiyam.enabled)
+
+            compose.onNodeWithText("Night prayer (Qiyam)").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { sunnah().qiyam.enabled }
+            assertEquals(app.mawaqeet.core.DuhaReminder(enabled = true, minutes = 90), sunnah().duha)
+        } finally {
+            runBlocking {
+                store.setDuhaReminder(false)
+                store.setDuhaReminderMinutes(app.mawaqeet.core.DuhaReminder.DEFAULT_MINUTES)
+                store.setQiyamReminder(false)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
     fun `Imsak is 10 minutes before Fajr under Ramadan in Worship reminders, and each tap moves it 5 minutes`() {
         val store = (compose.activity.application as MawaqeetApplication).settings
         fun imsak() = runBlocking { store.settings.first() }.alerts.ramadan.imsakMinutes

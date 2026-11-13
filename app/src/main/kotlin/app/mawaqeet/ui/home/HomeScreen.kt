@@ -185,9 +185,12 @@ private fun HomeContent(
         tip?.invoke()
         day.highLatitude?.let { HighLatitudeNote(it) }
         val cardSizes = NextPrayerCardSizes.of(size)
+        // After Isha, until Fajr, the card names the start of the Last Third of the Night (#96).
+        val afterIsha = day.next.prayer == Prayer.FAJR && !day.timeOf(Prayer.ISHA).toInstant().isAfter(now)
+        val lastThird = day.lastThirdOfNight.takeIf { afterIsha }
         when (ramadan) {
-            RamadanState.None -> NextPrayerCard(day, now, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
-            else -> RamadanCard(ramadan, day.next, now, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
+            RamadanState.None -> NextPrayerCard(day, now, lastThird, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
+            else -> RamadanCard(ramadan, day.next, now, lastThird, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
         }
         tools?.invoke()
         Card(Modifier.layoutId(Fill.Rows(count = day.prayerTimes.size + 1))) {
@@ -494,10 +497,11 @@ private data class NextPrayerCardSizes(
 
 /**
  * The next Prayer on a deep teal card: its name and time, the countdown, and how much of the time since the previous
- * Prayer has passed (hidden before Fajr, when the previous Prayer was yesterday's).
+ * Prayer has passed. After Isha the bar gives way to [lastThird], the start of the Last Third of the Night (#96), in
+ * less height than the bar and its line, so the card never grows.
  */
 @Composable
-private fun NextPrayerCard(day: DisplayDay, now: Instant, sizes: NextPrayerCardSizes, modifier: Modifier = Modifier) {
+private fun NextPrayerCard(day: DisplayDay, now: Instant, lastThird: ZonedDateTime?, sizes: NextPrayerCardSizes, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val next = day.next
     val format = LocalDisplayFormatter.current
@@ -532,17 +536,35 @@ private fun NextPrayerCard(day: DisplayDay, now: Instant, sizes: NextPrayerCardS
                 Text("${prayerName(previous)} ${format.time(previous.time)}", style = sizes.small, color = onCard, modifier = Modifier.weight(1f))
                 Text("${prayerName(next)} ${format.time(next.time)}", style = sizes.small, color = onCard)
             }
+        } else if (lastThird != null) {
+            Spacer(Modifier.height(sizes.barGap))
+            LastThirdLine(lastThird, now, sizes, onCard)
         }
     }
+}
+
+/** «الثلث الأخير من الليل يبدأ ٢:٣٤ ص», or «… بدأ …» once it has begun (#96). */
+@Composable
+private fun LastThirdLine(start: ZonedDateTime, now: Instant, sizes: NextPrayerCardSizes, color: Color, modifier: Modifier = Modifier) {
+    val text = if (start.toInstant().isAfter(now)) R.string.last_third_begins else R.string.last_third_began
+    Text(stringResource(text, LocalDisplayFormatter.current.time(start)), style = sizes.small, color = color, modifier = modifier)
 }
 
 /**
  * The Next Prayer card's Ramadan form (#90), as tall as the usual card so Today still fits a small phone: the day of
  * Ramadan and Imsak on top; while fasting, Iftar's time with the countdown to it and a bar from Imsak to Maghrib; from
- * Maghrib, the countdown to the end of suhoor. The next Prayer stays as one line at the bottom.
+ * Maghrib, the countdown to the end of suhoor. The next Prayer stays as one line at the bottom; after Isha that line
+ * gives way to [lastThird], the start of the Last Third of the Night (#96).
  */
 @Composable
-private fun RamadanCard(state: RamadanState, next: PrayerTime, now: Instant, sizes: NextPrayerCardSizes, modifier: Modifier = Modifier) {
+private fun RamadanCard(
+    state: RamadanState,
+    next: PrayerTime,
+    now: Instant,
+    lastThird: ZonedDateTime?,
+    sizes: NextPrayerCardSizes,
+    modifier: Modifier = Modifier,
+) {
     val colors = MaterialTheme.colorScheme
     val format = LocalDisplayFormatter.current
     val onCard = colors.onTertiaryContainer
@@ -581,17 +603,21 @@ private fun RamadanCard(state: RamadanState, next: PrayerTime, now: Instant, siz
             Spacer(Modifier.height(sizes.barGap))
             ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
         }
-        Text(
-            stringResource(
-                R.string.ramadan_next_prayer,
-                prayerName(next),
-                format.time(next.time),
-                format.hoursMinutes(Duration.between(now, next.time.toInstant())),
-            ),
-            style = sizes.small,
-            color = onCard,
-            modifier = Modifier.padding(top = sizes.smallGap),
-        )
+        if (lastThird != null) {
+            LastThirdLine(lastThird, now, sizes, onCard, Modifier.padding(top = sizes.smallGap))
+        } else {
+            Text(
+                stringResource(
+                    R.string.ramadan_next_prayer,
+                    prayerName(next),
+                    format.time(next.time),
+                    format.hoursMinutes(Duration.between(now, next.time.toInstant())),
+                ),
+                style = sizes.small,
+                color = onCard,
+                modifier = Modifier.padding(top = sizes.smallGap),
+            )
+        }
     }
 }
 

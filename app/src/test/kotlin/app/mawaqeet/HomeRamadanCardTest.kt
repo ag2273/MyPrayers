@@ -85,17 +85,18 @@ class HomeRamadanCardTest {
 
     @Test
     fun `after Maghrib the card counts to the end of suhoor, for the next day's fast`() {
-        val clock = clockAt("2027-02-22T21:00")
+        // Before Isha (Maghrib + 2 hours in Ramadan under Umm al-Qura): after it the last line is the Last Third (#96).
+        val clock = clockAt("2027-02-22T19:00")
         val core = show(clock)
         val now = clock.instant()
         val imsak = core.timeOn("2027-02-23", Prayer.FAJR).minusMinutes(10)
-        val fajr = core.timeOn("2027-02-23", Prayer.FAJR)
+        val isha = core.timeOn("2027-02-22", Prayer.ISHA)
 
         assertShown("رمضان · اليوم ١٦")
         assertShown("الإمساك ${format.time(imsak)}")
         assertShown("السحور")
         assertShown("ينتهي بعد ${format.countdown(Duration.between(now, imsak.toInstant()))}")
-        assertShown("الصلاة القادمة: الفجر ${format.time(fajr)} · بعد ${format.hoursMinutes(Duration.between(now, fajr.toInstant()))}")
+        assertShown("الصلاة القادمة: العشاء ${format.time(isha)} · بعد ${format.hoursMinutes(Duration.between(now, isha.toInstant()))}")
         assertEquals(0, count("الإفطار", substring = true))
     }
 
