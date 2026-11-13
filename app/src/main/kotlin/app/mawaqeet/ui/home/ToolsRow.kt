@@ -39,9 +39,9 @@ fun ToolsRow(
     onMosques: (() -> Unit)? = null,
 ) {
     EqualRowOrStack {
-        ToolButton(R.string.tool_qibla, R.drawable.ic_qibla, onQibla)
-        onCalendar?.let { ToolButton(R.string.tool_calendar, R.drawable.ic_today, it) }
-        onMosques?.let { ToolButton(R.string.tool_mosques, R.drawable.ic_pin, it) }
+        ToolButton(R.string.tool_qibla, R.drawable.ic_compass, onQibla)
+        onCalendar?.let { ToolButton(R.string.tool_calendar, R.drawable.ic_calendar, it) }
+        onMosques?.let { ToolButton(R.string.tool_mosques, R.drawable.ic_mosque, it) }
     }
 }
 
@@ -78,12 +78,13 @@ private val ToolShape = RoundedCornerShape(16.dp)
 @Composable
 private fun ToolButton(@StringRes label: Int, @DrawableRes icon: Int, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
+    val skin = app.mawaqeet.ui.theme.LocalSkin.current
     Row(
         Modifier
             .heightIn(min = 48.dp)
             .clip(ToolShape)
-            .background(colors.surfaceContainer)
-            .border(1.dp, colors.outlineVariant, ToolShape)
+            .background(skin.surface)
+            .border(1.dp, skin.line, ToolShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

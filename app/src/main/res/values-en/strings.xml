@@ -19,7 +19,7 @@
     <string name="log_read_only">This day can no longer be edited</string>
 
     <!-- Bottom navigation (redesign). -->
-    <string name="home_log_hint">Tap a Prayer after you pray it to log it. The bell shows its alert.</string>
+    <string name="home_log_hint">Tap the circle once you have prayed. The bell shows the alert type.</string>
     <string name="tab_today">Today</string>
     <string name="settings">Settings</string>
     <string name="back">Back</string>
@@ -674,4 +674,39 @@
     <string name="widget_suhoor_ends">Suhoor ends</string>
     <string name="widget_chip_imsak">Imsak alert</string>
     <string name="widget_chip_imsak_off">No alert</string>
+    <!-- 1.4 "A Day That Breathes" -->
+    <string name="weather_search_query">weather</string>
+    <string name="weather_open">Open the weather app</string>
+    <string name="tab_log">Log</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">Phone</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="home_until_adhan">until the adhan</string>
+    <string name="home_until_iftar">until iftar</string>
+    <string name="home_until_suhoor_end">until suhoor ends</string>
+    <string name="home_iftar">Iftar</string>
+    <string name="home_last_third">Last third %1$s</string>
+    <string name="home_last_third_began">Last third began %1$s</string>
+    <string name="home_arc_description">%1$s, %2$s %3$s</string>
+    <string name="tasbeeh_section">Tasbeeh</string>
+    <string name="tasbeeh_hand">Count with</string>
+    <string name="tasbeeh_hand_right">Right hand</string>
+    <string name="tasbeeh_hand_left">Left hand</string>
+    <string name="tasbeeh_hand_hint">The button sits under your thumb and the count on the other side, so it stays visible.</string>
+    <string name="tasbeeh_set_right">Set for the right hand</string>
+    <string name="tasbeeh_set_left">Set for the left hand</string>
+    <string name="tasbeeh_hand_change">Change</string>
+    <string name="tasbeeh_today">Today\'s total</string>
+    <string name="log_day_hint">%1$s\nTap a Prayer after you pray it to log it</string>
+    <string name="log_legend_prayed">Prayed</string>
+    <string name="log_legend_missed">Missed</string>
+    <string name="log_legend_not_yet">Not yet</string>
+    <string name="log_total_of">of %1$s</string>
+    <string name="log_status_prayed">Prayed</string>
+    <string name="log_status_not_marked">Not logged</string>
+    <string name="log_status_not_yet">Not yet due</string>
+    <string name="log_status_line">%1$s · %2$s</string>
+    <string name="log_day_description">%1$s, %2$s</string>
+    <string name="log_week_percent">Week summary</string>
 </resources>

@@ -43,6 +43,8 @@ import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SuhoorReminder
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.core.SettingValue
+import app.mawaqeet.ui.adhkar.TasbeehHand
+import app.mawaqeet.ui.theme.ThemeMode
 import app.mawaqeet.widget.WidgetAppearance
 import app.mawaqeet.widget.WidgetColors
 import kotlinx.coroutines.flow.Flow
@@ -93,6 +95,24 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         .distinctUntilChanged()
 
     private fun Preferences.digitStyle(): DigitStyle = this[DIGITS].toEnum(DigitStyle.AUTOMATIC)
+
+    /** Settings → Language and display → Theme (1.4): the phone's, or always light or dark. */
+    val themeMode: Flow<ThemeMode> = store.data.map { it.themeMode() }.distinctUntilChanged()
+
+    private fun Preferences.themeMode(): ThemeMode = this[THEME_MODE].toEnum(ThemeMode.SYSTEM)
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        store.edit { it[THEME_MODE] = mode.name }
+    }
+
+    /** Settings → Language and display → Tasbeeh (1.4): which hand counts, so the button sits under it. */
+    val tasbeehHand: Flow<TasbeehHand> = store.data.map { it.tasbeehHand() }.distinctUntilChanged()
+
+    private fun Preferences.tasbeehHand(): TasbeehHand = this[TASBEEH_HAND].toEnum(TasbeehHand.RIGHT)
+
+    suspend fun setTasbeehHand(hand: TasbeehHand) {
+        store.edit { it[TASBEEH_HAND] = hand.name }
+    }
 
     suspend fun setLocation(saved: SavedLocation) {
         store.edit {
@@ -479,6 +499,8 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             prayerSettings()
             savedLocation()
             digitStyle()
+            themeMode()
+            tasbeehHand()
             widgetAppearance()
             this[APP_LANGUAGE]?.length
         } catch (e: ClassCastException) {
@@ -589,6 +611,8 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val HIJRI_OFFSET = intPreferencesKey("hijri_offset_days")
         private val HIGH_LATITUDE_RULE = stringPreferencesKey("high_latitude_rule")
         private val DIGITS = stringPreferencesKey("digit_style")
+        private val THEME_MODE = stringPreferencesKey("theme_mode")
+        private val TASBEEH_HAND = stringPreferencesKey("tasbeeh_hand")
         private val APP_LANGUAGE = stringPreferencesKey("app_language")
         private val WIDGET_TRANSPARENCY = intPreferencesKey("widget_transparency")
         private val WIDGET_COLORS = stringPreferencesKey("widget_colors")

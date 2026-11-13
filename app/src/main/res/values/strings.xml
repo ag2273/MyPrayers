@@ -22,7 +22,7 @@
 
     <!-- Settings (#16). Groups in the order the spec lists them; later tickets fill the empty ones. -->
     <!-- Bottom navigation (redesign). -->
-    <string name="home_log_hint">اضغط الصلاة بعد أدائها لتسجيلها. الجرس يبيّن نوع التنبيه.</string>
+    <string name="home_log_hint">اضغط الدائرة بعد أداء الصلاة لتسجيلها. الجرس يبيّن نوع التنبيه.</string>
     <string name="tab_today">اليوم</string>
     <string name="settings">الإعدادات</string>
     <string name="back">رجوع</string>
@@ -735,4 +735,39 @@
     <string name="widget_suhoor_ends">السحور ينتهي</string>
     <string name="widget_chip_imsak">تنبيه الإمساك</string>
     <string name="widget_chip_imsak_off">بلا تنبيه</string>
+    <!-- 1.4 "A Day That Breathes" -->
+    <string name="weather_search_query">الطقس</string>
+    <string name="weather_open">فتح تطبيق الطقس</string>
+    <string name="tab_log">السجل</string>
+    <string name="theme">المظهر</string>
+    <string name="theme_system">حسب الهاتف</string>
+    <string name="theme_light">فاتح</string>
+    <string name="theme_dark">داكن</string>
+    <string name="home_until_adhan">حتى الأذان</string>
+    <string name="home_until_iftar">حتى الإفطار</string>
+    <string name="home_until_suhoor_end">حتى نهاية السحور</string>
+    <string name="home_iftar">الإفطار</string>
+    <string name="home_last_third">الثلث الأخير %1$s</string>
+    <string name="home_last_third_began">بدأ الثلث الأخير %1$s</string>
+    <string name="home_arc_description">%1$s، %2$s %3$s</string>
+    <string name="tasbeeh_section">السبحة</string>
+    <string name="tasbeeh_hand">التسبيح باليد</string>
+    <string name="tasbeeh_hand_right">اليمنى</string>
+    <string name="tasbeeh_hand_left">اليسرى</string>
+    <string name="tasbeeh_hand_hint">زر التسبيح يكون تحت إصبعك، والعدد في الناحية الأخرى ليبقى ظاهرًا.</string>
+    <string name="tasbeeh_set_right">للتسبيح باليد اليمنى</string>
+    <string name="tasbeeh_set_left">للتسبيح باليد اليسرى</string>
+    <string name="tasbeeh_hand_change">تغيير</string>
+    <string name="tasbeeh_today">مجموع اليوم</string>
+    <string name="log_day_hint">%1$s\nاضغط الصلاة بعد أدائها لتسجيلها</string>
+    <string name="log_legend_prayed">صلّيت</string>
+    <string name="log_legend_missed">فاتت</string>
+    <string name="log_legend_not_yet">لم يحن</string>
+    <string name="log_total_of">من %1$s</string>
+    <string name="log_status_prayed">صلّيت</string>
+    <string name="log_status_not_marked">لم تُسجَّل</string>
+    <string name="log_status_not_yet">لم يحن وقتها بعد</string>
+    <string name="log_status_line">%1$s · %2$s</string>
+    <string name="log_day_description">%1$s، %2$s</string>
+    <string name="log_week_percent">ملخص الأسبوع</string>
 </resources>

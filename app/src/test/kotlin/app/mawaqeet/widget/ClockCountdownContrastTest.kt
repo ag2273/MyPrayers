@@ -71,14 +71,18 @@ class ClockCountdownContrastTest {
         val text = countdown()
         for ((name, widget, size) in widgets) {
             val root = renderWidget(context, widget(), size.first, size.second)
-            val background = root.findViewById<ImageView>(R.id.widget_bg).imageTintList!!.defaultColor
+            val backgrounds = backgroundColours(root)
+            assertTrue("$look $name: a background", backgrounds.isNotEmpty())
             val shown: TextView = widgetTexts(root).firstOrNull { it.text.toString() == text }
                 ?: throw AssertionError("$look $name: countdown «$text» not in ${widgetTexts(root).map { it.text }}")
-            val ratio = contrast(shown.currentTextColor, background or 0xFF000000.toInt())
-            assertTrue(
-                "$look $name: countdown #%08X on #%08X is %.2f:1".format(shown.currentTextColor, background, ratio),
-                ratio >= 4.5,
-            )
+            // Over a gradient, against every stop of it.
+            for (background in backgrounds) {
+                val ratio = contrast(shown.currentTextColor, background or 0xFF000000.toInt())
+                assertTrue(
+                    "$look $name: countdown #%08X on #%08X is %.2f:1".format(shown.currentTextColor, background, ratio),
+                    ratio >= 4.5,
+                )
+            }
         }
     }
 

@@ -111,7 +111,7 @@ class OnboardingTest {
 
         // Not an alarm-killing brand: no battery step, straight to Home with working Prayer Times.
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.onboardingDone.first() } }
-        waitForText("الصلاة القادمة")
+        waitForText("حتى الأذان")
     }
 
     @Test
@@ -176,7 +176,7 @@ class FixAlertsTest {
 
     @Test
     fun `phones that keep alarms get no Home tip`() {
-        compose.onNodeWithText("Next Prayer").assertIsDisplayed()
+        compose.onNodeWithText("until the adhan").assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Your phone may delay", substring = true).fetchSemanticsNodes().isEmpty())
     }
 

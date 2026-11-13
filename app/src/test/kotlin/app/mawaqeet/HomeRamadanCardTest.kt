@@ -29,12 +29,13 @@ import java.time.ZonedDateTime
 import java.util.Locale
 
 /**
- * Ramadan Mode on Today (#90): the Next Prayer card becomes the fasting card from Imsak to Maghrib and the suhoor card
- * from Maghrib to the next Imsak, keeping the next Prayer as one line. Outside Ramadan it is unchanged. Ramadan 1448
- * starts on 2027-02-08 in Makkah (Umm al-Qura), so 2027-02-22 is 15 Ramadan.
+ * Ramadan Mode on Today (#90), in the 1.4 hero: from Imsak to Maghrib the hero counts to iftar, from Maghrib to the
+ * next Imsak to the end of suhoor, with the day of Ramadan over it and Imsak as the first date chip. The next Prayer
+ * keeps its own countdown on its stop in the timeline. Outside Ramadan the hero counts to the next Prayer's adhan.
+ * Ramadan 1448 starts on 2027-02-08 in Makkah (Umm al-Qura), so 2027-02-22 is 15 Ramadan.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36], qualifiers = "ar")
+@Config(sdk = [36], qualifiers = "ar-w412dp-h915dp")
 class HomeRamadanCardTest {
     @get:Rule
     val compose = createComposeRule()
@@ -66,7 +67,7 @@ class HomeRamadanCardTest {
         compose.onAllNodes(hasText(text, substring = substring), useUnmergedTree = true).fetchSemanticsNodes().size
 
     @Test
-    fun `while fasting the card counts to iftar, with Imsak and the day of Ramadan on top and the next Prayer inside`() {
+    fun `while fasting the hero counts to iftar, with Imsak and the day of Ramadan, and the next Prayer counts on its stop`() {
         val clock = clockAt("2027-02-22T15:00")
         val core = show(clock)
         val now = clock.instant()
@@ -76,15 +77,17 @@ class HomeRamadanCardTest {
 
         assertShown("رمضان · اليوم ١٥")
         assertShown("الإمساك ${format.time(fajr.minusMinutes(10))}")
-        assertShown("الإفطار ${format.time(maghrib)}")
-        assertShown("بعد ${format.countdown(Duration.between(now, maghrib.toInstant()))}")
-        assertShown("الصلاة القادمة: العصر ${format.time(asr)} · بعد ${format.hoursMinutes(Duration.between(now, asr.toInstant()))}")
-        // The Next Prayer label of the usual card is gone.
-        assertEquals(0, count("الصلاة القادمة"))
+        assertShown("الإفطار")
+        assertShown("حتى الإفطار")
+        assertShown(format.countdown(Duration.between(now, maghrib.toInstant())))
+        assertEquals("Maghrib's time in the hero and on its stop", 2, count(format.time(maghrib)))
+        assertShown("بعد ${format.countdown(Duration.between(now, asr.toInstant()))}")
+        // The usual hero's line is gone.
+        assertEquals(0, count("حتى الأذان"))
     }
 
     @Test
-    fun `after Maghrib the card counts to the end of suhoor, for the next day's fast`() {
+    fun `after Maghrib the hero counts to the end of suhoor, for the next day's fast`() {
         // Before Isha (Maghrib + 2 hours in Ramadan under Umm al-Qura): after it the last line is the Last Third (#96).
         val clock = clockAt("2027-02-22T19:00")
         val core = show(clock)
@@ -95,16 +98,18 @@ class HomeRamadanCardTest {
         assertShown("رمضان · اليوم ١٦")
         assertShown("الإمساك ${format.time(imsak)}")
         assertShown("السحور")
-        assertShown("ينتهي بعد ${format.countdown(Duration.between(now, imsak.toInstant()))}")
-        assertShown("الصلاة القادمة: العشاء ${format.time(isha)} · بعد ${format.hoursMinutes(Duration.between(now, isha.toInstant()))}")
+        assertShown("حتى نهاية السحور")
+        assertShown(format.countdown(Duration.between(now, imsak.toInstant())))
+        assertShown("بعد ${format.countdown(Duration.between(now, isha.toInstant()))}")
         assertEquals(0, count("الإفطار", substring = true))
     }
 
     @Test
-    fun `outside Ramadan the card is the usual Next Prayer card`() {
+    fun `outside Ramadan the hero counts to the next Prayer's adhan`() {
         show(clockAt("2026-11-09T13:00"))
 
         assertShown("الصلاة القادمة")
+        assertShown("حتى الأذان")
         assertEquals(0, count("رمضان", substring = true))
         assertEquals(0, count("الإمساك", substring = true))
     }

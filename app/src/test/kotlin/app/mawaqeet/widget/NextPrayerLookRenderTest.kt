@@ -40,11 +40,11 @@ class NextPrayerLookRenderTest {
     @After
     fun reset() = runBlocking { settings.setWidgetNextPrayerLook(false) }
 
-    private fun backgroundTint(root: android.view.View) = root.findViewById<ImageView>(R.id.widget_bg).imageTintList?.defaultColor
+    private fun backgroundTint(root: android.view.View) = backgroundColours(root).takeIf { it.isNotEmpty() }
 
     @Test
     fun `on, every widget is deep with readable text, and off each is back to its own look`() {
-        val deep = context.getColor(R.color.widget_deep_background)
+        val deep = artColours(context, R.drawable.widget_bg_deep)
         runBlocking { settings.setWidgetNextPrayerLook(true) }
         for ((widget, w, h) in widgets) {
             val name = "${widget.javaClass.simpleName} $w×$h"

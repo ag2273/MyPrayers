@@ -1,5 +1,33 @@
 package app.mawaqeet.ui.home
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.IntrinsicMeasurable
+import androidx.compose.ui.layout.IntrinsicMeasureScope
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import app.mawaqeet.ui.theme.LocalSkin
+import app.mawaqeet.ui.theme.NotoKufiArabic
+import app.mawaqeet.ui.theme.SkyPhase
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.ui.draw.clip
@@ -136,7 +164,7 @@ fun HomeScreen(
         null
     }
     HomeContent(
-        day, now, ramadan, prayerDay, locationName, alerts, onOpenLocation, locationHint, onLocationHint, tip, tools,
+        day, now, ramadan, prayerDay, alerts, locationHint, onLocationHint, tip, tools,
         showLogHint = hasAnyMark == false,
         onOpenCalendar = onOpenCalendar,
     ) { prayer ->
@@ -153,15 +181,19 @@ fun HomeScreen(
     }
 }
 
+/**
+ * Today in the "A Day That Breathes" design (1.4): the hero (what comes next, its name and the arc that fills toward
+ * it, the countdown inside), the dates as chips (the Hijri one opens the calendar), the Tools Row, then the day as a
+ * timeline of stops with each Prayer's bell, time and mark. The page fits its screen exactly: the timeline's rows take
+ * spare height first, then the arc grows.
+ */
 @Composable
 private fun HomeContent(
     day: DisplayDay,
     now: Instant,
     ramadan: RamadanState,
     prayerDay: PrayerDay?,
-    locationName: String,
     alerts: AlertSettings,
-    onOpenLocation: () -> Unit,
     locationHint: String?,
     onLocationHint: () -> Unit,
     tip: (@Composable () -> Unit)?,
@@ -171,47 +203,55 @@ private fun HomeContent(
     onToggle: (Prayer) -> Unit,
 ) {
     FillingPage { size ->
-        Row(
-            Modifier.semantics { todaySize = size },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            DateLine(day, size, onOpenCalendar, Modifier.weight(1f))
-            LocationChip(locationName, onOpenLocation)
-        }
         if (locationHint != null) {
             TextButton(onClick = onLocationHint) { Text(locationHint) }
         }
         tip?.invoke()
         day.highLatitude?.let { HighLatitudeNote(it) }
-        val cardSizes = NextPrayerCardSizes.of(size)
-        // After Isha, until Fajr, the card names the start of the Last Third of the Night (#96).
+        // After Isha, until Fajr, the hero names the start of the Last Third of the Night (#96).
         val afterIsha = day.next.prayer == Prayer.FAJR && !day.timeOf(Prayer.ISHA).toInstant().isAfter(now)
         val lastThird = day.lastThirdOfNight.takeIf { afterIsha }
-        when (ramadan) {
-            RamadanState.None -> NextPrayerCard(day, now, lastThird, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
-            is RamadanState.Active -> RamadanCard(ramadan, day.next, now, lastThird, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
-        }
+        Hero(
+            HeroModel.of(day, now, ramadan, lastThird),
+            now = now,
+            night = SkyPhase.of(day, now) == SkyPhase.NIGHT,
+            size = size,
+            modifier = Modifier.layoutId(Fill.TakesTheRest).semantics { todaySize = size },
+        )
+        DateChips(day, ramadan, onOpenCalendar)
         tools?.invoke()
-        Card(Modifier.layoutId(Fill.Rows(count = day.prayerTimes.size + 1))) {
-            SharedHeightColumn(Modifier.fillMaxHeight().padding(vertical = 4.dp)) {
-                val isNextToday = day.next.time.toLocalDate() == day.date
-                day.prayerTimes.forEach { prayerTime ->
-                    val prayer = prayerTime.prayer
-                    TimeRow(
-                        name = prayerName(prayerTime),
-                        time = prayerTime.time,
-                        highlighted = isNextToday && prayerTime == day.next,
-                        alert = alerts.effective(prayer),
-                        prayer = prayer,
-                        // Between midnight and Fajr the marks are still the previous Prayer Day's (late Isha).
-                        log = prayerDay?.let { LogCell(it.stateOf(prayer), it.isMarkable(prayer)) },
-                        onClick = { onToggle(prayer) },
+        val isNextToday = day.next.time.toLocalDate() == day.date
+        // In Ramadan the hero counts to iftar or the end of suhoor: the next Prayer's own countdown sits on its stop.
+        val stopCountdown = (ramadan as? RamadanState.Active)?.takeIf { isNextToday && it.countsTo != day.next.time }
+            ?.let { LocalDisplayFormatter.current.countdown(Duration.between(now, day.next.time.toInstant())) }
+        SharedHeightColumn(Modifier.layoutId(Fill.Rows(count = day.prayerTimes.size + 1)).fillMaxHeight()) {
+            day.prayerTimes.forEach { prayerTime ->
+                val prayer = prayerTime.prayer
+                val current = isNextToday && prayerTime == day.next
+                Stop(
+                    name = prayerName(prayerTime),
+                    time = prayerTime.time,
+                    current = current,
+                    past = !current && !prayerTime.time.toInstant().isAfter(now),
+                    first = prayer == Prayer.FAJR,
+                    last = prayer == Prayer.ISHA,
+                    countdown = stopCountdown.takeIf { current },
+                    alert = alerts.effective(prayer),
+                    prayer = prayer,
+                    // Between midnight and Fajr the marks are still the previous Prayer Day's (late Isha).
+                    log = prayerDay?.let { LogCell(it.stateOf(prayer), it.isMarkable(prayer)) },
+                    onClick = { onToggle(prayer) },
+                )
+                if (prayer == Prayer.FAJR) {
+                    // Sunrise is not a Prayer: never markable, and no alert.
+                    Stop(
+                        name = stringResource(R.string.sunrise),
+                        time = day.sunrise,
+                        current = false,
+                        past = !day.sunrise.toInstant().isAfter(now),
+                        first = false,
+                        last = false,
                     )
-                    if (prayer == Prayer.FAJR) {
-                        // Sunrise is not a Prayer: never markable, and no alert.
-                        TimeRow(name = stringResource(R.string.sunrise), time = day.sunrise, highlighted = false, muted = true)
-                    }
                 }
             }
         }
@@ -220,11 +260,13 @@ private fun HomeContent(
                 stringResource(R.string.home_log_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 4.dp),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             )
         }
     }
 }
+
 
 /**
  * Today's size class (#101), chosen from the height Today has: [REGULAR] is the original design, kept on normal and big
@@ -245,9 +287,9 @@ private sealed interface Fill {
     data object TakesTheRest : Fill
 }
 
-private val MAX_ROW_HEIGHT = 64.dp
-private val PAGE_GAP = 10.dp
-private val PAGE_GAP_COMPACT = 6.dp
+private val MAX_ROW_HEIGHT = 50.dp
+private val PAGE_GAP = 6.dp
+private val PAGE_GAP_COMPACT = 4.dp
 private val PAGE_PADDING_H = 16.dp
 private val PAGE_PADDING_V = 8.dp
 
@@ -361,26 +403,6 @@ private fun SharedHeightColumn(modifier: Modifier = Modifier, content: @Composab
     }
 }
 
-/** The current location as a tappable chip: it opens the city search. */
-@Composable
-private fun LocationChip(name: String, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(24.dp))
-            .background(colors.surfaceContainer)
-            .border(1.dp, colors.outlineVariant, RoundedCornerShape(24.dp))
-            .clickable(onClickLabel = stringResource(R.string.location), onClick = onClick)
-            .heightIn(min = 48.dp)
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Icon(painterResource(R.drawable.ic_pin), contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp))
-        Text(name, style = MaterialTheme.typography.titleSmall, maxLines = 2)
-    }
-}
-
 /** On alarm-killing phones: a short tip pointing to Fix alerts, until the user taps Done. */
 @Composable
 private fun FixAlertsTip(onOpen: () -> Unit, onDone: () -> Unit) {
@@ -406,32 +428,6 @@ private fun FixAlertsTip(onOpen: () -> Unit, onDone: () -> Unit) {
     }
 }
 
-/** The display day's Gregorian date, then its Hijri date (with the user's offset); tapping it opens [onOpen]. */
-@Composable
-private fun DateLine(day: DisplayDay, size: TodaySize, onOpen: (() -> Unit)?, modifier: Modifier = Modifier) {
-    val format = LocalDisplayFormatter.current
-    val style = when (size) {
-        TodaySize.REGULAR -> MaterialTheme.typography.titleLarge
-        TodaySize.COMPACT -> MaterialTheme.typography.titleMedium
-    }
-    val tappable = if (onOpen == null) {
-        Modifier
-    } else {
-        Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClickLabel = stringResource(R.string.calendar_open_description), role = Role.Button, onClick = onOpen)
-            .heightIn(min = 48.dp)
-    }
-    Column(modifier.then(tappable), verticalArrangement = Arrangement.Center) {
-        Text(format.gregorianDate(day.date), style = style)
-        Text(
-            format.hijriDate(day.hijriDate),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
 /** Says that a high-latitude rule, not the method's angle, set today's Fajr or Isha (#20). */
 @Composable
 private fun HighLatitudeNote(adjustment: HighLatitudeAdjustment) {
@@ -443,217 +439,279 @@ private fun HighLatitudeNote(adjustment: HighLatitudeAdjustment) {
     )
 }
 
+
 /** What a row shows of the Prayer Log. */
 private data class LogCell(val state: LogState, val markable: Boolean)
 
 /**
- * The Next Prayer card's type sizes and spacing, shared by its usual and Ramadan forms so one size class sets both.
- * The regular sizes are the card's own design; the compact ones are for short screens.
+ * What the hero says: [eyebrow] over the big [title] (the next Prayer, or in Ramadan «الإفطار» / «السحور»), the
+ * countdown to [target] from [start] (the arc's span) with its [label], and under it [at]: the target's time, or after
+ * Isha the Last Third of the Night.
  */
 @Immutable
-private data class NextPrayerCardSizes(
-    /** «الصلاة القادمة», and the Ramadan card's top line. */
-    val label: TextStyle,
-    /** The Prayer's name and time; «الإفطار …» and «السحور». */
-    val headline: TextStyle,
-    val countdown: TextStyle,
-    /** The bar's ends; the Ramadan card's next Prayer line. */
-    val small: TextStyle,
-    val paddingHorizontal: Dp,
-    val paddingVertical: Dp,
-    val barGap: Dp,
-    val barHeight: Dp,
-    /** The gap above the bar's ends and the Ramadan card's next Prayer line. */
-    val smallGap: Dp,
-    /** The label and the countdown each on their own line (regular), or sharing the label's line (compact). */
-    val stacked: Boolean,
+private data class HeroModel(
+    val eyebrow: String,
+    val title: String,
+    val start: Instant,
+    val target: Instant,
+    val label: String,
+    val at: String,
 ) {
     companion object {
         @Composable
-        fun of(size: TodaySize) = when (size) {
-            TodaySize.REGULAR -> regular()
-            TodaySize.COMPACT -> compact()
-        }
-
-        @Composable
-        fun regular() = MaterialTheme.typography.let {
-            NextPrayerCardSizes(
-                label = it.bodyMedium, headline = it.headlineLarge, countdown = it.titleLarge, small = it.bodySmall,
-                paddingHorizontal = 22.dp, paddingVertical = 20.dp, barGap = 14.dp, barHeight = 6.dp, smallGap = 6.dp,
-                stacked = true,
-            )
-        }
-
-        @Composable
-        fun compact() = MaterialTheme.typography.let {
-            NextPrayerCardSizes(
-                label = it.bodyMedium, headline = it.headlineSmall, countdown = it.titleMedium, small = it.bodySmall,
-                paddingHorizontal = 20.dp, paddingVertical = 8.dp, barGap = 6.dp, barHeight = 6.dp, smallGap = 2.dp,
-                stacked = false,
-            )
-        }
-    }
-}
-
-/**
- * The next Prayer on a deep teal card: its name and time, the countdown, and how much of the time since the previous
- * Prayer has passed. After Isha the bar gives way to [lastThird], the start of the Last Third of the Night (#96), in
- * less height than the bar and its line, so the card never grows.
- */
-@Composable
-private fun NextPrayerCard(day: DisplayDay, now: Instant, lastThird: ZonedDateTime?, sizes: NextPrayerCardSizes, modifier: Modifier = Modifier) {
-    val colors = MaterialTheme.colorScheme
-    val next = day.next
-    val format = LocalDisplayFormatter.current
-    val onCard = colors.onTertiaryContainer
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(colors.tertiaryContainer, RoundedCornerShape(28.dp))
-            .padding(horizontal = sizes.paddingHorizontal, vertical = sizes.paddingVertical)
-            .semantics(mergeDescendants = true) {},
-        // When the page gives it spare height, the content stays in the middle.
-        verticalArrangement = Arrangement.Center,
-    ) {
-        val countdown = stringResource(R.string.countdown, format.countdown(Duration.between(now, next.time.toInstant())))
-        // On a short screen the label and the countdown share a line (#87).
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.next_prayer), style = sizes.label, color = onCard, modifier = Modifier.weight(1f))
-            if (!sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(prayerName(next), style = sizes.headline, color = onCard, modifier = Modifier.weight(1f))
-            Text(format.time(next.time), style = sizes.headline, color = onCard)
-        }
-        if (sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
-        val previous = day.prayerTimes.lastOrNull { !it.time.toInstant().isAfter(now) }
-        if (previous != null && next.time.toLocalDate() == day.date) {
-            val total = Duration.between(previous.time, next.time).seconds.coerceAtLeast(1)
-            val passed = Duration.between(previous.time.toInstant(), now).seconds.coerceIn(0, total)
-            Spacer(Modifier.height(sizes.barGap))
-            ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
-            Row(Modifier.fillMaxWidth().padding(top = sizes.smallGap).clearAndSetSemantics {}) {
-                Text(stringResource(R.string.prayer_at, prayerName(previous), format.time(previous.time)), style = sizes.small, color = onCard, modifier = Modifier.weight(1f))
-                Text(stringResource(R.string.prayer_at, prayerName(next), format.time(next.time)), style = sizes.small, color = onCard)
+        fun of(day: DisplayDay, now: Instant, ramadan: RamadanState, lastThird: ZonedDateTime?): HeroModel {
+            val format = LocalDisplayFormatter.current
+            val lastThirdText = lastThird?.let {
+                stringResource(if (it.toInstant().isAfter(now)) R.string.home_last_third else R.string.home_last_third_began, format.time(it))
             }
-        } else if (lastThird != null) {
-            Spacer(Modifier.height(sizes.barGap))
-            LastThirdLine(lastThird, now, sizes, onCard)
+            return when (ramadan) {
+                is RamadanState.Fasting -> HeroModel(
+                    eyebrow = stringResource(R.string.ramadan_day, format.number(ramadan.fastingDayNumber)),
+                    title = stringResource(R.string.home_iftar),
+                    start = ramadan.imsak.toInstant(),
+                    target = ramadan.maghrib.toInstant(),
+                    label = stringResource(R.string.home_until_iftar),
+                    at = format.time(ramadan.maghrib),
+                )
+                is RamadanState.Suhoor -> {
+                    val maghrib = ramadan.maghrib.toInstant().takeUnless { it.isAfter(now) } ?: day.timeOf(Prayer.MAGHRIB).toInstant()
+                    HeroModel(
+                        eyebrow = stringResource(R.string.ramadan_day, format.number(ramadan.fastingDayNumber)),
+                        title = stringResource(R.string.ramadan_suhoor),
+                        start = maghrib,
+                        target = ramadan.imsak.toInstant(),
+                        label = stringResource(R.string.home_until_suhoor_end),
+                        at = lastThirdText ?: format.time(ramadan.imsak),
+                    )
+                }
+                RamadanState.None -> {
+                    val next = day.next
+                    val previous = day.prayerTimes.lastOrNull { !it.time.toInstant().isAfter(now) } ?: day.previousIsha
+                    HeroModel(
+                        eyebrow = stringResource(R.string.next_prayer),
+                        title = prayerName(next),
+                        start = previous.time.toInstant(),
+                        target = next.time.toInstant(),
+                        label = stringResource(R.string.home_until_adhan),
+                        at = lastThirdText ?: format.time(next.time),
+                    )
+                }
+            }
         }
     }
 }
 
-/** «الثلث الأخير من الليل يبدأ ٢:٣٤ ص», or «… بدأ …» once it has begun (#96). */
+/** The hero's type sizes: the design's on normal and big phones, a step smaller on short screens. */
 @Composable
-private fun LastThirdLine(start: ZonedDateTime, now: Instant, sizes: NextPrayerCardSizes, color: Color, modifier: Modifier = Modifier) {
-    val text = if (start.toInstant().isAfter(now)) R.string.last_third_begins else R.string.last_third_began
-    Text(stringResource(text, LocalDisplayFormatter.current.time(start)), style = sizes.small, color = color, modifier = modifier)
+private fun heroTitleStyle(size: TodaySize) = when (size) {
+    TodaySize.REGULAR -> MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+    TodaySize.COMPACT -> MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+}
+
+private val ARC_MIN_REGULAR = 150.dp
+private val ARC_MIN_COMPACT = 120.dp
+private val ARC_MAX = 260.dp
+
+/**
+ * The hero: the eyebrow and title, then the arc, which takes whatever height the page gives the hero (between its
+ * minimum and [ARC_MAX], and never wider than 64% of the width). TalkBack reads it as one item.
+ */
+@Composable
+private fun Hero(model: HeroModel, now: Instant, night: Boolean, size: TodaySize, modifier: Modifier = Modifier) {
+    val format = LocalDisplayFormatter.current
+    val countdown = format.countdown(Duration.between(now, model.target).coerceAtLeast(Duration.ZERO))
+    val minArc = if (size == TodaySize.REGULAR) ARC_MIN_REGULAR else ARC_MIN_COMPACT
+    Layout(
+        content = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // A short screen drops the eyebrow and moves the title into the ring, as the design does under 800px.
+                if (size == TodaySize.REGULAR) {
+                    Text(model.eyebrow, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(model.title, style = heroTitleStyle(size), textAlign = TextAlign.Center)
+                }
+            }
+            Arc(model, now, countdown, night, titleInside = size == TodaySize.COMPACT)
+        },
+        modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+        measurePolicy = object : MeasurePolicy {
+            override fun MeasureScope.measure(measurables: List<Measurable>, constraints: Constraints): MeasureResult {
+                val width = constraints.maxWidth
+                val header = measurables[0].measure(Constraints(maxWidth = width))
+                val gap = 6.dp.roundToPx()
+                val room = if (constraints.hasBoundedHeight) constraints.maxHeight - header.height - gap else Int.MAX_VALUE
+                val largest = minOf(ARC_MAX.roundToPx(), (width * 0.64f).toInt())
+                val arc = room.coerceIn(minOf(minArc.roundToPx(), largest), largest)
+                val arcPlaceable = measurables[1].measure(Constraints.fixed(arc, arc))
+                val height = maxOf(constraints.minHeight, header.height + gap + arc)
+                // Centred together in the height the page gave.
+                val top = (height - header.height - gap - arc) / 2
+                return layout(width, height) {
+                    header.placeRelative((width - header.width) / 2, top)
+                    arcPlaceable.placeRelative((width - arc) / 2, top + header.height + gap)
+                }
+            }
+
+            override fun IntrinsicMeasureScope.minIntrinsicHeight(measurables: List<IntrinsicMeasurable>, width: Int): Int =
+                measurables[0].minIntrinsicHeight(width) + 6.dp.roundToPx() + minOf(minArc.roundToPx(), (width * 0.64f).toInt())
+
+            override fun IntrinsicMeasureScope.maxIntrinsicHeight(measurables: List<IntrinsicMeasurable>, width: Int): Int =
+                minIntrinsicHeight(measurables, width)
+        },
+    )
 }
 
 /**
- * The Next Prayer card's Ramadan form (#90), as tall as the usual card so Today still fits a small phone: the day of
- * Ramadan and Imsak on top; while fasting, Iftar's time with the countdown to it and a bar from Imsak to Maghrib; from
- * Maghrib, the countdown to the end of suhoor. The next Prayer stays as one line at the bottom (#83); after Isha the
- * suhoor card, which has no bar, names [lastThird], the start of the Last Third of the Night (#96), above it, or on a
- * short screen beside the next Prayer's name and time, so the card is no taller than the fasting one.
+ * The ring: a faint track, the amber arc filled from the top as the span passes, and the sun (a pale moon at night) at
+ * its tip. Inside: the countdown, what it counts to, and [HeroModel.at]. The type scales with the ring.
  */
 @Composable
-private fun RamadanCard(
-    state: RamadanState.Active,
-    next: PrayerTime,
-    now: Instant,
-    lastThird: ZonedDateTime?,
-    sizes: NextPrayerCardSizes,
-    modifier: Modifier = Modifier,
-) {
-    val colors = MaterialTheme.colorScheme
+private fun Arc(model: HeroModel, now: Instant, countdown: String, night: Boolean, titleInside: Boolean) {
+    val skin = LocalSkin.current
+    val span = Duration.between(model.start, model.target).toMillis().coerceAtLeast(1_000)
+    val fraction = (Duration.between(model.start, now).toMillis().toFloat() / span).coerceIn(0f, 1f)
+    val dot = if (night) Color(0xFFCFE1DC) else skin.amber
+    Box(contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val stroke = size.minDimension * 0.03f
+            val radius = size.minDimension / 2 - stroke * 2.8f
+            val center = Offset(size.width / 2, size.height / 2)
+            val topLeft = Offset(center.x - radius, center.y - radius)
+            val box = Size(radius * 2, radius * 2)
+            drawArc(skin.track, 0f, 360f, useCenter = false, topLeft = topLeft, size = box, style = Stroke(stroke))
+            drawArc(skin.amber, -90f, 360f * fraction, useCenter = false, topLeft = topLeft, size = box, style = Stroke(stroke, cap = StrokeCap.Round))
+            val angle = Math.toRadians(-90.0 + 360.0 * fraction)
+            val tip = Offset(center.x + radius * cos(angle).toFloat(), center.y + radius * sin(angle).toFloat())
+            drawCircle(Brush.radialGradient(listOf(dot.copy(alpha = 0.55f), Color.Transparent), tip, stroke * 2.6f), stroke * 2.6f, tip)
+            drawCircle(dot, stroke * 1.0f, tip)
+        }
+        // The type grows with the font size up to 130%, then stays: past that it would no longer fit the ring.
+        val scale = LocalDensity.current.run { minOf(fontScale, 1.3f) / fontScale }
+        BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            val ring = maxWidth.value
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (titleInside) {
+                    val title = ((ring * 0.12f).coerceIn(14f, 22f) * scale).sp
+                    Text(model.title, fontFamily = NotoKufiArabic, fontWeight = FontWeight.Bold, fontSize = title, lineHeight = title * 1.3f, maxLines = 1)
+                }
+                Text(
+                    countdown,
+                    fontFamily = NotoKufiArabic,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = ((ring * 0.135f).coerceIn(20f, 36f) * scale).sp,
+                    lineHeight = ((ring * 0.16f).coerceIn(24f, 44f) * scale).sp,
+                    maxLines = 1,
+                    style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
+                )
+                val small = ((ring * 0.056f).coerceIn(10f, 14f) * scale).sp
+                // In the small ring the title takes the label's line.
+                if (!titleInside) Text(model.label, fontSize = small, lineHeight = small * 1.3f, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Text(
+                    model.at,
+                    fontFamily = NotoKufiArabic,
+                    fontSize = small,
+                    lineHeight = small * 1.4f,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+    }
+}
+
+/** The dates as chips under the hero: Imsak in Ramadan, the Gregorian date, and the Hijri one, which opens the calendar. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DateChips(day: DisplayDay, ramadan: RamadanState, onOpenCalendar: (() -> Unit)?) {
     val format = LocalDisplayFormatter.current
-    val onCard = colors.onTertiaryContainer
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(colors.tertiaryContainer, RoundedCornerShape(28.dp))
-            .padding(horizontal = sizes.paddingHorizontal, vertical = sizes.paddingVertical)
-            .semantics(mergeDescendants = true) {},
-        verticalArrangement = Arrangement.Center,
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.ramadan_day, format.number(state.fastingDayNumber)), style = sizes.label, color = onCard, modifier = Modifier.weight(1f))
-            Text(stringResource(R.string.ramadan_imsak_at, format.time(state.imsak)), style = sizes.label, color = onCard)
+        if (ramadan is RamadanState.Active) {
+            Chip(stringResource(R.string.ramadan_imsak_at, format.time(ramadan.imsak)), highlighted = true)
         }
-        val left = format.countdown(Duration.between(now, state.countsTo.toInstant()))
-        val (title, countdown) = when (state) {
-            is RamadanState.Fasting -> stringResource(R.string.ramadan_iftar_at, format.time(state.maghrib)) to stringResource(R.string.countdown, left)
-            is RamadanState.Suhoor -> stringResource(R.string.ramadan_suhoor) to stringResource(R.string.ramadan_suhoor_ends_in, left)
-        }
-        // As on the usual card: the countdown has its own line, or shares the title's on a short screen.
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = sizes.headline, color = onCard, modifier = Modifier.weight(1f))
-            if (!sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
-        }
-        if (sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
-        val fastFrom = state.fastFrom
-        if (fastFrom != null) {
-            val total = Duration.between(fastFrom, state.countsTo).seconds.coerceAtLeast(1)
-            val passed = Duration.between(fastFrom.toInstant(), now).seconds.coerceIn(0, total)
-            Spacer(Modifier.height(sizes.barGap))
-            ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
-        }
-        val nextPrayerLine = stringResource(
-            R.string.ramadan_next_prayer,
-            prayerName(next),
-            format.time(next.time),
-            format.hoursMinutes(Duration.between(now, next.time.toInstant())),
+        // In Ramadan the Imsak chip joins the row, so the date drops its weekday to keep one line.
+        val arabic = LocalConfiguration.current.locales[0].language == "ar"
+        Chip(if (ramadan is RamadanState.Active) format.dayMonth(day.date) else "${format.weekday(day.date)}${if (arabic) "، " else ", "}${format.dayMonth(day.date)}")
+        Chip(
+            // With the Imsak chip in the row the Hijri date drops its year too: «١٥ رمضان».
+            if (ramadan is RamadanState.Active) format.hijriDayMonth(day.hijriDate) else format.hijriDate(day.hijriDate),
+            icon = R.drawable.ic_calendar.takeIf { onOpenCalendar != null },
+            onClick = onOpenCalendar,
+            clickLabel = stringResource(R.string.calendar_open_description),
         )
-        when {
-            lastThird == null -> Text(nextPrayerLine, style = sizes.small, color = onCard, modifier = Modifier.padding(top = sizes.smallGap))
-            // Suhoor has no bar: in its place the Last Third, above the next Prayer line.
-            sizes.stacked -> {
-                LastThirdLine(lastThird, now, sizes, onCard, Modifier.padding(top = sizes.smallGap))
-                Text(nextPrayerLine, style = sizes.small, color = onCard, modifier = Modifier.padding(top = sizes.smallGap))
-            }
-            // On a short screen they share one line, as the usual card's bar ends do: «الثلث الأخير … · الفجر ٥:٠٠ ص».
-            else -> Row(Modifier.fillMaxWidth().padding(top = sizes.smallGap), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LastThirdLine(lastThird, now, sizes, onCard, Modifier.weight(1f))
-                Text(stringResource(R.string.prayer_at, prayerName(next), format.time(next.time)), style = sizes.small, color = onCard)
-            }
+    }
+}
+
+@Composable
+private fun Chip(text: String, highlighted: Boolean = false, icon: Int? = null, onClick: (() -> Unit)? = null, clickLabel: String? = null) {
+    val skin = LocalSkin.current
+    val shape = RoundedCornerShape(50)
+    Row(
+        Modifier
+            .heightIn(min = if (onClick != null) 48.dp else 36.dp)
+            .padding(vertical = if (onClick != null) 6.dp else 0.dp)
+            .clip(shape)
+            .background(skin.surface)
+            .border(1.dp, if (highlighted) skin.amber.copy(alpha = 0.6f) else skin.line, shape)
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = clickLabel, role = Role.Button, onClick = onClick) else Modifier)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (icon != null) {
+            Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp))
         }
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Normal),
+            color = if (highlighted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
-/** The Next Prayer card's bar, [height] tall, [fraction] of it filled. */
-@Composable
-private fun ProgressBar(fraction: Float, height: Dp, track: Color, fill: Color) {
-    val shape = RoundedCornerShape(height / 2)
-    Box(Modifier.fillMaxWidth().height(height).background(track, shape)) {
-        Box(Modifier.fillMaxWidth(fraction).height(height).background(fill, shape))
-    }
-}
+private val StopShape = RoundedCornerShape(18.dp)
 
+/**
+ * One stop of the day's timeline: the dot on the line, the name (in Ramadan the current one also counts down to its
+ * adhan), the bell, the time, and the Prayer Log mark. The next Prayer's stop is lifted on a near-solid card with an
+ * amber dot; passed stops are dimmed. A Prayer's whole stop toggles its mark (a 48dp target); Sunrise has none.
+ */
 @Composable
-private fun TimeRow(
+private fun Stop(
     name: String,
     time: ZonedDateTime,
-    highlighted: Boolean,
+    current: Boolean,
+    past: Boolean,
+    first: Boolean,
+    last: Boolean,
+    countdown: String? = null,
     alert: PrayerAlertSettings? = null,
     prayer: Prayer? = null,
-    muted: Boolean = false,
     log: LogCell? = null,
     onClick: () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
+    val skin = LocalSkin.current
     val stateText = log?.let { stringResource(stateDescriptionOf(it)) }
-    val textColor = when {
-        highlighted -> colors.onPrimaryContainer
-        muted -> colors.onSurfaceVariant
-        else -> colors.onSurface
-    }
+    val dim = if (past) 0.6f else 1f
+    val prayed = log?.state == LogState.PRAYED
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (highlighted) colors.primaryContainer else Color.Transparent)
+            .then(
+                if (current) {
+                    Modifier
+                        .shadow(14.dp, StopShape, ambientColor = Color(0x29134A44), spotColor = Color(0x29134A44))
+                        .clip(StopShape)
+                        .background(skin.surfaceStrong)
+                        .border(1.dp, skin.line, StopShape)
+                } else {
+                    Modifier.clip(StopShape)
+                },
+            )
             .then(
                 if (log == null) {
                     Modifier
@@ -663,32 +721,34 @@ private fun TimeRow(
                         .clickable(role = Role.Checkbox, onClick = onClick)
                         .semantics {
                             stateDescription = stateText.orEmpty()
-                            toggleableState = ToggleableState(log.state == LogState.PRAYED)
+                            toggleableState = ToggleableState(prayed)
                         }
                 },
             )
-            // A Prayer row is a 48dp tap target; Sunrise is never tapped, so it may be shorter.
-            .heightIn(min = if (log == null) 0.dp else 48.dp)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
+            // A Prayer's stop is a 48dp tap target; Sunrise is never tapped, so it may be shorter.
+            .heightIn(min = if (log == null) 36.dp else 48.dp)
+            .padding(start = 0.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        val weight = if (muted) FontWeight.Normal else FontWeight.SemiBold
-        Text(
-            text = name,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = weight,
-            color = textColor,
-        )
+        TimelineDot(current = current, done = prayed, first = first, last = last)
+        Column(Modifier.weight(1f).alpha(dim)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleLarge.copy(fontFamily = NotoKufiArabic, fontWeight = if (current) FontWeight.SemiBold else FontWeight.Normal),
+            )
+            if (countdown != null) {
+                Text(stringResource(R.string.countdown, countdown), style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
+            }
+        }
         Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-            if (alert != null && prayer != null) AlertIcon(prayer, alert, if (highlighted) colors.onPrimaryContainer else colors.onSurfaceVariant)
+            if (alert != null && prayer != null) AlertIcon(prayer, alert, if (current) colors.onSurface else colors.onSurfaceVariant)
         }
         Text(
             text = LocalDisplayFormatter.current.time(time),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = weight,
-            color = textColor,
+            style = MaterialTheme.typography.titleLarge.copy(fontFamily = NotoKufiArabic, fontFeatureSettings = "tnum"),
+            color = if (current) colors.onSurface else colors.onSurfaceVariant,
+            modifier = Modifier.alpha(dim),
         )
         // Sunrise gets an empty slot so its time lines up with the Prayers'.
         Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
@@ -697,10 +757,35 @@ private fun TimeRow(
     }
 }
 
-/** A bell for an audible Adhan Alert, a struck-out bell for a silent one or none; its description names the sound. */
+/** The timeline's thread through the stop and its dot: amber with a halo on the next Prayer, filled once prayed. */
+@Composable
+private fun TimelineDot(current: Boolean, done: Boolean, first: Boolean, last: Boolean) {
+    val skin = LocalSkin.current
+    val teal = MaterialTheme.colorScheme.primary
+    Canvas(Modifier.width(34.dp).fillMaxHeight().heightIn(min = 40.dp)) {
+        val x = size.width / 2 + 2.dp.toPx()
+        val cy = size.height / 2
+        val line = 1.dp.toPx()
+        if (!first) drawLine(skin.line, Offset(x, 0f), Offset(x, cy), line)
+        if (!last) drawLine(skin.line, Offset(x, cy), Offset(x, size.height), line)
+        val r = 5.5.dp.toPx()
+        when {
+            current -> {
+                drawCircle(skin.amber.copy(alpha = 0.18f), r + 5.dp.toPx(), Offset(x, cy))
+                drawCircle(skin.amber, r, Offset(x, cy))
+            }
+            done -> drawCircle(teal, r, Offset(x, cy))
+            else -> {
+                drawCircle(skin.bar, r, Offset(x, cy))
+                drawCircle(teal, r - 1.dp.toPx(), Offset(x, cy), style = Stroke(2.dp.toPx()))
+            }
+        }
+    }
+}
+
+/** A bell for each kind of Adhan Alert (full, short, silent, off); its description names the sound. */
 @Composable
 private fun AlertIcon(prayer: Prayer, alert: PrayerAlertSettings, tint: Color) {
-    val audible = alert.adhanAlert && alert.sound != AdhanSoundChoice.SILENT
     val description = stringResource(
         when {
             !alert.adhanAlert -> R.string.alerts_adhan_off
@@ -709,28 +794,39 @@ private fun AlertIcon(prayer: Prayer, alert: PrayerAlertSettings, tint: Color) {
             else -> R.string.alerts_sound_silent
         },
     )
+    val icon = when {
+        !alert.adhanAlert -> R.drawable.ic_bell_off
+        alert.sound == AdhanSoundChoice.FULL -> R.drawable.ic_bell_full
+        alert.sound == AdhanSoundChoice.SHORT -> R.drawable.ic_bell
+        else -> R.drawable.ic_bell_silent
+    }
     Icon(
-        painterResource(if (audible) R.drawable.ic_bell else R.drawable.ic_bell_off),
+        painterResource(icon),
         contentDescription = description,
-        tint = if (audible) tint else tint.copy(alpha = 0.6f),
+        tint = if (alert.adhanAlert) tint else tint.copy(alpha = 0.6f),
         modifier = Modifier.size(18.dp),
     )
 }
 
-/** Prayed: a filled circle with a tick. Not marked: an outlined circle. Not yet due: a faint outline. */
+/** Prayed: a filled circle with a tick. Due and not marked: an accent ring. Not yet due: a faint dashed ring. */
 @Composable
 private fun LogMark(state: LogState) {
-    val colors = MaterialTheme.colorScheme
+    val skin = LocalSkin.current
+    val accent = MaterialTheme.colorScheme.primary
     when (state) {
-        LogState.PRAYED -> Box(
-            Modifier.size(28.dp).background(colors.primary, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
+        LogState.PRAYED -> Box(Modifier.size(26.dp).background(skin.mark, CircleShape), contentAlignment = Alignment.Center) {
             // The row's state already says "Prayed"; TalkBack shouldn't also read "check mark".
-            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(16.dp))
+            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = skin.onMark, modifier = Modifier.size(15.dp))
         }
-        LogState.NOT_MARKED -> Box(Modifier.size(28.dp).border(2.dp, colors.primary, CircleShape))
-        LogState.NOT_YET_DUE -> Box(Modifier.size(28.dp).border(1.5.dp, colors.outline.copy(alpha = 0.5f), CircleShape))
+        LogState.NOT_MARKED -> Box(Modifier.size(26.dp).border(2.dp, accent, CircleShape))
+        LogState.NOT_YET_DUE -> Canvas(Modifier.size(26.dp)) {
+            val w = 1.5.dp.toPx()
+            drawCircle(
+                skin.track,
+                radius = size.minDimension / 2 - w / 2,
+                style = Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx()))),
+            )
+        }
     }
 }
 

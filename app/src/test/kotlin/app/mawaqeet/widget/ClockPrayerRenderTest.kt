@@ -150,12 +150,12 @@ class ClockPrayerRenderTest {
 
     @Test
     fun `it is on the light surface, and on the deep surface with the star when the Next Prayer look is on`() {
-        fun tint(root: View) = root.findViewById<ImageView>(R.id.widget_bg).imageTintList?.defaultColor
+        fun tint(root: View) = backgroundColours(root)
         fun images(root: View) = views(root).count { it is ImageView && it.visibility == View.VISIBLE }
-        val deep = context.getColor(R.color.widget_deep_background)
+        val deep = artColours(context, R.drawable.widget_bg_deep)
 
         val light = render()
-        assertEquals(context.getColor(R.color.widget_background), tint(light))
+        assertEquals(artColours(context, R.drawable.widget_bg_sky), tint(light))
 
         runBlocking { settings.setWidgetNextPrayerLook(true) }
         val on = render()

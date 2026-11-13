@@ -22,7 +22,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.Clock
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -30,12 +29,12 @@ import java.time.ZoneOffset
 import java.util.Locale
 
 /**
- * The Last Third of the Night on Today (#96): after Isha, until Fajr, the Next Prayer card names when it starts, in
- * place of its bar and «العشاء … الفجر …» line; on the Ramadan card during suhoor, in the fasting card's bar slot,
- * above the next Prayer line, which stays.
+ * The Last Third of the Night on Today (#96): after Isha, until Fajr, the hero's line under the countdown names when it
+ * starts in place of the next Prayer's time; during suhoor in Ramadan, in place of Imsak's time (Imsak stays as the
+ * first date chip), while Fajr keeps its stop and time.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36], qualifiers = "ar")
+@Config(sdk = [36], qualifiers = "ar-w412dp-h915dp")
 class HomeLastThirdTest {
     @get:Rule
     val compose = createComposeRule()
@@ -43,8 +42,10 @@ class HomeLastThirdTest {
     private val riyadh = ZoneId.of("Asia/Riyadh")
     private val format = DisplayFormatter(Locale.forLanguageTag("ar"), DigitStyle.ARABIC_INDIC)
 
+    private fun instant(dateTime: String) = LocalDateTime.parse(dateTime).atZone(riyadh).toInstant()
+
     private fun show(dateTime: String): PrayerCore {
-        val clock = Clock.fixed(LocalDateTime.parse(dateTime).atZone(riyadh).toInstant(), ZoneOffset.UTC)
+        val clock = Clock.fixed(instant(dateTime), ZoneOffset.UTC)
         val core = PrayerCore(PrayerSettings.Default, clock, NoMarks)
         compose.setContent {
             MawaqeetTheme {
@@ -65,57 +66,40 @@ class HomeLastThirdTest {
         compose.onAllNodes(hasText(text, substring = true), useUnmergedTree = true).fetchSemanticsNodes().size
 
     @Test
-    fun `after Isha the card names the start of the Last Third instead of the bar's line`() {
+    fun `after Isha the hero names the start of the Last Third instead of Fajr's time`() {
         val core = show("2026-11-09T21:00")
 
-        assertShown("الثلث الأخير من الليل يبدأ ${lastThirdOf(core)}")
-        // The bar's line «العشاء ٧:٠٦ م … الفجر …» is gone: Isha is named only in its row of the list.
-        assertEquals(1, count("العشاء"))
+        assertShown("الثلث الأخير ${lastThirdOf(core)}")
+        // Fajr's time is left only on its stop.
+        assertEquals(1, count(format.time(core.displayDay().next.time)))
     }
 
     @Test
-    fun `after midnight, once the Last Third has begun, the card says it began`() {
+    fun `after midnight, once the Last Third has begun, the hero says it began`() {
         val core = show("2026-11-10T03:00")
 
-        assertShown("الثلث الأخير من الليل بدأ ${lastThirdOf(core)}")
-        assertEquals(0, count("يبدأ"))
+        assertShown("بدأ الثلث الأخير ${lastThirdOf(core)}")
     }
 
     @Test
-    fun `before Isha the card shows its bar's line and no Last Third`() {
+    fun `before Isha the hero shows Isha's time and no Last Third`() {
         val core = show("2026-11-09T18:30")
-        val maghrib = core.prayerDay(LocalDate.parse("2026-11-09")).prayerTimes.single { it.prayer == Prayer.MAGHRIB }.time
+        val isha = core.prayerDay(LocalDate.parse("2026-11-09")).prayerTimes.single { it.prayer == Prayer.ISHA }.time
 
-        assertShown("المغرب ${format.time(maghrib)}")
+        assertEquals("in the hero and on its stop", 2, count(format.time(isha)))
         assertEquals(0, count("الثلث الأخير"))
     }
 
     @Test
-    @Config(qualifiers = "ar-w360dp-h600dp")
-    fun `on a short screen during suhoor the Last Third shares a line with the next Prayer's name and time`() {
-        // Without the tab bar and the Tools Row, 360x600dp is short enough for the compact sizes.
+    fun `during suhoor after Isha the hero names the Last Third, and Fajr keeps its stop and time`() {
+        // 15 Ramadan 1448 in Makkah; at 21:00 the suhoor hero counts to the 16th's Imsak.
         val core = show("2027-02-22T21:00")
-        val fajr = core.displayDay().next.time
-
-        assertShown("الثلث الأخير من الليل يبدأ ${lastThirdOf(core)}")
-        assertShown("الفجر ${format.time(fajr)}")
-        val lastThird = compose.onNodeWithText("الثلث الأخير", substring = true, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val next = compose.onNodeWithText("الفجر ${format.time(fajr)}", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        assertEquals("on one line", lastThird.center.y, next.center.y, 1f)
-    }
-
-    @Test
-    @Config(qualifiers = "ar-w412dp-h915dp")
-    fun `during suhoor after Isha the Ramadan card names the Last Third and keeps the next Prayer line`() {
-        // 15 Ramadan 1448 in Makkah; at 21:00 the suhoor card counts to the 16th's Imsak.
-        val core = show("2027-02-22T21:00")
-        val now = LocalDateTime.parse("2027-02-22T21:00").atZone(riyadh).toInstant()
         val fajr = core.displayDay().next.time
 
         assertShown("رمضان · اليوم ١٦")
-        assertShown("الثلث الأخير من الليل يبدأ ${lastThirdOf(core)}")
-        // The next Prayer stays as one line inside the card (#83).
-        assertShown("الصلاة القادمة: الفجر ${format.time(fajr)} · بعد ${format.hoursMinutes(Duration.between(now, fajr.toInstant()))}")
+        assertShown("السحور")
+        assertShown("الثلث الأخير ${lastThirdOf(core)}")
+        assertShown(format.time(fajr))
     }
 }
 

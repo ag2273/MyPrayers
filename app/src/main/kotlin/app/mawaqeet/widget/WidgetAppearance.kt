@@ -2,6 +2,7 @@ package app.mawaqeet.widget
 
 import android.os.Build
 import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
 import app.mawaqeet.R
 
 /** Where widgets take their colours from (Android 12+; Android 8–11 always uses the app's). */
@@ -71,6 +72,11 @@ data class WidgetStyle(
      * star behind it. The Next Prayer widgets draw their own.
      */
     val star: Boolean = false,
+    /**
+     * The surface drawn as a gradient (1.4, the "A Day That Breathes" colours): the sky by day and night for the app's
+     * colours, the deep teal for the Next Prayer look; null draws [background] flat (wallpaper colours).
+     */
+    @param:DrawableRes val backgroundArt: Int? = null,
 ) {
     companion object {
         fun of(appearance: WidgetAppearance, sdk: Int = Build.VERSION.SDK_INT, deep: Boolean = false): WidgetStyle {
@@ -98,6 +104,7 @@ data class WidgetStyle(
                     countdown = if (light) R.color.widget_over_gold else R.color.widget_deep_gold,
                     deep = true,
                     star = !deep,
+                    backgroundArt = R.drawable.widget_bg_deep,
                 )
             }
             return WidgetStyle(
@@ -151,6 +158,7 @@ data class WidgetStyle(
                     wallpaper -> R.color.widget_dyn_muted
                     else -> R.color.widget_ring_muted
                 },
+                backgroundArt = if (wallpaper) null else R.drawable.widget_bg_sky,
             )
         }
     }

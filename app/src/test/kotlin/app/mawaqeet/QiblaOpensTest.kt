@@ -35,6 +35,6 @@ class QiblaOpensTest {
                 compose.onAllNodesWithText("لا توجد بوصلة في هذا الهاتف").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("رجوع").performClick()
-        compose.onNodeWithText("الصلاة القادمة").assertIsDisplayed()
+        compose.onNodeWithText("حتى الأذان").assertIsDisplayed()
     }
 }

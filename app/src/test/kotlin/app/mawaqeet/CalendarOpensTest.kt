@@ -26,7 +26,7 @@ class CalendarOpensTest {
     private fun assertCalendarOpenThenBack() {
         compose.onNodeWithText("القادم").assertIsDisplayed()
         compose.onNodeWithContentDescription("رجوع").performClick()
-        compose.onNodeWithText("الصلاة القادمة").assertIsDisplayed()
+        compose.onNodeWithText("حتى الأذان").assertIsDisplayed()
     }
 
     @Test

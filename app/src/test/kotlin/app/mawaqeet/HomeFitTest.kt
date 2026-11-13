@@ -48,10 +48,10 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
-private const val HINT = "اضغط الصلاة بعد أدائها لتسجيلها. الجرس يبيّن نوع التنبيه."
+private const val HINT = "اضغط الدائرة بعد أداء الصلاة لتسجيلها. الجرس يبيّن نوع التنبيه."
 private const val ISHA = "العشاء"
 private const val QIBLA = "القبلة"
-private const val LAST_THIRD = "الثلث الأخير من الليل يبدأ"
+private const val LAST_THIRD = "الثلث الأخير"
 
 /** A Prayer Log in memory that tells the screen when it changes, as the Room one does. */
 private class WatchedLog : PrayerLogRepository {
@@ -160,7 +160,7 @@ class HomeFitTest {
     fun `on a 360x740dp phone the Ramadan card fits too, with room for the tools row`() {
         log.setPrayed(LocalDate.of(2027, 2, 22), Prayer.FAJR, true)
         show(withToolsRow = true, clock = ramadanClock)
-        compose.onNodeWithText("رمضان · اليوم ١٥", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("الإفطار", useUnmergedTree = true).assertIsDisplayed()
 
         assertEquals("scroll range", 0f, scrollRange())
         for (prayer in listOf("الفجر", "الظهر", "العصر", "المغرب", ISHA)) {
@@ -178,7 +178,7 @@ class HomeFitTest {
         val gap = dp(page().boundsInRoot.bottom - rowOf(ISHA).boundsInRoot.bottom)
         // Only the card's inset and the page's margin are left below Isha.
         assertTrue("gap below Isha is ${gap}dp", gap <= 20f)
-        assertTrue("rows grew past 48dp", dp(rowOf(ISHA).boundsInRoot.height) > 52f)
+        assertTrue("rows grew past 48dp", dp(rowOf(ISHA).boundsInRoot.height) > 49f)
     }
 
     @Test
@@ -207,8 +207,8 @@ class HomeFitTest {
         if (!hint) log.setPrayed(if (ramadan) LocalDate.of(2027, 2, 22) else LocalDate.of(2026, 11, 9), Prayer.FAJR, true)
         show(withToolsRow = true, clock = clock)
         if (hint) waitForHint()
-        // From Maghrib the suhoor card counts to the next Fasting Day: the 16th.
-        if (ramadan) compose.onNodeWithText(if (night) "رمضان · اليوم ١٦" else "رمضان · اليوم ١٥", useUnmergedTree = true).assertIsDisplayed()
+        // From Maghrib the hero counts to the end of suhoor, for the next Fasting Day.
+        if (ramadan) compose.onNodeWithText(if (night) "السحور" else "الإفطار", useUnmergedTree = true).assertIsDisplayed()
         compose.waitForIdle()
     }
 
@@ -259,7 +259,7 @@ class HomeFitTest {
         assertEquals(TodaySize.COMPACT, todaySize())
     }
 
-    @Test @Config(qualifiers = "ar-w393dp-h830dp")
+    @Test @Config(qualifiers = "ar-w393dp-h800dp")
     fun `the regular sizes come back when the log hint goes`() {
         // Just too short for the regular sizes with the hint, tall enough without it.
         showToday(ramadan = false, hint = true)
@@ -352,19 +352,14 @@ class HomeFitTest {
         assertScrollsWithoutClipping(hint = true)
     }
 
-    // After Isha the card swaps its bar for the Last Third of the Night (#96); the suhoor card, which has no bar, puts
-    // it in the bar's slot and keeps its next Prayer line. Today still fits.
+    // After Isha the hero names the Last Third of the Night (#96) under its countdown. Today still fits.
     private fun assertLastThirdShown() =
         compose.onNodeWithText(LAST_THIRD, substring = true, useUnmergedTree = true).assertIsDisplayed()
 
-    /**
-     * The suhoor card keeps the next Prayer (#83) with the Last Third: its full line under it at the regular sizes,
-     * «الفجر ٥:٠٠ ص» beside it at the compact ones. Fajr's row in the list is named without a time.
-     */
-    private fun assertNextPrayerLineShown(size: TodaySize) {
-        val line = if (size == TodaySize.REGULAR) "الصلاة القادمة: الفجر " else "الفجر "
-        compose.onAllNodes(hasText(line, substring = true), useUnmergedTree = true).onFirst().assertIsDisplayed()
-        if (size == TodaySize.COMPACT) assertEquals(0, compose.onAllNodes(hasText("الصلاة القادمة", substring = true), useUnmergedTree = true).fetchSemanticsNodes().size)
+    /** During suhoor the hero counts to Imsak, which stays on its chip, and Fajr, the next Prayer (#83), keeps its stop. */
+    private fun assertImsakAndFajrShown() {
+        compose.onNodeWithText("الإمساك", substring = true, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNode(prayerRow("الفجر")).assertIsDisplayed()
     }
 
     @Test @Config(qualifiers = "ar-w360dp-h740dp")
@@ -387,7 +382,7 @@ class HomeFitTest {
     fun `360x740 during suhoor fits with the Last Third on the Ramadan card, with the hint`() {
         showToday(ramadan = true, hint = true, night = true)
         assertLastThirdShown()
-        assertNextPrayerLineShown(TodaySize.COMPACT)
+        assertImsakAndFajrShown()
         assertFillsTheScreen(hint = true)
         assertEquals(TodaySize.COMPACT, todaySize())
     }
@@ -396,7 +391,7 @@ class HomeFitTest {
     fun `393x852 during suhoor fits at the regular sizes with the Last Third on the Ramadan card`() {
         showToday(ramadan = true, hint = false, night = true)
         assertLastThirdShown()
-        assertNextPrayerLineShown(TodaySize.REGULAR)
+        assertImsakAndFajrShown()
         assertFillsTheScreen(hint = false)
         assertEquals(TodaySize.REGULAR, todaySize())
     }
@@ -412,10 +407,10 @@ class HomeFitTest {
         show(withToolsRow = true)
 
         assertEquals(TodaySize.REGULAR, todaySize())
-        // The regular card puts «الصلاة القادمة» on its own line, above the countdown.
+        // The regular hero puts «الصلاة القادمة» over the Prayer's name, and the countdown in the arc below them.
         val label = compose.onNodeWithText("الصلاة القادمة", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val countdown = compose.onAllNodes(hasText("بعد ", substring = true), useUnmergedTree = true).fetchSemanticsNodes().single().boundsInRoot
-        assertTrue("countdown below the label", countdown.top >= label.bottom)
+        val until = compose.onNodeWithText("حتى الأذان", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertTrue("the arc below the label", until.top >= label.bottom)
     }
 
     @Test

@@ -40,15 +40,17 @@ class PrayerLogScreenTest {
     @Test
     @Config(qualifiers = "ar")
     fun `the Prayer Log opens from Home with the week's summary and seven days, in Arabic`() {
-        compose.onNodeWithText("سجل الصلاة").performClick()
+        compose.onNodeWithText("السجل").performClick()
         // The week is read off the main thread.
         compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText("ملخص الأسبوع").fetchSemanticsNodes().isNotEmpty() }
 
-        compose.onNodeWithText("ملخص الأسبوع").assertIsDisplayed()
+        compose.onNodeWithText("ملخص الأسبوع").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("المجموع").performScrollTo().assertIsDisplayed()
-        // Every day label ends with its Hijri date.
-        compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText(" هـ", substring = true).fetchSemanticsNodes().size == 7 }
-        compose.onNodeWithContentDescription("الأسبوع السابق").performClick()
+        // TalkBack reads every day of the strip with its Hijri date, and the chosen day shows it too.
+        val withHijri = androidx.compose.ui.test.hasContentDescription(" هـ", substring = true)
+        compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodes(withHijri).fetchSemanticsNodes().size == 7 }
+        compose.onNodeWithText(" هـ", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("الأسبوع السابق").performScrollTo().performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText("الأيام الأقدم من أسبوع للعرض فقط.").fetchSemanticsNodes().isNotEmpty()
         }

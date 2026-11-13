@@ -19,7 +19,7 @@ import org.robolectric.annotation.Config
 
 /**
  * What TalkBack reads on Home and the Prayer Log (#33): each Prayer as one item with its name, time and Prayer Log
- * state, never a bare tick or circle.
+ * state, never a bare tick or circle. In the Log, the week strip reads each of its seven days as one item.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36])
@@ -52,9 +52,13 @@ class TalkBackTest {
     private fun checkLog(names: List<String>, log: String) {
         compose.onNodeWithText(log).performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription(names.first()).fetchSemanticsNodes().isNotEmpty() }
+        val days = compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected) and SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription)).fetchSemanticsNodes()
+            .filter { node -> node.config[SemanticsProperties.ContentDescription].any { "/" in it } }
+        assertEquals("seven days, each read with its count", 7, days.size)
         for (name in names) {
+            // 1.4: the chosen day's Prayers are rows; the week strip reads each day with its count.
             val cells = compose.onAllNodesWithContentDescription(name).fetchSemanticsNodes()
-            assertEquals("$name: one cell a day", 7, cells.size)
+            assertEquals("$name: one row for the chosen day", 1, cells.size)
             for (cell in cells) {
                 assertTrue("$name has no state", !cell.config.getOrNull(SemanticsProperties.StateDescription).isNullOrBlank())
                 assertTrue("$name reads a tick", cell.config.getOrNull(SemanticsProperties.Text).orEmpty().none { "✓" in it.text })
@@ -67,7 +71,7 @@ class TalkBackTest {
     fun `in Arabic each Prayer is read with its time and state, on Home and in the Prayer Log`() {
         val names = listOf("الفجر", "العصر", "المغرب", "العشاء")
         checkHome(names, "ar")
-        checkLog(names, "سجل الصلاة")
+        checkLog(names, "السجل")
     }
 
     @Test
@@ -75,6 +79,6 @@ class TalkBackTest {
     fun `in English each Prayer is read with its time and state, on Home and in the Prayer Log`() {
         val names = listOf("Fajr", "Asr", "Maghrib", "Isha")
         checkHome(names, "en")
-        checkLog(names, "Prayer Log")
+        checkLog(names, "Log")
     }
 }

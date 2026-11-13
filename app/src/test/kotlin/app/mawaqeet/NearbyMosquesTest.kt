@@ -70,6 +70,6 @@ class NearbyMosquesTest {
         compose.onNode(hasText("المساجد") and hasClickAction()).performClick()
 
         assertEquals("لا يوجد تطبيق خرائط على هذا الهاتف", ShadowToast.getTextOfLatestToast())
-        compose.onNodeWithText("الصلاة القادمة").assertIsDisplayed()
+        compose.onNodeWithText("حتى الأذان").assertIsDisplayed()
     }
 }

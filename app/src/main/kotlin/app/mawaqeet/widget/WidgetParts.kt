@@ -218,7 +218,13 @@ internal fun WidgetFrame(
     val context = LocalContext.current
     val style = LocalWidgetStyle.current
     val root = RemoteViews(context.packageName, if (rtl) R.layout.widget_root_rtl else R.layout.widget_root_ltr).apply {
-        setColor(context, R.id.widget_bg, "setImageTintList", "setColorFilter", style.background)
+        val art = style.backgroundArt
+        if (art != null) {
+            // The design's gradient surface, untinted.
+            setImageViewResource(R.id.widget_bg, art)
+        } else {
+            setColor(context, R.id.widget_bg, "setImageTintList", "setColorFilter", style.background)
+        }
         setInt(R.id.widget_bg, "setImageAlpha", style.backgroundAlpha)
     }
     AndroidRemoteViews(root, R.id.widget_root, GlanceModifier.fillMaxSize()) {

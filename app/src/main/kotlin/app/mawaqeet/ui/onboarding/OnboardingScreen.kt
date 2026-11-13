@@ -152,7 +152,7 @@ fun OnboardingScreen(
         return
     }
     val dots: @Composable () -> Unit = { StepDots(step, brand != null) }
-    Scaffold { padding ->
+    Scaffold(containerColor = androidx.compose.ui.graphics.Color.Transparent) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (step) {
                 OnboardingStep.WELCOME -> Welcome(actions, dots, onStart = ::next)
