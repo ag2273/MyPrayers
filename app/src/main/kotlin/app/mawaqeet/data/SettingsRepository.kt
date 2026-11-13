@@ -33,6 +33,7 @@ import app.mawaqeet.core.KahfReminder
 import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
+import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SavedLocation
 import app.mawaqeet.core.SettingValue
 import app.mawaqeet.widget.WidgetAppearance
@@ -284,6 +285,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         }
     }
 
+    /** Settings → Alerts → «تذكيرات العبادة» → «رمضان» (#90): Imsak moved [step] taps of 5 minutes, within 0–30. */
+    suspend fun stepImsakMinutes(step: Int) {
+        store.edit { it[RAMADAN_IMSAK_MINUTES] = it.alertSettings().ramadan.stepped(step).imsakMinutes }
+    }
+
     /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63); planned only while the master switch is on. */
     suspend fun setSalawatReminder(on: Boolean) {
         store.edit { it[SALAWAT_ENABLED] = on }
@@ -450,6 +456,10 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
             customAdhans = AdhanRecording.entries
                 .mapNotNull { recording -> this[customAdhanKey(recording)]?.takeIf { it.isNotEmpty() }?.let { recording to it } }
                 .toMap(),
+            ramadan = RamadanSettings(
+                imsakMinutes = this[RAMADAN_IMSAK_MINUTES]?.takeIf { it in RamadanSettings.IMSAK_MINUTES_RANGE }
+                    ?: default.ramadan.imsakMinutes,
+            ),
             prayerSilence = PrayerSilence(
                 enabled = this[PRAYER_SILENCE_ENABLED] ?: default.prayerSilence.enabled,
                 mode = this[PRAYER_SILENCE_MODE].toEnum(default.prayerSilence.mode),
@@ -551,6 +561,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
 
         /** Worship Reminders (#64): «سورة الكهف» on or off. */
         private val KAHF_ENABLED = booleanPreferencesKey("worship_kahf_enabled")
+        private val RAMADAN_IMSAK_MINUTES = intPreferencesKey("ramadan_imsak_minutes")
         private val LOCATION_STALE = booleanPreferencesKey("location_maybe_stale")
         private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val FIX_ALERTS_DONE = booleanPreferencesKey("fix_alerts_done")

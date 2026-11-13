@@ -155,6 +155,9 @@ interface SettingsActions {
     /** Settings → Alerts → «تذكيرات العبادة» → «سورة الكهف» (#64). */
     fun setKahfReminder(on: Boolean)
 
+    /** «الإمساك» under «رمضان» (#90): Imsak moved [step] taps of [app.mawaqeet.core.RamadanSettings.IMSAK_MINUTES_STEP] minutes. */
+    fun stepImsakMinutes(step: Int)
+
     /** Whether Prayer Silence may change the ringer: Do Not Disturb (notification policy) access. */
     fun hasDoNotDisturbAccess(): Boolean
 

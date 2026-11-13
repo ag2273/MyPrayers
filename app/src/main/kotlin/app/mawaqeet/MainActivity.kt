@@ -54,6 +54,9 @@ import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.components.MainScaffold
 import app.mawaqeet.ui.components.Tab
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.home.ToolsRow
+import app.mawaqeet.qibla.SensorHeadings
+import app.mawaqeet.ui.qibla.QiblaScreen
 import app.mawaqeet.ui.fixalerts.FixAlerts
 import app.mawaqeet.ui.fixalerts.FixAlertsScreen
 import app.mawaqeet.ui.location.LocationScreen
@@ -137,6 +140,9 @@ class MainActivity : AppCompatActivity() {
                 var settingsRoute by rememberSaveable { mutableStateOf<SettingsRoute?>(null) }
                 var showLocation by rememberSaveable { mutableStateOf(false) }
                 var showFixAlerts by rememberSaveable { mutableStateOf(false) }
+                // The Qibla screen, opened from the Tools Row on Today (#88).
+                var showQibla by rememberSaveable { mutableStateOf(false) }
+                val headings = remember { SensorHeadings(this@MainActivity) }
                 // The Adhkar Set an adhkar reminder's tap asked for, until the Adhkar tab opens it.
                 var adhkarToOpen by remember { mutableStateOf<AdhkarSlot?>(null) }
                 // A widget tap opens today's Prayer Times (Home) or the Prayer Log, from whatever screen was open.
@@ -144,6 +150,7 @@ class MainActivity : AppCompatActivity() {
                     val request = openRequest ?: return@LaunchedEffect
                     showLocation = false
                     showFixAlerts = false
+                    showQibla = false
                     settingsRoute = null
                     tab = when (request.opens) {
                         Opens.PRAYER_LOG -> Tab.LOG
@@ -316,6 +323,10 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setKahfReminder(on) }
                             }
 
+                            override fun stepImsakMinutes(step: Int) {
+                                scope.launch { settingsStore.stepImsakMinutes(step) }
+                            }
+
                             override fun hasDoNotDisturbAccess(): Boolean = PrayerSilencer.hasAccess(this@MainActivity)
 
                             override fun openDoNotDisturbAccess() {
@@ -485,6 +496,14 @@ class MainActivity : AppCompatActivity() {
                         onBack = { showLocation = false },
                         readDevicePosition = { DeviceLocation.current(this@MainActivity) },
                     )
+                } else if (showQibla) {
+                    // Only the stored location: the Qibla screen never asks for a permission.
+                    QiblaScreen(
+                        savedLocation?.location,
+                        headings,
+                        onSetLocation = { showLocation = true },
+                        onBack = { showQibla = false },
+                    )
                 } else if (settingsRoute != null) {
                     SettingsPageScreen(
                         settingsRoute ?: return@ProvideDisplayFormatter,
@@ -529,6 +548,7 @@ class MainActivity : AppCompatActivity() {
                         showFixAlertsTip = !fixAlertsDone && FixAlerts.deviceBrand != null,
                         onOpenFixAlerts = { showFixAlerts = true },
                         onFixAlertsDone = { scope.launch { settingsStore.setFixAlertsDone(true) } },
+                        tools = { ToolsRow(onQibla = { showQibla = true }) },
                     )
                     }
                     }

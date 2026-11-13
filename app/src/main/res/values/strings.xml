@@ -563,6 +563,52 @@
     <string name="kahf_reminder_title">اقرأ سورة الكهف</string>
     <string name="kahf_reminder_text">من سنن يوم الجمعة قراءة سورة الكهف</string>
     <string name="kahf_reminder_read">قرأتها</string>
+    <!-- Tools Row on Today (#88) -->
+    <string name="tool_qibla">القبلة</string>
+    <string name="tool_calendar">التقويم</string>
+    <string name="tool_mosques">المساجد</string>
+    <!-- Qibla screen (#88) -->
+    <string name="qibla_waiting">جارٍ قراءة البوصلة…</string>
+    <string name="qibla_turn_right">لفّ %1$s° يمينًا</string>
+    <string name="qibla_turn_left">لفّ %1$s° يسارًا</string>
+    <string name="qibla_on_target">أنت في اتجاه القبلة</string>
+    <string name="qibla_bearing">القبلة %1$s° من الشمال الحقيقي</string>
+    <string name="qibla_distance">%1$s كم إلى مكة المكرمة</string>
+    <string name="qibla_dial_description">بوصلة القبلة</string>
+    <string name="qibla_kaaba">الكعبة</string>
+    <string name="qibla_dial_north">ش</string>
+    <string name="qibla_dial_east">ق</string>
+    <string name="qibla_dial_south">ج</string>
+    <string name="qibla_dial_west">غ</string>
+    <string name="qibla_calibrate_title">البوصلة تحتاج إلى معايرة</string>
+    <string name="qibla_calibrate">حرّك الهاتف في الهواء على شكل الرقم ٨ بضع مرات، بعيدًا عن المعادن والأجهزة، حتى تستقر القراءة.</string>
+    <string name="qibla_no_sensor_title">لا توجد بوصلة في هذا الهاتف</string>
+    <string name="qibla_no_sensor">القبلة على %1$s° من الشمال الحقيقي، نحو %2$s. استعن بالشمس أو ببوصلة أخرى لتحديد الشمال.</string>
+    <string name="qibla_no_location_title">لم يُحدَّد موقعك بعد</string>
+    <string name="qibla_no_location">حدّد موقعك لمعرفة اتجاه القبلة منه.</string>
+    <string name="qibla_set_location">تحديد الموقع</string>
+    <string name="compass_north">الشمال</string>
+    <string name="compass_north_east">الشمال الشرقي</string>
+    <string name="compass_east">الشرق</string>
+    <string name="compass_south_east">الجنوب الشرقي</string>
+    <string name="compass_south">الجنوب</string>
+    <string name="compass_south_west">الجنوب الغربي</string>
+    <string name="compass_west">الغرب</string>
+    <string name="compass_north_west">الشمال الغربي</string>
+    <!-- Ramadan Mode on Today (#90): the Next Prayer card's fasting and suhoor forms. -->
+    <string name="ramadan_day">رمضان · اليوم %1$s</string>
+    <string name="ramadan_imsak_at">الإمساك %1$s</string>
+    <string name="ramadan_iftar_at">الإفطار %1$s</string>
+    <string name="ramadan_suhoor">السحور</string>
+    <string name="ramadan_suhoor_ends_in">ينتهي بعد %1$s</string>
+    <!-- The next Prayer inside the Ramadan card: name, time, then the time left ("١ س ١٠ د"). -->
+    <string name="ramadan_next_prayer">الصلاة القادمة: %1$s %2$s · بعد %3$s</string>
+    <!-- Ramadan under Worship Reminders (#90) -->
+    <string name="ramadan">رمضان</string>
+    <string name="ramadan_imsak">الإمساك</string>
+    <string name="ramadan_imsak_summary">قبل الفجر، يظهر على بطاقة اليوم في رمضان</string>
+    <string name="ramadan_imsak_closer">تقريب الإمساك من الفجر %1$s دقائق</string>
+    <string name="ramadan_imsak_earlier">تبكير الإمساك %1$s دقائق</string>
     <string name="about_use_serialization">ملف النسخة الاحتياطية</string>
 
     <!-- Settings → Backup (#98) -->

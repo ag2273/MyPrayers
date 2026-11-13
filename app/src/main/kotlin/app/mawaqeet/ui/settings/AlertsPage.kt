@@ -68,6 +68,7 @@ import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.SalawatReminder
+import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.ui.components.Segment
 import app.mawaqeet.ui.components.SegmentedChoice
@@ -307,6 +308,24 @@ private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions)
         RowDivider()
         AdhkarReminderRows(AdhkarSetId.EVENING, alerts.worshipReminders.eveningAdhkar, actions)
     }
+    RamadanRows(alerts.ramadan, actions)
+}
+
+/** «رمضان» under «تذكيرات العبادة» (#90): how many minutes before Fajr Imsak comes, for Ramadan Mode on Today. */
+@Composable
+private fun RamadanRows(ramadan: RamadanSettings, actions: SettingsActions) {
+    SectionTitle(stringResource(R.string.ramadan))
+    Card {
+        SilenceDurationRow(
+            title = stringResource(R.string.ramadan_imsak),
+            summary = stringResource(R.string.ramadan_imsak_summary),
+            minutes = ramadan.imsakMinutes,
+            range = RamadanSettings.IMSAK_MINUTES_RANGE,
+            shorter = R.string.ramadan_imsak_closer,
+            longer = R.string.ramadan_imsak_earlier,
+            step = RamadanSettings.IMSAK_MINUTES_STEP,
+        ) { step -> actions.stepImsakMinutes(step) }
+    }
 }
 
 /** «أذكار الصباح» or «أذكار المساء» (#75): its switch, then its minutes after Fajr or Asr once it is on. */
@@ -336,7 +355,7 @@ private fun AdhkarReminderRows(set: AdhkarSetId, reminder: AdhkarReminder, actio
     }
 }
 
-/** A Silence Window's duration: its title and summary, then −, the minutes and +, [PrayerSilence.MINUTES_STEP] per tap. */
+/** A duration in minutes (a Silence Window's, Imsak's): its title and summary, then −, the minutes and +, [step] per tap. */
 @Composable
 private fun SilenceDurationRow(
     title: String,
@@ -345,17 +364,18 @@ private fun SilenceDurationRow(
     range: IntRange,
     @StringRes shorter: Int,
     @StringRes longer: Int,
+    step: Int = PrayerSilence.MINUTES_STEP,
     onStep: (Int) -> Unit,
 ) {
     val format = LocalDisplayFormatter.current
-    val step = format.number(PrayerSilence.MINUTES_STEP)
+    val stepText = format.number(step)
     Row(
         Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         RowText(title, summary)
-        StepButton(R.drawable.ic_minus, stringResource(shorter, step), enabled = minutes > range.first) { onStep(-1) }
+        StepButton(R.drawable.ic_minus, stringResource(shorter, stepText), enabled = minutes > range.first) { onStep(-1) }
         Text(
             pluralStringResource(R.plurals.prayer_silence_minutes, minutes, format.number(minutes)),
             style = MaterialTheme.typography.bodyLarge,
@@ -363,7 +383,7 @@ private fun SilenceDurationRow(
             textAlign = TextAlign.Center,
             modifier = Modifier.widthIn(min = 80.dp),
         )
-        StepButton(R.drawable.ic_plus, stringResource(longer, step), enabled = minutes < range.last) { onStep(+1) }
+        StepButton(R.drawable.ic_plus, stringResource(longer, stepText), enabled = minutes < range.last) { onStep(+1) }
     }
 }
 
