@@ -248,7 +248,7 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
                             Alignment.CenterVertically,
                             listOf(
                                 cell { WidgetLine(view.before, ClockPrayerMetrics.BEFORE_SP * s, Tone.MUTED) },
-                                cell { WidgetLine(clock.countdown, ClockPrayerMetrics.COUNTDOWN_SP * s, Tone.ACCENT, bold = true, modifier = direction.paddingStart(word)) },
+                                cell { WidgetLine(clock.countdown, ClockPrayerMetrics.COUNTDOWN_SP * s, Tone.COUNTDOWN, bold = true, modifier = direction.paddingStart(word)) },
                             ),
                         )
                         val bar = (ClockPrayerMetrics.BAR_GAP_DP * s).dp

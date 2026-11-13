@@ -15,8 +15,8 @@ data class PrayerTime(
 }
 
 /**
- * What the home screen and widgets show: the calendar date at the location (switching at local midnight)
- * with its Prayer Times and Sunrise.
+ * What the home screen and widgets show: the Prayer Day running now at the location (switching at Fajr, so from
+ * midnight until Fajr it is still the previous date) with its Prayer Times and Sunrise.
  */
 data class DisplayDay(
     val date: LocalDate,

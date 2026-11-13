@@ -42,6 +42,7 @@ internal fun goldClockStyle(sdk: Int = Build.VERSION.SDK_INT) = WidgetStyle(
     shadowedText = false,
     responsive = sdk >= Build.VERSION_CODES.S,
     onAccentSoft = R.color.widget_gold_date,
+    countdown = R.color.widget_gold,
 )
 
 /** The Gold Clock entry in the widget picker (4×2, down to 4×1). */

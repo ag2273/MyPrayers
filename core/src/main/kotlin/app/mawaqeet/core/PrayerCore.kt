@@ -22,13 +22,17 @@ class PrayerCore(
     fun alerts(): AlertSettings = settings.alerts
 
     /**
-     * The calendar date to display now, at the location, with its Prayer Times (after the user's adjustments) and
-     * Sunrise, and whether a high-latitude rule was applied to them.
+     * The Prayer Day running now (from midnight until Fajr, still the previous one), at the location, with its
+     * Prayer Times (after the user's adjustments) and Sunrise, and whether a high-latitude rule was applied to them.
+     * It moves on at Fajr, together with [currentPrayerDay].
      */
     fun displayDay(): DisplayDay {
         val now = clock.instant()
-        val date = LocalDate.ofInstant(now, settings.location.zone)
-        val day = calculateDay(settings, date)
+        val calendarDate = LocalDate.ofInstant(now, settings.location.zone)
+        val calendarDay = calculateDay(settings, calendarDate)
+        val beforeFajr = calendarDay.prayerTimes.first().time.toInstant().isAfter(now)
+        val date = if (beforeFajr) calendarDate.minusDays(1) else calendarDate
+        val day = if (beforeFajr) calculateDay(settings, date) else calendarDay
         val next = day.prayerTimes.firstOrNull { it.time.toInstant().isAfter(now) }
             ?: calculateDay(settings, date.plusDays(1)).prayerTimes.first()
         return DisplayDay(
