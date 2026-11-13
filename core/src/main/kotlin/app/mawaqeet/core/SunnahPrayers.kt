@@ -75,12 +75,15 @@ internal fun duhaReminder(duha: DuhaReminder, prayerDay: LocalDate, sunrise: Ins
     return PlannedWorshipReminder(WorshipReminderKind.DUHA, at, prayerDay)
 }
 
-/** The Qiyam reminder of the night after [prayerDay]'s Maghrib, when it is on; an alarm in [QiyamStyle.ALARM]. */
-internal fun qiyamReminder(qiyam: QiyamReminder, prayerDay: LocalDate, maghrib: ZonedDateTime, nextFajr: ZonedDateTime): PlannedWorshipReminder? =
+/**
+ * The Qiyam reminder of the night after [prayerDay]'s Maghrib, when it is on; an alarm in [QiyamStyle.ALARM]. The next
+ * day's Fajr is only worked out ([nextFajr]) when the reminder is on.
+ */
+internal fun qiyamReminder(qiyam: QiyamReminder, prayerDay: LocalDate, maghrib: ZonedDateTime, nextFajr: () -> ZonedDateTime): PlannedWorshipReminder? =
     if (qiyam.enabled) {
         PlannedWorshipReminder(
             WorshipReminderKind.QIYAM,
-            lastThirdOfNight(maghrib, nextFajr).toInstant(),
+            lastThirdOfNight(maghrib, nextFajr()).toInstant(),
             prayerDay,
             alarm = qiyam.style == QiyamStyle.ALARM,
         )

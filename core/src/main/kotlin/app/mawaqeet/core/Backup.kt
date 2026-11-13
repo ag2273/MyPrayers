@@ -71,7 +71,8 @@ sealed interface RestoreResult {
 }
 
 /**
- * The Backup File (#86): one UTF-8 JSON document the user saves wherever they choose. Its shape, version [VERSION]:
+ * The Backup File (#86; export #98, restore #99): one UTF-8 JSON document the user saves wherever they choose. Its
+ * shape, version [VERSION]:
  *
  * ```
  * {

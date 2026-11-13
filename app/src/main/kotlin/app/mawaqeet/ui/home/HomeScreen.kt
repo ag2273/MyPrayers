@@ -190,7 +190,7 @@ private fun HomeContent(
         val lastThird = day.lastThirdOfNight.takeIf { afterIsha }
         when (ramadan) {
             RamadanState.None -> NextPrayerCard(day, now, lastThird, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
-            else -> RamadanCard(ramadan, day.next, now, lastThird, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
+            is RamadanState.Active -> RamadanCard(ramadan, day.next, now, lastThird, cardSizes, Modifier.layoutId(Fill.TakesTheRest))
         }
         tools?.invoke()
         Card(Modifier.layoutId(Fill.Rows(count = day.prayerTimes.size + 1))) {
@@ -559,7 +559,7 @@ private fun LastThirdLine(start: ZonedDateTime, now: Instant, sizes: NextPrayerC
  */
 @Composable
 private fun RamadanCard(
-    state: RamadanState,
+    state: RamadanState.Active,
     next: PrayerTime,
     now: Instant,
     lastThird: ZonedDateTime?,
@@ -569,11 +569,6 @@ private fun RamadanCard(
     val colors = MaterialTheme.colorScheme
     val format = LocalDisplayFormatter.current
     val onCard = colors.onTertiaryContainer
-    val (day, imsak) = when (state) {
-        is RamadanState.Fasting -> state.dayOfRamadan to state.imsak
-        is RamadanState.Suhoor -> state.dayOfRamadan to state.imsak
-        RamadanState.None -> return
-    }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -583,14 +578,13 @@ private fun RamadanCard(
         verticalArrangement = Arrangement.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.ramadan_day, format.number(day)), style = sizes.label, color = onCard, modifier = Modifier.weight(1f))
-            Text(stringResource(R.string.ramadan_imsak_at, format.time(imsak)), style = sizes.label, color = onCard)
+            Text(stringResource(R.string.ramadan_day, format.number(state.fastingDayNumber)), style = sizes.label, color = onCard, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.ramadan_imsak_at, format.time(state.imsak)), style = sizes.label, color = onCard)
         }
+        val left = format.countdown(Duration.between(now, state.countsTo.toInstant()))
         val (title, countdown) = when (state) {
-            is RamadanState.Fasting -> stringResource(R.string.ramadan_iftar_at, format.time(state.maghrib)) to
-                stringResource(R.string.countdown, format.countdown(Duration.between(now, state.maghrib.toInstant())))
-            else -> stringResource(R.string.ramadan_suhoor) to
-                stringResource(R.string.ramadan_suhoor_ends_in, format.countdown(Duration.between(now, imsak.toInstant())))
+            is RamadanState.Fasting -> stringResource(R.string.ramadan_iftar_at, format.time(state.maghrib)) to stringResource(R.string.countdown, left)
+            is RamadanState.Suhoor -> stringResource(R.string.ramadan_suhoor) to stringResource(R.string.ramadan_suhoor_ends_in, left)
         }
         // As on the usual card: the countdown has its own line, or shares the title's on a short screen.
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -598,9 +592,10 @@ private fun RamadanCard(
             if (!sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
         }
         if (sizes.stacked) Text(countdown, style = sizes.countdown, color = colors.tertiary)
-        if (state is RamadanState.Fasting) {
-            val total = Duration.between(state.imsak, state.maghrib).seconds.coerceAtLeast(1)
-            val passed = Duration.between(state.imsak.toInstant(), now).seconds.coerceIn(0, total)
+        val fastFrom = state.fastFrom
+        if (fastFrom != null) {
+            val total = Duration.between(fastFrom, state.countsTo).seconds.coerceAtLeast(1)
+            val passed = Duration.between(fastFrom.toInstant(), now).seconds.coerceIn(0, total)
             Spacer(Modifier.height(sizes.barGap))
             ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
         }

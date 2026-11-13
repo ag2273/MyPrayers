@@ -110,7 +110,7 @@ data class PlannedWorshipReminder(
     val instant: Instant,
     val prayerDay: LocalDate,
     val slot: Int = 0,
-    val fast: FastDay? = null,
+    val fast: SunnahFastDay? = null,
     val alarm: Boolean = false,
 ) {
     init {

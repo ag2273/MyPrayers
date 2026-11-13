@@ -52,7 +52,7 @@ class SunnahFastReminderPlanTest {
         val reminder = reminders.single()
         assertEquals(core.isha("2026-11-15").plus(Duration.ofMinutes(30)), reminder.instant)
         assertEquals(LocalDate.parse("2026-11-15"), reminder.prayerDay)
-        assertEquals(FastDay(HijriDate(1448, 6, 6), setOf(SunnahFast.MONDAY_THURSDAY)), reminder.fast)
+        assertEquals(SunnahFastDay(HijriDate(1448, 6, 6), setOf(SunnahFast.MONDAY_THURSDAY)), reminder.fast)
     }
 
     @Test
@@ -102,7 +102,7 @@ class SunnahFastReminderPlanTest {
         val reminder = core.alertPlan().fastReminders.single()
 
         assertEquals(core.isha("2027-05-14").plus(Duration.ofMinutes(30)), reminder.instant)
-        assertEquals(FastDay(HijriDate(1448, 12, 9), setOf(SunnahFast.ARAFAH)), reminder.fast)
+        assertEquals(SunnahFastDay(HijriDate(1448, 12, 9), setOf(SunnahFast.ARAFAH)), reminder.fast)
     }
 
     @Test

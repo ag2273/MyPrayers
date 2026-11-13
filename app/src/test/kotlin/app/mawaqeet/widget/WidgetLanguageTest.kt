@@ -51,7 +51,7 @@ class WidgetLanguageTest {
         val text = WidgetText(DisplayFormatter(Locale.forLanguageTag("ar"), DigitStyle.ARABIC_INDIC), arabic, rtl = true, place = "مكة")
         val iftar = NextPrayerContent(
             R.string.widget_iftar, "١٧:٤١", Duration.ofHours(4),
-            previousNameRes = R.string.ramadan_imsak, previousTime = "٠٤:٥٩", ramadanDay = 15,
+            previousNameRes = R.string.ramadan_imsak, previousTime = "٠٤:٥٩", fastingDayNumber = 15,
         )
 
         val view = NextPrayerView.of(iftar, text)
@@ -67,7 +67,7 @@ class WidgetLanguageTest {
     fun `in English the suhoor widget reads Suhoor ends`() {
         val english = localizedContext(context, Locale.ENGLISH)
         val text = WidgetText(DisplayFormatter(Locale.ENGLISH, DigitStyle.WESTERN), english, rtl = false)
-        val suhoor = NextPrayerContent(R.string.widget_suhoor_ends, "04:59", Duration.ofHours(8), ramadanDay = 15)
+        val suhoor = NextPrayerContent(R.string.widget_suhoor_ends, "04:59", Duration.ofHours(8), fastingDayNumber = 15)
 
         val view = NextPrayerView.of(suhoor, text)
 

@@ -55,14 +55,44 @@ sealed interface RamadanState {
     /** Not Ramadan Mode: the Next Prayer card and widgets show the next Prayer as usual. */
     data object None : RamadanState
 
-    /** From Imsak to Maghrib on Fasting Day [dayOfRamadan]: counting to [maghrib] (Iftar). */
-    data class Fasting(val dayOfRamadan: Int, val imsak: ZonedDateTime, val maghrib: ZonedDateTime) : RamadanState
+    /**
+     * Ramadan Mode is on, for the [fastingDayNumber]th Fasting Day of Ramadan (its Hijri day), whose fast runs from
+     * [imsak] to [maghrib]. What the Today card and the Next Prayer widget count to and draw is decided here, once.
+     */
+    sealed interface Active : RamadanState {
+        val fastingDayNumber: Int
+        val imsak: ZonedDateTime
+        val maghrib: ZonedDateTime
+
+        /** The moment the countdown runs to: Iftar while fasting, Imsak (the end of suhoor) before it. */
+        val countsTo: ZonedDateTime
+
+        /** Where the fast's bar starts (Imsak) while fasting; null during suhoor, which has no fast to show yet. */
+        val fastFrom: ZonedDateTime?
+    }
+
+    /** From Imsak to Maghrib on the Fasting Day: counting to [maghrib] (Iftar). */
+    data class Fasting(
+        override val fastingDayNumber: Int,
+        override val imsak: ZonedDateTime,
+        override val maghrib: ZonedDateTime,
+    ) : Active {
+        override val countsTo: ZonedDateTime get() = maghrib
+        override val fastFrom: ZonedDateTime get() = imsak
+    }
 
     /**
-     * Suhoor before Fasting Day [dayOfRamadan]: from the previous Maghrib (or midnight) to that day's [imsak], counting
-     * to [imsak]. [maghrib] is that Fasting Day's Iftar. Never on the night before Eid.
+     * Suhoor before the Fasting Day: from the previous Maghrib (or midnight) to that day's [imsak], counting to [imsak].
+     * [maghrib] is that Fasting Day's Iftar. Never on the night before Eid.
      */
-    data class Suhoor(val dayOfRamadan: Int, val imsak: ZonedDateTime, val maghrib: ZonedDateTime) : RamadanState
+    data class Suhoor(
+        override val fastingDayNumber: Int,
+        override val imsak: ZonedDateTime,
+        override val maghrib: ZonedDateTime,
+    ) : Active {
+        override val countsTo: ZonedDateTime get() = imsak
+        override val fastFrom: ZonedDateTime? get() = null
+    }
 }
 
 internal const val RAMADAN_MONTH = 9

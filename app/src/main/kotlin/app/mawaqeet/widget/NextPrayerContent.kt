@@ -37,8 +37,8 @@ data class NextPrayerContent(
     @param:StringRes val alertRes: Int = R.string.alerts_sound_short,
     /** Whether that alert makes a sound (a bell, else a struck-out bell). */
     val audible: Boolean = true,
-    /** The day of Ramadan while Ramadan Mode counts to iftar or the end of suhoor; null otherwise. */
-    val ramadanDay: Int? = null,
+    /** Which Fasting Day of Ramadan (1–30) while Ramadan Mode counts to iftar or the end of suhoor; null otherwise. */
+    val fastingDayNumber: Int? = null,
 ) {
     companion object {
         fun of(
@@ -52,23 +52,23 @@ data class NextPrayerContent(
             is RamadanState.Fasting -> prayer(day, now, formatter, alerts).copy(
                 nameRes = R.string.widget_iftar,
                 time = formatter.time(ramadan.maghrib),
-                untilNext = until(now, ramadan.maghrib.toInstant()),
+                untilNext = until(now, ramadan.countsTo.toInstant()),
                 isTomorrow = false,
                 previousNameRes = R.string.ramadan_imsak,
-                previousTime = formatter.time(ramadan.imsak),
-                progress = progress(ramadan.imsak.toInstant(), ramadan.maghrib.toInstant(), now),
-                ramadanDay = ramadan.dayOfRamadan,
+                previousTime = formatter.time(ramadan.fastFrom),
+                progress = progress(ramadan.fastFrom.toInstant(), ramadan.countsTo.toInstant(), now),
+                fastingDayNumber = ramadan.fastingDayNumber,
             ).withAlertOf(alerts, Prayer.MAGHRIB)
             // The line keeps the previous Prayer's end (Maghrib, Isha, or yesterday's Isha after midnight).
             is RamadanState.Suhoor -> prayer(day, now, formatter, alerts).copy(
                 nameRes = R.string.widget_suhoor_ends,
                 time = formatter.time(ramadan.imsak),
-                untilNext = until(now, ramadan.imsak.toInstant()),
+                untilNext = until(now, ramadan.countsTo.toInstant()),
                 isTomorrow = false,
-                progress = progress(day.previous().time.toInstant(), ramadan.imsak.toInstant(), now),
+                progress = progress(day.previous().time.toInstant(), ramadan.countsTo.toInstant(), now),
                 alertRes = if (imsakAlert(alerts)) R.string.widget_chip_imsak else R.string.widget_chip_imsak_off,
                 audible = imsakAlert(alerts),
-                ramadanDay = ramadan.dayOfRamadan,
+                fastingDayNumber = ramadan.fastingDayNumber,
             )
         }
 

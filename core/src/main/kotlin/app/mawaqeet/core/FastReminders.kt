@@ -23,7 +23,7 @@ data class FastReminders(val on: Set<SunnahFast> = emptySet()) {
  * What a [WorshipReminderKind.SUNNAH_FAST] reminder announces: tomorrow's [hijri] date and the Sunnah Fasts switched on
  * that it is a day of (never empty). Tomorrow is the reminder's Prayer Day + 1, so its weekday is known too.
  */
-data class FastDay(val hijri: HijriDate, val kinds: Set<SunnahFast>) {
+data class SunnahFastDay(val hijri: HijriDate, val kinds: Set<SunnahFast>) {
     init {
         require(kinds.isNotEmpty()) { "A fast reminder names at least one Sunnah Fast" }
     }
@@ -50,7 +50,7 @@ internal fun sunnahFastReminder(
         kind = WorshipReminderKind.SUNNAH_FAST,
         instant = isha.plus(FastReminders.AFTER_ISHA),
         prayerDay = prayerDay,
-        fast = FastDay(tomorrow.hijri, kinds),
+        fast = SunnahFastDay(tomorrow.hijri, kinds),
     )
 }
 

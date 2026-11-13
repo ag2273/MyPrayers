@@ -110,11 +110,11 @@ internal data class NextPrayerView(
             val name = s.getString(content.nameRes)
             val where = if (content.isTomorrow) s.getString(R.string.widget_tomorrow) else text.place
             // In Ramadan Mode (#92) the label is the Today card's «رمضان · اليوم ١٥».
-            val ramadanDay = content.ramadanDay
-            val label = if (ramadanDay == null) s.getString(R.string.widget_next_prayer) else s.getString(R.string.ramadan_day, text.formatter.number(ramadanDay))
+            val fastingDayNumber = content.fastingDayNumber
+            val label = if (fastingDayNumber == null) s.getString(R.string.widget_next_prayer) else s.getString(R.string.ramadan_day, text.formatter.number(fastingDayNumber))
             return NextPrayerView(
                 label = label + if (where.isEmpty()) "" else " · $where",
-                shortLabel = s.getString(if (ramadanDay == null) R.string.widget_next_short else R.string.ramadan),
+                shortLabel = s.getString(if (fastingDayNumber == null) R.string.widget_next_short else R.string.ramadan),
                 name = name,
                 time = content.time,
                 from = "${s.getString(content.previousNameRes)} ${content.previousTime}",

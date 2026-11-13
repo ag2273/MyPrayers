@@ -72,7 +72,7 @@ class PrayerCore(
         if (hijri.month != RAMADAN_MONTH) return null
         val day = calculateDay(settings, date)
         return RamadanState.Fasting(
-            dayOfRamadan = hijri.day,
+            fastingDayNumber = hijri.day,
             imsak = day.at(Prayer.FAJR).minusMinutes(settings.alerts.ramadan.imsakMinutes.toLong()),
             maghrib = day.at(Prayer.MAGHRIB),
         )
@@ -80,7 +80,7 @@ class PrayerCore(
 
     private fun CalculatedDay.at(prayer: Prayer) = prayerTimes.single { it.prayer == prayer }.time
 
-    private fun RamadanState.Fasting.suhoor() = RamadanState.Suhoor(dayOfRamadan, imsak, maghrib)
+    private fun RamadanState.Fasting.suhoor() = RamadanState.Suhoor(fastingDayNumber, imsak, maghrib)
 
     /** The Prayer Day now falls in. */
     fun currentPrayerDay(): PrayerDay = places().let { prayerDay(prayerDayDateAt(clock.instant(), it), it) }
@@ -193,11 +193,7 @@ class PrayerCore(
                 sunnahFastReminder(reminders.fasts, calendar, date, at(Prayer.ISHA)),
                 duhaReminder(reminders.sunnahPrayers.duha, date, day.sunrise.toInstant(), at(Prayer.DHUHR)),
                 // The night after this day's Maghrib runs to the next day's own Fajr.
-                if (reminders.sunnahPrayers.qiyam.enabled) {
-                    qiyamReminder(reminders.sunnahPrayers.qiyam, date, day.at(Prayer.MAGHRIB), calculateDay(settings, date.plusDays(1)).at(Prayer.FAJR))
-                } else {
-                    null
-                },
+                qiyamReminder(reminders.sunnahPrayers.qiyam, date, day.at(Prayer.MAGHRIB)) { calculateDay(settings, date.plusDays(1)).at(Prayer.FAJR) },
             ) + ramadanReminders(date)
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
     }
@@ -208,7 +204,7 @@ class PrayerCore(
         if (!ramadan.suhoorReminder.enabled && !ramadan.imsakAlert) return emptyList()
         val fast = fastingDay(date) ?: return emptyList()
         val imsak = fast.imsak.toInstant()
-        val fajr = imsak.plus(java.time.Duration.ofMinutes(ramadan.imsakMinutes.toLong()))
+        val fajr = calculateDay(settings, date).at(Prayer.FAJR).toInstant()
         return listOfNotNull(
             if (ramadan.suhoorReminder.enabled) {
                 PlannedWorshipReminder(WorshipReminderKind.SUHOOR, fajr.minus(java.time.Duration.ofMinutes(ramadan.suhoorReminder.minutes.toLong())), date)

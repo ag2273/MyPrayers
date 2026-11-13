@@ -10,7 +10,7 @@ import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.AlertSound
 import app.mawaqeet.core.DeliveryMode
 import app.mawaqeet.core.DigitStyle
-import app.mawaqeet.core.FastDay
+import app.mawaqeet.core.SunnahFastDay
 import app.mawaqeet.core.HijriDate
 import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.PlannedAlert
@@ -81,7 +81,7 @@ internal class AlertPlanStore(context: Context) {
         }
         for (w in plan.silenceWindows) appendLine(SILENCE + "\t" + encodeSilenceWindow(w))
         for (r in plan.worshipReminders) {
-            appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot, encodeFastDay(r.fast), r.alarm).joinToString("\t"))
+            appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot, encodeSunnahFastDay(r.fast), r.alarm).joinToString("\t"))
         }
         appendLine(listOf(STYLE, style.digits.name, style.language).joinToString("\t"))
     }
@@ -100,7 +100,7 @@ internal class AlertPlanStore(context: Context) {
                 prayerDay = LocalDate.parse(f[2]),
                 instant = Instant.ofEpochMilli(f[3].toLong()),
                 slot = f[4].toInt(),
-                fast = decodeFastDay(f.getOrElse(5) { "" }),
+                fast = decodeSunnahFastDay(f.getOrElse(5) { "" }),
                 alarm = f.getOrNull(6)?.toBooleanStrict() ?: false,
             )
         }
@@ -139,7 +139,7 @@ internal class AlertPlanStore(context: Context) {
         private const val SILENCE = "silence"
 
         /**
-         * First field of a Worship Reminder's line (#63): `worship kind prayerDay instant slot fast alarm` ([encodeFastDay],
+         * First field of a Worship Reminder's line (#63): `worship kind prayerDay instant slot fast alarm` ([encodeSunnahFastDay],
          * v9; alarm, v10).
          */
         private const val WORSHIP = "worship"
@@ -206,18 +206,18 @@ internal fun Intent.silenceWindow(prefix: String = ""): SilenceWindow? = runCatc
 }.getOrNull()
 
 /**
- * Text form of a Sunnah Fast reminder's [FastDay] (#95), shared by the stored plan and the alarm intent:
+ * Text form of a Sunnah Fast reminder's [SunnahFastDay] (#95), shared by the stored plan and the alarm intent:
  * `<hijri year>-<month>-<day>:<kind>,<kind>`, e.g. `1448-6-13:MONDAY_THURSDAY,WHITE_DAYS`; empty for none.
  */
-internal fun encodeFastDay(fast: FastDay?): String =
+internal fun encodeSunnahFastDay(fast: SunnahFastDay?): String =
     if (fast == null) "" else "${fast.hijri.year}-${fast.hijri.month}-${fast.hijri.day}:" + fast.kinds.sorted().joinToString(",") { it.name }
 
 /** Throws IllegalArgumentException (or NumberFormatException, also one) for an unreadable fast; null for an empty one. */
-internal fun decodeFastDay(text: String): FastDay? {
+internal fun decodeSunnahFastDay(text: String): SunnahFastDay? {
     if (text.isEmpty()) return null
     val (date, kinds) = text.split(':').also { require(it.size == 2) }
     val (year, month, day) = date.split('-').also { require(it.size == 3) }.map(String::toInt)
-    return FastDay(HijriDate(year, month, day), kinds.split(',').mapTo(mutableSetOf(), SunnahFast::valueOf))
+    return SunnahFastDay(HijriDate(year, month, day), kinds.split(',').mapTo(mutableSetOf(), SunnahFast::valueOf))
 }
 
 private const val CUSTOM_PREFIX = "CUSTOM:"

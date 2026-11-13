@@ -41,7 +41,7 @@ class RamadanStateTest {
 
         assertEquals(
             RamadanState.Fasting(
-                dayOfRamadan = 15,
+                fastingDayNumber = 15,
                 imsak = core.timeOn("2027-02-22", Prayer.FAJR).minusMinutes(10),
                 maghrib = core.timeOn("2027-02-22", Prayer.MAGHRIB),
             ),
@@ -66,7 +66,7 @@ class RamadanStateTest {
         val maghrib = core.timeOn("2027-02-22", Prayer.MAGHRIB)
 
         val expected = RamadanState.Suhoor(
-            dayOfRamadan = 16,
+            fastingDayNumber = 16,
             imsak = core.timeOn("2027-02-23", Prayer.FAJR).minusMinutes(10),
             maghrib = core.timeOn("2027-02-23", Prayer.MAGHRIB),
         )
@@ -94,7 +94,7 @@ class RamadanStateTest {
     fun `after Maghrib on the last day there is no suhoor, and Eid morning is not a fast`() {
         val core = core()
 
-        assertEquals(29, (core.ramadanState(makkah("2027-03-08", "12:00").toInstant()) as RamadanState.Fasting).dayOfRamadan)
+        assertEquals(29, (core.ramadanState(makkah("2027-03-08", "12:00").toInstant()) as RamadanState.Fasting).fastingDayNumber)
         assertEquals(RamadanState.None, core.ramadanState(core.timeOn("2027-03-08", Prayer.MAGHRIB).toInstant()))
         assertEquals(RamadanState.None, core.ramadanState(makkah("2027-03-09", "03:00").toInstant()))
         assertEquals(RamadanState.None, core.ramadanState(makkah("2027-03-09", "12:00").toInstant()))
@@ -125,6 +125,22 @@ class RamadanStateTest {
     }
 
     @Test
+    fun `Ramadan Mode counts to Iftar while fasting and to Imsak during suhoor, the bar running from Imsak only while fasting`() {
+        val core = core()
+        val imsak = core.timeOn("2027-02-22", Prayer.FAJR).minusMinutes(10)
+        val maghrib = core.timeOn("2027-02-22", Prayer.MAGHRIB)
+
+        val fasting = core.ramadanState(makkah("2027-02-22", "12:00").toInstant()) as RamadanState.Active
+        assertEquals(maghrib, fasting.countsTo)
+        assertEquals(imsak, fasting.fastFrom)
+
+        val suhoor = core.ramadanState(makkah("2027-02-22", "02:30").toInstant()) as RamadanState.Active
+        assertEquals(imsak, suhoor.countsTo)
+        assertEquals(null, suhoor.fastFrom)
+        assertEquals(15, suhoor.fastingDayNumber)
+    }
+
+    @Test
     fun `outside Ramadan the state is none`() {
         assertEquals(RamadanState.None, state(makkah("2026-11-12", "12:00")))
         assertEquals(RamadanState.None, state(makkah("2026-11-12", "03:00")))
@@ -134,14 +150,14 @@ class RamadanStateTest {
     @Test
     fun `the Hijri offset moves Ramadan Mode with the user's day`() {
         // Offset +1: 2027-02-07 is already 1 Ramadan, and 2027-03-08 is 1 Shawwal.
-        assertEquals(1, (state(makkah("2027-02-07", "12:00"), settings(hijriOffsetDays = 1)) as RamadanState.Fasting).dayOfRamadan)
+        assertEquals(1, (state(makkah("2027-02-07", "12:00"), settings(hijriOffsetDays = 1)) as RamadanState.Fasting).fastingDayNumber)
         assertEquals(RamadanState.None, state(makkah("2027-03-08", "12:00"), settings(hijriOffsetDays = 1)))
         // Offset 0: as the calendar says.
-        assertEquals(1, (state(makkah("2027-02-08", "12:00"), settings(hijriOffsetDays = 0)) as RamadanState.Fasting).dayOfRamadan)
+        assertEquals(1, (state(makkah("2027-02-08", "12:00"), settings(hijriOffsetDays = 0)) as RamadanState.Fasting).fastingDayNumber)
         // Offset −1: 2027-02-08 is still 30 Sha'ban (suhoor only after its Maghrib), and 2027-03-09 is 29 Ramadan.
         assertEquals(RamadanState.None, state(makkah("2027-02-08", "12:00"), settings(hijriOffsetDays = -1)))
-        assertEquals(1, (state(makkah("2027-02-08", "22:00"), settings(hijriOffsetDays = -1)) as RamadanState.Suhoor).dayOfRamadan)
-        assertEquals(29, (state(makkah("2027-03-09", "12:00"), settings(hijriOffsetDays = -1)) as RamadanState.Fasting).dayOfRamadan)
+        assertEquals(1, (state(makkah("2027-02-08", "22:00"), settings(hijriOffsetDays = -1)) as RamadanState.Suhoor).fastingDayNumber)
+        assertEquals(29, (state(makkah("2027-03-09", "12:00"), settings(hijriOffsetDays = -1)) as RamadanState.Fasting).fastingDayNumber)
     }
 
     @Test

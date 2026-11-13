@@ -103,7 +103,7 @@ class NextPrayerContentTest {
         assertEquals("٠٤:٥٩", content.previousTime)
         // 8:01 of the fast's 12:42 have passed.
         assertEquals(481f / 762f, content.progress, 0.001f)
-        assertEquals(15, content.ramadanDay)
+        assertEquals(15, content.fastingDayNumber)
         assertEquals(false, content.isTomorrow)
     }
 
@@ -122,7 +122,7 @@ class NextPrayerContentTest {
         assertEquals("19:11", content.previousTime)
         // 49 minutes of the 9:48 from Isha to Imsak.
         assertEquals(49f / 588f, content.progress, 0.001f)
-        assertEquals(15, content.ramadanDay)
+        assertEquals(15, content.fastingDayNumber)
     }
 
     @Test
@@ -149,6 +149,6 @@ class NextPrayerContentTest {
 
         assertEquals(R.string.prayer_dhuhr, content.nameRes)
         assertEquals("12:04", content.time)
-        assertEquals(null, content.ramadanDay)
+        assertEquals(null, content.fastingDayNumber)
     }
 }

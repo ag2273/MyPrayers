@@ -547,7 +547,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                         ),
                         qiyam = QiyamReminder(
                             enabled = this[QIYAM_ENABLED] ?: sunnah.qiyam.enabled,
-                            style = this[QIYAM_STYLE]?.let { name -> QiyamStyle.entries.firstOrNull { it.name == name } } ?: sunnah.qiyam.style,
+                            style = this[QIYAM_STYLE].toEnum(sunnah.qiyam.style),
                         ),
                     )
                 },

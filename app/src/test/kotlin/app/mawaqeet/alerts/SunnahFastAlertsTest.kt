@@ -9,7 +9,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.alerts.AlertScheduler.Companion.requestCode
 import app.mawaqeet.core.AlertPlan
-import app.mawaqeet.core.FastDay
+import app.mawaqeet.core.SunnahFastDay
 import app.mawaqeet.core.HijriDate
 import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.SunnahFast
@@ -41,7 +41,7 @@ class SunnahFastAlertsTest {
     private val night = Instant.parse("2026-11-22T16:45:00Z")
 
     private fun fastReminder(prayerDay: LocalDate, hijri: HijriDate, vararg kinds: SunnahFast) =
-        PlannedWorshipReminder(WorshipReminderKind.SUNNAH_FAST, night, prayerDay, fast = FastDay(hijri, kinds.toSet()))
+        PlannedWorshipReminder(WorshipReminderKind.SUNNAH_FAST, night, prayerDay, fast = SunnahFastDay(hijri, kinds.toSet()))
 
     private val mondayAndWhite = fastReminder(sunday, HijriDate(1448, 6, 13), SunnahFast.MONDAY_THURSDAY, SunnahFast.WHITE_DAYS)
 
