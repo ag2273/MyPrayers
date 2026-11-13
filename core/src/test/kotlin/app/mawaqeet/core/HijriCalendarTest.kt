@@ -128,4 +128,61 @@ class HijriCalendarTest {
         assertEquals(HijriDate(1448, 9, 29), days[9].hijri)
         assertEquals(HijriDate(1448, 10, 1), days[10].hijri)
     }
+
+    @Test
+    fun `a Hijri month gives its days from the 1st, as many as Umm al-Qura gives it`() {
+        val jumada = HijriCalendar().month(HijriMonth(1448, 6))
+        assertEquals(LocalDate.parse("2026-11-11"), jumada.first().date) // a Wednesday
+        assertEquals(HijriDate(1448, 6, 1), jumada.first().hijri)
+        assertEquals(29, jumada.size) // 1 Rajab is 10 December
+        assertEquals(LocalDate.parse("2026-12-09"), jumada.last().date)
+
+        val dhuAlHijjah = HijriCalendar().month(HijriMonth(1448, 12))
+        assertEquals(LocalDate.parse("2027-05-07"), dhuAlHijjah.first().date)
+        assertEquals(30, dhuAlHijjah.size) // 1 Muharram 1449 is 6 June 2027
+    }
+
+    @Test
+    fun `the Hijri offset moves a month's days with it`() {
+        assertEquals(LocalDate.parse("2026-11-10"), HijriCalendar(offsetDays = 1).month(HijriMonth(1448, 6)).first().date)
+        assertEquals(LocalDate.parse("2026-11-12"), HijriCalendar(offsetDays = -1).month(HijriMonth(1448, 6)).first().date)
+    }
+
+    @Test
+    fun `the month after Dhu al-Hijjah is Muharram of the next year, and back`() {
+        assertEquals(HijriMonth(1449, 1), HijriMonth(1448, 12).next())
+        assertEquals(HijriMonth(1448, 12), HijriMonth(1449, 1).previous())
+        assertEquals(HijriMonth(1448, 7), HijriMonth(1448, 6).next())
+        assertEquals(HijriMonth(1448, 6), HijriMonth.of(HijriDate(1448, 6, 3)))
+    }
+
+    @Test
+    fun `in this month lists the month's Occasions and fasts in date order, without the weekly fast`() {
+        fun entries(month: HijriMonth) = HijriCalendar().inMonth(month).map {
+            when (it) {
+                is MonthEntry.OccasionDays -> it.occasion.name
+                is MonthEntry.FastDays -> it.fast.name
+            } + " " + it.first.date + ".." + it.last.date
+        }
+
+        assertEquals(
+            listOf(
+                "FIRST_TEN_OF_DHU_AL_HIJJAH 2027-05-07..2027-05-16",
+                "ARAFAH 2027-05-15..2027-05-15",
+                "EID_AL_ADHA 2027-05-16..2027-05-16",
+                "TASHREEQ 2027-05-17..2027-05-19",
+                "WHITE_DAYS 2027-05-20..2027-05-21",
+            ),
+            entries(HijriMonth(1448, 12)),
+        )
+        assertEquals(
+            listOf(
+                "EID_AL_FITR 2027-03-09..2027-03-09",
+                "SIX_OF_SHAWWAL 2027-03-10..2027-03-15",
+                "WHITE_DAYS 2027-03-21..2027-03-23",
+            ),
+            entries(HijriMonth(1448, 10)),
+        )
+        assertEquals(listOf("WHITE_DAYS 2026-11-23..2026-11-25"), entries(HijriMonth(1448, 6)))
+    }
 }
