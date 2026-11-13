@@ -60,6 +60,11 @@ data class WidgetStyle(
     @param:ColorRes val ringMuted: Int = muted,
     /** The next Prayer's cell in Today times: a background tint, so it must be opaque. */
     @param:ColorRes val cellFill: Int = accentSoft,
+    /**
+     * A Clock Widget's countdown: the bright [text] on the regular surfaces (the tinted accent was too pale to read
+     * there); the gold [accent] on the deep surface and Gold Clock.
+     */
+    @param:ColorRes val countdown: Int = text,
     val deep: Boolean = false,
     /**
      * A widget that is deep only because of [WidgetAppearance.nextPrayerLook]: [WidgetFrame] draws the Next Prayer's
@@ -90,6 +95,7 @@ data class WidgetStyle(
                     responsive = modern,
                     band = fill,
                     cellFill = fill,
+                    countdown = if (light) R.color.widget_over_gold else R.color.widget_deep_gold,
                     deep = true,
                     star = !deep,
                 )
