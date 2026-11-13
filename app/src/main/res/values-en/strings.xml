@@ -608,6 +608,7 @@
     <string name="qiyam_alarm_channel_description">An alarm when the last third of the night begins, with the phone\'s alarm sound</string>
     <string name="last_third_begins">Last third of the night begins %1$s</string>
     <string name="last_third_began">Last third of the night began %1$s</string>
+    <string name="prayer_at">%1$s %2$s</string>
     <string name="about_use_serialization">The backup file</string>
 
     <!-- Settings → Backup (#98) -->

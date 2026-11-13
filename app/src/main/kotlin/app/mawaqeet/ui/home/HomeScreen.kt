@@ -533,8 +533,8 @@ private fun NextPrayerCard(day: DisplayDay, now: Instant, lastThird: ZonedDateTi
             Spacer(Modifier.height(sizes.barGap))
             ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
             Row(Modifier.fillMaxWidth().padding(top = sizes.smallGap).clearAndSetSemantics {}) {
-                Text("${prayerName(previous)} ${format.time(previous.time)}", style = sizes.small, color = onCard, modifier = Modifier.weight(1f))
-                Text("${prayerName(next)} ${format.time(next.time)}", style = sizes.small, color = onCard)
+                Text(stringResource(R.string.prayer_at, prayerName(previous), format.time(previous.time)), style = sizes.small, color = onCard, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.prayer_at, prayerName(next), format.time(next.time)), style = sizes.small, color = onCard)
             }
         } else if (lastThird != null) {
             Spacer(Modifier.height(sizes.barGap))
@@ -553,8 +553,9 @@ private fun LastThirdLine(start: ZonedDateTime, now: Instant, sizes: NextPrayerC
 /**
  * The Next Prayer card's Ramadan form (#90), as tall as the usual card so Today still fits a small phone: the day of
  * Ramadan and Imsak on top; while fasting, Iftar's time with the countdown to it and a bar from Imsak to Maghrib; from
- * Maghrib, the countdown to the end of suhoor. The next Prayer stays as one line at the bottom; after Isha that line
- * gives way to [lastThird], the start of the Last Third of the Night (#96).
+ * Maghrib, the countdown to the end of suhoor. The next Prayer stays as one line at the bottom (#83); after Isha the
+ * suhoor card, which has no bar, names [lastThird], the start of the Last Third of the Night (#96), above it, or on a
+ * short screen beside the next Prayer's name and time, so the card is no taller than the fasting one.
  */
 @Composable
 private fun RamadanCard(
@@ -603,20 +604,24 @@ private fun RamadanCard(
             Spacer(Modifier.height(sizes.barGap))
             ProgressBar(passed.toFloat() / total, sizes.barHeight, track = onCard.copy(alpha = 0.2f), fill = colors.tertiary)
         }
-        if (lastThird != null) {
-            LastThirdLine(lastThird, now, sizes, onCard, Modifier.padding(top = sizes.smallGap))
-        } else {
-            Text(
-                stringResource(
-                    R.string.ramadan_next_prayer,
-                    prayerName(next),
-                    format.time(next.time),
-                    format.hoursMinutes(Duration.between(now, next.time.toInstant())),
-                ),
-                style = sizes.small,
-                color = onCard,
-                modifier = Modifier.padding(top = sizes.smallGap),
-            )
+        val nextPrayerLine = stringResource(
+            R.string.ramadan_next_prayer,
+            prayerName(next),
+            format.time(next.time),
+            format.hoursMinutes(Duration.between(now, next.time.toInstant())),
+        )
+        when {
+            lastThird == null -> Text(nextPrayerLine, style = sizes.small, color = onCard, modifier = Modifier.padding(top = sizes.smallGap))
+            // Suhoor has no bar: in its place the Last Third, above the next Prayer line.
+            sizes.stacked -> {
+                LastThirdLine(lastThird, now, sizes, onCard, Modifier.padding(top = sizes.smallGap))
+                Text(nextPrayerLine, style = sizes.small, color = onCard, modifier = Modifier.padding(top = sizes.smallGap))
+            }
+            // On a short screen they share one line, as the usual card's bar ends do: «الثلث الأخير … · الفجر ٥:٠٠ ص».
+            else -> Row(Modifier.fillMaxWidth().padding(top = sizes.smallGap), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LastThirdLine(lastThird, now, sizes, onCard, Modifier.weight(1f))
+                Text(stringResource(R.string.prayer_at, prayerName(next), format.time(next.time)), style = sizes.small, color = onCard)
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -351,9 +352,20 @@ class HomeFitTest {
         assertScrollsWithoutClipping(hint = true)
     }
 
-    // After Isha the card swaps its bar for the Last Third of the Night (#96): no taller, so Today still fits.
+    // After Isha the card swaps its bar for the Last Third of the Night (#96); the suhoor card, which has no bar, puts
+    // it in the bar's slot and keeps its next Prayer line. Today still fits.
     private fun assertLastThirdShown() =
         compose.onNodeWithText(LAST_THIRD, substring = true, useUnmergedTree = true).assertIsDisplayed()
+
+    /**
+     * The suhoor card keeps the next Prayer (#83) with the Last Third: its full line under it at the regular sizes,
+     * «الفجر ٥:٠٠ ص» beside it at the compact ones. Fajr's row in the list is named without a time.
+     */
+    private fun assertNextPrayerLineShown(size: TodaySize) {
+        val line = if (size == TodaySize.REGULAR) "الصلاة القادمة: الفجر " else "الفجر "
+        compose.onAllNodes(hasText(line, substring = true), useUnmergedTree = true).onFirst().assertIsDisplayed()
+        if (size == TodaySize.COMPACT) assertEquals(0, compose.onAllNodes(hasText("الصلاة القادمة", substring = true), useUnmergedTree = true).fetchSemanticsNodes().size)
+    }
 
     @Test @Config(qualifiers = "ar-w360dp-h740dp")
     fun `360x740 after Isha fits at the compact sizes with the Last Third, with the hint`() {
@@ -375,6 +387,7 @@ class HomeFitTest {
     fun `360x740 during suhoor fits with the Last Third on the Ramadan card, with the hint`() {
         showToday(ramadan = true, hint = true, night = true)
         assertLastThirdShown()
+        assertNextPrayerLineShown(TodaySize.COMPACT)
         assertFillsTheScreen(hint = true)
         assertEquals(TodaySize.COMPACT, todaySize())
     }
@@ -383,6 +396,7 @@ class HomeFitTest {
     fun `393x852 during suhoor fits at the regular sizes with the Last Third on the Ramadan card`() {
         showToday(ramadan = true, hint = false, night = true)
         assertLastThirdShown()
+        assertNextPrayerLineShown(TodaySize.REGULAR)
         assertFillsTheScreen(hint = false)
         assertEquals(TodaySize.REGULAR, todaySize())
     }

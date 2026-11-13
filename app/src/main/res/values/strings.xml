@@ -664,6 +664,8 @@
     <string name="qiyam_alarm_channel_description">منبّه عند بدء الثلث الأخير من الليل، بصوت منبّه الهاتف</string>
     <string name="last_third_begins">الثلث الأخير من الليل يبدأ %1$s</string>
     <string name="last_third_began">الثلث الأخير من الليل بدأ %1$s</string>
+    <!-- A Prayer and its time on the Next Prayer card: «العشاء ٧:٠٦ م». -->
+    <string name="prayer_at">%1$s %2$s</string>
     <string name="about_use_serialization">ملف النسخة الاحتياطية</string>
 
     <!-- Settings → Backup (#98) -->
