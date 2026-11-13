@@ -20,6 +20,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -145,7 +146,11 @@ class BackupScreenTest {
     }
 
     /** The settings file outlives a test; every restore test starts from a method the file it restores doesn't use. */
-    private fun startOnUmmAlQura() = runBlocking { app.settings.setCalculationMethod(CalculationMethod.UMM_AL_QURA) }
+    /** A restore can turn on Prayer Silence, which other tests expect off. */
+    @After
+    fun turnPrayerSilenceOff() = runBlocking { app.settings.setPrayerSilenceEnabled(false) }
+
+    private fun startOnUmmAlQura() =runBlocking { app.settings.setCalculationMethod(CalculationMethod.UMM_AL_QURA) }
 
     private fun method() =runBlocking { app.settings.settings.first().method }
 
