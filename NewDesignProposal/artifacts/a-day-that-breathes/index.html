@@ -190,7 +190,15 @@ html[data-theme="dark"] .chip[aria-pressed="true"]{background:#8FD3C8;border-col
 html[data-theme="dark"] .tap-btn{background:#8FD3C8;color:#0E1917}
 .tap-btn:active{transform:scale(.95)}
 .dhikr.done .tap-btn{background:transparent;color:var(--teal);border:1px solid rgba(31,111,102,.4)}
-.tasbeeh{margin:18px 0 6px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.tasbeeh{margin:18px 0 6px;display:flex;flex-direction:column;align-items:center;gap:12px}
+/* 1.4: the button sits under the counting hand, the count on the other side so the thumb never covers it */
+.tasbeeh-pad{direction:ltr;display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;padding:0 6px}
+.tas-hand{margin:0;font-family:var(--font-ui);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.tasbeeh-pad.left{flex-direction:row-reverse}
+.tasbeeh-count{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;direction:rtl}
+html[lang="en"] .tasbeeh-count{direction:ltr}
+.tasbeeh-count b{font-family:var(--font-display);font-weight:500;font-size:clamp(48px,15cqw,66px);line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+.tasbeeh-count span{font-family:var(--font-ui);font-size:12.5px;color:var(--muted)}
 .tasbeeh-btn{width:168px;height:168px;border-radius:50%;border:1px solid rgba(224,162,70,.5);
   background:radial-gradient(circle at 38% 32%, rgba(255,255,255,.5), transparent 62%), var(--teal);
   color:#fff;font-family:var(--font-display);font-size:44px;font-variant-numeric:tabular-nums;
@@ -198,7 +206,9 @@ html[data-theme="dark"] .tap-btn{background:#8FD3C8;color:#0E1917}
   box-shadow:0 18px 40px rgba(19,74,68,.35), inset 0 0 0 6px rgba(255,255,255,.07);
   transition:transform .1s var(--ease);user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .tasbeeh-btn:active{transform:scale(.97)}
-.tasbeeh-btn small{position:absolute;bottom:26px;font-family:var(--font-ui);font-size:10.5px;letter-spacing:.16em;opacity:.75}
+.tasbeeh-btn{width:clamp(136px,40cqw,168px);height:clamp(136px,40cqw,168px);flex:none}
+.tasbeeh-btn svg{width:34%;height:34%;stroke:#fff;fill:none;stroke-width:1.4;opacity:.9}
+.tasbeeh-btn small{position:absolute;bottom:22px;font-family:var(--font-ui);font-size:10.5px;letter-spacing:.16em;opacity:.75}
 .tasbeeh-row{display:flex;gap:8px}
 .ghost-btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:14px;padding:10px 14px;
   font-family:var(--font-ui);font-size:12px;cursor:pointer;min-height:44px}
@@ -822,6 +832,7 @@ html[dir="ltr"] .w .bar em{transform:translate(-50%,-50%)}
     silence: { on: false, dnd: false, mode: "silent", prayers: { fajr: false, dhuhr: true, asr: true, maghrib: true, isha: true }, minutes: 20, jumuah: true, jumuahMinutes: 60 },
     worship: { salawat: true, salawatEvery: 1, morning: true, morningMin: 30, evening: true, eveningMin: 30, kahf: true },
     sunnah: { duha: false, duhaMin: 60, qiyam: false, qiyamStyle: "notification" },
+    tasbeehHand: "right",
     fasts: { monThu: true, white: true, arafah: true, ashura: true, shawwal: true },
     ramadan: { suhoor: true, suhoorMin: 60, imsakAlert: true, imsak: 10 },
     widgets: { alpha: 0, colors: "app", deepLook: false },
@@ -1448,8 +1459,11 @@ html[dir="ltr"] .w .bar em{transform:translate(-50%,-50%)}
       ${reader}
       <div class="card">${tapRow(L("سجل الأذكار", "Adhkar record"), L("الأيام التي أتممت فيها الأذكار", "The days you completed the adhkar"), "", "adhRecord", "", "calendar")}</div>
       <div class="tasbeeh">
-        <button class="tasbeeh-btn" id="tasbeehBtn" aria-label="${L("التسبيح", "Tasbeeh")}"><span id="tasbeehCount">${num(D.tas)}</span><small>${L("اضغط للتسبيح", "TAP")}</small></button>
-        <p class="arc-label" style="margin:0;letter-spacing:.02em" id="tasTotal">${L("مجموع اليوم", "Today's total")}: ${num(D.tas)}</p>
+        <div class="tasbeeh-pad ${S.tasbeehHand === "left" ? "left" : "right"}">
+          <div class="tasbeeh-count" aria-live="polite"><b id="tasbeehCount">${num(D.tas)}</b><span id="tasTotal">${L("مجموع اليوم", "Today's total")}</span></div>
+          <button class="tasbeeh-btn" id="tasbeehBtn" aria-label="${L("سبّح", "Count")}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg><small>${L("اضغط للتسبيح", "TAP")}</small></button>
+        </div>
+        <p class="tas-hand">${S.tasbeehHand === "left" ? L("للتسبيح باليد اليسرى", "Set for the left hand") : L("للتسبيح باليد اليمنى", "Set for the right hand")} · <button class="link-btn" data-act="openDisplay">${L("تغيير", "Change")}</button></p>
         <div class="tasbeeh-row"><button class="ghost-btn" data-act="resetTasbeeh">${L("تصفير", "Reset")}</button></div>
       </div>`;
   }
@@ -1674,6 +1688,8 @@ html[dir="ltr"] .w .bar em{transform:translate(-50%,-50%)}
         ${segRow(L("الأرقام", "Digits"), [{ v: "auto", l: L("تلقائي", "Auto") }, { v: "arabic", l: "٠١٢" }, { v: "latin", l: "123" }], "digits", L("تلقائي: حسب لغة الهاتف وإعداداته", "Auto follows the phone"))}
         ${segRow(L("المظهر", "Theme"), [{ v: "auto", l: L("حسب الهاتف", "Phone") }, { v: "light", l: L("فاتح", "Light") }, { v: "dark", l: L("داكن", "Dark") }], "theme")}
       </div>
+      ${card(L("السبحة", "Tasbeeh"), `
+        ${segRow(L("التسبيح باليد", "Count with"), [{ v: "right", l: L("اليمنى", "Right hand") }, { v: "left", l: L("اليسرى", "Left hand") }], "tasbeehHand", L("زر التسبيح يكون تحت إصبعك، والعدد في الناحية الأخرى ليبقى ظاهرًا.", "The button sits under your thumb and the count on the other side, so it stays visible."))}`)}
       ${card(L("تعديل التاريخ الهجري", "Hijri date adjustment"), `
         ${stepRow(hijriText(clockNow()), L("لمطابقة رؤية الهلال في بلدك", "To match the moon sighting where you live"), "hijriOffset", 1, -2, 2, (v) => (v ? L(`${signed(v)} يوم`, `${signed(v)} day`) : L("بلا تعديل", "None")))}`)}`;
   }
@@ -2082,7 +2098,6 @@ html[dir="ltr"] .w .bar em{transform:translate(-50%,-50%)}
       const btn = $("#tasbeehBtn"); ripple(ev, btn); buzz(8);
       const D = adhDay(clockNow()); D.tas += 1; saveAdh();
       $("#tasbeehCount").textContent = num(D.tas);
-      $("#tasTotal").textContent = `${L("مجموع اليوم", "Today's total")}: ${num(D.tas)}`;
       return;
     }
     const el = ev.target.closest("[data-act]");
@@ -2107,6 +2122,7 @@ html[dir="ltr"] .w .bar em{transform:translate(-50%,-50%)}
       case "homePage": return sub(arg);
       case "openLocation": S.tab = "settings"; S.pages.settings = "location"; return go(() => { applyChrome(); renderTab(); });
       case "openFix": S.tab = "settings"; S.pages.settings = "fix"; return go(() => { applyChrome(); renderTab(); });
+      case "openDisplay": S.tab = "settings"; S.pages.settings = "display"; return go(() => { applyChrome(); renderTab(); main.scrollTop = 0; });
       case "tipDone": S.alertState = "ready"; return go(renderAll);
       case "mosques": return openSheet("mosques");
       case "sheet": return openSheet(arg);
