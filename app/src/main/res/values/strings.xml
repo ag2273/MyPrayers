@@ -644,4 +644,9 @@
     <string name="backup_restore_damaged">هذا الملف تالف أو ليس نسخة احتياطية من مواقيت. لم يتغير شيء.</string>
     <string name="backup_restore_newer">هذا الملف من إصدار أحدث من مواقيت. حدّث التطبيق ثم أعد المحاولة. لم يتغير شيء.</string>
     <string name="backup_restore_unreadable">تعذّرت قراءة الملف. لم يتغير شيء.</string>
+    <!-- Next Prayer widgets in Ramadan Mode (#92). -->
+    <string name="widget_iftar">الإفطار</string>
+    <string name="widget_suhoor_ends">السحور ينتهي</string>
+    <string name="widget_chip_imsak">تنبيه الإمساك</string>
+    <string name="widget_chip_imsak_off">بلا تنبيه</string>
 </resources>

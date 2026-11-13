@@ -78,8 +78,9 @@ data class AlertPlan(
     val nextLocalMidnight: Instant,
     /**
      * The next moment the display day changes with no Adhan Alert to announce it: a Prayer Time whose Adhan Alert
-     * is turned off, or [nextLocalMidnight], whichever comes first. The scheduler's display alarm goes here, so
-     * widgets move on at every Prayer Time and at midnight without polling.
+     * is turned off, a Fasting Day's Imsak (Ramadan Mode, #92), or [nextLocalMidnight], whichever comes first. The
+     * scheduler's display alarm goes here, so widgets move on at every Prayer Time, at Imsak and at midnight without
+     * polling.
      */
     val nextDisplayChange: Instant = nextLocalMidnight,
     /**

@@ -592,4 +592,9 @@
     <string name="backup_restore_damaged">This file is damaged or isn\'t a Mawaqeet backup. Nothing changed.</string>
     <string name="backup_restore_newer">This file is from a newer version of Mawaqeet. Update the app, then try again. Nothing changed.</string>
     <string name="backup_restore_unreadable">The file couldn\'t be read. Nothing changed.</string>
+    <!-- Next Prayer widgets in Ramadan Mode (#92). -->
+    <string name="widget_iftar">Iftar</string>
+    <string name="widget_suhoor_ends">Suhoor ends</string>
+    <string name="widget_chip_imsak">Imsak alert</string>
+    <string name="widget_chip_imsak_off">No alert</string>
 </resources>
