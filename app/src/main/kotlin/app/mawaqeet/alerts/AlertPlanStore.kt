@@ -81,7 +81,7 @@ internal class AlertPlanStore(context: Context) {
         }
         for (w in plan.silenceWindows) appendLine(SILENCE + "\t" + encodeSilenceWindow(w))
         for (r in plan.worshipReminders) {
-            appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot, encodeFastDay(r.fast)).joinToString("\t"))
+            appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot, encodeFastDay(r.fast), r.alarm).joinToString("\t"))
         }
         appendLine(listOf(STYLE, style.digits.name, style.language).joinToString("\t"))
     }
@@ -94,13 +94,14 @@ internal class AlertPlanStore(context: Context) {
         val (silenceLines, alertLines) = otherLines.partition { it.startsWith(SILENCE + "\t") }
         val worshipReminders = worshipLines.map { line ->
             val f = line.split('\t')
-            require(f.size == 5 || f.size == 6)
+            require(f.size in 5..7)
             PlannedWorshipReminder(
                 kind = WorshipReminderKind.valueOf(f[1]),
                 prayerDay = LocalDate.parse(f[2]),
                 instant = Instant.ofEpochMilli(f[3].toLong()),
                 slot = f[4].toInt(),
                 fast = decodeFastDay(f.getOrElse(5) { "" }),
+                alarm = f.getOrNull(6)?.toBooleanStrict() ?: false,
             )
         }
         val silenceWindows = silenceLines.map { decodeSilenceWindow(it.removePrefix(SILENCE + "\t")) }
@@ -127,14 +128,20 @@ internal class AlertPlanStore(context: Context) {
 
     companion object {
         const val FILE_NAME = "alert_plan.txt"
-        /** v9 (#95) adds the Sunnah Fast field at the end of a Worship Reminder's line; v8 (#91) the Iftar field to an alert's. */
-        private const val VERSION = "alert-plan-v9"
-        private val READABLE_VERSIONS = setOf(VERSION, "alert-plan-v8", "alert-plan-v7", "alert-plan-v6")
+        /**
+         * v10 (#97) adds the alarm field at the end of a Worship Reminder's line (an alarm-style Qiyam reminder), v9 (#95)
+         * the Sunnah Fast field before it; v8 (#91) the Iftar field to an alert's.
+         */
+        private const val VERSION = "alert-plan-v10"
+        private val READABLE_VERSIONS = setOf(VERSION, "alert-plan-v9", "alert-plan-v8", "alert-plan-v7", "alert-plan-v6")
 
         /** First field of a Silence Window's line (#61). */
         private const val SILENCE = "silence"
 
-        /** First field of a Worship Reminder's line (#63): `worship kind prayerDay instant slot fast` ([encodeFastDay], v9). */
+        /**
+         * First field of a Worship Reminder's line (#63): `worship kind prayerDay instant slot fast alarm` ([encodeFastDay],
+         * v9; alarm, v10).
+         */
         private const val WORSHIP = "worship"
 
         /** First field of the [NotificationStyle] line (v7): `style digits language`. */

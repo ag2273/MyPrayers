@@ -103,6 +103,21 @@ data class AdhanNotification(
          */
         const val CHANNEL_REMINDERS = "prayer_reminders"
 
+        /**
+         * Whether a full-screen intent may open an alarm over the lock screen: always before Android 14, then only with
+         * the «Full screen notifications» permission the user can withdraw.
+         */
+        fun canShowOverLockScreen(context: Context): Boolean =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE || fullScreenPermission(context)
+
+        /** The phone's answer for Android 14's full-screen permission. */
+        internal val DEVICE_FULL_SCREEN_PERMISSION: (Context) -> Boolean =
+            { it.getSystemService(NotificationManager::class.java).canUseFullScreenIntent() }
+
+        /** Android 14's full-screen permission; tests stand in for it, since Robolectric cannot grant it. */
+        @androidx.annotation.VisibleForTesting
+        internal var fullScreenPermission: (Context) -> Boolean = DEVICE_FULL_SCREEN_PERMISSION
+
         fun canPost(context: Context): Boolean =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED

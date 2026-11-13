@@ -61,6 +61,36 @@ class AccessibilityTest {
         }
     }
 
+    /** Alerts with the Qiyam reminder on in alarm style (#97): its style choice and the alarm's description. */
+    private fun checkQiyamAlarm(settings: String, alerts: String, alarm: String) {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        try {
+            kotlinx.coroutines.runBlocking {
+                store.setQiyamReminder(true)
+                store.setQiyamStyle(app.mawaqeet.core.QiyamStyle.ALARM)
+            }
+            open(settings)
+            open(alerts)
+            compose.waitUntil(5_000) { compose.onAllNodes(hasText(alarm)).fetchSemanticsNodes().isNotEmpty() }
+            compose.assertAccessible("$alerts with the Qiyam alarm", density)
+        } finally {
+            kotlinx.coroutines.runBlocking {
+                store.setQiyamReminder(false)
+                store.setQiyamStyle(app.mawaqeet.core.QiyamStyle.NOTIFICATION)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "ar-w360dp-h12000dp")
+    fun `in Arabic at 200% the Qiyam reminder's style choice is whole and big enough`() =
+        checkQiyamAlarm("الإعدادات", "التنبيهات والأذان", "منبّه")
+
+    @Test
+    @Config(qualifiers = "en-w360dp-h12000dp")
+    fun `in English at 200% the Qiyam reminder's style choice is whole and big enough`() =
+        checkQiyamAlarm("Settings", "Alerts & adhan", "Alarm")
+
     @Test
     @Config(qualifiers = "ar-w360dp-h12000dp")
     fun `in Arabic at 200% text nothing is cut off and every tap target is big enough`() =

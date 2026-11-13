@@ -657,6 +657,11 @@
     <string name="qiyam_reminder">قيام الليل</string>
     <string name="qiyam_reminder_description">عند بدء الثلث الأخير من الليل</string>
     <string name="qiyam_reminder_text">بدأ الثلث الأخير من الليل، وقت قيام الليل</string>
+    <string name="qiyam_style_notification">إشعار</string>
+    <string name="qiyam_style_alarm">منبّه</string>
+    <string name="qiyam_style_alarm_description">يظهر فوق شاشة القفل بصوت المنبّه دقيقةً واحدة، لا بالأذان</string>
+    <string name="qiyam_alarm_channel_name">منبّه قيام الليل</string>
+    <string name="qiyam_alarm_channel_description">منبّه عند بدء الثلث الأخير من الليل، بصوت منبّه الهاتف</string>
     <string name="last_third_begins">الثلث الأخير من الليل يبدأ %1$s</string>
     <string name="last_third_began">الثلث الأخير من الليل بدأ %1$s</string>
     <string name="about_use_serialization">ملف النسخة الاحتياطية</string>

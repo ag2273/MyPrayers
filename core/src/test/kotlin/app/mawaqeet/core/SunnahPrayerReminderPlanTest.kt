@@ -183,6 +183,33 @@ class SunnahPrayerReminderPlanTest {
     }
 
     @Test
+    fun `the Qiyam reminder is a notification by default, and an alarm only in alarm style`() {
+        assertEquals(QiyamStyle.NOTIFICATION, QiyamReminder().style)
+        fun qiyam(style: QiyamStyle) =
+            core(makkah("2026-11-15", "21:00"), sunnahOn(qiyam = QiyamReminder(enabled = true, style = style))).alertPlan()
+
+        assertEquals(listOf(false, false), qiyam(QiyamStyle.NOTIFICATION).of(WorshipReminderKind.QIYAM).map { it.alarm })
+        val alarm = qiyam(QiyamStyle.ALARM)
+        assertEquals(listOf(true, true), alarm.of(WorshipReminderKind.QIYAM).map { it.alarm })
+        // Only the Qiyam reminder rings: Duha stays a notification.
+        assertEquals(listOf(false, false), alarm.of(WorshipReminderKind.DUHA).map { it.alarm })
+    }
+
+    @Test
+    fun `with the master switch off no Qiyam alarm is planned`() {
+        val settings = sunnahOn(qiyam = QiyamReminder(enabled = true, style = QiyamStyle.ALARM), alerts = AlertSettings(enabled = false))
+
+        assertEquals(emptyList(), core(makkah("2026-11-15", "21:00"), settings).alertPlan().of(WorshipReminderKind.QIYAM))
+    }
+
+    @Test
+    fun `only a Qiyam reminder can be an alarm`() {
+        assertFailsWith<IllegalArgumentException> {
+            PlannedWorshipReminder(WorshipReminderKind.DUHA, java.time.Instant.EPOCH, LocalDate.parse("2026-11-15"), alarm = true)
+        }
+    }
+
+    @Test
     fun `a Qiyam reminder already past is not planned again`() {
         val core = core(makkah("2026-11-16", "03:00"), sunnahOn(duha = DuhaReminder()))
 

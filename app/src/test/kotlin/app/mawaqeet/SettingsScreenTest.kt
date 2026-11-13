@@ -388,6 +388,34 @@ class SettingsScreenTest {
 
     @Test
     @Config(qualifiers = "en")
+    fun `once Qiyam is on its style shows under it, a notification until Alarm is chosen`() {
+        val store = (compose.activity.application as MawaqeetApplication).settings
+        fun qiyam() = runBlocking { store.settings.first() }.alerts.worshipReminders.sunnahPrayers.qiyam
+        openSettings("Settings")
+        openPage("Alerts & adhan")
+        try {
+            assertEquals(0, compose.onAllNodesWithText("Alarm").fetchSemanticsNodes().size)
+
+            compose.onNodeWithText("Night prayer (Qiyam)").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { qiyam().enabled }
+            compose.waitUntil(timeoutMillis = 5_000) { compose.onAllNodesWithText("Alarm").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("Notification").performScrollTo().assertIsSelected()
+
+            compose.onNodeWithText("Alarm").performScrollTo().performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { qiyam().style == app.mawaqeet.core.QiyamStyle.ALARM }
+            compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Alarm").assertIsSelected() }.isSuccess }
+            compose.onNodeWithText("Shows over the lock screen with the alarm sound for one minute, never the adhan")
+                .performScrollTo().assertIsDisplayed()
+        } finally {
+            runBlocking {
+                store.setQiyamReminder(false)
+                store.setQiyamStyle(app.mawaqeet.core.QiyamStyle.NOTIFICATION)
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en")
     fun `Imsak is 10 minutes before Fajr under Ramadan in Worship reminders, and each tap moves it 5 minutes`() {
         val store = (compose.activity.application as MawaqeetApplication).settings
         fun imsak() = runBlocking { store.settings.first() }.alerts.ramadan.imsakMinutes

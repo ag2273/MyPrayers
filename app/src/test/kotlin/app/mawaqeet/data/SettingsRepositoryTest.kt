@@ -459,6 +459,44 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `the Qiyam reminder's style is a notification by default, and the alarm style survives a restart and a backup`() {
+        assertEquals(
+            app.mawaqeet.core.QiyamStyle.NOTIFICATION,
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers.qiyam.style,
+        )
+
+        val backup = withRepository { repo, _ ->
+            repo.setQiyamStyle(app.mawaqeet.core.QiyamStyle.ALARM)
+            repo.backupSettings()
+        }
+
+        // Kept while the reminder is off.
+        val chosen = app.mawaqeet.core.QiyamReminder(enabled = false, style = app.mawaqeet.core.QiyamStyle.ALARM)
+        assertEquals(chosen, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers.qiyam)
+        fun snapshot(settings: Map<String, app.mawaqeet.core.SettingValue>) = app.mawaqeet.core.BackupSnapshot(
+            settings, app.mawaqeet.core.PrayerLogBackup(null, emptyMap(), emptyList()), app.mawaqeet.core.AdhkarRecordBackup(null, emptyMap()),
+        )
+        val file = app.mawaqeet.core.Backup.export(snapshot(backup), java.time.Instant.parse("2026-11-13T00:00:00Z"))
+        val restored = (app.mawaqeet.core.Backup.restore(file, snapshot(emptyMap())) as app.mawaqeet.core.RestoreResult.Restored).snapshot
+        withRepository { repo, _ ->
+            repo.restoreSettings(emptyMap())
+            assertEquals(app.mawaqeet.core.QiyamReminder(), repo.settings.first().alerts.worshipReminders.sunnahPrayers.qiyam)
+            repo.restoreSettings(restored.settings)
+            assertEquals(chosen, repo.settings.first().alerts.worshipReminders.sunnahPrayers.qiyam)
+        }
+    }
+
+    @Test
+    fun `an unknown stored Qiyam style reads as a notification`() {
+        withRepository { _, store -> store.edit { it[androidx.datastore.preferences.core.stringPreferencesKey("worship_qiyam_style")] = "SIREN" } }
+
+        assertEquals(
+            app.mawaqeet.core.QiyamStyle.NOTIFICATION,
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.sunnahPrayers.qiyam.style,
+        )
+    }
+
+    @Test
     fun `stored Duha minutes outside the choices read as an hour after Sunrise`() {
         withRepository { _, store -> store.edit { it[intPreferencesKey("worship_duha_minutes")] = 50 } }
 

@@ -30,6 +30,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.lifecycleScope
+import app.mawaqeet.alerts.AdhanNotification
 import app.mawaqeet.alerts.AlertPermissions
 import app.mawaqeet.alerts.AlertRescheduler
 import app.mawaqeet.alerts.AlertScheduler
@@ -345,6 +346,10 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.setQiyamReminder(on) }
                             }
 
+                            override fun setQiyamStyle(style: app.mawaqeet.core.QiyamStyle) {
+                                scope.launch { settingsStore.setQiyamStyle(style) }
+                            }
+
                             override fun stepImsakMinutes(step: Int) {
                                 scope.launch { settingsStore.stepImsakMinutes(step) }
                             }
@@ -392,9 +397,7 @@ class MainActivity : AppCompatActivity() {
                                 return true
                             }
 
-                            override fun canShowOverLockScreen(): Boolean =
-                                android.os.Build.VERSION.SDK_INT < 34 ||
-                                    getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
+                            override fun canShowOverLockScreen(): Boolean = AdhanNotification.canShowOverLockScreen(this@MainActivity)
 
                             override fun openLockScreenPermission() {
                                 if (android.os.Build.VERSION.SDK_INT >= 34) {

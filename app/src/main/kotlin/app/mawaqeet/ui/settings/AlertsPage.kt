@@ -71,6 +71,7 @@ import app.mawaqeet.core.SalawatReminder
 import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SuhoorReminder
 import app.mawaqeet.core.DuhaReminder
+import app.mawaqeet.core.QiyamStyle
 import app.mawaqeet.core.FastReminders
 import app.mawaqeet.core.SunnahPrayerReminders
 import app.mawaqeet.core.SunnahFast
@@ -354,6 +355,25 @@ private fun SunnahPrayerRows(sunnah: SunnahPrayerReminders, actions: SettingsAct
             checked = sunnah.qiyam.enabled,
             onChange = actions::setQiyamReminder,
         )
+        if (sunnah.qiyam.enabled) {
+            RowDivider()
+            // «إشعار» or «منبّه» (#97); the alarm's description says what it does, and that it is never the adhan.
+            SegmentedChoice(
+                listOf(QiyamStyle.NOTIFICATION to R.string.qiyam_style_notification, QiyamStyle.ALARM to R.string.qiyam_style_alarm)
+                    .map { (style, label) -> Segment(stringResource(label), sunnah.qiyam.style == style) { actions.setQiyamStyle(style) } },
+                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            if (sunnah.qiyam.style == QiyamStyle.ALARM) {
+                Text(
+                    stringResource(R.string.qiyam_style_alarm_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                )
+                // Without it the alarm arrives as a notification only.
+                LockScreenPermissionRow(actions)
+            }
+        }
     }
 }
 

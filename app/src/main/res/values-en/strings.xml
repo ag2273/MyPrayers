@@ -601,6 +601,11 @@
     <string name="qiyam_reminder">Night prayer (Qiyam)</string>
     <string name="qiyam_reminder_description">When the last third of the night begins</string>
     <string name="qiyam_reminder_text">The last third of the night has begun: a time for Qiyam</string>
+    <string name="qiyam_style_notification">Notification</string>
+    <string name="qiyam_style_alarm">Alarm</string>
+    <string name="qiyam_style_alarm_description">Shows over the lock screen with the alarm sound for one minute, never the adhan</string>
+    <string name="qiyam_alarm_channel_name">Night prayer alarm</string>
+    <string name="qiyam_alarm_channel_description">An alarm when the last third of the night begins, with the phone\'s alarm sound</string>
     <string name="last_third_begins">Last third of the night begins %1$s</string>
     <string name="last_third_began">Last third of the night began %1$s</string>
     <string name="about_use_serialization">The backup file</string>

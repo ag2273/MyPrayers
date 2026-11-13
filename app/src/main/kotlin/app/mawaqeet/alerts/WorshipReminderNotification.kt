@@ -20,7 +20,7 @@ import java.time.DayOfWeek
  * A Worship Reminder's gentle notification (#63) on its own «تذكيرات العبادة» channel, with the system's default
  * notification sound (never an adhan). One notification per kind: a new salawat reminder replaces the last one.
  * Tapping opens the app; an adhkar reminder's tap opens its Adhkar Set (#75). The Surat Al-Kahf reminder (#64) also
- * has «قرأتها», which only dismisses it.
+ * has «قرأتها», which only dismisses it. An alarm-style Qiyam reminder (#97) goes to [QiyamAlarmNotification] instead.
  */
 internal object WorshipReminderNotification {
     const val CHANNEL = "worship_reminders"
@@ -44,11 +44,16 @@ internal object WorshipReminderNotification {
             WorshipReminderKind.IMSAK -> R.string.imsak_alert_title to R.string.imsak_alert_text
             WorshipReminderKind.SUNNAH_FAST -> R.string.fast_reminder_title to R.string.fast_reminder_text
             WorshipReminderKind.DUHA -> R.string.duha_reminder to R.string.duha_reminder_text
-            // A normal notification; #97 adds the alarm style, which the receiver will route here or to the alarm.
             WorshipReminderKind.QIYAM -> R.string.qiyam_reminder to R.string.qiyam_reminder_text
         }
         val strings = alertText(context)
         val body = if (reminder.kind == WorshipReminderKind.SUNNAH_FAST) fastText(strings, reminder) else strings.getString(text)
+        // An alarm-style Qiyam reminder (#97) rings over the lock screen; inside a Silence Window, or where full-screen
+        // alarms aren't allowed, it is this notification instead.
+        if (reminder.alarm && !silent && AdhanNotification.canShowOverLockScreen(context)) {
+            QiyamAlarmNotification.post(context, reminder, strings.getString(title), body)
+            return
+        }
         val id = id(reminder.kind)
         val tap = reminder.kind.adhkarSet?.let { set ->
             PendingIntent.getActivity(

@@ -93,15 +93,17 @@ enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
 
     /**
      * «قيام الليل» (#96), at the start of the Last Third of the Night; its Prayer Day is that night's Maghrib's, so a
-     * reminder after midnight still belongs to the day before. A normal notification for now (the alarm style is #97).
+     * reminder after midnight still belongs to the day before. A notification, or an alarm in [QiyamStyle.ALARM] (#97).
      */
     QIYAM,
 }
 
 /**
- * One Worship Reminder the scheduler must raise: a gentle notification at [instant], never an adhan. Identified by
+ * One Worship Reminder the scheduler must raise at [instant]: a gentle notification, never an adhan. Identified by
  * [kind], [prayerDay] and [slot] (its place among that kind's reminders on that Prayer Day, from 0; always 0 for a
  * kind that comes once a day). [fast] is what a [WorshipReminderKind.SUNNAH_FAST] reminder announces, null for the others.
+ * [alarm] marks a [WorshipReminderKind.QIYAM] reminder in [QiyamStyle.ALARM] (#97): it rings like an alarm, with the
+ * phone's alarm sound, still never an adhan.
  */
 data class PlannedWorshipReminder(
     val kind: WorshipReminderKind,
@@ -109,9 +111,11 @@ data class PlannedWorshipReminder(
     val prayerDay: LocalDate,
     val slot: Int = 0,
     val fast: FastDay? = null,
+    val alarm: Boolean = false,
 ) {
     init {
         require(slot in 0 until MAX_SLOTS) { "A Worship Reminder's slot is below $MAX_SLOTS, not $slot" }
+        require(!alarm || kind == WorshipReminderKind.QIYAM) { "Only the Qiyam reminder can be an alarm, not $kind" }
     }
 
     companion object {

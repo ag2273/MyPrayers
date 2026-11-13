@@ -32,6 +32,7 @@ import app.mawaqeet.core.AdhkarSetId
 import app.mawaqeet.core.DuhaReminder
 import app.mawaqeet.core.FastReminders
 import app.mawaqeet.core.QiyamReminder
+import app.mawaqeet.core.QiyamStyle
 import app.mawaqeet.core.SunnahPrayerReminders
 import app.mawaqeet.core.KahfReminder
 import app.mawaqeet.core.SunnahFast
@@ -363,6 +364,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[QIYAM_ENABLED] = on }
     }
 
+    /** The Qiyam reminder's [QiyamStyle] (#97), by name under `worship_qiyam_style`; kept while the reminder is off. */
+    suspend fun setQiyamStyle(style: QiyamStyle) {
+        store.edit { it[QIYAM_STYLE] = style.name }
+    }
+
     suspend fun setAlarmClockMode(on: Boolean) {
         store.edit { it[ALARM_CLOCK_MODE] = on }
     }
@@ -539,7 +545,10 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                             enabled = this[DUHA_ENABLED] ?: sunnah.duha.enabled,
                             minutes = this[DUHA_MINUTES]?.takeIf { it in DuhaReminder.MINUTES } ?: sunnah.duha.minutes,
                         ),
-                        qiyam = QiyamReminder(enabled = this[QIYAM_ENABLED] ?: sunnah.qiyam.enabled),
+                        qiyam = QiyamReminder(
+                            enabled = this[QIYAM_ENABLED] ?: sunnah.qiyam.enabled,
+                            style = this[QIYAM_STYLE]?.let { name -> QiyamStyle.entries.firstOrNull { it.name == name } } ?: sunnah.qiyam.style,
+                        ),
                     )
                 },
             ),
@@ -632,6 +641,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val DUHA_ENABLED = booleanPreferencesKey("worship_duha_enabled")
         private val DUHA_MINUTES = intPreferencesKey("worship_duha_minutes")
         private val QIYAM_ENABLED = booleanPreferencesKey("worship_qiyam_enabled")
+        private val QIYAM_STYLE = stringPreferencesKey("worship_qiyam_style")
         private val RAMADAN_IMSAK_MINUTES = intPreferencesKey("ramadan_imsak_minutes")
 
         /** Ramadan reminders (#91): «تذكير السحور» on or off and its minutes before Fajr, «تنبيه الإمساك» on or off. */

@@ -22,7 +22,8 @@ import java.time.Instant
  * `setAlarmClock` in alarm-clock mode) plus one display alarm ([AlertPlan.nextDisplayChange]: local midnight, or a Prayer
  * Time with no Adhan Alert), plus a start and an end alarm per Silence Window ([SilenceReceiver]; the start only while
  * it is still ahead, so re-planning during a window never silences twice, and only when no Adhan Alert opens it), plus
- * one exact alarm per Worship Reminder ([WorshipReminderReceiver]). Applying a plan reconciles: alarms of the previously
+ * one exact alarm per Worship Reminder ([WorshipReminderReceiver]; an alarm clock for an alarm-style Qiyam reminder).
+ * Applying a plan reconciles: alarms of the previously
  * applied plan that the new one lacks
  * are cancelled, the rest are (re)set. The applied plan is stored in device-protected storage ([AlertPlanStore]) for
  * [rearmStoredPlan] after a locked boot; the stored copy keeps only midnight, so its display alarm is midnight.
@@ -67,13 +68,21 @@ class AlertScheduler(context: Context) {
         armWorship(stored.worshipReminders, now)
     }
 
-    /** Each Worship Reminder still after [now], as an exact alarm (never an alarm clock: it is not an alarm). */
+    /**
+     * Each Worship Reminder still after [now], as an exact alarm; an alarm-style Qiyam reminder (#97) as an alarm clock,
+     * like alarm-clock mode, so it shows as the phone's next alarm and rings on time in deep sleep.
+     */
     private fun armWorship(reminders: List<PlannedWorshipReminder>, now: Instant) {
         if (!canScheduleExact(alarmManager)) return
         for (reminder in reminders) {
             if (!reminder.instant.isAfter(now)) continue
             val operation = worshipIntent(reminder, PendingIntent.FLAG_UPDATE_CURRENT)!!
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminder.instant.toEpochMilli(), operation)
+            val at = reminder.instant.toEpochMilli()
+            if (reminder.alarm) {
+                alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(at, openAppIntent(context)), operation)
+            } else {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, operation)
+            }
         }
     }
 

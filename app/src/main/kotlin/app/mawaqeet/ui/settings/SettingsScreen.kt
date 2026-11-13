@@ -167,6 +167,9 @@ interface SettingsActions {
     /** «قيام الليل» under «تذكيرات العبادة» → «السنن» (#96). */
     fun setQiyamReminder(on: Boolean)
 
+    /** The Qiyam reminder's style (#97): «إشعار» or «منبّه». */
+    fun setQiyamStyle(style: app.mawaqeet.core.QiyamStyle)
+
     /** «الإمساك» under «رمضان» (#90): Imsak moved [step] taps of [app.mawaqeet.core.RamadanSettings.IMSAK_MINUTES_STEP] minutes. */
     fun stepImsakMinutes(step: Int)
 

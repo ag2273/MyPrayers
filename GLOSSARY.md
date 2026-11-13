@@ -61,8 +61,8 @@ An optional, gentle reminder for daily worship beyond the five Prayers, under «
 _Avoid_: Dhikr reminder, nudge, Sunnah alert
 
 **Sunnah Prayer Reminder**:
-A Worship Reminder for a voluntary prayer of the Sunnah, under «تذكيرات العبادة» → «السنن»: «صلاة الضحى» 20, 30, 45, 60 (default) or 90 minutes after Sunrise, never later than 10 minutes before Dhuhr; and «قيام الليل» at the start of the Last Third of the Night. Each is off by default. Not the rawatib before or after the five Prayers, which have no reminder.
-_Avoid_: Nafl reminder, Duha alarm, Qiyam alarm (until the alarm style exists)
+A Worship Reminder for a voluntary prayer of the Sunnah, under «تذكيرات العبادة» → «السنن»: «صلاة الضحى» 20, 30, 45, 60 (default) or 90 minutes after Sunrise, never later than 10 minutes before Dhuhr; and «قيام الليل» at the start of the Last Third of the Night, as a notification (default) or in the «منبّه» style: over the lock screen like alarm-clock mode, with the phone's default alarm sound (never an adhan) and Stop, ringing for at most 1 minute, and a plain notification where full-screen alarms are not allowed or inside a Silence Window. Each is off by default. Not the rawatib before or after the five Prayers, which have no reminder.
+_Avoid_: Nafl reminder, Duha alarm, Qiyam adhan
 
 **Last Third of the Night**:
 The last third of the night from Maghrib to the next Fajr, the best time for Qiyam. It starts at Maghrib + ⅔ × (next Fajr − Maghrib), counted in real time across a clock change, and belongs to the Prayer Day of that Maghrib. After Isha, Today's Next Prayer card shows its start in place of the bar's line.
