@@ -2,6 +2,7 @@ package app.mawaqeet.core
 
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.chrono.HijrahDate
 import java.time.temporal.ChronoUnit
 
 /**
@@ -76,6 +77,36 @@ class HijriCalendar(private val offsetDays: Int = 0) {
     fun days(first: LocalDate, last: LocalDate): List<CalendarDay> =
         generateSequence(first) { it.plusDays(1) }.takeWhile { !it.isAfter(last) }.map(::day).toList()
 
+    /** Each day of the Hijri [month] (with the offset), from its 1st to its last, 29th or 30th. */
+    fun month(month: HijriMonth): List<CalendarDay> {
+        val first = HijrahDate.of(month.year, month.month, 1)
+        val start = LocalDate.from(first).minusDays(offsetDays.toLong())
+        return days(start, start.plusDays(first.lengthOfMonth() - 1L))
+    }
+
+    /**
+     * The «في هذا الشهر» list of the Hijri [month]: its Occasions (one entry per run of days) and the fasts that are
+     * not Occasions too, the white days and six of Shawwal; the weekly Monday/Thursday fast is left to the grid's dots.
+     * In date order; on the same day, Occasions in table order before fasts.
+     */
+    fun inMonth(month: HijriMonth): List<MonthEntry> {
+        val days = month(month)
+        val occasions = Occasion.entries.flatMap { occasion ->
+            runs(days) { occasion in it.occasions }.map { (first, last) -> MonthEntry.OccasionDays(occasion, first, last) }
+        }
+        val fasts = listOf(SunnahFast.WHITE_DAYS, SunnahFast.SIX_OF_SHAWWAL).flatMap { fast ->
+            runs(days) { fast in it.fasts }.map { (first, last) -> MonthEntry.FastDays(fast, first, last) }
+        }
+        return (occasions + fasts).sortedWith(
+            compareBy<MonthEntry> { it.first.date }.thenBy {
+                when (it) {
+                    is MonthEntry.OccasionDays -> it.occasion.ordinal
+                    is MonthEntry.FastDays -> Occasion.entries.size + it.fast.ordinal
+                }
+            },
+        )
+    }
+
     /**
      * The «القادم» list from [today]: every Occasion of the next 12 months (one entry per run of days, an Occasion
      * under way today included), plus only the nearest Monday/Thursday fast and the next white days, so the weekly
@@ -131,6 +162,27 @@ class HijriCalendar(private val offsetDays: Int = 0) {
             return runs
         }
     }
+}
+
+/** A month of the Hijri year: [month] 1 = Muharram … 12 = Dhu al-Hijjah. */
+data class HijriMonth(val year: Int, val month: Int) {
+    fun next(): HijriMonth = if (month == 12) HijriMonth(year + 1, 1) else HijriMonth(year, month + 1)
+
+    fun previous(): HijriMonth = if (month == 1) HijriMonth(year - 1, 12) else HijriMonth(year, month - 1)
+
+    companion object {
+        fun of(date: HijriDate): HijriMonth = HijriMonth(date.year, date.month)
+    }
+}
+
+/** An entry of the «في هذا الشهر» list: an Occasion or a Sunnah Fast from [first] through [last]. */
+sealed interface MonthEntry {
+    val first: CalendarDay
+    val last: CalendarDay
+
+    data class OccasionDays(val occasion: Occasion, override val first: CalendarDay, override val last: CalendarDay) : MonthEntry
+
+    data class FastDays(val fast: SunnahFast, override val first: CalendarDay, override val last: CalendarDay) : MonthEntry
 }
 
 /**
