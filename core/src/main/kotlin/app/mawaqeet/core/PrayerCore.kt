@@ -143,6 +143,7 @@ class PrayerCore(
      * With Prayer Silence on ([AlertSettings.prayerSilence]) it also holds a Silence Window per chosen Prayer, master switch or not.
      * With the master switch on it holds the Worship Reminders switched on ([AlertSettings.worshipReminders]), and on
      * Fasting Days the Ramadan reminders switched on ([RamadanSettings]); Maghrib's Adhan Alert there is [PlannedAlert.isIftar].
+     * On Fasting Days the display alarm also goes off at Imsak, master switch or not.
      */
     fun alertPlan(): AlertPlan {
         val now = clock.instant()
@@ -157,10 +158,12 @@ class PrayerCore(
             day.prayerTimes.flatMap { time -> plannedAlerts(time, date, settings.alerts, iftar = fasting && time.prayer == Prayer.MAGHRIB) }
         }.filter { it.instant.isAfter(now) && !it.instant.isAfter(end) }.sortedBy { it.instant }
         val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
-        // Prayer Times no Adhan Alert announces still move the display day's next Prayer (widgets).
+        // Prayer Times no Adhan Alert announces still move the display day's next Prayer (widgets), and a Fasting
+        // Day's Imsak moves the Next Prayer widgets from suhoor to iftar (Ramadan Mode, #92).
         val unannounced = days.flatMap { (_, day) -> day.prayerTimes }
             .filter { !alertsOn || !settings.alerts.of(it.prayer).adhanAlert }
             .map { it.time.toInstant() }
+            .plus(days.mapNotNull { (date, _) -> fastingDay(date)?.imsak?.toInstant() })
             .filter { it.isAfter(now) && it.isBefore(midnight) }
         return AlertPlan(
             alerts,

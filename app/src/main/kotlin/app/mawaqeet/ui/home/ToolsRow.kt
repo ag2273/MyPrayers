@@ -16,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.Layout
@@ -23,12 +24,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
 
 /**
  * The Tools Row on Today, under the Next Prayer card: equal one-line buttons, icon beside label, 48dp tall. A tool
- * whose callback is null is hidden (the Mosques tool until its screen exists).
+ * whose callback is null is hidden.
  */
 @Composable
 fun ToolsRow(
@@ -36,56 +38,58 @@ fun ToolsRow(
     onCalendar: (() -> Unit)? = null,
     onMosques: (() -> Unit)? = null,
 ) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    EqualRowOrStack {
         ToolButton(R.string.tool_qibla, R.drawable.ic_qibla, onQibla)
         onCalendar?.let { ToolButton(R.string.tool_calendar, R.drawable.ic_today, it) }
         onMosques?.let { ToolButton(R.string.tool_mosques, R.drawable.ic_pin, it) }
     }
 }
 
-private val ToolShape = RoundedCornerShape(16.dp)
+private val ToolGap = 8.dp
 
 /**
- * One tool: icon beside label, centred. When the label would not fit beside the icon (long words at large text sizes),
- * the icon is left out so the label is never cut off.
+ * The buttons side by side in equal widths and one height; when a label would not fit its share (a large system
+ * font), one above the other at full width instead, so no label is cut off.
  */
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.ToolButton(@StringRes label: Int, @DrawableRes icon: Int, onClick: () -> Unit) {
+private fun EqualRowOrStack(content: @Composable () -> Unit) {
+    Layout(content, Modifier.fillMaxWidth()) { measurables, constraints ->
+        val gap = ToolGap.roundToPx()
+        val width = constraints.maxWidth
+        val share = (width - gap * (measurables.size - 1)) / measurables.size.coerceAtLeast(1)
+        if (measurables.all { it.maxIntrinsicWidth(Constraints.Infinity) <= share }) {
+            val height = measurables.maxOf { it.minIntrinsicHeight(share) }
+            val placeables = measurables.map { it.measure(Constraints.fixed(share, height)) }
+            layout(width, placeables.maxOf { it.height }) {
+                placeables.forEachIndexed { i, p -> p.placeRelative(i * (share + gap), 0) }
+            }
+        } else {
+            val placeables = measurables.map { it.measure(Constraints.fixedWidth(width)) }
+            layout(width, placeables.sumOf { it.height } + gap * (placeables.size - 1)) {
+                var y = 0
+                placeables.forEach { p -> p.placeRelative(0, y); y += p.height + gap }
+            }
+        }
+    }
+}
+
+private val ToolShape = RoundedCornerShape(16.dp)
+
+@Composable
+private fun ToolButton(@StringRes label: Int, @DrawableRes icon: Int, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Layout(
-        content = {
-            Icon(painterResource(icon), contentDescription = null, tint = colors.primary, modifier = Modifier.size(20.dp))
-            Text(stringResource(label), style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        },
-        modifier = Modifier
-            .weight(1f)
+    Row(
+        Modifier
             .heightIn(min = 48.dp)
             .clip(ToolShape)
             .background(colors.surfaceContainer)
             .border(1.dp, colors.outlineVariant, ToolShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 10.dp),
-    ) { measurables, constraints ->
-        val (iconMeasurable, labelMeasurable) = measurables
-        val gap = 8.dp.roundToPx()
-        val loose = constraints.copy(minWidth = 0, minHeight = 0)
-        val iconPlaceable = iconMeasurable.measure(loose)
-        val labelWidth = labelMeasurable.maxIntrinsicWidth(constraints.maxHeight)
-        val withIcon = iconPlaceable.width + gap + labelWidth <= constraints.maxWidth
-        val labelPlaceable = labelMeasurable.measure(
-            loose.copy(maxWidth = if (withIcon) constraints.maxWidth - iconPlaceable.width - gap else constraints.maxWidth),
-        )
-        val contentWidth = labelPlaceable.width + if (withIcon) iconPlaceable.width + gap else 0
-        val width = constraints.maxWidth.takeIf { it != androidx.compose.ui.unit.Constraints.Infinity } ?: contentWidth
-        val height = maxOf(constraints.minHeight, labelPlaceable.height, if (withIcon) iconPlaceable.height else 0)
-        layout(width, height) {
-            // Start edge first, so in Arabic the icon sits on the right as in a Row.
-            var x = (width - contentWidth) / 2
-            if (withIcon) {
-                iconPlaceable.placeRelative(x, (height - iconPlaceable.height) / 2)
-                x += iconPlaceable.width + gap
-            }
-            labelPlaceable.placeRelative(x, (height - labelPlaceable.height) / 2)
-        }
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+    ) {
+        Icon(painterResource(icon), contentDescription = null, tint = colors.primary, modifier = Modifier.size(20.dp))
+        Text(stringResource(label), style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

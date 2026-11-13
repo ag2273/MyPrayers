@@ -569,6 +569,11 @@
     <string name="tool_qibla">القبلة</string>
     <string name="tool_calendar">التقويم</string>
     <string name="tool_mosques">المساجد</string>
+    <!-- Nearby mosques (#89): the maps app's search query, the Qibla screen's button and its line, no maps app -->
+    <string name="mosques_query">مسجد</string>
+    <string name="mosques_nearby">المساجد القريبة</string>
+    <string name="mosques_opens_in_maps">تُفتح في تطبيق الخرائط عندك</string>
+    <string name="mosques_no_maps_app">لا يوجد تطبيق خرائط على هذا الهاتف</string>
     <!-- Qibla screen (#88) -->
     <string name="qibla_waiting">جارٍ قراءة البوصلة…</string>
     <string name="qibla_turn_right">لفّ %1$s° يمينًا</string>
@@ -677,4 +682,9 @@
     <string name="backup_restore_damaged">هذا الملف تالف أو ليس نسخة احتياطية من مواقيت. لم يتغير شيء.</string>
     <string name="backup_restore_newer">هذا الملف من إصدار أحدث من مواقيت. حدّث التطبيق ثم أعد المحاولة. لم يتغير شيء.</string>
     <string name="backup_restore_unreadable">تعذّرت قراءة الملف. لم يتغير شيء.</string>
+    <!-- Next Prayer widgets in Ramadan Mode (#92). -->
+    <string name="widget_iftar">الإفطار</string>
+    <string name="widget_suhoor_ends">السحور ينتهي</string>
+    <string name="widget_chip_imsak">تنبيه الإمساك</string>
+    <string name="widget_chip_imsak_off">بلا تنبيه</string>
 </resources>

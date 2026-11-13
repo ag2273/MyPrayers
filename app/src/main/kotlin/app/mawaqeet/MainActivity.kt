@@ -56,6 +56,7 @@ import app.mawaqeet.ui.components.MainScaffold
 import app.mawaqeet.ui.components.Tab
 import app.mawaqeet.ui.home.HomeScreen
 import app.mawaqeet.ui.home.ToolsRow
+import app.mawaqeet.mosques.NearbyMosques
 import app.mawaqeet.qibla.SensorHeadings
 import app.mawaqeet.ui.qibla.QiblaScreen
 import app.mawaqeet.ui.calendar.CalendarScreen
@@ -519,6 +520,7 @@ class MainActivity : AppCompatActivity() {
                         savedLocation?.location,
                         headings,
                         onSetLocation = { showLocation = true },
+                        onMosques = { NearbyMosques.open(this@MainActivity) },
                         onBack = { showQibla = false },
                     )
                 } else if (showCalendar) {
@@ -571,7 +573,13 @@ class MainActivity : AppCompatActivity() {
                         showFixAlertsTip = !fixAlertsDone && FixAlerts.deviceBrand != null,
                         onOpenFixAlerts = { showFixAlerts = true },
                         onFixAlertsDone = { scope.launch { settingsStore.setFixAlertsDone(true) } },
-                        tools = { ToolsRow(onQibla = { showQibla = true }, onCalendar = { showCalendar = true }) },
+                        tools = {
+                            ToolsRow(
+                                onQibla = { showQibla = true },
+                                onCalendar = { showCalendar = true },
+                                onMosques = { NearbyMosques.open(this@MainActivity) },
+                            )
+                        },
                         onOpenCalendar = { showCalendar = true },
                     )
                     }

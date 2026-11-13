@@ -171,4 +171,32 @@ class RamadanReminderPlanTest {
 
         assertTrue(core(makkah("2026-11-12", "00:30"), PrayerSettings.Default).alertPlan().alerts.none { it.isIftar })
     }
+
+    @Test
+    fun `on a Fasting Day the display alarm goes off at Imsak, so the Next Prayer widgets switch from suhoor to iftar`() {
+        // Reminders off: nothing else fires at Imsak.
+        val core = core(makkah("2027-02-22", "01:00"), ramadanOn(suhoor = SuhoorReminder(), imsakAlert = false))
+
+        assertEquals(core.fajr("2027-02-22").minus(Duration.ofMinutes(10)), core.alertPlan().nextDisplayChange)
+    }
+
+    @Test
+    fun `with the master switch off the display alarm still goes off at Imsak, then at Maghrib`() {
+        val off = ramadanOn(alerts = AlertSettings(enabled = false))
+        val beforeImsak = core(makkah("2027-02-22", "01:00"), off)
+        val afternoon = core(makkah("2027-02-22", "16:00"), off)
+
+        assertEquals(beforeImsak.fajr("2027-02-22").minus(Duration.ofMinutes(10)), beforeImsak.alertPlan().nextDisplayChange)
+        assertEquals(
+            afternoon.prayerDay(LocalDate.parse("2027-02-22")).prayerTimes.single { it.prayer == Prayer.MAGHRIB }.time.toInstant(),
+            afternoon.alertPlan().nextDisplayChange,
+        )
+    }
+
+    @Test
+    fun `outside Ramadan nothing moves the display alarm to before Fajr`() {
+        val core = core(makkah("2027-03-10", "01:00"), ramadanOn())
+
+        assertEquals(makkah("2027-03-11", "00:00").toInstant(), core.alertPlan().nextDisplayChange)
+    }
 }

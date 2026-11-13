@@ -28,6 +28,7 @@ import androidx.glance.layout.size
 import androidx.glance.layout.wrapContentHeight
 import androidx.glance.layout.wrapContentWidth
 import app.mawaqeet.R
+import app.mawaqeet.core.PrayerCore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,7 +48,7 @@ class NextPrayerWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { core, text -> NextPrayerView.of(NextPrayerContent.of(core.displayDay(), Clock.systemUTC().instant(), text.formatter, core.alerts()).also { CountdownUnitReceiver.schedule(context, it.untilNext) }, text) },
+        build = { core, text -> nextPrayerView(context, core, text) },
         deep = true,
         layout = { view, rtl ->
             // In Exact mode the launcher's size is known on every Android version; when it isn't, 4×2 is the default.
@@ -67,15 +68,23 @@ class NextPrayerRingWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) = provideFromCore(
         context,
-        build = { core, text -> NextPrayerView.of(NextPrayerContent.of(core.displayDay(), Clock.systemUTC().instant(), text.formatter, core.alerts()).also { CountdownUnitReceiver.schedule(context, it.untilNext) }, text) },
+        build = { core, text -> nextPrayerView(context, core, text) },
         deep = true,
         layout = { view, rtl -> RingLayout(view, rtl) },
     )
 }
 
+/** What both Next Prayer widgets draw now, counting to iftar or the end of suhoor in Ramadan Mode (#92). */
+private fun nextPrayerView(context: Context, core: PrayerCore, text: WidgetText): NextPrayerView {
+    val now = Clock.systemUTC().instant()
+    val content = NextPrayerContent.of(core.displayDay(), now, text.formatter, core.alerts(), core.ramadanState(now))
+    CountdownUnitReceiver.schedule(context, content.untilNext)
+    return NextPrayerView.of(content, text)
+}
+
 /** Everything the layouts draw, already in the user's language and digits. */
 internal data class NextPrayerView(
-    /** «الصلاة القادمة · القاهرة», or «… · غدًا» after Isha. */
+    /** «الصلاة القادمة · القاهرة», or «… · غدًا» after Isha; «رمضان · اليوم ١٥ · القاهرة» in Ramadan Mode. */
     val label: String,
     /** «القادمة», the 2×2's label. */
     val shortLabel: String,
@@ -100,9 +109,12 @@ internal data class NextPrayerView(
             val s = text.strings
             val name = s.getString(content.nameRes)
             val where = if (content.isTomorrow) s.getString(R.string.widget_tomorrow) else text.place
+            // In Ramadan Mode (#92) the label is the Today card's «رمضان · اليوم ١٥».
+            val ramadanDay = content.ramadanDay
+            val label = if (ramadanDay == null) s.getString(R.string.widget_next_prayer) else s.getString(R.string.ramadan_day, text.formatter.number(ramadanDay))
             return NextPrayerView(
-                label = s.getString(R.string.widget_next_prayer) + if (where.isEmpty()) "" else " · $where",
-                shortLabel = s.getString(R.string.widget_next_short),
+                label = label + if (where.isEmpty()) "" else " · $where",
+                shortLabel = s.getString(if (ramadanDay == null) R.string.widget_next_short else R.string.ramadan),
                 name = name,
                 time = content.time,
                 from = "${s.getString(content.previousNameRes)} ${content.previousTime}",
