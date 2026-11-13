@@ -1,11 +1,5 @@
 package app.mawaqeet.ui.theme
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -14,7 +8,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -63,27 +56,17 @@ private fun SkyPhase.glows(): Pair<Color, Color> = when (this) {
 }
 
 /**
- * The page behind every screen: the theme's sky gradient, the phase's two glows breathing slowly, and the sun (a pale
+ * The page behind every screen: the theme's sky gradient, the phase's two glows, and the sun (a pale
  * moon at night) rising out of the top start corner. [content] draws on top.
  */
 @Composable
 fun SkyBackground(phase: SkyPhase, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val skin = LocalSkin.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val breath = rememberInfiniteTransition(label = "sky")
-    // 26 s in and out, as on the prototype; the system's animator scale (Remove animations) stills it.
-    val glow by breath.animateFloat(
-        initialValue = 0.75f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(26_000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "glow",
-    )
-    val rise by breath.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(18_000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "sun",
-    )
+    // Still, not breathing: an endless animation would redraw the screen every frame for as long as the app is open,
+    // which costs battery on a screen people leave open, for a change too slow to see.
+    val glow = 0.875f
+    val rise = 0.5f
     Box(modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) { drawSky(skin, phase, glow, rise, rtl) }
         // Transparent scaffolds take their content colour from here (contentColorFor finds no match for Transparent).

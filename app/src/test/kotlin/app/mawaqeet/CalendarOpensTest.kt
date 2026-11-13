@@ -26,7 +26,8 @@ class CalendarOpensTest {
     private fun assertCalendarOpenThenBack() {
         compose.onNodeWithText("القادم").assertIsDisplayed()
         compose.onNodeWithContentDescription("رجوع").performClick()
-        compose.onNodeWithText("حتى الأذان").assertIsDisplayed()
+        // Today is showing: its hero.
+        compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(app.mawaqeet.ui.home.TodaySizeKey)).assertIsDisplayed()
     }
 
     @Test

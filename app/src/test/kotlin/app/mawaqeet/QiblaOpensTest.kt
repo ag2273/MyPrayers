@@ -35,6 +35,7 @@ class QiblaOpensTest {
                 compose.onAllNodesWithText("لا توجد بوصلة في هذا الهاتف").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("رجوع").performClick()
-        compose.onNodeWithText("حتى الأذان").assertIsDisplayed()
+        // Today is showing: its hero.
+        compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(app.mawaqeet.ui.home.TodaySizeKey)).assertIsDisplayed()
     }
 }

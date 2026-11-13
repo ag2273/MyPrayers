@@ -70,6 +70,7 @@ class NearbyMosquesTest {
         compose.onNode(hasText("المساجد") and hasClickAction()).performClick()
 
         assertEquals("لا يوجد تطبيق خرائط على هذا الهاتف", ShadowToast.getTextOfLatestToast())
-        compose.onNodeWithText("حتى الأذان").assertIsDisplayed()
+        // Today is showing: its hero.
+        compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(app.mawaqeet.ui.home.TodaySizeKey)).assertIsDisplayed()
     }
 }
