@@ -125,7 +125,8 @@ fun PrayerLogScreen(core: PrayerCore, logChanges: StateFlow<Int>) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        val selectedDate = "${format.gregorianDate(selected.date)} · ${format.hijriDate(selected.hijriDate)}"
+        // One date a line: a middle dot between two dates reads as an Arabic zero («٢٠٢٦ · ٣» → «٢٠٢٦٠٣»).
+        val selectedDate = "${format.gregorianDate(selected.date)}\n${format.hijriDate(selected.hijriDate)}"
         Text(
             if (selected.isEditable) stringResource(R.string.log_day_hint, selectedDate) else selectedDate,
             style = MaterialTheme.typography.bodyMedium,
