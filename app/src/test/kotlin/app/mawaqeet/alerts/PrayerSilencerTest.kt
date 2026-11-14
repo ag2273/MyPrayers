@@ -201,6 +201,58 @@ class PrayerSilencerTest {
         assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, notifications.currentInterruptionFilter)
     }
 
+    @Test
+    fun `a phone that refuses the sound at the end gets it back on a later try`() {
+        PrayerSilencer(context).start(window)
+        val refuseSound: (AudioManager, Int) -> Unit = { audio, mode -> if (mode != AudioManager.RINGER_MODE_NORMAL) audio.ringerMode = mode }
+        PrayerSilencer.ringerSetter = refuseSound
+        try {
+            PrayerSilencer(context).end(window)
+            assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+            // Still refusing: the next try fails too, and the app keeps at it.
+            PrayerSilencer(context).endIfOverdue()
+            assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        } finally {
+            PrayerSilencer.ringerSetter = { audio, mode -> audio.ringerMode = mode }
+        }
+
+        // The retry alarm (the window's end alarm again) brings the sound back once the phone allows it.
+        PrayerSilencer(context).end(window)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+    }
+
+    @Test
+    fun `the retries stop once the user turns the sound on, and never mute again`() {
+        PrayerSilencer(context).start(window)
+        PrayerSilencer.ringerSetter = { audio, mode -> if (mode != AudioManager.RINGER_MODE_NORMAL) audio.ringerMode = mode }
+        try {
+            PrayerSilencer(context).end(window)
+        } finally {
+            PrayerSilencer.ringerSetter = { audio, mode -> audio.ringerMode = mode }
+        }
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        PrayerSilencer(context).ringerChanged()
+        // Later the user silences the phone themselves: no retry turns it back up.
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        PrayerSilencer(context).ringerChanged()
+        PrayerSilencer(context).endIfOverdue()
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
+    fun `after half an hour of refusals it stops trying`() {
+        PrayerSilencer(context).start(window)
+        PrayerSilencer.ringerSetter = { audio, mode -> if (mode != AudioManager.RINGER_MODE_NORMAL) audio.ringerMode = mode }
+        try {
+            PrayerSilencer(context).end(window)
+        } finally {
+            PrayerSilencer.ringerSetter = { audio, mode -> audio.ringerMode = mode }
+        }
+        PrayerSilencer(context).retryRestore(Instant.now().plusMillis(PrayerSilencer.RETRY_FOR_MILLIS + 60_000))
+        PrayerSilencer(context).retryRestore()
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
     /** Runs the main looper, then waits for the receivers' background work. */
     private fun idle() {
         shadowOf(Looper.getMainLooper()).idle()

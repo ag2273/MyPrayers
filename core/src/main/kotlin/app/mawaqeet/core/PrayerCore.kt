@@ -25,7 +25,7 @@ class PrayerCore(
      * Today's date on the calendar at the location. Unlike [displayDay] it moves on at midnight: the Calendar screen's
      * today and its day counts use it, as the Sunnah Fast reminders do.
      */
-    fun calendarDate(): LocalDate = LocalDate.ofInstant(clock.instant(), settings.location.zone)
+    fun calendarDate(): LocalDate = clock.instant().atZone(settings.location.zone).toLocalDate()
 
     /**
      * The Prayer Day running now (from midnight until Fajr, still the previous one), at the location, with its
@@ -34,7 +34,7 @@ class PrayerCore(
      */
     fun displayDay(): DisplayDay {
         val now = clock.instant()
-        val calendarDate = LocalDate.ofInstant(now, settings.location.zone)
+        val calendarDate = now.atZone(settings.location.zone).toLocalDate()
         val calendarDay = calculateDay(settings, calendarDate)
         val beforeFajr = calendarDay.prayerTimes.first().time.toInstant().isAfter(now)
         val date = if (beforeFajr) calendarDate.minusDays(1) else calendarDate
@@ -55,7 +55,7 @@ class PrayerCore(
      * the next Imsak when the next day is a Fasting Day (and before Imsak on a Fasting Day), otherwise none.
      */
     fun ramadanState(instant: Instant = clock.instant()): RamadanState {
-        val date = LocalDate.ofInstant(instant, settings.location.zone)
+        val date = instant.atZone(settings.location.zone).toLocalDate()
         val today = fastingDay(date)
         return when {
             today != null && instant.isBefore(today.imsak.toInstant()) -> today.suhoor()
@@ -156,7 +156,7 @@ class PrayerCore(
         val now = clock.instant()
         val end = now.plus(AlertPlan.WINDOW)
         val zone = settings.location.zone
-        val today = LocalDate.ofInstant(now, zone)
+        val today = now.atZone(zone).toLocalDate()
         // Yesterday too: a Prayer Day is a calendar date's Fajr onwards, and the window spans at most 3 dates.
         val days = (-1L..2L).map { offset -> today.plusDays(offset).let { it to calculateDay(settings, it) } }
         val alertsOn = settings.alerts.enabled
@@ -297,7 +297,7 @@ class PrayerCore(
 
     /** The latest Prayer Day whose Fajr, at the place in effect that day, is at or before [instant]. */
     private fun prayerDayDateAt(instant: Instant, places: List<PastPlace>): LocalDate {
-        val date = LocalDate.ofInstant(instant, settings.location.zone)
+        val date = instant.atZone(settings.location.zone).toLocalDate()
         // Travel can shift a past day's Fajr by up to about a day relative to the current zone's dates.
         return (1L downTo -2L).map { date.plusDays(it) }.first { day ->
             !calculateDay(settingsOn(day, places), day).prayerTimes.first().time.toInstant().isAfter(instant)

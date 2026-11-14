@@ -38,6 +38,10 @@ import java.time.Instant
  * [catchUp] starts a window still waiting for its adhan (the adhan never replays), re-posts the notification of one in
  * progress and restores the sound at once for one whose planned end has passed.
  *
+ * A phone can refuse the sound at the end (a Samsung kept the ringer muted after the window, and the sound never came
+ * back). Then the end keeps trying ([retryRestore]): a minute later by alarm, and whenever the ringer or Do Not Disturb
+ * changes, the minute tick runs or the app starts, for up to [RETRY_FOR_MILLIS], while the phone is still muted.
+ *
  * The record (the window, the mode it replaced, the mode it set, and a window waiting for its adhan) lives in
  * device-protected storage, so a window that ends before the first unlock still restores the sound.
  */
@@ -63,8 +67,9 @@ class PrayerSilencer(
         val previous = audio.ringerMode
         if (doNotDisturb || previous != AudioManager.RINGER_MODE_NORMAL) return
         val applied = ringerMode(window.mode)
-        val changed = runCatching { audio.ringerMode = applied }.isSuccess
+        val changed = runCatching { ringerSetter(audio, applied) }.isSuccess
         if (!changed) return
+        forgetRetry()
         val filter = notifications.currentInterruptionFilter
         record.edit()
             .putString(KEY_WINDOW, encode(window))
@@ -110,7 +115,8 @@ class PrayerSilencer(
         // Another window holds the silence now (they overlapped): its own end restores the sound.
         if (held != null && held.id != window.id) return
         SilenceNotification.cancel(context)
-        if (held == null) return
+        // Not held: this may be the retry alarm of an end the phone refused.
+        if (held == null) return retryRestore()
         val previous = record.getInt(KEY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)
         // A record from before the filter was kept has none to compare.
         val filter = record.getInt(KEY_FILTER, notifications.currentInterruptionFilter)
@@ -119,14 +125,27 @@ class PrayerSilencer(
         // The sound is already on (the phone's own doing, since the user turning it on forgets the window first).
         if (audio.ringerMode == previous && !isDoNotDisturb(notifications.currentInterruptionFilter)) return
         val now = notifications.currentInterruptionFilter
-        runCatching { audio.ringerMode = previous }
-        if (audio.ringerMode != previous && isDoNotDisturb(now) && (now == filter || dndByApp)) {
+        setRinger(previous)
+        val mayTurnOffDnd = now == filter || dndByApp
+        if (audio.ringerMode != previous && isDoNotDisturb(now) && mayTurnOffDnd) {
             // Some phones keep the ringer muted while their own Do Not Disturb is on: turn it off, then try again.
             runCatching { notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL) }
-            runCatching { audio.ringerMode = previous }
+            setRinger(previous)
         }
         val after = notifications.currentInterruptionFilter
-        log("restored", after)
+        if (isMuted(audio.ringerMode) && audio.ringerMode != previous) {
+            // The phone refused: keep trying for a while rather than leave it muted.
+            record.edit()
+                .putInt(KEY_RETRY_PREVIOUS, previous)
+                .putLong(KEY_RETRY_UNTIL, System.currentTimeMillis() + RETRY_FOR_MILLIS)
+                .putBoolean(KEY_RETRY_DND, mayTurnOffDnd)
+                .putString(KEY_RETRY_WINDOW, encode(window))
+                .apply()
+            log("not restored, will retry", after)
+            AlertScheduler(context).armSilenceRetry(window, Instant.now().plusMillis(RETRY_EVERY_MILLIS))
+        } else {
+            log("restored", after)
+        }
         when {
             // The user changed Do Not Disturb during the window: the ringer comes back but their setting stays, even
             // on phones where restoring the ringer turns Do Not Disturb off.
@@ -143,7 +162,7 @@ class PrayerSilencer(
      * Do Not Disturb off). Later on it is the user's change, which [end] keeps.
      */
     fun interruptionFilterChanged() {
-        if (!record.contains(KEY_WINDOW)) return
+        if (!record.contains(KEY_WINDOW)) return retryRestore()
         log("dnd changed", notifications.currentInterruptionFilter)
         // Still muted (as the app set it, or moved by the phone between silent and vibrate).
         if (audio.ringerMode == record.getInt(KEY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)) return
@@ -180,7 +199,7 @@ class PrayerSilencer(
      * phone's own doing, and the window stays the app's: the new mode is what the end expects to find.
      */
     fun ringerChanged() {
-        if (!record.contains(KEY_WINDOW)) return
+        if (!record.contains(KEY_WINDOW)) return retryRestore()
         val mode = audio.ringerMode
         if (mode == record.getInt(KEY_APPLIED, -1)) return
         log("ringer changed", notifications.currentInterruptionFilter)
@@ -196,10 +215,48 @@ class PrayerSilencer(
     }
 
     /**
+     * Another try at an end the phone refused ([end]): while the phone is still muted and the time to keep trying has not
+     * run out, the sound comes back (and Do Not Disturb goes, where the end could turn it off). The user turning the sound
+     * on, or any other ringer change to sound, ends the trying.
+     */
+    fun retryRestore(now: Instant = Instant.now()) {
+        if (!record.contains(KEY_RETRY_PREVIOUS)) return
+        val previous = record.getInt(KEY_RETRY_PREVIOUS, AudioManager.RINGER_MODE_NORMAL)
+        if (!isMuted(audio.ringerMode) || audio.ringerMode == previous) return forgetRetry()
+        if (now.toEpochMilli() > record.getLong(KEY_RETRY_UNTIL, 0)) {
+            log("gave up restoring", notifications.currentInterruptionFilter)
+            return forgetRetry()
+        }
+        setRinger(previous)
+        if (audio.ringerMode != previous && isDoNotDisturb(notifications.currentInterruptionFilter) && record.getBoolean(KEY_RETRY_DND, false)) {
+            runCatching { notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL) }
+            setRinger(previous)
+        }
+        if (audio.ringerMode == previous) {
+            log("restored on retry", notifications.currentInterruptionFilter)
+            forgetRetry()
+        } else {
+            log("retry refused", notifications.currentInterruptionFilter)
+            record.getString(KEY_RETRY_WINDOW, null)?.let(::decode)?.let {
+                AlertScheduler(context).armSilenceRetry(it, now.plusMillis(RETRY_EVERY_MILLIS))
+            }
+        }
+    }
+
+    private fun forgetRetry() {
+        record.edit().remove(KEY_RETRY_PREVIOUS).remove(KEY_RETRY_UNTIL).remove(KEY_RETRY_DND).remove(KEY_RETRY_WINDOW).apply()
+    }
+
+    private fun setRinger(mode: Int) {
+        runCatching { ringerSetter(audio, mode) }.onFailure { log("ringer refused: ${it.javaClass.simpleName}", notifications.currentInterruptionFilter) }
+    }
+
+    /**
      * A safety net for an end alarm that never came (a phone that drops exact alarms): a window the app still holds
      * whose planned end is past [now] ends now. Called from the receivers that run anyway (the minute tick, alerts).
      */
     fun endIfOverdue(now: Instant = Instant.now()) {
+        retryRestore(now)
         val held = active() ?: return
         if (!held.end.isAfter(now)) end(held)
     }
@@ -244,6 +301,8 @@ class PrayerSilencer(
             .remove(KEY_DND_BY_APP).remove(KEY_STARTED_AT).apply()
     }
 
+    private fun isMuted(mode: Int) = mode == AudioManager.RINGER_MODE_SILENT || mode == AudioManager.RINGER_MODE_VIBRATE
+
     private fun ringerMode(mode: SilenceMode): Int = when (mode) {
         SilenceMode.SILENT -> AudioManager.RINGER_MODE_SILENT
         SilenceMode.VIBRATE -> AudioManager.RINGER_MODE_VIBRATE
@@ -258,6 +317,19 @@ class PrayerSilencer(
         private const val KEY_AWAITING = "awaiting_adhan"
         private const val KEY_DND_BY_APP = "dnd_by_app"
         private const val KEY_STARTED_AT = "started_at_elapsed"
+
+        private const val KEY_RETRY_PREVIOUS = "retry_previous_ringer_mode"
+        private const val KEY_RETRY_UNTIL = "retry_until"
+        private const val KEY_RETRY_DND = "retry_may_end_dnd"
+        private const val KEY_RETRY_WINDOW = "retry_window"
+
+        /** How long an end the phone refused keeps trying, and how often by alarm. */
+        const val RETRY_FOR_MILLIS = 30 * 60_000L
+        const val RETRY_EVERY_MILLIS = 60_000L
+
+        /** Sets the ringer; tests stand in for a phone that refuses. */
+        @androidx.annotation.VisibleForTesting
+        internal var ringerSetter: (AudioManager, Int) -> Unit = { audio, mode -> audio.ringerMode = mode }
 
         /** How long after the start a Do Not Disturb change counts as the phone's side effect of the silence. */
         const val SIDE_EFFECT_MILLIS = 60_000L

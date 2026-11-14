@@ -1,5 +1,10 @@
 package app.mawaqeet.ui.qibla
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.Animatable
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
@@ -106,7 +111,8 @@ private fun Compass(location: Location, source: HeadingSource, onFacingQibla: ()
     val qibla = remember(location) { Qibla.from(location.latitude, location.longitude) }
     val flow = remember(location, source) { source.headings(location.latitude, location.longitude) }
     val reading: HeadingReading? by flow.collectAsStateWithLifecycle(null)
-    val turn = reading?.let { qibla.turn(it.degrees) }
+    val heading = smoothHeading(reading?.degrees)
+    val turn = heading?.let { qibla.turn(it) }
     val onTarget = turn?.side == TurnSide.ON_TARGET
     val facing by rememberUpdatedState(onFacingQibla)
     LaunchedEffect(onTarget) { if (onTarget) facing() }
@@ -114,7 +120,7 @@ private fun Compass(location: Location, source: HeadingSource, onFacingQibla: ()
     val colors = MaterialTheme.colorScheme
 
     if (reading?.accurate == false) CalibrationCard()
-    Dial(qibla.bearing, reading?.degrees ?: 0.0, onTarget)
+    Dial(qibla.bearing, heading ?: 0.0, onTarget)
     Text(
         when (turn?.side) {
             null -> stringResource(R.string.qibla_waiting)
@@ -129,6 +135,36 @@ private fun Compass(location: Location, source: HeadingSource, onFacingQibla: ()
         modifier = Modifier.fillMaxWidth(),
     )
     BearingAndDistance(qibla)
+}
+
+/**
+ * The heading the dial shows: it follows the sensor on a soft spring instead of jumping to each reading, so a quick turn
+ * of the phone glides and the sensor's jitter doesn't shake the dial. It always takes the short way round, so passing
+ * north (359° → 1°) is a 2° step, not a spin. Null until the first reading.
+ */
+@Composable
+private fun smoothHeading(target: Double?): Double? {
+    val shown = remember { Animatable(0f) }
+    var started by remember { mutableStateOf(false) }
+    LaunchedEffect(target) {
+        val to = target ?: return@LaunchedEffect
+        if (!started) {
+            shown.snapTo(to.toFloat())
+            started = true
+        } else {
+            shown.animateTo(unwrapToward(shown.value.toDouble(), to).toFloat(), HeadingSpring)
+        }
+    }
+    return if (started && target != null) ((shown.value.toDouble() % 360.0) + 360.0) % 360.0 else null
+}
+
+/** No bounce, and slow enough to hide the sensor's noise but quick enough that the dial keeps up with the hand. */
+private val HeadingSpring = spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
+
+/** [heading] (0–360) as the angle nearest [from] (which may be any number of turns): the short way round. */
+internal fun unwrapToward(from: Double, heading: Double): Double {
+    val delta = ((heading - from) % 360.0 + 540.0) % 360.0 - 180.0
+    return from + delta
 }
 
 /** The bearing from true north and the distance to Makkah, under the dial or on the no-sensor card. */
