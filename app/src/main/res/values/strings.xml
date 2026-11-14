@@ -767,7 +767,7 @@
     <string name="log_status_prayed">صلّيت</string>
     <string name="log_status_not_marked">لم تُسجَّل</string>
     <string name="log_status_not_yet">لم يحن وقتها بعد</string>
-    <string name="log_status_line">%1$s · %2$s</string>
+    <string name="log_status_line">%1$s – %2$s</string>
     <string name="log_day_description">%1$s، %2$s</string>
     <string name="log_week_percent">ملخص الأسبوع</string>
 </resources>

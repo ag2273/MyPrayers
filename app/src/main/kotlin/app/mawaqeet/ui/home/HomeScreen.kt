@@ -2,8 +2,6 @@ package app.mawaqeet.ui.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
@@ -20,6 +18,7 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
@@ -50,6 +49,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.produceState
@@ -275,6 +275,9 @@ private fun HomeContent(
 enum class TodaySize { REGULAR, COMPACT }
 
 /** The size class Today chose, on its header (for tests). */
+/** The countdown ring on Today, for tests. */
+const val RING_TAG = "today-ring"
+
 val TodaySizeKey = SemanticsPropertyKey<TodaySize>("TodaySize")
 private var SemanticsPropertyReceiver.todaySize by TodaySizeKey
 
@@ -570,7 +573,7 @@ private fun Arc(model: HeroModel, now: Instant, countdown: String, night: Boolea
     val span = Duration.between(model.start, model.target).toMillis().coerceAtLeast(1_000)
     val fraction = (Duration.between(model.start, now).toMillis().toFloat() / span).coerceIn(0f, 1f)
     val dot = if (night) Color(0xFFCFE1DC) else skin.amber
-    Box(contentAlignment = Alignment.Center) {
+    Box(Modifier.testTag(RING_TAG), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val stroke = size.minDimension * 0.03f
             val radius = size.minDimension / 2 - stroke * 2.8f
@@ -588,6 +591,9 @@ private fun Arc(model: HeroModel, now: Instant, countdown: String, night: Boolea
         val scale = LocalDensity.current.run { minOf(fontScale, 1.3f) / fontScale }
         BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             val ring = maxWidth.value
+            // Inside the stroke: the small lines under the countdown are kept to the ring's inner chord there, so a long
+            // one («بدأ الثلث الأخير 00:54») wraps instead of crossing the arc.
+            val chord = Modifier.widthIn(max = (ring * 0.6f).dp)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (titleInside) {
                     val title = ((ring * 0.12f).coerceIn(14f, 22f) * scale).sp
@@ -604,7 +610,7 @@ private fun Arc(model: HeroModel, now: Instant, countdown: String, night: Boolea
                 )
                 val small = ((ring * 0.056f).coerceIn(10f, 14f) * scale).sp
                 // In the small ring the title takes the label's line.
-                if (!titleInside) Text(model.label, fontSize = small, lineHeight = small * 1.3f, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                if (!titleInside) Text(model.label, chord, fontSize = small, lineHeight = small * 1.3f, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 Text(
                     model.at,
                     fontFamily = NotoKufiArabic,
@@ -612,7 +618,7 @@ private fun Arc(model: HeroModel, now: Instant, countdown: String, night: Boolea
                     lineHeight = small * 1.4f,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = chord.padding(top = 2.dp),
                 )
             }
         }
@@ -620,15 +626,11 @@ private fun Arc(model: HeroModel, now: Instant, countdown: String, night: Boolea
 }
 
 /** The dates as chips under the hero: Imsak in Ramadan, the Gregorian date, and the Hijri one, which opens the calendar. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DateChips(day: DisplayDay, ramadan: RamadanState, onOpenCalendar: (() -> Unit)?) {
     val format = LocalDisplayFormatter.current
-    FlowRow(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+    // Edge to edge like the Tools Row under it, with the same gap, so the two rows line up.
+    SpreadRows {
         if (ramadan is RamadanState.Active) {
             Chip(stringResource(R.string.ramadan_imsak_at, format.time(ramadan.imsak)), highlighted = true)
         }
@@ -651,15 +653,16 @@ private fun Chip(text: String, highlighted: Boolean = false, icon: Int? = null, 
     val shape = RoundedCornerShape(50)
     Row(
         Modifier
-            .heightIn(min = if (onClick != null) 48.dp else 36.dp)
-            .padding(vertical = if (onClick != null) 6.dp else 0.dp)
+            // One height for every chip in the row: a 48dp target around a 36dp pill.
+            .heightIn(min = 48.dp)
+            .padding(vertical = 6.dp)
             .clip(shape)
             .background(skin.surface)
             .border(1.dp, if (highlighted) skin.amber.copy(alpha = 0.6f) else skin.line, shape)
             .then(if (onClick != null) Modifier.clickable(onClickLabel = clickLabel, role = Role.Button, onClick = onClick) else Modifier)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
     ) {
         if (icon != null) {
             Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp))

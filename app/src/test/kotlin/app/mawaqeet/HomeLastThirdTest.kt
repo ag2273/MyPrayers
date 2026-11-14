@@ -3,6 +3,7 @@ package app.mawaqeet
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.core.DigitStyle
@@ -14,13 +15,16 @@ import app.mawaqeet.core.PrayerLogRepository
 import app.mawaqeet.core.PrayerSettings
 import app.mawaqeet.ui.ProvideDisplayFormatter
 import app.mawaqeet.ui.home.HomeScreen
+import app.mawaqeet.ui.home.RING_TAG
 import app.mawaqeet.ui.theme.MawaqeetTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -79,6 +83,19 @@ class HomeLastThirdTest {
         val core = show("2026-11-10T03:00")
 
         assertShown("بدأ الثلث الأخير ${lastThirdOf(core)}")
+    }
+
+    @Test
+    @Config(qualifiers = "ar-w393dp-h852dp", fontScale = 1.3f)
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the Last Third line stays inside the ring`() {
+        val core = show("2026-11-10T03:00")
+
+        val line = compose.onNodeWithText("بدأ الثلث الأخير ${lastThirdOf(core)}", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val ring = compose.onNodeWithTag(RING_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        // Within the chord the stroke leaves at the line's height: 60% of the ring, centred.
+        assertTrue("line ${line.width} wide in a ring of ${ring.width}", line.width <= ring.width * 0.6f + 1f)
+        assertTrue(line.center.x in ring.center.x - 2f..ring.center.x + 2f)
     }
 
     @Test
