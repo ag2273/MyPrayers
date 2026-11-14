@@ -73,6 +73,44 @@ private fun EqualRowOrStack(content: @Composable () -> Unit) {
     }
 }
 
+/**
+ * Items side by side across the full width with the Tools Row's gap: each keeps its own width and the room left over
+ * is shared out equally, so the row starts and ends where the Tools Row does. Items that do not fit one line wrap to
+ * the next, and each line spreads the same way.
+ */
+@Composable
+internal fun SpreadRows(content: @Composable () -> Unit) {
+    Layout(content, Modifier.fillMaxWidth()) { measurables, constraints ->
+        val gap = ToolGap.roundToPx()
+        val width = constraints.maxWidth
+        val natural = measurables.map { minOf(it.maxIntrinsicWidth(Constraints.Infinity), width) }
+        val lines = mutableListOf<MutableList<Int>>()
+        var used = 0
+        natural.forEachIndexed { i, w ->
+            val line = lines.lastOrNull()
+            if (line == null || used + gap + w > width) {
+                lines += mutableListOf(i); used = w
+            } else {
+                line += i; used += gap + w
+            }
+        }
+        val placed = lines.map { line ->
+            val extra = (width - line.sumOf { natural[it] } - gap * (line.size - 1)) / line.size
+            val height = line.maxOf { measurables[it].minIntrinsicHeight(natural[it] + extra) }
+            line.map { measurables[it].measure(Constraints(natural[it] + extra, natural[it] + extra, height, height)) }
+        }
+        val total = placed.sumOf { row -> row.maxOf { it.height } } + gap * (placed.size - 1)
+        layout(width, total) {
+            var y = 0
+            placed.forEach { row ->
+                var x = 0
+                row.forEach { p -> p.placeRelative(x, y); x += p.width + gap }
+                y += row.maxOf { it.height } + gap
+            }
+        }
+    }
+}
+
 private val ToolShape = RoundedCornerShape(16.dp)
 
 @Composable
