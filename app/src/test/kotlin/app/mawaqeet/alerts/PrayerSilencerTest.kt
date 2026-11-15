@@ -253,6 +253,34 @@ class PrayerSilencerTest {
         assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
     }
 
+    @Test
+    fun `a phone that ignores the ringer back to sound gets it back through the ring volume`() {
+        audio.setStreamVolume(AudioManager.STREAM_RING, 5, 0)
+        // Like the Samsung on Android 17: vibrate drops the ring volume to 0, an app's change back to sound is ignored,
+        // and setting the ring volume above 0 turns the sound on.
+        PrayerSilencer.ringerSetter = { audio, mode ->
+            if (mode != AudioManager.RINGER_MODE_NORMAL) {
+                audio.ringerMode = mode
+                audio.setStreamVolume(AudioManager.STREAM_RING, 0, 0)
+            }
+        }
+        PrayerSilencer.volumeSetter = { audio, stream, index ->
+            audio.setStreamVolume(stream, index, 0)
+            if (stream == AudioManager.STREAM_RING && index > 0) audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        }
+        try {
+            PrayerSilencer(context).start(window.copy(mode = SilenceMode.VIBRATE))
+            assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+
+            PrayerSilencer(context).end(window.copy(mode = SilenceMode.VIBRATE))
+            assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+            assertEquals(5, audio.getStreamVolume(AudioManager.STREAM_RING))
+        } finally {
+            PrayerSilencer.ringerSetter = { audio, mode -> audio.ringerMode = mode }
+            PrayerSilencer.volumeSetter = { audio, stream, index -> audio.setStreamVolume(stream, index, 0) }
+        }
+    }
+
     /** Runs the main looper, then waits for the receivers' background work. */
     private fun idle() {
         shadowOf(Looper.getMainLooper()).idle()

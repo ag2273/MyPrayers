@@ -67,6 +67,9 @@ class PrayerSilencer(
         val previous = audio.ringerMode
         if (doNotDisturb || previous != AudioManager.RINGER_MODE_NORMAL) return
         val applied = ringerMode(window.mode)
+        // The ring volume before the silence: a Samsung on Android 17 drops it to 0 for vibrate, then refuses the
+        // ringer back to sound (no error, it just stays on vibrate) until the volume is up again.
+        val ringVolume = audio.getStreamVolume(AudioManager.STREAM_RING)
         val changed = runCatching { ringerSetter(audio, applied) }.isSuccess
         if (!changed) return
         forgetRetry()
@@ -75,6 +78,7 @@ class PrayerSilencer(
             .putString(KEY_WINDOW, encode(window))
             .putInt(KEY_PREVIOUS, previous)
             .putInt(KEY_APPLIED, applied)
+            .putInt(KEY_RING_VOLUME, ringVolume)
             // What the app left, so the end can tell whether the user has since turned Do Not Disturb on or off.
             .putInt(KEY_FILTER, filter)
             // Do Not Disturb was off a moment ago, so if it is on now the phone turned it on along with the silence.
@@ -121,16 +125,17 @@ class PrayerSilencer(
         // A record from before the filter was kept has none to compare.
         val filter = record.getInt(KEY_FILTER, notifications.currentInterruptionFilter)
         val dndByApp = record.getBoolean(KEY_DND_BY_APP, false)
+        val ringVolume = record.getInt(KEY_RING_VOLUME, 0)
         forget()
         // The sound is already on (the phone's own doing, since the user turning it on forgets the window first).
         if (audio.ringerMode == previous && !isDoNotDisturb(notifications.currentInterruptionFilter)) return
         val now = notifications.currentInterruptionFilter
-        setRinger(previous)
+        restoreRinger(previous, ringVolume)
         val mayTurnOffDnd = now == filter || dndByApp
         if (audio.ringerMode != previous && isDoNotDisturb(now) && mayTurnOffDnd) {
             // Some phones keep the ringer muted while their own Do Not Disturb is on: turn it off, then try again.
             runCatching { notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL) }
-            setRinger(previous)
+            restoreRinger(previous, ringVolume)
         }
         val after = notifications.currentInterruptionFilter
         if (isMuted(audio.ringerMode) && audio.ringerMode != previous) {
@@ -139,6 +144,7 @@ class PrayerSilencer(
                 .putInt(KEY_RETRY_PREVIOUS, previous)
                 .putLong(KEY_RETRY_UNTIL, System.currentTimeMillis() + RETRY_FOR_MILLIS)
                 .putBoolean(KEY_RETRY_DND, mayTurnOffDnd)
+                .putInt(KEY_RETRY_RING_VOLUME, ringVolume)
                 .putString(KEY_RETRY_WINDOW, encode(window))
                 .apply()
             log("not restored, will retry", after)
@@ -227,10 +233,11 @@ class PrayerSilencer(
             log("gave up restoring", notifications.currentInterruptionFilter)
             return forgetRetry()
         }
-        setRinger(previous)
+        val ringVolume = record.getInt(KEY_RETRY_RING_VOLUME, 0)
+        restoreRinger(previous, ringVolume)
         if (audio.ringerMode != previous && isDoNotDisturb(notifications.currentInterruptionFilter) && record.getBoolean(KEY_RETRY_DND, false)) {
             runCatching { notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL) }
-            setRinger(previous)
+            restoreRinger(previous, ringVolume)
         }
         if (audio.ringerMode == previous) {
             log("restored on retry", notifications.currentInterruptionFilter)
@@ -244,7 +251,23 @@ class PrayerSilencer(
     }
 
     private fun forgetRetry() {
-        record.edit().remove(KEY_RETRY_PREVIOUS).remove(KEY_RETRY_UNTIL).remove(KEY_RETRY_DND).remove(KEY_RETRY_WINDOW).apply()
+        record.edit().remove(KEY_RETRY_PREVIOUS).remove(KEY_RETRY_UNTIL).remove(KEY_RETRY_DND).remove(KEY_RETRY_WINDOW)
+            .remove(KEY_RETRY_RING_VOLUME).apply()
+    }
+
+    /**
+     * Puts the ringer back on [previous]. Some phones ignore an app's ringer change back to sound without an error (a
+     * Samsung on Android 17 stayed on vibrate through every try). Then the ring volume is set back to what it was before
+     * the silence ([ringVolume], at least 1): Android turns the sound on whenever the ring volume is set above 0, as
+     * with the volume keys, by a path that does not go through the app ringer change. Then the ringer is set again.
+     */
+    private fun restoreRinger(previous: Int, ringVolume: Int) {
+        setRinger(previous)
+        if (audio.ringerMode == previous || previous != AudioManager.RINGER_MODE_NORMAL) return
+        val volume = maxOf(ringVolume, audio.getStreamVolume(AudioManager.STREAM_RING), 1)
+        runCatching { volumeSetter(audio, AudioManager.STREAM_RING, volume) }
+            .onFailure { log("ring volume refused: ${it.javaClass.simpleName}", notifications.currentInterruptionFilter) }
+        if (audio.ringerMode != previous) setRinger(previous)
     }
 
     private fun setRinger(mode: Int) {
@@ -290,14 +313,15 @@ class PrayerSilencer(
     /** Whether the app holds the phone silenced for a Silence Window at [now]: one started and not yet at its end. */
     fun isActive(now: Instant = Instant.now()): Boolean = active()?.end?.isAfter(now) == true
 
-    private fun log(event: String, filter: Int) = SilenceLog.add(context, event, audio.ringerMode, filter)
+    private fun log(event: String, filter: Int) =
+        SilenceLog.add(context, "$event ring=${runCatching { audio.getStreamVolume(AudioManager.STREAM_RING) }.getOrDefault(-1)}", audio.ringerMode, filter)
 
     private fun active(): SilenceWindow? = record.getString(KEY_WINDOW, null)?.let(::decode)
 
     private fun awaiting(): SilenceWindow? = record.getString(KEY_AWAITING, null)?.let(::decode)
 
     private fun forget() {
-        record.edit().remove(KEY_WINDOW).remove(KEY_PREVIOUS).remove(KEY_APPLIED).remove(KEY_FILTER)
+        record.edit().remove(KEY_WINDOW).remove(KEY_PREVIOUS).remove(KEY_APPLIED).remove(KEY_FILTER).remove(KEY_RING_VOLUME)
             .remove(KEY_DND_BY_APP).remove(KEY_STARTED_AT).apply()
     }
 
@@ -322,6 +346,8 @@ class PrayerSilencer(
         private const val KEY_RETRY_UNTIL = "retry_until"
         private const val KEY_RETRY_DND = "retry_may_end_dnd"
         private const val KEY_RETRY_WINDOW = "retry_window"
+        private const val KEY_RING_VOLUME = "ring_volume"
+        private const val KEY_RETRY_RING_VOLUME = "retry_ring_volume"
 
         /** How long an end the phone refused keeps trying, and how often by alarm. */
         const val RETRY_FOR_MILLIS = 30 * 60_000L
@@ -330,6 +356,10 @@ class PrayerSilencer(
         /** Sets the ringer; tests stand in for a phone that refuses. */
         @androidx.annotation.VisibleForTesting
         internal var ringerSetter: (AudioManager, Int) -> Unit = { audio, mode -> audio.ringerMode = mode }
+
+        /** Sets a stream's volume; tests stand in for a phone that ties the ringer to the ring volume. */
+        @androidx.annotation.VisibleForTesting
+        internal var volumeSetter: (AudioManager, Int, Int) -> Unit = { audio, stream, index -> audio.setStreamVolume(stream, index, 0) }
 
         /** How long after the start a Do Not Disturb change counts as the phone's side effect of the silence. */
         const val SIDE_EFFECT_MILLIS = 60_000L
