@@ -71,7 +71,7 @@ class AlertReceiver : BroadcastReceiver() {
         // Widgets.refreshAll does nothing; BOOT_COMPLETED refreshes them.
         val startSilence = silence
         AlertRescheduler.rescheduleAsync(this, context, refreshWidgets = true) {
-            startSilence?.let { PrayerSilencer(context).start(it) }
+            startSilence?.let { SilenceService.run(context, SilenceService.ACTION_START, it) { block -> block() } }
         }
     }
 

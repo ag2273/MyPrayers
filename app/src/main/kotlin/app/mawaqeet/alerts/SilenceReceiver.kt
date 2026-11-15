@@ -19,14 +19,15 @@ class SilenceReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val window = intent.silenceWindow() ?: return
         val action = intent.action
-        // Preferences, the stored plan and AudioManager: off the main thread.
-        ReceiverWork.run(this) {
-            when (action) {
-                ACTION_START -> PrayerSilencer(context).start(window)
-                ACTION_END -> PrayerSilencer(context).end(window)
-                ACTION_RESTORE -> PrayerSilencer(context).restore(window)
-            }
+        val work = when (action) {
+            ACTION_START -> SilenceService.ACTION_START
+            ACTION_END -> SilenceService.ACTION_END
+            ACTION_RESTORE -> SilenceService.ACTION_RESTORE
+            else -> return
         }
+        // In a foreground service on Android 17, which ignores an app's ringer changes from the background; elsewhere
+        // here, off the main thread (preferences, the stored plan and AudioManager).
+        SilenceService.run(context, work, window) { block -> ReceiverWork.run(this) { block() } }
     }
 
     companion object {

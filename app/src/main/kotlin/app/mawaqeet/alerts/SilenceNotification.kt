@@ -51,6 +51,19 @@ internal object SilenceNotification {
 
     fun cancel(context: Context) = NotificationManagerCompat.from(context).cancel(ID)
 
+    /** [SilenceService]'s own notification for the second it runs, in the stored plan's language. */
+    fun working(context: Context): android.app.Notification {
+        val text = localizedContext(context, appLocale(context, AlertPlanStore(context).readStyle().language))
+        ensureChannel(context, text)
+        return NotificationCompat.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(text.getString(R.string.prayer_silence_working))
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setSilent(true)
+            .setShowWhen(false)
+            .build()
+    }
+
     private fun ensureChannel(context: Context, text: Context) {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, text.getString(R.string.prayer_silence_channel_name), NotificationManager.IMPORTANCE_LOW).apply {

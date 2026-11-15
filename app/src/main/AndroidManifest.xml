@@ -114,6 +114,13 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- Prayer Silence's ringer changes on Android 17, which ignores them from the background (SilenceService.kt). -->
+        <service
+            android:name=".alerts.SilenceService"
+            android:directBootAware="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
         <!-- Re-renders the Next Prayer widgets when their countdown drops under an hour (its unit changes). -->
         <receiver
             android:name=".widget.CountdownUnitReceiver"
