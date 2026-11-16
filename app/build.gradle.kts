@@ -105,8 +105,8 @@ android {
         applicationId = "app.nileorbit.mawaqeet"
         minSdk = 26
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.4.1"
+        versionCode = 15
+        versionName = "1.4.5"
         buildConfigField("boolean", "ADHAN_CHANNEL_SOUND_FALLBACK", adhanChannelSoundFallback.toString())
     }
 
@@ -136,6 +136,13 @@ android {
         // Arabic is the unqualified default locale (res/resources.properties, ADR 0002).
         generateLocaleConfig = true
         localeFilters += listOf("ar", "en")
+    }
+
+    bundle {
+        // The app switches language itself (Settings → Language), so every phone needs both languages. With language
+        // splits Play installs only the phone's languages: on an English phone running Android 8–12 the "ar" split was
+        // missing, AppCompat's [ar, en] then resolved to English, and choosing Arabic only made the screen flicker.
+        language { enableSplit = false }
     }
 
     compileOptions {
