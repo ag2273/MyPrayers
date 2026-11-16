@@ -418,6 +418,7 @@
     <string name="prayer_silence_log">نسخ سجل الصامت</string>
     <string name="prayer_silence_log_summary">آخر ما فعله الصامت وقت الصلاة، لإرساله إلينا إن لم يعد الصوت.</string>
     <string name="prayer_silence_log_copied">نُسخ السجل</string>
+    <string name="prayer_silence_working">ضبط صوت الهاتف</string>
     <string name="prayer_silence_channel_name">الصامت وقت الصلاة</string>
     <string name="prayer_silence_channel_description">إشعار هادئ ما دام الهاتف صامتًا للصلاة</string>
     <string name="settings_alerts_summary_off">كلها موقوفة</string>

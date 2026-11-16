@@ -100,6 +100,13 @@ class AlertScheduler(context: Context) {
         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, window.end.toEpochMilli(), operation)
     }
 
+    /** One more try at [window]'s end, at [at], for a phone that refused to give the sound back ([PrayerSilencer.end]). */
+    fun armSilenceRetry(window: SilenceWindow, at: Instant) {
+        if (!canScheduleExact(alarmManager)) return
+        val operation = silenceIntent(window, start = false, PendingIntent.FLAG_UPDATE_CURRENT)!!
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at.toEpochMilli(), operation)
+    }
+
     /** Drops [window]'s end alarm (it was ended early with «استعادة الصوت»). */
     fun cancelSilenceEnd(window: SilenceWindow) = cancel(silenceIntent(window, start = false, PendingIntent.FLAG_NO_CREATE))
 

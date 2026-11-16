@@ -105,6 +105,9 @@ internal fun AlertsPage(alerts: AlertSettings, actions: SettingsActions, onOpenP
         )
     }
     PrayerSilenceRows(alerts, actions)
+    // Whether Prayer Silence is on now or not: someone turns it off when the sound did not come back, and the log of
+    // that time is what they would send.
+    SilenceLogRow()
     if (!alerts.enabled) {
         // Today's Ramadan card uses Imsak whatever the alerts: it stays editable with the master switch off (#91).
         RamadanRows(alerts.ramadan, actions, reminders = false)
@@ -263,17 +266,20 @@ private fun PrayerSilenceRows(alerts: AlertSettings, actions: SettingsActions) {
             longer = R.string.prayer_silence_jumuah_longer,
         ) { step -> actions.stepPrayerSilenceMinutes(jumuah = true, step = step) }
     }
-    SilenceLogRow()
 }
 
 /** «نسخ سجل الصامت»: what Prayer Silence did lately, copied for a report when the sound did not come back. */
 @Composable
 private fun SilenceLogRow() {
     val context = LocalContext.current
+    // Nothing logged yet (Prayer Silence never ran), nothing to copy.
+    if (remember { SilenceLog.read(context).isBlank() }) return
     val copied = stringResource(R.string.prayer_silence_log_copied)
     Card {
         NavRow(stringResource(R.string.prayer_silence_log), stringResource(R.string.prayer_silence_log_summary)) {
-            val text = SilenceLog.read(context).ifEmpty { "-" }
+            // The phone and its Android version first: what the phone does around silencing differs by maker.
+            val phone = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}, Android ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})"
+            val text = phone + "\n" + SilenceLog.read(context).ifEmpty { "-" }
             context.getSystemService(android.content.ClipboardManager::class.java)
                 .setPrimaryClip(android.content.ClipData.newPlainText("Mawaqeet silence log", text))
             android.widget.Toast.makeText(context, copied, android.widget.Toast.LENGTH_SHORT).show()

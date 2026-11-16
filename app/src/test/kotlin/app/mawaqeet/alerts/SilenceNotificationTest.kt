@@ -190,8 +190,8 @@ class SilenceNotificationTest {
         PrayerSilencer(context).end(window)
 
         val log = SilenceLog.read(context)
-        assertTrue(log, "start ${window.prayer} ringer=silent" in log)
-        assertTrue(log, "restored ringer=normal" in log)
+        assertTrue(log, Regex("start ${window.prayer} ring=\\d+ ringer=silent") in log)
+        assertTrue(log, Regex("restored ring=\\d+ ringer=normal") in log)
     }
 
     @Test

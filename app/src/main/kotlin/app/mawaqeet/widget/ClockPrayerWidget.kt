@@ -86,6 +86,11 @@ internal object ClockPrayerMetrics {
     /** The prayer side takes at least this share of the width, so its bar reads as a bar. */
     const val PRAYER_SHARE = 0.44f
     const val MAX_GROW = 1.6f
+    /**
+     * Room kept over the measured width of every line. The launcher draws the text in its own process, and on some
+     * phones (a Samsung, in Arabic) it comes out wider than this process measures it, which cut «المغرب» to «المغ…».
+     */
+    const val TEXT_SLACK = 1.15f
 
     /** The weather on one line under the clock at 4×2 (design board option «أ»). */
     val WEATHER = WeatherSizes(temperatureSp = 13f, detailSp = 11f, sunDp = 12f, iconDp = 10f, iconGapDp = 3f, itemGapDp = 8f, lineGapDp = 0f)
@@ -135,7 +140,7 @@ internal object ClockPrayerMetrics {
         val paddingV = if (compact) COMPACT_PADDING_V else PADDING_V
         val across = widthDp - 2 * PADDING_H.value
         val room = heightDp - 2 * paddingV.value - 1
-        fun w(text: String, sp: Float, bold: Boolean = false) = textWidthDp(text, sp, fontScale, bold)
+        fun w(text: String, sp: Float, bold: Boolean = false) = textWidthDp(text, sp, fontScale, bold) * TEXT_SLACK
         fun h(text: String, sp: Float, bold: Boolean = false) = lineHeightDp(text, sp, fontScale, bold).toFloat()
         fun prayerText(s: Float) = maxOf(
             if (label) w(view.label, LABEL_SP * s) else 0f,
@@ -170,7 +175,9 @@ internal object ClockPrayerMetrics {
             clockScale = scale
         }
         val divider = maxOf(clockHeight(clockScale), prayerHeight(scale)).coerceAtMost(room)
-        return Tried(Fit(scale, prayerWidth(scale), divider, clockScale, paddingV, dates, label, since), fits(clockScale, scale))
+        // Half the width the two sides leave over goes to the prayer side, whose lines are the ones that get cut.
+        val spare = (across - clockSide(clockScale) - 2 * DIVIDER_GAP_DP * scale - 1 - prayerWidth(scale)).coerceAtLeast(0f) / 2
+        return Tried(Fit(scale, prayerWidth(scale) + spare, divider, clockScale, paddingV, dates, label, since), fits(clockScale, scale))
     }
 }
 

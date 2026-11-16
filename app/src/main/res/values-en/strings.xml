@@ -388,6 +388,7 @@
     <string name="prayer_silence_log">Copy silence log</string>
     <string name="prayer_silence_log_summary">What Prayer Silence did lately, to send us if the sound did not come back.</string>
     <string name="prayer_silence_log_copied">Log copied</string>
+    <string name="prayer_silence_working">Setting the phone\'s sound</string>
     <string name="prayer_silence_channel_name">Silent during Prayer</string>
     <string name="prayer_silence_channel_description">A quiet notification while the phone is silenced for Prayer</string>
     <string name="settings_alerts_summary_off">All turned off</string>
