@@ -46,7 +46,7 @@ class ClockPrayerRenderTest {
     private val settings get() = (context as MawaqeetApplication).settings
 
     /** One fixed instant for the widget and the expected values alike, so no minute turns between them. */
-    private val clock: Clock = Clock.fixed(Instant.parse("2026-11-12T06:30:20Z"), ZoneId.systemDefault())
+    private var clock: Clock = Clock.fixed(Instant.parse("2026-11-12T06:30:20Z"), ZoneId.systemDefault())
 
     @After
     fun reset() = runBlocking {
@@ -165,6 +165,26 @@ class ClockPrayerRenderTest {
 
         runBlocking { settings.setWidgetNextPrayerLook(false) }
         assertNotEquals(deep, tint(render()))
+    }
+
+    @Test
+    fun `the next Prayer's lines keep room to spare, so a launcher that draws text wider does not cut them`() {
+        runBlocking { settings.setAppLanguage("ar") }
+        // Between Asr and Maghrib: the longer name, «المغرب», and «من العصر …».
+        clock = Clock.fixed(Instant.parse("2026-11-12T14:00:00Z"), ZoneId.systemDefault())
+        val shown = shown()
+        // 4×2 and 4×1 on narrow to wide phones.
+        for ((w, h) in listOf(250 to 110, 300 to 150, 340 to 190, 400 to 200, 250 to 60, 340 to 80)) {
+            val root = render(w, h)
+            val name = root.text(shown.nextName)
+            // The name beside its time sits in the prayer side's column, with «من …» under the bar where it fits.
+            val row = name.parent.parent as View
+            val column = row.parent as View
+            assertTrue("name at ${w}x$h: ${row.width}px in ${column.width}px", column.width >= row.width * 1.12f)
+            widgetTexts(root).firstOrNull { it.text.toString() == "من ${shown.previous}" }?.let { since ->
+                assertTrue("«من …» at ${w}x$h: ${since.width}px in ${column.width}px", column.width >= since.width * 1.12f)
+            }
+        }
     }
 
     @Test

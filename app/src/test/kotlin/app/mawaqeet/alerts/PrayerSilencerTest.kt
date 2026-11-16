@@ -201,6 +201,86 @@ class PrayerSilencerTest {
         assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, notifications.currentInterruptionFilter)
     }
 
+    @Test
+    fun `a phone that refuses the sound at the end gets it back on a later try`() {
+        PrayerSilencer(context).start(window)
+        val refuseSound: (AudioManager, Int) -> Unit = { audio, mode -> if (mode != AudioManager.RINGER_MODE_NORMAL) audio.ringerMode = mode }
+        PrayerSilencer.ringerSetter = refuseSound
+        try {
+            PrayerSilencer(context).end(window)
+            assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+            // Still refusing: the next try fails too, and the app keeps at it.
+            PrayerSilencer(context).endIfOverdue()
+            assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+        } finally {
+            PrayerSilencer.ringerSetter = { audio, mode -> audio.ringerMode = mode }
+        }
+
+        // The retry alarm (the window's end alarm again) brings the sound back once the phone allows it.
+        PrayerSilencer(context).end(window)
+        assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+    }
+
+    @Test
+    fun `the retries stop once the user turns the sound on, and never mute again`() {
+        PrayerSilencer(context).start(window)
+        PrayerSilencer.ringerSetter = { audio, mode -> if (mode != AudioManager.RINGER_MODE_NORMAL) audio.ringerMode = mode }
+        try {
+            PrayerSilencer(context).end(window)
+        } finally {
+            PrayerSilencer.ringerSetter = { audio, mode -> audio.ringerMode = mode }
+        }
+        audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        PrayerSilencer(context).ringerChanged()
+        // Later the user silences the phone themselves: no retry turns it back up.
+        audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+        PrayerSilencer(context).ringerChanged()
+        PrayerSilencer(context).endIfOverdue()
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
+    fun `after half an hour of refusals it stops trying`() {
+        PrayerSilencer(context).start(window)
+        PrayerSilencer.ringerSetter = { audio, mode -> if (mode != AudioManager.RINGER_MODE_NORMAL) audio.ringerMode = mode }
+        try {
+            PrayerSilencer(context).end(window)
+        } finally {
+            PrayerSilencer.ringerSetter = { audio, mode -> audio.ringerMode = mode }
+        }
+        PrayerSilencer(context).retryRestore(Instant.now().plusMillis(PrayerSilencer.RETRY_FOR_MILLIS + 60_000))
+        PrayerSilencer(context).retryRestore()
+        assertEquals(AudioManager.RINGER_MODE_SILENT, audio.ringerMode)
+    }
+
+    @Test
+    fun `a phone that ignores the ringer back to sound gets it back through the ring volume`() {
+        audio.setStreamVolume(AudioManager.STREAM_RING, 5, 0)
+        // Like the Samsung on Android 17: vibrate drops the ring volume to 0, an app's change back to sound is ignored,
+        // and setting the ring volume above 0 turns the sound on.
+        PrayerSilencer.ringerSetter = { audio, mode ->
+            if (mode != AudioManager.RINGER_MODE_NORMAL) {
+                audio.ringerMode = mode
+                audio.setStreamVolume(AudioManager.STREAM_RING, 0, 0)
+            }
+        }
+        PrayerSilencer.volumeSetter = { audio, stream, index ->
+            audio.setStreamVolume(stream, index, 0)
+            if (stream == AudioManager.STREAM_RING && index > 0) audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+        }
+        try {
+            PrayerSilencer(context).start(window.copy(mode = SilenceMode.VIBRATE))
+            assertEquals(AudioManager.RINGER_MODE_VIBRATE, audio.ringerMode)
+
+            PrayerSilencer(context).end(window.copy(mode = SilenceMode.VIBRATE))
+            assertEquals(AudioManager.RINGER_MODE_NORMAL, audio.ringerMode)
+            assertEquals(5, audio.getStreamVolume(AudioManager.STREAM_RING))
+        } finally {
+            PrayerSilencer.ringerSetter = { audio, mode -> audio.ringerMode = mode }
+            PrayerSilencer.volumeSetter = { audio, stream, index -> audio.setStreamVolume(stream, index, 0) }
+        }
+    }
+
     /** Runs the main looper, then waits for the receivers' background work. */
     private fun idle() {
         shadowOf(Looper.getMainLooper()).idle()
