@@ -84,3 +84,17 @@ internal fun backgroundColours(root: View): List<Int> {
 /** The stops of a gradient drawable resource, as [backgroundColours] reads them off a widget. */
 internal fun artColours(context: Context, @androidx.annotation.DrawableRes art: Int): List<Int> =
     (androidx.core.content.ContextCompat.getDrawable(context, art) as android.graphics.drawable.GradientDrawable).colors!!.toList()
+
+/**
+ * Like [renderWidget], but the launcher draws every line [wider] times wider than this process measured it, at the
+ * same height (a Samsung's own Arabic font, or bold faked over a font with no bold).
+ */
+internal fun renderWidgetWiderText(context: Context, widget: GlanceAppWidget, width: Int, height: Int, wider: Float): View {
+    val root = renderWidget(context, widget, width, height)
+    // Setting the text again makes an auto-sized line fit itself afresh, as it would have in that launcher.
+    widgetTexts(root).forEach { it.textScaleX = wider; it.text = it.text }
+    val parent = root.parent as View
+    parent.measure(View.MeasureSpec.makeMeasureSpec(parent.width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(parent.height, View.MeasureSpec.EXACTLY))
+    parent.layout(0, 0, parent.width, parent.height)
+    return root
+}
