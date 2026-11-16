@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One line of widget text that shrinks to its box rather than being cut (WidgetFitLine in WidgetParts.kt): the box is the size the line is designed at, so it shrinks only when the launcher draws the text wider than this app measured it. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_text"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:ellipsize="end"
+    android:gravity="start|center_vertical"
+    android:includeFontPadding="false"
+    android:maxLines="1"
+    android:shadowColor="@color/widget_text_shadow"
+    android:shadowDy="1"
+    android:shadowRadius="3"
+    android:autoSizeMaxTextSize="200sp"
+    android:autoSizeMinTextSize="6sp"
+    android:autoSizeStepGranularity="1px"
+    android:autoSizeTextType="uniform" />

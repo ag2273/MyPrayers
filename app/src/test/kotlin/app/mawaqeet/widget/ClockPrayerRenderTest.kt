@@ -98,8 +98,8 @@ class ClockPrayerRenderTest {
     private fun assertSplit(root: View, name: String, rtl: Boolean, label: String, before: String, from: String) {
         val s = shown()
         val clock = clock(root)
-        val nextName = root.text(s.nextName)
-        root.text(s.nextTime)
+        // The name and its time are one line, so the launcher never cuts the name to make room for the time.
+        val nextName = root.text("${s.nextName} ${s.nextTime}")
         root.text(label)
         root.text(before)
         root.text(s.countdown)
@@ -168,22 +168,18 @@ class ClockPrayerRenderTest {
     }
 
     @Test
-    fun `the next Prayer's lines keep room to spare, so a launcher that draws text wider does not cut them`() {
+    fun `when the launcher draws the text wider, the next Prayer's name and the from line shrink a little rather than being cut`() {
         runBlocking { settings.setAppLanguage("ar") }
-        // Between Asr and Maghrib: the longer name, «المغرب», and «من العصر …».
+        // Between Asr and Maghrib: «المغرب ١٦:٥٩» and «من العصر ١٤:٤٤», the lines a Samsung cut to «المغ…» and «من العصر ١٤…».
         clock = Clock.fixed(Instant.parse("2026-11-12T14:00:00Z"), ZoneId.systemDefault())
         val shown = shown()
-        // 4×2 and 4×1 on narrow to wide phones.
-        for ((w, h) in listOf(250 to 110, 300 to 150, 340 to 190, 400 to 200, 250 to 60, 340 to 80)) {
-            val root = render(w, h)
-            val name = root.text(shown.nextName)
-            // The name beside its time sits in the prayer side's column, with «من …» under the bar where it fits.
-            val row = name.parent.parent as View
-            val column = row.parent as View
-            assertTrue("name at ${w}x$h: ${row.width}px in ${column.width}px", column.width >= row.width * 1.12f)
-            widgetTexts(root).firstOrNull { it.text.toString() == "من ${shown.previous}" }?.let { since ->
-                assertTrue("«من …» at ${w}x$h: ${since.width}px in ${column.width}px", column.width >= since.width * 1.12f)
-            }
+        // 4×2 and 4×1 on narrow to wide phones, and text up to 60% wider than measured here.
+        for ((w, h) in listOf(250 to 110, 280 to 120, 300 to 150, 340 to 190, 400 to 200, 250 to 60, 340 to 80)) for (wider in listOf(1f, 1.2f, 1.6f)) {
+            val root = renderWidgetWiderText(context, ClockPrayerWidget(clock), w, h, wider = wider)
+            val texts = widgetTexts(root).filter { shown.nextName in it.text || it.text.toString() == "من ${shown.previous}" }
+            // At 4×1 «من …» gives way where it doesn't fit; the name never does.
+            assertTrue("${w}x$h: ${widgetTexts(root).map { it.text }}", texts.any { shown.nextName in it.text } && (h < 100 || texts.size == 2))
+            try { assertNothingClipped(root, allowEllipsis = { line -> texts.none { it.text.toString() == line } }) } catch (e: AssertionError) { throw AssertionError("${w}x$h, $wider wider: ${e.message}") }
         }
     }
 

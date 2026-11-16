@@ -1,6 +1,11 @@
 package app.mawaqeet.widget
 
 import android.content.Context
+import android.graphics.Typeface
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
+import android.text.style.StyleSpan
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -91,6 +96,15 @@ internal object ClockPrayerMetrics {
      * phones (a Samsung, in Arabic) it comes out wider than this process measures it, which cut «المغرب» to «المغ…».
      */
     const val TEXT_SLACK = 1.15f
+
+    /** The next Stop's name in bold and its time at [TIME_SP], one line, so the launcher never cuts the name to fit the time. */
+    fun nameLine(name: String, time: String): CharSequence = SpannableStringBuilder(name).apply {
+        setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        append(' ')
+        val start = length
+        append(time)
+        setSpan(RelativeSizeSpan(TIME_SP / NAME_SP), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
 
     /** The weather on one line under the clock at 4×2 (design board option «أ»). */
     val WEATHER = WeatherSizes(temperatureSp = 13f, detailSp = 11f, sunDp = 12f, iconDp = 10f, iconGapDp = 3f, itemGapDp = 8f, lineGapDp = 0f)
@@ -241,14 +255,17 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
                 },
                 cell {
                     Column(GlanceModifier.width(fit.prayerWidth.dp), horizontalAlignment = direction.start) {
-                        if (fit.label) WidgetLine(view.label, ClockPrayerMetrics.LABEL_SP * s, Tone.MUTED)
-                        ReadingRow(
+                        // The label, the name with its time, and «من …» each take the column's whole width at their designed
+                        // height, and shrink there rather than being cut when the launcher's font draws them wider than this
+                        // process measures (a Samsung in Arabic cut them to «المغ…» and «من العصر ١٤…»).
+                        val fontScale = context.resources.configuration.fontScale
+                        fun height(text: String, sp: Float, bold: Boolean = false) = lineHeightDp(text, sp * s, fontScale, bold).toFloat()
+                        if (fit.label) WidgetFitLine(view.label, height(view.label, ClockPrayerMetrics.LABEL_SP), Tone.MUTED)
+                        WidgetFitLine(
+                            ClockPrayerMetrics.nameLine(clock.nextName, clock.nextTime),
+                            maxOf(height(clock.nextName, ClockPrayerMetrics.NAME_SP, bold = true), height(clock.nextTime, ClockPrayerMetrics.TIME_SP)),
+                            Tone.TEXT,
                             GlanceModifier.padding(top = if (fit.label) line else 0.dp),
-                            Alignment.CenterVertically,
-                            listOf(
-                                cell { WidgetLine(clock.nextName, ClockPrayerMetrics.NAME_SP * s, Tone.TEXT, bold = true) },
-                                cell { WidgetLine(clock.nextTime, ClockPrayerMetrics.TIME_SP * s, Tone.TEXT, modifier = direction.paddingStart(word)) },
-                            ),
                         )
                         ReadingRow(
                             GlanceModifier.padding(top = line),
@@ -260,7 +277,7 @@ internal fun ClockPrayerLayout(view: ClockPrayerView, rtl: Boolean) {
                         )
                         val bar = (ClockPrayerMetrics.BAR_GAP_DP * s).dp
                         ClockBar(clock, fit.prayerWidth, rtl, GlanceModifier.padding(top = bar, bottom = if (fit.since) bar else 0.dp))
-                        if (fit.since) WidgetLine(view.since, ClockPrayerMetrics.SINCE_SP * s, Tone.MUTED)
+                        if (fit.since) WidgetFitLine(view.since, height(view.since, ClockPrayerMetrics.SINCE_SP), Tone.MUTED)
                     }
                 },
             ),

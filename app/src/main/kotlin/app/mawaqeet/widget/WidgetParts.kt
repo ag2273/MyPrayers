@@ -332,7 +332,7 @@ internal fun tint(@ColorRes color: Int) = ColorFilter.tint(ColorProvider(color))
  */
 @Composable
 internal fun WidgetLine(
-    text: String,
+    text: CharSequence,
     sp: Float,
     tone: Tone = Tone.TEXT,
     bold: Boolean = false,
@@ -363,6 +363,25 @@ internal fun WidgetLine(
     } else {
         AndroidRemoteViews(views, wrap.then(modifier))
     }
+}
+
+/**
+ * A line of widget text across its parent's whole width in a box [heightDp] tall, which the launcher's `TextView`
+ * fills with the largest text that fits (Android's uniform auto-size). Give [heightDp] the line's height at the
+ * designed size: the text is then drawn at that size, and only where the launcher's font draws it wider than this
+ * process measured it (a Samsung in Arabic) does it come out a little smaller, never cut to «المغ…».
+ */
+@Composable
+internal fun WidgetFitLine(text: CharSequence, heightDp: Float, tone: Tone = Tone.TEXT, modifier: GlanceModifier = GlanceModifier) {
+    val context = LocalContext.current
+    val style = LocalWidgetStyle.current
+    val layout = if (style.shadowedText && tone != Tone.ON_ACCENT) R.layout.widget_text_fit_shadow else R.layout.widget_text_fit_plain
+    val views = RemoteViews(context.packageName, layout).apply {
+        setTextViewText(R.id.widget_text, text)
+        setColor(context, R.id.widget_text, "setTextColor", "setTextColor", style.colorOf(tone))
+        LocalWidgetDirection.current.applyTo(this, R.id.widget_text)
+    }
+    AndroidRemoteViews(views, modifier.fillMaxWidth().height(heightDp.dp))
 }
 
 /** Sets a colour resource: as a resource on Android 12+ (day/night follow the launcher), resolved before that. */
