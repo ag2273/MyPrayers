@@ -82,6 +82,19 @@ class SettingsScreenTest {
 
     @Test
     @Config(qualifiers = "ar")
+    fun `the Custom Adhan section links to the Islamweb adhan collection`() {
+        openSettings("الإعدادات")
+        openPage("التنبيهات والأذان")
+
+        compose.onNodeWithText("تحميل أذان من إسلام ويب").performScrollTo().performClick()
+
+        val opened = shadowOf(compose.activity).nextStartedActivity
+        assertEquals(android.content.Intent.ACTION_VIEW, opened?.action)
+        assertEquals(app.mawaqeet.ui.settings.ADHAN_DOWNLOADS_URL, opened?.dataString)
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
     fun `choosing a Calculation Method and Asr Convention stores them`() {
         openSettings("الإعدادات")
         openPage("الموقع وطريقة الحساب")
