@@ -210,6 +210,8 @@
     <string name="alerts_custom_preview">استماع</string>
     <string name="alerts_custom_preview_stop">إيقاف الاستماع</string>
     <string name="alerts_custom_clear">العودة إلى التسجيل المرفق</string>
+    <string name="alerts_custom_download">تحميل أذان من إسلام ويب</string>
+    <string name="alerts_custom_download_description">مختارات من الأذان بأصوات كثيرة. حمّل ما تحب ثم اختره من هنا</string>
 
     <!-- Widgets (#27). -->
     <string name="widget_next_prayer">الصلاة القادمة</string>

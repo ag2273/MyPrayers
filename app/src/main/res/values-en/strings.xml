@@ -198,6 +198,8 @@
     <string name="alerts_custom_preview">Preview</string>
     <string name="alerts_custom_preview_stop">Stop preview</string>
     <string name="alerts_custom_clear">Use the bundled recording</string>
+    <string name="alerts_custom_download">Download an adhan from Islamweb</string>
+    <string name="alerts_custom_download_description">A collection of adhans by many muezzins. Download one you like, then choose it here</string>
 
     <!-- Widgets (#27). -->
     <string name="widget_next_prayer">Next Prayer</string>
