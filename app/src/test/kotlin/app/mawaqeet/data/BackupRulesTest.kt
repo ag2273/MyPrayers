@@ -78,8 +78,21 @@ class BackupRulesTest {
         listOf("database" to database, "database" to "$database-wal", "file" to settings).forEach { (domain, path) ->
             assertTrue("$path excluded from cloud backup", listOf("cloud-backup", "exclude", domain, path, null) in rules)
         }
-        // Nothing in device-transfer: a direct transfer carries every file.
-        assertTrue(rules.none { it[0] == "device-transfer" })
+        // A direct transfer carries every file but the Adhkar Audio, sealed with this phone's own key.
+        assertEquals(
+            listOf(listOf("device-transfer", "exclude", "file", "adhkar-audio/", null)),
+            rules.filter { it[0] == "device-transfer" },
+        )
+    }
+
+    @Test
+    fun `the Adhkar Audio never goes to backup or another phone`() {
+        val modern = rules(R.xml.data_extraction_rules)
+        listOf("cloud-backup", "device-transfer").forEach { section ->
+            assertTrue(section, listOf(section, "exclude", "file", "adhkar-audio/", null) in modern)
+        }
+        // Android 8-11 back up only what is included, and the audio folder isn't.
+        assertTrue(rules(R.xml.backup_rules).none { it[3]?.startsWith("adhkar-audio") == true })
     }
 
     @Test

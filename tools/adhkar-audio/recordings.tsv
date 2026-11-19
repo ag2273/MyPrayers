@@ -1,0 +1,36 @@
+# Adhkar Audio sources: recording, source file (relative to --audio-root), the adhkar it reads (set/dhikr id, comma-separated).
+# Matched 2026-11-19 by transcribing every recording and comparing it with adhkar.tsv.
+asbahna-almulk	اذكار الصباح/أذكار الصباح - 1.mp3	morning/asbahna-almulk
+amsayna-almulk	أذكار المساء/أذكار المساء - 1.mp3	evening/amsayna-almulk
+bika-asbahna	اذكار الصباح/أذكار الصباح - 2.mp3	morning/bika-asbahna
+bika-amsayna	أذكار المساء/أذكار المساء - 2.mp3	evening/bika-amsayna
+sayyid-alistighfar	اذكار الصباح/أذكار الصباح - 3.mp3	morning/sayyid-alistighfar,evening/sayyid-alistighfar
+ushhiduka-asbahtu	اذكار الصباح/أذكار الصباح -4.mp3	morning/ushhiduka
+ushhiduka-amsaytu	أذكار المساء/أذكار المساء - 4.mp3	evening/ushhiduka
+ma-asbaha-bi	اذكار الصباح/أذكار الصباح - ما أصبح بي من نعمه.mp3	morning/ma-asbaha-bi
+ma-amsa-bi	أذكار المساء/أذكار المساء - 5.mp3	evening/ma-asbaha-bi
+hasbiyallah-morning	اذكار الصباح/أذكار الصباح - 5.mp3	morning/hasbiyallah
+hasbiyallah-evening	أذكار المساء/أذكار المساء - 6.mp3	evening/hasbiyallah
+alafwa-walafiya	اذكار الصباح/أذكار الصباح - 7.mp3	morning/alafwa-walafiya,evening/alafwa-walafiya
+alim-alghayb	اذكار الصباح/أذكار الصباح - 8.mp3	morning/alim-alghayb,evening/alim-alghayb
+bismillah-alladhi-la-yadurr	اذكار الصباح/أذكار الصباح - 9.mp3	morning/bismillah-alladhi-la-yadurr,evening/bismillah-alladhi-la-yadurr
+raditu-billah	اذكار الصباح/أذكار الصباح - 10.mp3	morning/raditu-billah,evening/raditu-billah
+ya-hayyu-ya-qayyum	اذكار الصباح/أذكار الصباح - 11.mp3	morning/ya-hayyu-ya-qayyum,evening/ya-hayyu-ya-qayyum
+rabb-alalamin-asbahna	اذكار الصباح/أذكار الصباح - 12.mp3	morning/rabb-alalamin
+rabb-alalamin-amsayna	أذكار المساء/أذكار المساء - 12.mp3	evening/rabb-alalamin
+fitrat-alislam-asbahna	اذكار الصباح/أذكار الصباح - 13.mp3	morning/fitrat-alislam
+fitrat-alislam-amsayna	أذكار المساء/أذكار المساء - 13.mp3	evening/fitrat-alislam
+subhanallah-wa-bihamdih	اذكار الصباح/أذكار الصباح - 14.mp3	morning/subhanallah-wa-bihamdih,evening/subhanallah-wa-bihamdih
+la-ilaha-illallah-wahdah	اذكار الصباح/أذكار الصباح - 15.mp3	morning/la-ilaha-illallah-10,morning/la-ilaha-illallah-100,evening/la-ilaha-illallah-10,after-prayer/tamam-almiah
+adada-khalqih	اذكار الصباح/أذكار الصباح - 16.mp3	morning/adada-khalqih
+ilman-nafian	اذكار الصباح/أذكار الصباح - 17.mp3	morning/ilman-nafian
+astaghfirullah-wa-atubu	اذكار الصباح/أذكار الصباح - 18.mp3	morning/astaghfirullah-wa-atubu
+salat-ala-annabi	اذكار الصباح/أذكار الصباح - 19.mp3	morning/salat-ala-annabi,evening/salat-ala-annabi
+audhu-bikalimatillah	أذكار المساء/أذكار المساء - 17.mp3	evening/audhu-bikalimatillah
+astaghfirullah	بعد الصلاه/استغفر الله.mp3	after-prayer/astaghfirullah
+anta-assalam	بعد الصلاه/after-anta-assalam.mp3	after-prayer/anta-assalam
+la-mani-lima-atayt	بعد الصلاه/after-la-mani-lima-atayt.mp3	after-prayer/la-mani-lima-atayt
+la-hawla-wala-quwwata	بعد الصلاه/after-la-hawla-wala-quwwata.mp3	after-prayer/la-hawla-wala-quwwata
+subhanallah	بعد الصلاه/سبحان الله.mp3	after-prayer/subhanallah
+alhamdulillah	بعد الصلاه/الحمد لله.mp3	after-prayer/alhamdulillah
+allahu-akbar	بعد الصلاه/الله أكبر.mp3	after-prayer/allahu-akbar

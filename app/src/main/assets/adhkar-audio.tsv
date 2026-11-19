@@ -1,0 +1,82 @@
+# mawaqeet-adhkar-audio-v1 Written by tools/adhkar-audio/build_pack.py; do not edit by hand.
+# file: recording, file on the site, encrypted bytes, sha256 of the encrypted file. dhikr: set, dhikr id, recording.
+base	https://mawaqeet.nileorbit.com/a/v1/
+file	asbahna-almulk	f7816a36a6623588721a.bin	287627	5deb134b8ba38da038d502b898215268300f0f45172520bba8053517a297fa0b
+file	amsayna-almulk	dcbb248c48741a50c9bf.bin	295360	0a6b467e105deb4c3ff8cede607592e8c41cb2fbcf4ddfe0f08e67002cb7839e
+file	bika-asbahna	10d1b006dbef53e7150c.bin	91396	568d702c60f9de30c94866a9f7419a66107e52a51d29d3e1827a859cdd7112c1
+file	bika-amsayna	56cb074f2c4fe6c9e607.bin	87425	abb5558d1474d0c6866522134484c2eba38a83d6b7e18c1a88bc2512c865b641
+file	sayyid-alistighfar	b7e5032487fcbc774f0a.bin	191706	86a2c8ada31a9b826dc68ab15bb6b7436094651a8ed7aaee5400353b91b3dcc5
+file	ushhiduka-asbahtu	e89dbfd4d3951f3d1574.bin	147611	e6e1063d023d4dcc47cbb780afa95c3f80f7cd3d21cba67f09dda69bcccdf4ee
+file	ushhiduka-amsaytu	aeb3421e8fbd1d7f2296.bin	146775	8062dda6793efe31662dda9abbc0d52c18646c53b798ce0183fef0455b6082f7
+file	ma-asbaha-bi	09496ce662e7b0d532c5.bin	118145	1c03dae0349baf33b70604a6012c8c27210d75ccaed62a24b6698b356a60ec34
+file	ma-amsa-bi	762c547dce90bdc8de09.bin	116682	93726f2d2c5ea578a5894593477f3bffab12eb39923ba404b7fb7496ff02af8e
+file	hasbiyallah-morning	85fce5dcea6a972f5290.bin	76976	8b26df8345b2557a6e166e09c35513d8a5bc08cb5dfbadc1def0d49fe663b737
+file	hasbiyallah-evening	edef3f9e35306c62eb59.bin	60676	4beb8f2d57eceea0cf9cb021ab04c781c108fc18212bbf044ff84626eb9fda2a
+file	alafwa-walafiya	b62667b9da2a39885bd8.bin	167255	26e92873d4b57b0ed979d088015b6f1ce9fed7d237425db5e2a88e16a1c5bfd5
+file	alim-alghayb	9eabdfabfcef37d0fa74.bin	195885	9e4f3e9bc4d60cd8f4cef8d58cf54e437a3ca8f2d7df62ee30affc03d69464a1
+file	bismillah-alladhi-la-yadurr	a3f28980c28c16e6a753.bin	81783	b059f41e0c3d8270f2c9fc8bcf25d3a4d255f31ef433ae5f3846bfcaf3a78451
+file	raditu-billah	e8cc200694695471add7.bin	86171	162a34ad6ea5bc3d06f7aa4b0c061f89d8c9187d42bb81e3c3038aa003983bdc
+file	ya-hayyu-ya-qayyum	7a55777c12a5b7233273.bin	99546	ae04810f54f8726f2e10351cf2c6534b00b1588eb60825043ab53ebbf6699611
+file	rabb-alalamin-asbahna	3de4f327abe35d21a1f8.bin	142805	b56fa7ee9715826d22b3756629c653d245143853083de884d800c3205c8cd178
+file	rabb-alalamin-amsayna	a63d32ca07920e6f7ffb.bin	150537	8d51add640bfff9bd95dc85e426c63c8636da51f6f453cabcdcd1dfb6bb987aa
+file	fitrat-alislam-asbahna	03ace53c9d9863c74021.bin	159523	0da0756fb26f41fad310636006d78661b92b30f95d0df1b9c5cf38e3c650dc0f
+file	fitrat-alislam-amsayna	d5fe9af2e1ce2ece302d.bin	156179	e1f4fa76c56a57ef1f62e41dbfd2519fec65d3dd7bd6ff2027e213e92c64350b
+file	subhanallah-wa-bihamdih	79dafb04563b183b518b.bin	22641	634d7b606df23f7d5ff68db50da496466af1f4cd4702b1d92d2f978068e856e8
+file	la-ilaha-illallah-wahdah	7eca44d75a45f4c001a0.bin	99546	a58758a91ffababac9959542ab19e6155617612c0bc49ee2b99d277049e72216
+file	adada-khalqih	8d6af39d7ffb69bc44d6.bin	97665	fdb88dbe11f01ec0c00feb19a2d41b641cb7a37c212fa13760132daebb8d4ee3
+file	ilman-nafian	8ed27bd424da2f3b7860.bin	74259	f86a787d37ea193f09586b4ed679fe04034682ddbd8a2f109d3271ac400240ab
+file	astaghfirullah-wa-atubu	5fc32c84fb4d8eeb6b77.bin	31627	328406e5f814b8baff7ab117b074de77838807576e314cf8d118f76c5f8694e0
+file	salat-ala-annabi	61adc1ea74d5f8037d80.bin	35389	d0c57761b47d35abf68b4c96a678e2b5a8d11271f12a11a05fe247ffee4526a3
+file	audhu-bikalimatillah	3c68bf7f8e5c09dcff6d.bin	42076	310a28e060eb9c12a15ef89e2ace9682b7fdeabd7d68540991132150e908c1ef
+file	astaghfirullah	696a96a5a0a5a2ffd307.bin	15745	345294f8bff3eb82b9d856974dfa34b2a39f8d9e61892a5b7dc4c63f029597e4
+file	anta-assalam	ca5e295b57dab870fab5.bin	79275	d0b2c5b37509ed1290671a5abb70d6dcf692f908b191cec12878798dc196194c
+file	la-mani-lima-atayt	355691d2471e5f68ff32.bin	156388	75a65b05342353ad895a2fe552d6df690f3a2c92489dceaa6b5e1f1814ddd9fb
+file	la-hawla-wala-quwwata	7d46ab4623e8d5ffffb5.bin	273835	16056e71568a3c1626acf5a82e9a5b546c2240cee7187232c28f2128968c0898
+file	subhanallah	97b0ff1a4d847f89e126.bin	15327	f820a0ec5a35280b4e73d97b6a6dff3499cef0e968820a22fbe577392d51a82e
+file	alhamdulillah	ff6c6229aa7d2eb5bb34.bin	17835	f2f07e80203f28627d8b0a629919f819b48dd4a57a0188f7eb8856492f3ec25f
+file	allahu-akbar	09fd51dcc7823a9a4205.bin	13446	3b5677c524656b28c34e1b400118da5c9642fdfb3c2fa1697a3d96867bb960de
+dhikr	morning	asbahna-almulk	asbahna-almulk
+dhikr	evening	amsayna-almulk	amsayna-almulk
+dhikr	morning	bika-asbahna	bika-asbahna
+dhikr	evening	bika-amsayna	bika-amsayna
+dhikr	morning	sayyid-alistighfar	sayyid-alistighfar
+dhikr	evening	sayyid-alistighfar	sayyid-alistighfar
+dhikr	morning	ushhiduka	ushhiduka-asbahtu
+dhikr	evening	ushhiduka	ushhiduka-amsaytu
+dhikr	morning	ma-asbaha-bi	ma-asbaha-bi
+dhikr	evening	ma-asbaha-bi	ma-amsa-bi
+dhikr	morning	hasbiyallah	hasbiyallah-morning
+dhikr	evening	hasbiyallah	hasbiyallah-evening
+dhikr	morning	alafwa-walafiya	alafwa-walafiya
+dhikr	evening	alafwa-walafiya	alafwa-walafiya
+dhikr	morning	alim-alghayb	alim-alghayb
+dhikr	evening	alim-alghayb	alim-alghayb
+dhikr	morning	bismillah-alladhi-la-yadurr	bismillah-alladhi-la-yadurr
+dhikr	evening	bismillah-alladhi-la-yadurr	bismillah-alladhi-la-yadurr
+dhikr	morning	raditu-billah	raditu-billah
+dhikr	evening	raditu-billah	raditu-billah
+dhikr	morning	ya-hayyu-ya-qayyum	ya-hayyu-ya-qayyum
+dhikr	evening	ya-hayyu-ya-qayyum	ya-hayyu-ya-qayyum
+dhikr	morning	rabb-alalamin	rabb-alalamin-asbahna
+dhikr	evening	rabb-alalamin	rabb-alalamin-amsayna
+dhikr	morning	fitrat-alislam	fitrat-alislam-asbahna
+dhikr	evening	fitrat-alislam	fitrat-alislam-amsayna
+dhikr	morning	subhanallah-wa-bihamdih	subhanallah-wa-bihamdih
+dhikr	evening	subhanallah-wa-bihamdih	subhanallah-wa-bihamdih
+dhikr	morning	la-ilaha-illallah-10	la-ilaha-illallah-wahdah
+dhikr	morning	la-ilaha-illallah-100	la-ilaha-illallah-wahdah
+dhikr	evening	la-ilaha-illallah-10	la-ilaha-illallah-wahdah
+dhikr	after-prayer	tamam-almiah	la-ilaha-illallah-wahdah
+dhikr	morning	adada-khalqih	adada-khalqih
+dhikr	morning	ilman-nafian	ilman-nafian
+dhikr	morning	astaghfirullah-wa-atubu	astaghfirullah-wa-atubu
+dhikr	morning	salat-ala-annabi	salat-ala-annabi
+dhikr	evening	salat-ala-annabi	salat-ala-annabi
+dhikr	evening	audhu-bikalimatillah	audhu-bikalimatillah
+dhikr	after-prayer	astaghfirullah	astaghfirullah
+dhikr	after-prayer	anta-assalam	anta-assalam
+dhikr	after-prayer	la-mani-lima-atayt	la-mani-lima-atayt
+dhikr	after-prayer	la-hawla-wala-quwwata	la-hawla-wala-quwwata
+dhikr	after-prayer	subhanallah	subhanallah
+dhikr	after-prayer	alhamdulillah	alhamdulillah
+dhikr	after-prayer	allahu-akbar	allahu-akbar

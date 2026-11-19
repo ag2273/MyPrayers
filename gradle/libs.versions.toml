@@ -14,7 +14,7 @@ glance = "1.2.0"
 room = "2.8.5"
 datastore = "1.3.0"
 junit = "4.13.2"
-# Matches the work-runtime Glance brings in; only for running a real Glance session in tests.
+# Matches the work-runtime Glance brings in: the app uses it (Adhkar Audio download) and tests run a real Glance session.
 workTesting = "2.7.1"
 robolectric = "4.17"
 androidxTestCore = "1.7.0"
@@ -42,6 +42,7 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 junit = { module = "junit:junit", version.ref = "junit" }
+work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "workTesting" }
 work-testing = { module = "androidx.work:work-testing", version.ref = "workTesting" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
