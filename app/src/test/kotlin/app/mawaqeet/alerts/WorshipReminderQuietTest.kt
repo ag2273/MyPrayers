@@ -52,7 +52,9 @@ class WorshipReminderQuietTest {
         WorshipReminderReceiver().onReceive(context, WorshipReminderReceiver.intent(context, reminder(kind)))
         // Adhkar reminders post after their completeness check, off the main thread (#75).
         kotlinx.coroutines.runBlocking { WorshipReminderReceiver.idle() }
-        return shadowOf(notifications).allNotifications.single { it.channelId == WorshipReminderNotification.CHANNEL }
+        return shadowOf(notifications).allNotifications.single {
+            it.channelId == WorshipReminderNotification.CHANNEL || it.channelId == WorshipReminderNotification.DHIKR_CHANNEL
+        }
     }
 
     /**
@@ -77,7 +79,9 @@ class WorshipReminderQuietTest {
         for (kind in WorshipReminderKind.entries) {
             val notification = fire(kind)
             assertFalse("$kind should sound", notification.isSilent())
-            assertEquals(WorshipReminderNotification.CHANNEL, notification.channelId)
+            // The dhikr reminder has its own soundless channel: its sound is the dhikr itself (DhikrVoice).
+            val channel = if (kind == WorshipReminderKind.DHIKR) WorshipReminderNotification.DHIKR_CHANNEL else WorshipReminderNotification.CHANNEL
+            assertEquals(channel, notification.channelId)
             notifications.cancelAll()
         }
     }
