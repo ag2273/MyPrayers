@@ -7,6 +7,7 @@ import android.content.Intent
 import app.mawaqeet.MawaqeetApplication
 import app.mawaqeet.core.Adhkar
 import app.mawaqeet.core.AdhkarSetId
+import app.mawaqeet.core.DhikrPhrase
 import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.PrayerCore
 import app.mawaqeet.core.WorshipReminderKind
@@ -38,7 +39,12 @@ class WorshipReminderReceiver : BroadcastReceiver() {
             val silent = PrayerSilencer(context).isActive()
             val set = reminder.kind.adhkarSet
             if (set == null || !isComplete(context, set, reminder.prayerDay)) {
-                WorshipReminderNotification.post(context, reminder, silent = silent)
+                val phrase = DhikrPhrase.pick()
+                WorshipReminderNotification.post(context, reminder, silent = silent, phrase = phrase)
+                // «بصوت الذكر»: the dhikr reminder says its dhikr aloud, never inside a Silence Window.
+                if (reminder.kind == WorshipReminderKind.DHIKR && reminder.sound && !silent && AdhanNotification.canPost(context)) {
+                    DhikrVoice.say(context, phrase)
+                }
             }
         }
     }
@@ -68,6 +74,9 @@ class WorshipReminderReceiver : BroadcastReceiver() {
         /** An alarm-style Qiyam reminder (#97): [PlannedWorshipReminder.alarm]. */
         private const val EXTRA_ALARM = "alarm"
 
+        /** A dhikr reminder that says its dhikr aloud: [PlannedWorshipReminder.sound]. */
+        private const val EXTRA_SOUND = "sound"
+
         /** A reminder's «قرأتها» (#64): dismisses its notification, nothing else. */
         const val ACTION_DISMISS = "app.mawaqeet.action.WORSHIP_REMINDER_DISMISS"
         private const val EXTRA_NOTIFICATION_ID = "notification_id"
@@ -90,15 +99,18 @@ class WorshipReminderReceiver : BroadcastReceiver() {
                 .putExtra(EXTRA_SLOT, reminder.slot)
                 .putExtra(EXTRA_FAST, encodeSunnahFastDay(reminder.fast))
                 .putExtra(EXTRA_ALARM, reminder.alarm)
+                .putExtra(EXTRA_SOUND, reminder.sound)
 
         private fun reminder(intent: Intent): PlannedWorshipReminder? = runCatching {
             PlannedWorshipReminder(
-                kind = WorshipReminderKind.valueOf(intent.getStringExtra(EXTRA_KIND)!!),
+                kind = WorshipReminderKind.byName(intent.getStringExtra(EXTRA_KIND)!!),
                 instant = Instant.ofEpochMilli(intent.getLongExtra(EXTRA_AT, 0)),
                 prayerDay = LocalDate.parse(intent.getStringExtra(EXTRA_PRAYER_DAY)!!),
                 slot = intent.getIntExtra(EXTRA_SLOT, 0),
                 fast = decodeSunnahFastDay(intent.getStringExtra(EXTRA_FAST).orEmpty()),
                 alarm = intent.getBooleanExtra(EXTRA_ALARM, false),
+                // An alarm set before 1.4.8 has no sound extra: its salawat reminder came with a sound.
+                sound = intent.getBooleanExtra(EXTRA_SOUND, intent.getStringExtra(EXTRA_KIND) == "SALAWAT"),
             )
         }.getOrNull()
     }

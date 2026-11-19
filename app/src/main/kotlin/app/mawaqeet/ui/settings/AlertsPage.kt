@@ -68,7 +68,7 @@ import app.mawaqeet.alerts.SilenceLog
 import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
-import app.mawaqeet.core.SalawatReminder
+import app.mawaqeet.core.DhikrReminder
 import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SuhoorReminder
 import app.mawaqeet.core.DuhaReminder
@@ -294,21 +294,28 @@ private fun SilenceLogRow() {
  */
 @Composable
 private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions) {
-    val salawat = alerts.worshipReminders.salawat
+    val dhikr = alerts.worshipReminders.dhikr
     SectionTitle(stringResource(R.string.worship_reminders))
     Card {
         SwitchRow(
-            title = stringResource(R.string.salawat_reminder),
-            description = stringResource(R.string.salawat_reminder_description),
-            checked = salawat.enabled,
-            onChange = actions::setSalawatReminder,
+            title = stringResource(R.string.dhikr_reminder),
+            description = stringResource(R.string.dhikr_reminder_description),
+            checked = dhikr.enabled,
+            onChange = actions::setDhikrReminder,
         )
-        if (salawat.enabled) {
+        if (dhikr.enabled) {
             RowDivider()
-            val labels = mapOf(1 to R.string.salawat_every_1, 2 to R.string.salawat_every_2, 3 to R.string.salawat_every_3)
+            SwitchRow(
+                title = stringResource(R.string.dhikr_sound),
+                description = stringResource(R.string.dhikr_sound_description),
+                checked = dhikr.sound,
+                onChange = actions::setDhikrSound,
+            )
+            RowDivider()
+            val labels = mapOf(1 to R.string.dhikr_every_1, 2 to R.string.dhikr_every_2, 3 to R.string.dhikr_every_3)
             SegmentedChoice(
-                SalawatReminder.INTERVAL_HOURS.map { hours ->
-                    Segment(stringResource(labels.getValue(hours)), salawat.intervalHours == hours) { actions.setSalawatInterval(hours) }
+                DhikrReminder.INTERVAL_HOURS.map { hours ->
+                    Segment(stringResource(labels.getValue(hours)), dhikr.intervalHours == hours) { actions.setDhikrInterval(hours) }
                 },
                 Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             )

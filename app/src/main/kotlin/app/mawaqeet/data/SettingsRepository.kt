@@ -36,7 +36,7 @@ import app.mawaqeet.core.QiyamStyle
 import app.mawaqeet.core.SunnahPrayerReminders
 import app.mawaqeet.core.KahfReminder
 import app.mawaqeet.core.SunnahFast
-import app.mawaqeet.core.SalawatReminder
+import app.mawaqeet.core.DhikrReminder
 import app.mawaqeet.core.SilenceMode
 import app.mawaqeet.core.WorshipReminders
 import app.mawaqeet.core.RamadanSettings
@@ -333,14 +333,22 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[RAMADAN_IMSAK_ALERT] = on }
     }
 
-    /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63); planned only while the master switch is on. */
-    suspend fun setSalawatReminder(on: Boolean) {
+    /**
+     * Settings → Alerts → «تذكيرات العبادة» → «ذكر الله والتسبيح»; planned only while the master switch is on. It replaced
+     * the salawat reminder and keeps its keys, so a switch turned on before 1.4.8 stays on.
+     */
+    suspend fun setDhikrReminder(on: Boolean) {
         store.edit { it[SALAWAT_ENABLED] = on }
     }
 
-    /** Every [hours] hours, one of [SalawatReminder.INTERVAL_HOURS]; kept while salawat reminders are off. */
-    suspend fun setSalawatInterval(hours: Int) {
-        require(hours in SalawatReminder.INTERVAL_HOURS)
+    /** «بصوت الذكر»: the dhikr reminder says its dhikr aloud (on by default) or comes silent; kept while it is off. */
+    suspend fun setDhikrSound(on: Boolean) {
+        store.edit { it[DHIKR_SOUND] = on }
+    }
+
+    /** Every [hours] hours, one of [DhikrReminder.INTERVAL_HOURS]; kept while dhikr reminders are off. */
+    suspend fun setDhikrInterval(hours: Int) {
+        require(hours in DhikrReminder.INTERVAL_HOURS)
         store.edit { it[SALAWAT_INTERVAL_HOURS] = hours }
     }
 
@@ -550,10 +558,11 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                     ?: default.prayerSilence.jumuahMinutes,
             ),
             worshipReminders = WorshipReminders(
-                salawat = SalawatReminder(
-                    enabled = this[SALAWAT_ENABLED] ?: default.worshipReminders.salawat.enabled,
-                    intervalHours = this[SALAWAT_INTERVAL_HOURS]?.takeIf { it in SalawatReminder.INTERVAL_HOURS }
-                        ?: default.worshipReminders.salawat.intervalHours,
+                dhikr = DhikrReminder(
+                    enabled = this[SALAWAT_ENABLED] ?: default.worshipReminders.dhikr.enabled,
+                    intervalHours = this[SALAWAT_INTERVAL_HOURS]?.takeIf { it in DhikrReminder.INTERVAL_HOURS }
+                        ?: default.worshipReminders.dhikr.intervalHours,
+                    sound = this[DHIKR_SOUND] ?: default.worshipReminders.dhikr.sound,
                 ),
                 morningAdhkar = adhkarReminder(AdhkarSetId.MORNING, default.worshipReminders.morningAdhkar),
                 eveningAdhkar = adhkarReminder(AdhkarSetId.EVENING, default.worshipReminders.eveningAdhkar),
@@ -632,9 +641,12 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val PRAYER_SILENCE_MINUTES = intPreferencesKey("prayer_silence_minutes")
         private val PRAYER_SILENCE_JUMUAH_MINUTES = intPreferencesKey("prayer_silence_jumuah_minutes")
 
-        /** Worship Reminders (#63): «الصلاة على النبي ﷺ» on or off, and its interval in hours. */
+        /** Worship Reminders (#63): «ذكر الله والتسبيح» (once «الصلاة على النبي ﷺ») on or off, and its interval in hours. */
         private val SALAWAT_ENABLED = booleanPreferencesKey("worship_salawat_enabled")
         private val SALAWAT_INTERVAL_HOURS = intPreferencesKey("worship_salawat_interval_hours")
+
+        /** «بصوت الذكر» of the dhikr reminder, which took over the salawat keys above. */
+        private val DHIKR_SOUND = booleanPreferencesKey("worship_dhikr_sound")
 
         /** Worship Reminders (#75): the morning and evening adhkar reminders, on or off, and their minutes after the Prayer. */
         private fun adhkarReminderKeys(set: AdhkarSetId) = when (set) {

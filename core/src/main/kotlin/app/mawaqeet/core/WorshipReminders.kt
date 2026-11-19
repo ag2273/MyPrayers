@@ -4,13 +4,15 @@ import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import kotlin.random.Random
 
 /**
  * Settings → Alerts → «تذكيرات العبادة»: the Worship Reminders, each off by default and switched on separately. None is
  * planned while the master switch ([AlertSettings.enabled]) is off. Each reminder is its own field.
  */
 data class WorshipReminders(
-    val salawat: SalawatReminder = SalawatReminder(),
+    /** «ذكر الله والتسبيح»: a random [DhikrPhrase] every few hours between Sunrise and Isha (it replaced the salawat reminder). */
+    val dhikr: DhikrReminder = DhikrReminder(),
     val kahf: KahfReminder = KahfReminder(),
     /** «أذكار الصباح» (#75): [AdhkarReminder.minutes] after Fajr; opens the morning set, skipped once it is complete. */
     val morningAdhkar: AdhkarReminder = AdhkarReminder(),
@@ -38,14 +40,20 @@ data class AdhkarReminder(
     }
 }
 
-/** «الصلاة على النبي ﷺ»: a reminder every [intervalHours] hours from Sunrise + [intervalHours] until Isha. */
-data class SalawatReminder(
+/**
+ * «ذكر الله والتسبيح»: a reminder every [intervalHours] hours from Sunrise + [intervalHours] until Isha, each showing one
+ * [DhikrPhrase] picked at random. With [sound] on it says that dhikr aloud (the recording bundled with the app); with it off
+ * it is a silent notification. It replaced the salawat reminder (1.4.8) and keeps its stored switch and interval.
+ */
+data class DhikrReminder(
     val enabled: Boolean = false,
     /** One of [INTERVAL_HOURS]; kept while the reminder is off. */
     val intervalHours: Int = DEFAULT_INTERVAL_HOURS,
+    /** Say the dhikr aloud; kept while the reminder is off. */
+    val sound: Boolean = true,
 ) {
     init {
-        require(intervalHours in INTERVAL_HOURS) { "Salawat reminders come every $INTERVAL_HOURS hours, not $intervalHours" }
+        require(intervalHours in INTERVAL_HOURS) { "Dhikr reminders come every $INTERVAL_HOURS hours, not $intervalHours" }
     }
 
     val interval: Duration get() = Duration.ofHours(intervalHours.toLong())
@@ -53,6 +61,23 @@ data class SalawatReminder(
     companion object {
         const val DEFAULT_INTERVAL_HOURS = 2
         val INTERVAL_HOURS = listOf(1, 2, 3)
+    }
+}
+
+/** The adhkar a [DhikrReminder] picks from, one at random each time. */
+enum class DhikrPhrase {
+    SUBHAN_ALLAH,
+    ASTAGHFIRULLAH,
+    ALHAMDULILLAH,
+    ALLAHU_AKBAR,
+    SALAT_ALA_MUHAMMAD,
+    SUBHAN_ALLAH_WA_BIHAMDIHI,
+    LA_ILAHA_ILLALLAH,
+    ;
+
+    companion object {
+        /** One of the adhkar, each as likely as the others. */
+        fun pick(random: Random = Random.Default): DhikrPhrase = entries[random.nextInt(entries.size)]
     }
 }
 
@@ -71,7 +96,8 @@ data class KahfReminder(val enabled: Boolean = false) {
  * Adhkar Set an adhkar reminder opens (and is skipped for once complete); null for the others.
  */
 enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
-    SALAWAT,
+    /** «ذكر الله والتسبيح»; stored as `SALAWAT` before 1.4.8, which [byName] still reads. Keep it first. */
+    DHIKR,
     KAHF,
     MORNING_ADHKAR(AdhkarSetId.MORNING),
     EVENING_ADHKAR(AdhkarSetId.EVENING),
@@ -96,6 +122,12 @@ enum class WorshipReminderKind(val adhkarSet: AdhkarSetId? = null) {
      * reminder after midnight still belongs to the day before. A notification, or an alarm in [QiyamStyle.ALARM] (#97).
      */
     QIYAM,
+    ;
+
+    companion object {
+        /** The kind stored or sent under [name], including the salawat reminder's old name. */
+        fun byName(name: String): WorshipReminderKind = if (name == "SALAWAT") DHIKR else valueOf(name)
+    }
 }
 
 /**
@@ -112,25 +144,28 @@ data class PlannedWorshipReminder(
     val slot: Int = 0,
     val fast: SunnahFastDay? = null,
     val alarm: Boolean = false,
+    /** A [WorshipReminderKind.DHIKR] reminder with [DhikrReminder.sound] on: it says its dhikr aloud. */
+    val sound: Boolean = false,
 ) {
     init {
         require(slot in 0 until MAX_SLOTS) { "A Worship Reminder's slot is below $MAX_SLOTS, not $slot" }
         require(!alarm || kind == WorshipReminderKind.QIYAM) { "Only the Qiyam reminder can be an alarm, not $kind" }
+        require(!sound || kind == WorshipReminderKind.DHIKR) { "Only the dhikr reminder says a dhikr aloud, not $kind" }
     }
 
     companion object {
-        /** At most this many reminders of one kind on one Prayer Day (hourly salawat at the poles stays below it). */
+        /** At most this many reminders of one kind on one Prayer Day (hourly dhikr at the poles stays below it). */
         const val MAX_SLOTS = 32
     }
 }
 
-/** The salawat reminders of one Prayer Day: Sunrise + n × interval for n ≥ 1, strictly before Isha. */
-internal fun salawatReminders(salawat: SalawatReminder, prayerDay: LocalDate, sunrise: Instant, isha: Instant): List<PlannedWorshipReminder> {
-    if (!salawat.enabled) return emptyList()
-    return generateSequence(sunrise.plus(salawat.interval)) { it.plus(salawat.interval) }
+/** The dhikr reminders of one Prayer Day: Sunrise + n × interval for n ≥ 1, strictly before Isha. */
+internal fun dhikrReminders(dhikr: DhikrReminder, prayerDay: LocalDate, sunrise: Instant, isha: Instant): List<PlannedWorshipReminder> {
+    if (!dhikr.enabled) return emptyList()
+    return generateSequence(sunrise.plus(dhikr.interval)) { it.plus(dhikr.interval) }
         .takeWhile { it.isBefore(isha) }
         .take(PlannedWorshipReminder.MAX_SLOTS)
-        .mapIndexed { slot, instant -> PlannedWorshipReminder(WorshipReminderKind.SALAWAT, instant, prayerDay, slot) }
+        .mapIndexed { slot, instant -> PlannedWorshipReminder(WorshipReminderKind.DHIKR, instant, prayerDay, slot, sound = dhikr.sound) }
         .toList()
 }
 

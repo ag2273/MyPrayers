@@ -123,7 +123,7 @@ class SunnahFastAlertsTest {
         assertEquals(WorshipReminderKind.entries.size * 2, codes.toSet().size)
         assertNotEquals(
             PlannedWorshipReminder(WorshipReminderKind.SUHOOR, night, this.sunday).requestCode,
-            PlannedWorshipReminder(WorshipReminderKind.SALAWAT, night, this.sunday.plusDays(1)).requestCode,
+            PlannedWorshipReminder(WorshipReminderKind.DHIKR, night, this.sunday.plusDays(1)).requestCode,
         )
     }
 }

@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-/** Worship Reminders (#63): the salawat reminders `PrayerCore.alertPlan()` plans between Sunrise and Isha. */
+/** Worship Reminders (#63): the dhikr reminders `PrayerCore.alertPlan()` plans between Sunrise and Isha. */
 class WorshipReminderPlanTest {
     private val riyadh = ZoneId.of("Asia/Riyadh")
 
@@ -21,22 +21,22 @@ class WorshipReminderPlanTest {
 
     private fun makkah(date: String, time: String) = ZonedDateTime.of(LocalDate.parse(date), LocalTime.parse(time), riyadh)
 
-    private fun salawatOn(
-        intervalHours: Int = SalawatReminder.DEFAULT_INTERVAL_HOURS,
+    private fun dhikrOn(
+        intervalHours: Int = DhikrReminder.DEFAULT_INTERVAL_HOURS,
         alerts: AlertSettings = AlertSettings(),
         location: Location = PrayerSettings.Default.location,
     ) = PrayerSettings.Default.copy(
-        alerts = alerts.copy(worshipReminders = WorshipReminders(salawat = SalawatReminder(enabled = true, intervalHours = intervalHours))),
+        alerts = alerts.copy(worshipReminders = WorshipReminders(dhikr = DhikrReminder(enabled = true, intervalHours = intervalHours))),
         location = location,
     )
 
-    private fun AlertPlan.salawatTimes(zone: ZoneId, day: String) = worshipReminders
-        .filter { it.kind == WorshipReminderKind.SALAWAT && it.prayerDay == LocalDate.parse(day) }
+    private fun AlertPlan.dhikrTimes(zone: ZoneId, day: String) = worshipReminders
+        .filter { it.kind == WorshipReminderKind.DHIKR && it.prayerDay == LocalDate.parse(day) }
         .map { it.instant.atZone(zone).truncatedTo(ChronoUnit.MINUTES).toLocalTime().toString() }
 
     @Test
-    fun `salawat reminders are off by default, every two hours once on`() {
-        assertEquals(SalawatReminder(enabled = false, intervalHours = 2), AlertSettings().worshipReminders.salawat)
+    fun `dhikr reminders are off by default, every two hours with sound once on`() {
+        assertEquals(DhikrReminder(enabled = false, intervalHours = 2, sound = true), AlertSettings().worshipReminders.dhikr)
 
         val plan = planAt(makkah("2026-11-08", "00:30"), PrayerSettings.Default)
 
@@ -46,24 +46,24 @@ class WorshipReminderPlanTest {
     @Test
     fun `every 2 hours from Sunrise plus two hours, stepping by two, the last before Isha`() {
         // Makkah, Umm al-Qura, 2026-11-08: Sunrise 06:27, Isha 19:11.
-        val plan = planAt(makkah("2026-11-08", "00:30"), salawatOn(2))
+        val plan = planAt(makkah("2026-11-08", "00:30"), dhikrOn(2))
 
-        assertEquals(listOf("08:27", "10:27", "12:27", "14:27", "16:27", "18:27"), plan.salawatTimes(riyadh, "2026-11-08"))
+        assertEquals(listOf("08:27", "10:27", "12:27", "14:27", "16:27", "18:27"), plan.dhikrTimes(riyadh, "2026-11-08"))
     }
 
     @Test
     fun `every hour and every 3 hours step by their own interval, never after Isha`() {
-        val hourly = planAt(makkah("2026-11-08", "00:30"), salawatOn(1))
-        val threeHourly = planAt(makkah("2026-11-08", "00:30"), salawatOn(3))
+        val hourly = planAt(makkah("2026-11-08", "00:30"), dhikrOn(1))
+        val threeHourly = planAt(makkah("2026-11-08", "00:30"), dhikrOn(3))
 
-        assertEquals((7..18).map { "%02d:27".format(it) }, hourly.salawatTimes(riyadh, "2026-11-08"))
-        assertEquals(listOf("09:27", "12:27", "15:27", "18:27"), threeHourly.salawatTimes(riyadh, "2026-11-08"))
+        assertEquals((7..18).map { "%02d:27".format(it) }, hourly.dhikrTimes(riyadh, "2026-11-08"))
+        assertEquals(listOf("09:27", "12:27", "15:27", "18:27"), threeHourly.dhikrTimes(riyadh, "2026-11-08"))
     }
 
     @Test
     fun `none before Sunrise or after Isha, across the 48 hours, in time order`() {
-        val plan = planAt(makkah("2026-11-08", "00:30"), salawatOn(2))
-        val core = PrayerCore(salawatOn(2), Clock.fixed(makkah("2026-11-08", "00:30").toInstant(), ZoneId.of("UTC")), InMemoryPrayerLog())
+        val plan = planAt(makkah("2026-11-08", "00:30"), dhikrOn(2))
+        val core = PrayerCore(dhikrOn(2), Clock.fixed(makkah("2026-11-08", "00:30").toInstant(), ZoneId.of("UTC")), InMemoryPrayerLog())
 
         assertEquals(plan.worshipReminders.sortedBy { it.instant }, plan.worshipReminders)
         for (reminder in plan.worshipReminders) {
@@ -78,9 +78,9 @@ class WorshipReminderPlanTest {
 
     @Test
     fun `a reminder already past is not planned again, and each has a distinct slot on its Prayer Day`() {
-        val plan = planAt(makkah("2026-11-08", "12:30"), salawatOn(2))
+        val plan = planAt(makkah("2026-11-08", "12:30"), dhikrOn(2))
 
-        assertEquals(listOf("14:27", "16:27", "18:27"), plan.salawatTimes(riyadh, "2026-11-08"))
+        assertEquals(listOf("14:27", "16:27", "18:27"), plan.dhikrTimes(riyadh, "2026-11-08"))
         val today = plan.worshipReminders.filter { it.prayerDay == LocalDate.parse("2026-11-08") }
         assertEquals(listOf(3, 4, 5), today.map { it.slot })
         val tomorrow = plan.worshipReminders.filter { it.prayerDay == LocalDate.parse("2026-11-09") }
@@ -89,33 +89,80 @@ class WorshipReminderPlanTest {
 
     @Test
     fun `with every app alert turned off no worship reminder is planned`() {
-        val plan = planAt(makkah("2026-11-08", "00:30"), salawatOn(2, alerts = AlertSettings(enabled = false)))
+        val plan = planAt(makkah("2026-11-08", "00:30"), dhikrOn(2, alerts = AlertSettings(enabled = false)))
 
         assertTrue(plan.worshipReminders.isEmpty())
     }
 
     @Test
-    fun `turning salawat off keeps the chosen interval for when it comes back`() {
-        val off = WorshipReminders(salawat = SalawatReminder(enabled = false, intervalHours = 3))
+    fun `turning dhikr off keeps the chosen interval for when it comes back`() {
+        val off = WorshipReminders(dhikr = DhikrReminder(enabled = false, intervalHours = 3))
 
         val plan = planAt(makkah("2026-11-08", "00:30"), PrayerSettings.Default.copy(alerts = AlertSettings(worshipReminders = off)))
 
         assertTrue(plan.worshipReminders.isEmpty())
-        assertEquals(3, off.salawat.intervalHours)
+        assertEquals(3, off.dhikr.intervalHours)
+    }
+
+    @Test
+    fun `each dhikr reminder says its dhikr aloud by default, and none does once sound is off`() {
+        val loud = planAt(makkah("2026-11-08", "00:30"), dhikrOn(2))
+        val quiet = planAt(
+            makkah("2026-11-08", "00:30"),
+            PrayerSettings.Default.copy(
+                alerts = AlertSettings(worshipReminders = WorshipReminders(dhikr = DhikrReminder(enabled = true, sound = false))),
+            ),
+        )
+
+        assertTrue(loud.worshipReminders.isNotEmpty() && loud.worshipReminders.all { it.sound })
+        assertEquals(loud.worshipReminders.map { it.instant }, quiet.worshipReminders.map { it.instant })
+        assertTrue(quiet.worshipReminders.none { it.sound })
+    }
+
+    @Test
+    fun `only a dhikr reminder can say a dhikr aloud`() {
+        assertFailsWith<IllegalArgumentException> {
+            PlannedWorshipReminder(WorshipReminderKind.KAHF, makkah("2026-11-13", "07:30").toInstant(), LocalDate.parse("2026-11-13"), sound = true)
+        }
+    }
+
+    @Test
+    fun `the dhikr is one of the seven adhkar, and in time every one of them comes`() {
+        assertEquals(
+            listOf(
+                "SUBHAN_ALLAH", "ASTAGHFIRULLAH", "ALHAMDULILLAH", "ALLAHU_AKBAR", "SALAT_ALA_MUHAMMAD",
+                "SUBHAN_ALLAH_WA_BIHAMDIHI", "LA_ILAHA_ILLALLAH",
+            ),
+            DhikrPhrase.entries.map { it.name },
+        )
+        val random = kotlin.random.Random(7)
+
+        val picked = (1..200).map { DhikrPhrase.pick(random) }.toSet()
+
+        assertEquals(DhikrPhrase.entries.toSet(), picked)
+    }
+
+    @Test
+    fun `a salawat reminder stored by an older version reads back as the dhikr reminder`() {
+        assertEquals(WorshipReminderKind.DHIKR, WorshipReminderKind.byName("SALAWAT"))
+        assertEquals(WorshipReminderKind.DHIKR, WorshipReminderKind.byName("DHIKR"))
+        assertEquals(WorshipReminderKind.KAHF, WorshipReminderKind.byName("KAHF"))
+        // Its alarms' request codes and notification id stay where the salawat reminder's were.
+        assertEquals(0, WorshipReminderKind.DHIKR.ordinal)
     }
 
     @Test
     fun `only every 1, 2 or 3 hours is allowed`() {
-        assertEquals(listOf(1, 2, 3), SalawatReminder.INTERVAL_HOURS)
-        assertFailsWith<IllegalArgumentException> { SalawatReminder(intervalHours = 4) }
-        assertFailsWith<IllegalArgumentException> { SalawatReminder(intervalHours = 0) }
+        assertEquals(listOf(1, 2, 3), DhikrReminder.INTERVAL_HOURS)
+        assertFailsWith<IllegalArgumentException> { DhikrReminder(intervalHours = 4) }
+        assertFailsWith<IllegalArgumentException> { DhikrReminder(intervalHours = 0) }
     }
 
     @Test
     fun `across the end of summer time the reminders keep their real interval from the day's Sunrise`() {
         // London leaves BST (UTC+1) for GMT at 01:00 UTC on Sunday 2026-10-25.
         val london = ZoneId.of("Europe/London")
-        val settings = salawatOn(2, location = Location(51.5074, -0.1278, london)).copy(method = CalculationMethod.MUSLIM_WORLD_LEAGUE)
+        val settings = dhikrOn(2, location = Location(51.5074, -0.1278, london)).copy(method = CalculationMethod.MUSLIM_WORLD_LEAGUE)
         val core = PrayerCore(settings, Clock.fixed(ZonedDateTime.of(2026, 10, 24, 0, 30, 0, 0, london).toInstant(), ZoneId.of("UTC")), InMemoryPrayerLog())
         val plan = core.alertPlan()
 
@@ -133,7 +180,7 @@ class WorshipReminderPlanTest {
     fun `after travel the reminders follow the new location's Sunrise`() {
         // The same morning, seen from Cairo (Egyptian method): Sunrise 2026-11-08 a little after 06:00 Cairo time.
         val cairo = ZoneId.of("Africa/Cairo")
-        val settings = salawatOn(2, location = Location(30.0444, 31.2357, cairo)).copy(method = CalculationMethod.EGYPTIAN)
+        val settings = dhikrOn(2, location = Location(30.0444, 31.2357, cairo)).copy(method = CalculationMethod.EGYPTIAN)
         val now = ZonedDateTime.of(2026, 11, 8, 0, 30, 0, 0, cairo)
         val core = PrayerCore(settings, Clock.fixed(now.toInstant(), ZoneId.of("UTC")), InMemoryPrayerLog())
 

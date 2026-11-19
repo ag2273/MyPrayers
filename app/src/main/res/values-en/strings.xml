@@ -495,15 +495,25 @@
     <string name="widget_preview_clock_since">from Sunrise 06:27</string>
     <!-- Worship Reminders (#63) -->
     <string name="worship_reminders">Worship reminders</string>
-    <string name="salawat_reminder">Salawat on the Prophet ﷺ</string>
-    <string name="salawat_reminder_description">A gentle reminder between Sunrise and Isha</string>
-    <string name="salawat_every_1">Every hour</string>
-    <string name="salawat_every_2">Every 2 hours</string>
-    <string name="salawat_every_3">Every 3 hours</string>
+    <string name="dhikr_reminder">Dhikr and tasbeeh</string>
+    <string name="dhikr_reminder_description">A different dhikr each time, between Sunrise and Isha</string>
+    <string name="dhikr_sound">Say the dhikr aloud</string>
+    <string name="dhikr_sound_description">Plays the dhikr itself; turned off, the reminder comes without sound</string>
+    <string name="dhikr_channel_name">Dhikr and tasbeeh</string>
+    <string name="dhikr_channel_description">A different dhikr each time, said aloud or silent as you choose in Settings</string>
+    <string name="dhikr_every_1">Every hour</string>
+    <string name="dhikr_every_2">Every 2 hours</string>
+    <string name="dhikr_every_3">Every 3 hours</string>
     <string name="worship_reminders_channel_name">Worship reminders</string>
     <string name="worship_reminders_channel_description">Gentle reminders with the usual notification sound, never an adhan</string>
-    <string name="salawat_reminder_title">Send salawat on the Prophet ﷺ</string>
-    <string name="salawat_reminder_text">O Allah, send prayers and peace upon our Prophet Muhammad</string>
+    <string name="dhikr_reminder_title">Remember Allah</string>
+    <string name="dhikr_subhan_allah">Subhan Allah: Glory be to Allah</string>
+    <string name="dhikr_astaghfirullah">Astaghfirullah: I seek Allah\'s forgiveness</string>
+    <string name="dhikr_alhamdulillah">Alhamdulillah: All praise is for Allah</string>
+    <string name="dhikr_allahu_akbar">Allahu Akbar: Allah is the Greatest</string>
+    <string name="dhikr_salat_ala_muhammad">Allahumma salli ala Muhammad: O Allah, send prayers upon Muhammad</string>
+    <string name="dhikr_subhan_allah_wa_bihamdihi">Subhan Allah wa bihamdihi: Glory and praise be to Allah</string>
+    <string name="dhikr_la_ilaha_illallah">La ilaha illallah: There is no god but Allah</string>
     <!-- Morning and evening adhkar reminders (#75) -->
     <string name="adhkar_morning_reminder_description">%1$s minutes after Fajr, skipped once you have read them</string>
     <string name="adhkar_evening_reminder_description">%1$s minutes after Asr, skipped once you have read them</string>

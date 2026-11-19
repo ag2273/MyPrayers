@@ -248,30 +248,36 @@ class SettingsScreenTest {
 
     @Test
     @Config(qualifiers = "en")
-    fun `salawat reminders are off under Worship reminders, and switching them on every 3 hours stores it`() {
+    fun `dhikr reminders are off under Worship reminders, and switching them on every 3 hours without sound stores it`() {
         val store = (compose.activity.application as MawaqeetApplication).settings
-        fun salawat() = runBlocking { store.settings.first() }.alerts.worshipReminders.salawat
+        fun dhikr() = runBlocking { store.settings.first() }.alerts.worshipReminders.dhikr
         openSettings("Settings")
         openPage("Alerts & adhan")
         try {
             compose.onNodeWithText("Worship reminders").performScrollTo().assertIsDisplayed()
-            compose.onNodeWithText("Salawat on the Prophet ﷺ").performScrollTo().assertIsOff()
-            // The interval only shows once it is on.
+            compose.onNodeWithText("Dhikr and tasbeeh").performScrollTo().assertIsOff()
+            // The sound and the interval only show once it is on.
             assertEquals(false, shown("Every 2 hours"))
+            assertEquals(false, shown("Say the dhikr aloud"))
 
-            compose.onNodeWithText("Salawat on the Prophet ﷺ").performClick()
+            compose.onNodeWithText("Dhikr and tasbeeh").performClick()
 
-            compose.waitUntil(timeoutMillis = 5_000) { salawat().enabled && shown("Every 2 hours") }
+            compose.waitUntil(timeoutMillis = 5_000) { dhikr().enabled && shown("Every 2 hours") }
+            compose.onNodeWithText("Say the dhikr aloud").performScrollTo().assertIsOn()
+            compose.onNodeWithText("Say the dhikr aloud").performClick()
+            compose.waitUntil(timeoutMillis = 5_000) { !dhikr().sound }
             compose.onNodeWithText("Every 2 hours").performScrollTo().assertIsSelected()
             compose.onNodeWithText("Every 3 hours").performScrollTo().performClick()
-            compose.waitUntil(timeoutMillis = 5_000) { salawat().intervalHours == 3 }
+            compose.waitUntil(timeoutMillis = 5_000) { dhikr().intervalHours == 3 }
             compose.waitUntil(timeoutMillis = 5_000) { runCatching { compose.onNodeWithText("Every 3 hours").assertIsSelected() }.isSuccess }
             compose.onNodeWithText("Every 2 hours").assertIsNotSelected()
-            compose.onNodeWithText("Salawat on the Prophet ﷺ").performScrollTo().assertIsOn()
+            compose.onNodeWithText("Dhikr and tasbeeh").performScrollTo().assertIsOn()
+            compose.onNodeWithText("Say the dhikr aloud").performScrollTo().assertIsOff()
         } finally {
             runBlocking {
-                store.setSalawatReminder(false)
-                store.setSalawatInterval(2)
+                store.setDhikrSound(true)
+                store.setDhikrReminder(false)
+                store.setDhikrInterval(2)
             }
         }
     }

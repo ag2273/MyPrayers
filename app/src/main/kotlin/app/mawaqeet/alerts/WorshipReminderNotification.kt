@@ -11,6 +11,7 @@ import androidx.core.app.NotificationManagerCompat
 import app.mawaqeet.MainActivity
 import app.mawaqeet.R
 import app.mawaqeet.core.AdhkarSlot
+import app.mawaqeet.core.DhikrPhrase
 import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.SunnahFast
 import app.mawaqeet.core.WorshipReminderKind
@@ -18,12 +19,16 @@ import java.time.DayOfWeek
 
 /**
  * A Worship Reminder's gentle notification (#63) on its own «تذكيرات العبادة» channel, with the system's default
- * notification sound (never an adhan). One notification per kind: a new salawat reminder replaces the last one.
+ * notification sound (never an adhan). One notification per kind: a new dhikr reminder replaces the last one. The dhikr
+ * reminder («ذكر الله والتسبيح») shows a random [DhikrPhrase] on its own soundless channel; [DhikrVoice] says it aloud.
  * Tapping opens the app; an adhkar reminder's tap opens its Adhkar Set (#75). The Surat Al-Kahf reminder (#64) also
  * has «قرأتها», which only dismisses it. An alarm-style Qiyam reminder (#97) goes to [QiyamAlarmNotification] instead.
  */
 internal object WorshipReminderNotification {
     const val CHANNEL = "worship_reminders"
+
+    /** «ذكر الله والتسبيح»: no channel sound, since the dhikr itself is the sound ([DhikrVoice]), or there is none. */
+    const val DHIKR_CHANNEL = "dhikr_reminders"
 
     /** Below the Silence notification's id and every alarm request code; one id per [WorshipReminderKind]. */
     private const val ID_BASE = 1_999_000
@@ -32,11 +37,11 @@ internal object WorshipReminderNotification {
      * [silent] (during a Silence Window, #76) posts it without sound or vibration, whatever the channel says:
      * NotificationCompat's setSilent puts it in a group that alerts only through a summary, and none is posted.
      */
-    fun post(context: Context, reminder: PlannedWorshipReminder, silent: Boolean = false) {
+    fun post(context: Context, reminder: PlannedWorshipReminder, silent: Boolean = false, phrase: DhikrPhrase = DhikrPhrase.pick()) {
         if (!AdhanNotification.canPost(context)) return
         ensureChannel(context)
         val (title, text) = when (reminder.kind) {
-            WorshipReminderKind.SALAWAT -> R.string.salawat_reminder_title to R.string.salawat_reminder_text
+            WorshipReminderKind.DHIKR -> R.string.dhikr_reminder_title to DhikrVoice.text(phrase)
             WorshipReminderKind.KAHF -> R.string.kahf_reminder_title to R.string.kahf_reminder_text
             WorshipReminderKind.MORNING_ADHKAR -> R.string.adhkar_morning to R.string.adhkar_morning_reminder_text
             WorshipReminderKind.EVENING_ADHKAR -> R.string.adhkar_evening to R.string.adhkar_evening_reminder_text
@@ -63,7 +68,8 @@ internal object WorshipReminderNotification {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         } ?: AlertScheduler.openAppIntent(context)
-        val builder = NotificationCompat.Builder(context, CHANNEL)
+        val channel = if (reminder.kind == WorshipReminderKind.DHIKR) DHIKR_CHANNEL else CHANNEL
+        val builder = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(strings.getString(title))
             .setContentText(body)
@@ -112,7 +118,15 @@ internal object WorshipReminderNotification {
 
     fun ensureChannel(context: Context) {
         val text = alertText(context)
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(
+        val notifications = context.getSystemService(NotificationManager::class.java)
+        notifications.createNotificationChannel(
+            NotificationChannel(DHIKR_CHANNEL, text.getString(R.string.dhikr_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = text.getString(R.string.dhikr_channel_description)
+                setSound(null, null)
+                enableVibration(false)
+            },
+        )
+        notifications.createNotificationChannel(
             NotificationChannel(CHANNEL, text.getString(R.string.worship_reminders_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
                 description = text.getString(R.string.worship_reminders_channel_description)
                 setSound(

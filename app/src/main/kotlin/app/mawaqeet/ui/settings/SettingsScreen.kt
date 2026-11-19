@@ -147,11 +147,14 @@ interface SettingsActions {
     /** The − and + buttons of the Silence Window's duration ([jumuah]: Jumu'ah's), one [app.mawaqeet.core.PrayerSilence.MINUTES_STEP] per step. */
     fun stepPrayerSilenceMinutes(jumuah: Boolean, step: Int)
 
-    /** Settings → Alerts → «تذكيرات العبادة» → «الصلاة على النبي ﷺ» (#63). */
-    fun setSalawatReminder(on: Boolean)
+    /** Settings → Alerts → «تذكيرات العبادة» → «ذكر الله والتسبيح». */
+    fun setDhikrReminder(on: Boolean)
 
-    /** Salawat reminders every [hours] hours, one of [app.mawaqeet.core.SalawatReminder.INTERVAL_HOURS]. */
-    fun setSalawatInterval(hours: Int)
+    /** «بصوت الذكر»: the dhikr reminder says its dhikr aloud, or comes silent. */
+    fun setDhikrSound(on: Boolean)
+
+    /** Dhikr reminders every [hours] hours, one of [app.mawaqeet.core.DhikrReminder.INTERVAL_HOURS]. */
+    fun setDhikrInterval(hours: Int)
 
     /** «أذكار الصباح» or «أذكار المساء» under «تذكيرات العبادة» (#75); [set] is MORNING or EVENING. */
     fun setAdhkarReminder(set: app.mawaqeet.core.AdhkarSetId, on: Boolean)

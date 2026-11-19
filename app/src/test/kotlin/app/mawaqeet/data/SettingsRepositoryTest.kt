@@ -307,26 +307,42 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun `salawat reminders are off every 2 hours by default, and switching them on every 3 hours survives an app restart`() {
+    fun `dhikr reminders are off every 2 hours with sound by default, and on every 3 hours without sound survives an app restart`() {
         assertEquals(
-            app.mawaqeet.core.SalawatReminder(enabled = false, intervalHours = 2),
-            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat,
+            app.mawaqeet.core.DhikrReminder(enabled = false, intervalHours = 2, sound = true),
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.dhikr,
         )
         withRepository { repo, _ ->
-            repo.setSalawatReminder(true)
-            repo.setSalawatInterval(3)
+            repo.setDhikrReminder(true)
+            repo.setDhikrInterval(3)
+            repo.setDhikrSound(false)
         }
 
-        val salawat = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat
+        val dhikr = withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.dhikr
 
-        assertEquals(app.mawaqeet.core.SalawatReminder(enabled = true, intervalHours = 3), salawat)
+        assertEquals(app.mawaqeet.core.DhikrReminder(enabled = true, intervalHours = 3, sound = false), dhikr)
     }
 
     @Test
-    fun `a stored salawat interval that is not 1, 2 or 3 hours reads as the default`() {
+    fun `a salawat reminder switched on before the dhikr reminder replaced it comes back on, at its interval`() {
+        withRepository { _, store ->
+            store.edit {
+                it[androidx.datastore.preferences.core.booleanPreferencesKey("worship_salawat_enabled")] = true
+                it[intPreferencesKey("worship_salawat_interval_hours")] = 1
+            }
+        }
+
+        assertEquals(
+            app.mawaqeet.core.DhikrReminder(enabled = true, intervalHours = 1, sound = true),
+            withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.dhikr,
+        )
+    }
+
+    @Test
+    fun `a stored dhikr interval that is not 1, 2 or 3 hours reads as the default`() {
         withRepository { _, store -> store.edit { it[intPreferencesKey("worship_salawat_interval_hours")] = 5 } }
 
-        assertEquals(2, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.salawat.intervalHours)
+        assertEquals(2, withRepository { repo, _ -> repo.settings.first() }.alerts.worshipReminders.dhikr.intervalHours)
     }
 
     @Test

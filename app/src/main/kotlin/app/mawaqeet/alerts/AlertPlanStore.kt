@@ -81,7 +81,7 @@ internal class AlertPlanStore(context: Context) {
         }
         for (w in plan.silenceWindows) appendLine(SILENCE + "\t" + encodeSilenceWindow(w))
         for (r in plan.worshipReminders) {
-            appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot, encodeSunnahFastDay(r.fast), r.alarm).joinToString("\t"))
+            appendLine(listOf(WORSHIP, r.kind.name, r.prayerDay, r.instant.toEpochMilli(), r.slot, encodeSunnahFastDay(r.fast), r.alarm, r.sound).joinToString("\t"))
         }
         appendLine(listOf(STYLE, style.digits.name, style.language).joinToString("\t"))
     }
@@ -94,14 +94,16 @@ internal class AlertPlanStore(context: Context) {
         val (silenceLines, alertLines) = otherLines.partition { it.startsWith(SILENCE + "\t") }
         val worshipReminders = worshipLines.map { line ->
             val f = line.split('\t')
-            require(f.size in 5..7)
+            require(f.size in 5..8)
             PlannedWorshipReminder(
-                kind = WorshipReminderKind.valueOf(f[1]),
+                kind = WorshipReminderKind.byName(f[1]),
                 prayerDay = LocalDate.parse(f[2]),
                 instant = Instant.ofEpochMilli(f[3].toLong()),
                 slot = f[4].toInt(),
                 fast = decodeSunnahFastDay(f.getOrElse(5) { "" }),
                 alarm = f.getOrNull(6)?.toBooleanStrict() ?: false,
+                // Before 1.4.8 a dhikr (salawat) reminder had no sound field and came with a sound.
+                sound = f.getOrNull(7)?.toBooleanStrict() ?: (f[1] == "SALAWAT"),
             )
         }
         val silenceWindows = silenceLines.map { decodeSilenceWindow(it.removePrefix(SILENCE + "\t")) }
