@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -67,7 +68,7 @@ import app.mawaqeet.alerts.SilenceLog
 import app.mawaqeet.core.PrayerSilence
 import app.mawaqeet.core.AdhkarReminder
 import app.mawaqeet.core.AdhkarSetId
-import app.mawaqeet.core.SalawatReminder
+import app.mawaqeet.core.DhikrReminder
 import app.mawaqeet.core.RamadanSettings
 import app.mawaqeet.core.SuhoorReminder
 import app.mawaqeet.core.DuhaReminder
@@ -293,21 +294,28 @@ private fun SilenceLogRow() {
  */
 @Composable
 private fun WorshipReminderRows(alerts: AlertSettings, actions: SettingsActions) {
-    val salawat = alerts.worshipReminders.salawat
+    val dhikr = alerts.worshipReminders.dhikr
     SectionTitle(stringResource(R.string.worship_reminders))
     Card {
         SwitchRow(
-            title = stringResource(R.string.salawat_reminder),
-            description = stringResource(R.string.salawat_reminder_description),
-            checked = salawat.enabled,
-            onChange = actions::setSalawatReminder,
+            title = stringResource(R.string.dhikr_reminder),
+            description = stringResource(R.string.dhikr_reminder_description),
+            checked = dhikr.enabled,
+            onChange = actions::setDhikrReminder,
         )
-        if (salawat.enabled) {
+        if (dhikr.enabled) {
             RowDivider()
-            val labels = mapOf(1 to R.string.salawat_every_1, 2 to R.string.salawat_every_2, 3 to R.string.salawat_every_3)
+            SwitchRow(
+                title = stringResource(R.string.dhikr_sound),
+                description = stringResource(R.string.dhikr_sound_description),
+                checked = dhikr.sound,
+                onChange = actions::setDhikrSound,
+            )
+            RowDivider()
+            val labels = mapOf(1 to R.string.dhikr_every_1, 2 to R.string.dhikr_every_2, 3 to R.string.dhikr_every_3)
             SegmentedChoice(
-                SalawatReminder.INTERVAL_HOURS.map { hours ->
-                    Segment(stringResource(labels.getValue(hours)), salawat.intervalHours == hours) { actions.setSalawatInterval(hours) }
+                DhikrReminder.INTERVAL_HOURS.map { hours ->
+                    Segment(stringResource(labels.getValue(hours)), dhikr.intervalHours == hours) { actions.setDhikrInterval(hours) }
                 },
                 Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             )
@@ -754,10 +762,28 @@ private fun CustomAdhanRows(alerts: AlertSettings, actions: SettingsActions) {
             )
             if (current.unreadable) Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { UnreadableNotice() }
         }
+        RowDivider()
+        val openDownloads = rememberOpenAdhanDownloads()
+        NavRow(
+            title = stringResource(R.string.alerts_custom_download),
+            summary = stringResource(R.string.alerts_custom_download_description),
+            onClick = openDownloads,
+        )
     }
     editing?.let { recording ->
         CustomAdhanDialog(recording, state(recording), alerts.adhanVolume, actions, onDismiss = { editing = null })
     }
+}
+
+/** Islamweb's free adhan collection, where people download a recording to choose as their Custom Adhan. */
+internal const val ADHAN_DOWNLOADS_URL =
+    "https://audio.islamweb.net/audio/adhan/%D9%85%D8%AE%D8%AA%D8%A7%D8%B1%D8%A7%D8%AA-%D9%85%D9%86-%D8%A7%D9%84%D8%A3%D8%B0%D8%A7%D9%86"
+
+/** Opens [ADHAN_DOWNLOADS_URL] in the browser; does nothing on a phone with no browser. */
+@Composable
+private fun rememberOpenAdhanDownloads(): () -> Unit {
+    val uriHandler = LocalUriHandler.current
+    return remember(uriHandler) { { runCatching { uriHandler.openUri(ADHAN_DOWNLOADS_URL) }; Unit } }
 }
 
 /** A recording's Custom Adhan as Settings shows it: [name] is null until checked, or when [unreadable]. */
@@ -820,6 +846,10 @@ private fun CustomAdhanDialog(
                 if (current.unreadable) UnreadableNotice()
                 TextButton(onClick = { picker.launch(CustomAdhanFiles.MIME_TYPES) }) {
                     Text(stringResource(R.string.alerts_custom_choose))
+                }
+                val openDownloads = rememberOpenAdhanDownloads()
+                TextButton(onClick = { stopPreview(); openDownloads() }) {
+                    Text(stringResource(R.string.alerts_custom_download))
                 }
                 TextButton(
                     onClick = {

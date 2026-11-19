@@ -32,7 +32,7 @@ class KahfReminderNotificationTest {
 
     private val friday = LocalDate.parse("2026-11-13")
     private val kahf = PlannedWorshipReminder(WorshipReminderKind.KAHF, Instant.parse("2026-11-13T04:30:00Z"), friday)
-    private val salawat = PlannedWorshipReminder(WorshipReminderKind.SALAWAT, Instant.parse("2026-11-13T05:30:00Z"), friday, 0)
+    private val dhikr = PlannedWorshipReminder(WorshipReminderKind.DHIKR, Instant.parse("2026-11-13T05:30:00Z"), friday, 0)
     private val midnight = Instant.parse("2026-11-13T21:00:00Z")
     private val early = Instant.parse("2026-11-13T03:00:00Z")
 
@@ -79,23 +79,23 @@ class KahfReminderNotificationTest {
     @Test
     fun `with the phone in English and the app in Arabic, the reminder and its channel are in Arabic`() {
         AlertScheduler(context).apply(
-            AlertPlan(emptyList(), midnight, worshipReminders = listOf(salawat)),
+            AlertPlan(emptyList(), midnight, worshipReminders = listOf(dhikr)),
             early,
             NotificationStyle(app.mawaqeet.core.DigitStyle.AUTOMATIC, "ar"),
         )
 
-        fire(salawat)
+        fire(dhikr)
 
         val notification = shadowOf(notificationManager).allNotifications.single()
-        assertEquals("صلِّ على النبي ﷺ", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
-        assertEquals("تذكيرات العبادة", notificationManager.getNotificationChannel(WorshipReminderNotification.CHANNEL).name.toString())
+        assertEquals("ذكر الله والتسبيح", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("ذكر الله والتسبيح", notificationManager.getNotificationChannel(WorshipReminderNotification.DHIKR_CHANNEL).name.toString())
     }
 
     @Test
-    fun `I read it dismisses the Kahf reminder and leaves a salawat reminder alone`() {
-        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(kahf, salawat)), early)
+    fun `I read it dismisses the Kahf reminder and leaves a dhikr reminder alone`() {
+        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(kahf, dhikr)), early)
         fire(kahf)
-        fire(salawat)
+        fire(dhikr)
         assertEquals(2, shadowOf(notificationManager).allNotifications.size)
 
         val readIt = shadowOf(kahfNotification().actions.single().actionIntent).savedIntent
@@ -103,14 +103,14 @@ class KahfReminderNotificationTest {
 
         val left = shadowOf(notificationManager).allNotifications
         assertEquals(1, left.size)
-        assertEquals("Send salawat on the Prophet ﷺ", left.single().extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("Remember Allah", left.single().extras.getCharSequence(Notification.EXTRA_TITLE).toString())
     }
 
     @Test
-    fun `a salawat reminder has no read-it action`() {
-        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(salawat)), early)
+    fun `a dhikr reminder has no read-it action`() {
+        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(dhikr)), early)
 
-        fire(salawat)
+        fire(dhikr)
 
         assertTrue(shadowOf(notificationManager).allNotifications.single().actions.isNullOrEmpty())
     }

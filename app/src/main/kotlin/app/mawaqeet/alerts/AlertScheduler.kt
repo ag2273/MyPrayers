@@ -282,7 +282,7 @@ class AlertScheduler(context: Context) {
                 }
             }
 
-        /** Salawat, Kahf and the two adhkar reminders. */
+        /** Dhikr, Kahf and the two adhkar reminders. */
         private const val SLOTTED_KINDS = 4
 
         /** Above every slotted kind's code (4,000,000 + 100,000 days × 128). */

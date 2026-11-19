@@ -346,12 +346,16 @@ class MainActivity : AppCompatActivity() {
                                 scope.launch { settingsStore.stepPrayerSilenceMinutes(jumuah, step) }
                             }
 
-                            override fun setSalawatReminder(on: Boolean) {
-                                scope.launch { settingsStore.setSalawatReminder(on) }
+                            override fun setDhikrReminder(on: Boolean) {
+                                scope.launch { settingsStore.setDhikrReminder(on) }
                             }
 
-                            override fun setSalawatInterval(hours: Int) {
-                                scope.launch { settingsStore.setSalawatInterval(hours) }
+                            override fun setDhikrSound(on: Boolean) {
+                                scope.launch { settingsStore.setDhikrSound(on) }
+                            }
+
+                            override fun setDhikrInterval(hours: Int) {
+                                scope.launch { settingsStore.setDhikrInterval(hours) }
                             }
 
                             override fun setAdhkarReminder(set: app.mawaqeet.core.AdhkarSetId, on: Boolean) {

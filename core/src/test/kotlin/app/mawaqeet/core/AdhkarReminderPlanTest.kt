@@ -128,6 +128,6 @@ class AdhkarReminderPlanTest {
     fun `the adhkar kinds name the set they open`() {
         assertEquals(AdhkarSetId.MORNING, WorshipReminderKind.MORNING_ADHKAR.adhkarSet)
         assertEquals(AdhkarSetId.EVENING, WorshipReminderKind.EVENING_ADHKAR.adhkarSet)
-        assertEquals(null, WorshipReminderKind.SALAWAT.adhkarSet)
+        assertEquals(null, WorshipReminderKind.DHIKR.adhkarSet)
     }
 }

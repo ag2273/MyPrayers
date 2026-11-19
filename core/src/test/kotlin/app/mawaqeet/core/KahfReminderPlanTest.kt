@@ -110,12 +110,12 @@ class KahfReminderPlanTest {
     }
 
     @Test
-    fun `salawat and Kahf on together are both planned, in time order`() {
-        val both = WorshipReminders(salawat = SalawatReminder(enabled = true), kahf = KahfReminder(enabled = true))
+    fun `dhikr and Kahf on together are both planned, in time order`() {
+        val both = WorshipReminders(dhikr = DhikrReminder(enabled = true), kahf = KahfReminder(enabled = true))
         val plan = core(makkah("2026-11-13", "00:30"), PrayerSettings.Default.copy(alerts = AlertSettings(worshipReminders = both))).alertPlan()
 
         assertEquals(1, plan.kahf().size)
-        assertTrue(plan.worshipReminders.any { it.kind == WorshipReminderKind.SALAWAT })
+        assertTrue(plan.worshipReminders.any { it.kind == WorshipReminderKind.DHIKR })
         assertEquals(plan.worshipReminders.sortedBy { it.instant }, plan.worshipReminders)
     }
 }

@@ -10,6 +10,7 @@ import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mawaqeet.MainActivity
+import app.mawaqeet.R
 import app.mawaqeet.core.AlertPlan
 import app.mawaqeet.core.PlannedWorshipReminder
 import app.mawaqeet.core.WorshipReminderKind
@@ -33,9 +34,15 @@ class WorshipReminderAlarmsTest {
     private val notificationManager = context.getSystemService(NotificationManager::class.java)
 
     private val day = LocalDate.parse("2026-11-08")
-    private fun salawat(at: String, slot: Int) = PlannedWorshipReminder(WorshipReminderKind.SALAWAT, Instant.parse(at), day, slot)
-    private val first = salawat("2026-11-08T05:27:00Z", 0)
-    private val second = salawat("2026-11-08T07:27:00Z", 1)
+    private fun dhikr(at: String, slot: Int, sound: Boolean = true) =
+        PlannedWorshipReminder(WorshipReminderKind.DHIKR, Instant.parse(at), day, slot, sound = sound)
+    private val first = dhikr("2026-11-08T05:27:00Z", 0)
+    private val second = dhikr("2026-11-08T07:27:00Z", 1)
+    private val quiet = dhikr("2026-11-08T09:27:00Z", 2, sound = false)
+
+    /** The recordings [DhikrVoice] played, in order. */
+    private val said = mutableListOf<Int>()
+    private val audio get() = context.getSystemService(android.media.AudioManager::class.java)
     private val midnight = Instant.parse("2026-11-08T21:00:00Z")
     private val early = Instant.parse("2026-11-08T03:00:00Z")
 
@@ -46,6 +53,7 @@ class WorshipReminderAlarmsTest {
 
     @Before
     fun setUp() {
+        DhikrVoice.player = { _, recording -> said += recording }
         ShadowAlarmManager.setCanScheduleExactAlarms(true)
         shadowOf(context as Application).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
     }
@@ -59,7 +67,7 @@ class WorshipReminderAlarmsTest {
     }
 
     @Test
-    fun `turning salawat off cancels its alarms`() {
+    fun `turning the dhikr reminder off cancels its alarms`() {
         val scheduler = AlertScheduler(context)
         scheduler.apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(first, second)), early)
 
@@ -88,20 +96,86 @@ class WorshipReminderAlarmsTest {
 
     @Test
     @Config(qualifiers = "ar")
-    fun `a salawat reminder is a gentle notification on the Worship Reminders channel, with the default sound, that opens the app`() {
+    fun `a dhikr reminder shows one of the seven adhkar on its own soundless channel, says it aloud, and opens the app`() {
         AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(first)), early)
 
         fire(first)
 
         val notification: Notification = shadowOf(notificationManager).allNotifications.single()
-        assertEquals("صلِّ على النبي ﷺ", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
-        assertEquals(WorshipReminderNotification.CHANNEL, notification.channelId)
-        val channel = notificationManager.getNotificationChannel(WorshipReminderNotification.CHANNEL)
-        assertEquals("تذكيرات العبادة", channel.name.toString())
+        assertEquals("ذكر الله والتسبيح", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        val text = notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString()
+        val adhkar = listOf(
+            "سبحان الله", "أستغفر الله", "الحمد لله", "الله أكبر", "اللهم صلِّ على محمد", "سبحان الله وبحمده", "لا إله إلا الله",
+        )
+        assertTrue(text, text in adhkar)
+        assertEquals(WorshipReminderNotification.DHIKR_CHANNEL, notification.channelId)
+        val channel = notificationManager.getNotificationChannel(WorshipReminderNotification.DHIKR_CHANNEL)
+        assertEquals("ذكر الله والتسبيح", channel.name.toString())
         assertEquals(NotificationManager.IMPORTANCE_DEFAULT, channel.importance)
-        assertEquals(Settings.System.DEFAULT_NOTIFICATION_URI, channel.sound)
+        assertEquals(null, channel.sound)
+        // The recording said is the one of the dhikr shown.
+        val recordings = mapOf(
+            "سبحان الله" to R.raw.dhikr_subhan_allah, "أستغفر الله" to R.raw.dhikr_astaghfirullah,
+            "الحمد لله" to R.raw.dhikr_alhamdulillah, "الله أكبر" to R.raw.dhikr_allahu_akbar,
+            "اللهم صلِّ على محمد" to R.raw.dhikr_salat_ala_muhammad, "سبحان الله وبحمده" to R.raw.dhikr_subhan_allah_wa_bihamdihi,
+            "لا إله إلا الله" to R.raw.dhikr_la_ilaha_illallah,
+        )
+        assertEquals(listOf(recordings.getValue(text)), said)
         val tap = shadowOf(notification.contentIntent).savedIntent
         assertEquals(MainActivity::class.java.name, tap.component!!.className)
+    }
+
+    @Test
+    fun `with the dhikr sound off the reminder comes without saying anything`() {
+        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(quiet)), early)
+
+        fire(quiet)
+
+        assertEquals(1, shadowOf(notificationManager).allNotifications.size)
+        assertEquals(emptyList<Int>(), said)
+    }
+
+    @Test
+    fun `on a phone set to silent or vibrate the dhikr is not said aloud`() {
+        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(first, second)), early)
+
+        audio.ringerMode = android.media.AudioManager.RINGER_MODE_VIBRATE
+        fire(first)
+        audio.ringerMode = android.media.AudioManager.RINGER_MODE_SILENT
+        fire(second)
+
+        assertEquals(emptyList<Int>(), said)
+        assertEquals(1, shadowOf(notificationManager).allNotifications.size)
+    }
+
+    @Test
+    fun `the sound choice survives the stored plan`() {
+        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(first, quiet)), early)
+
+        assertEquals(listOf(first, quiet), AlertPlanStore(context).read()!!.worshipReminders)
+    }
+
+    @Test
+    fun `an alarm set by an older version for a salawat reminder still posts the dhikr reminder`() {
+        val old = WorshipReminderReceiver.intent(context, first).putExtra("kind", "SALAWAT").apply { removeExtra("sound") }
+
+        WorshipReminderReceiver().onReceive(context, old)
+        kotlinx.coroutines.runBlocking { WorshipReminderReceiver.idle() }
+
+        assertEquals(WorshipReminderNotification.DHIKR_CHANNEL, shadowOf(notificationManager).allNotifications.single().channelId)
+        assertEquals(1, said.size)
+    }
+
+    @Test
+    fun `the other Worship Reminders keep the default notification sound on their own channel`() {
+        val kahf = PlannedWorshipReminder(WorshipReminderKind.KAHF, Instant.parse("2026-11-13T05:30:00Z"), LocalDate.parse("2026-11-13"))
+        AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(kahf)), early)
+
+        fire(kahf)
+
+        assertEquals(WorshipReminderNotification.CHANNEL, shadowOf(notificationManager).allNotifications.single().channelId)
+        assertEquals(Settings.System.DEFAULT_NOTIFICATION_URI, notificationManager.getNotificationChannel(WorshipReminderNotification.CHANNEL).sound)
+        assertEquals(emptyList<Int>(), said)
     }
 
     @Test
@@ -111,12 +185,12 @@ class WorshipReminderAlarmsTest {
         fire(first)
 
         val notification = shadowOf(notificationManager).allNotifications.single()
-        assertEquals("Send salawat on the Prophet ﷺ", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
-        assertEquals("Worship reminders", notificationManager.getNotificationChannel(WorshipReminderNotification.CHANNEL).name.toString())
+        assertEquals("Remember Allah", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("Dhikr and tasbeeh", notificationManager.getNotificationChannel(WorshipReminderNotification.DHIKR_CHANNEL).name.toString())
     }
 
     @Test
-    fun `a new salawat reminder replaces the last one, so they never pile up`() {
+    fun `a new dhikr reminder replaces the last one, so they never pile up`() {
         AlertScheduler(context).apply(AlertPlan(emptyList(), midnight, worshipReminders = listOf(first, second)), early)
 
         fire(first)
