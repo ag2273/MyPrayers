@@ -23,4 +23,6 @@ tasks.test {
     inputs.file(rootProject.file("app/src/main/assets/cities.tsv"))
     // AdhkarCatalogTest reads the bundled adhkar.
     inputs.file(rootProject.file("app/src/main/assets/adhkar.tsv"))
+    // AdhkarAudioTest checks the bundled Adhkar Audio pack reads every bundled dhikr.
+    inputs.file(rootProject.file("app/src/main/assets/adhkar-audio.tsv"))
 }

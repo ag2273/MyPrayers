@@ -15,7 +15,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -226,6 +230,15 @@ private fun SetReader(
     val haptics = LocalHapticFeedback.current
     val format = LocalDisplayFormatter.current
     val name = slotName(set)
+    // Listening (the recordings downloaded once): null in a build without the pack key, then none of it shows.
+    val audio = rememberAdhkarAudio()
+    var offer by rememberSaveable { mutableStateOf(false) }
+    if (audio != null) {
+        if (offer) AudioDownloadSheet(audio) { offer = false }
+        // Leaving the reader stops the recording; leaving the app pauses it.
+        DisposableEffect(audio) { onDispose { audio.player.stop() } }
+        LifecycleEventEffect(Lifecycle.Event.ON_STOP) { audio.player.pause() }
+    }
     SubPage(stringResource(set.set.nameRes), onBack) {
         val shown = progress ?: return@SubPage
         val index = moved?.takeIf { it in shown.items.indices } ?: shown.currentIndex
@@ -246,6 +259,7 @@ private fun SetReader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        if (audio != null) AudioDownloadCard(audio) { offer = true }
         if (index == null) {
             if (shown.isComplete) Complete(name) else ReadOutsideTime(name)
         } else {
@@ -260,7 +274,30 @@ private fun SetReader(
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-            DhikrCard(shown.items[index]) {
+            val recording = audio?.recordingFor(set.set, shown.items[index].dhikr.id)
+            if (audio != null) {
+                val player by audio.player.state.collectAsState()
+                // Recordings that finished before this reader opened don't move it.
+                var seen by rememberSaveable(set.key) { mutableIntStateOf(audio.player.state.value.finished) }
+                LaunchedEffect(player.finished) {
+                    if (player.finished == seen) return@LaunchedEffect
+                    seen = player.finished
+                    // Auto-next: this dhikr's recording ended, so on to the next dhikr, playing it.
+                    if (!audio.prefs.value.autoNext || player.lastFinished != recording || index >= shown.items.lastIndex) return@LaunchedEffect
+                    moved = index + 1
+                    audio.recordingFor(set.set, shown.items[index + 1].dhikr.id)?.takeIf(audio.store::isReady)?.let(audio.player::play)
+                }
+                // Moving to another dhikr (by hand, or by counting this one) stops a recording that isn't its own.
+                LaunchedEffect(recording) { if (audio.player.state.value.recording != recording) audio.player.stop() }
+            }
+            DhikrCard(
+                shown.items[index],
+                player = if (audio != null && recording != null) {
+                    { DhikrPlayer(audio, recording) { offer = true } }
+                } else {
+                    null
+                },
+            ) {
                 if (shown.items[index].isDone) return@DhikrCard
                 haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                 scope.launch {
@@ -282,6 +319,7 @@ private fun SetReader(
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                 ) { Text(stringResource(R.string.adhkar_next)) }
             }
+            if (audio != null) AutoNextRow(audio)
             Text(
                 stringResource(R.string.adhkar_tap_hint),
                 style = MaterialTheme.typography.bodySmall,
@@ -300,9 +338,12 @@ private fun SetReader(
     }
 }
 
-/** The dhikr's Arabic text, its source and the count; the whole card is one tap target and one TalkBack item. */
+/**
+ * The dhikr's Arabic text, its source, its [player] when the audio is available, and the count; the whole card is one
+ * tap target (but the player, which takes its own taps).
+ */
 @Composable
-private fun DhikrCard(item: DhikrProgress, onCount: () -> Unit) {
+private fun DhikrCard(item: DhikrProgress, player: (@Composable () -> Unit)? = null, onCount: () -> Unit) {
     val format = LocalDisplayFormatter.current
     val state = stringResource(
         R.string.adhkar_card_state,
@@ -333,6 +374,7 @@ private fun DhikrCard(item: DhikrProgress, onCount: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
             )
+            player?.invoke()
             Text(
                 format.count(item.counted, item.dhikr.count),
                 style = MaterialTheme.typography.displaySmall,

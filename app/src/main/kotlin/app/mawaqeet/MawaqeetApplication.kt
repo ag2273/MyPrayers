@@ -7,6 +7,10 @@ import androidx.datastore.preferences.preferencesDataStore
 import app.mawaqeet.alerts.AlertRescheduler
 import app.mawaqeet.alerts.CustomAdhanFiles
 import app.mawaqeet.alerts.PrayerSilencer
+import app.mawaqeet.audio.AdhkarAudio
+import app.mawaqeet.audio.HttpFetcher
+import app.mawaqeet.audio.KeystoreDeviceCipher
+import app.mawaqeet.core.AdhkarAudioPack
 import app.mawaqeet.core.AdhkarCatalog
 import app.mawaqeet.core.CityDirectory
 import app.mawaqeet.core.Location
@@ -42,6 +46,20 @@ class MawaqeetApplication : Application() {
 
     /** The bundled adhkar (asset `adhkar.tsv`). Small, but first touch it off the main thread. */
     val adhkarCatalog: AdhkarCatalog by lazy { assets.open(ADHKAR_ASSET).use(AdhkarCatalog::read) }
+
+    /**
+     * Listening to the adhkar (downloaded once from the site, never bundled), or null when this build has no pack key:
+     * then nothing about audio shows. Tests set [adhkarAudioOverride] instead.
+     */
+    val adhkarAudio: AdhkarAudio? by lazy {
+        adhkarAudioOverride ?: AdhkarAudio.buildKey()?.let { key ->
+            AdhkarAudio(this, assets.open(ADHKAR_AUDIO_ASSET).use(AdhkarAudioPack::read), key, KeystoreDeviceCipher(), HttpFetcher)
+        }
+    }
+
+    /** Set before first use (tests) to stand in for the real [adhkarAudio]. */
+    @Volatile
+    var adhkarAudioOverride: AdhkarAudio? = null
 
     private val database: PrayerLogDatabase by lazy { PrayerLogDatabase.open(this) }
 
@@ -122,3 +140,6 @@ const val CITIES_ASSET = "cities.tsv"
 
 /** The Adhkar Sets' texts, counts and sources (format: core `AdhkarCatalog`). */
 const val ADHKAR_ASSET = "adhkar.tsv"
+
+/** Where the Adhkar Audio pack's files are and which recording reads which dhikr (tools/adhkar-audio/build_pack.py). */
+const val ADHKAR_AUDIO_ASSET = "adhkar-audio.tsv"

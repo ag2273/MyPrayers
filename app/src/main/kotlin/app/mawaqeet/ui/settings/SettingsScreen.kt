@@ -57,6 +57,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -72,6 +73,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import app.mawaqeet.R
+import app.mawaqeet.ui.adhkar.AdhkarAudioPage
+import app.mawaqeet.ui.adhkar.megabytes
+import app.mawaqeet.ui.adhkar.rememberAdhkarAudio
 import app.mawaqeet.about.AboutContent
 import app.mawaqeet.core.AdhanRecording
 import app.mawaqeet.core.AsrConvention
@@ -250,6 +254,7 @@ enum class SettingsPage(@StringRes val title: Int) {
     WIDGETS(R.string.settings_group_widgets),
     ABOUT(R.string.settings_group_about),
     BACKUP(R.string.backup_title),
+    ADHKAR_AUDIO(R.string.adhkar_audio_title),
     CREDITS(R.string.about_sources_title),
 }
 
@@ -328,6 +333,20 @@ fun SettingsHub(
                 },
                 icon = R.drawable.ic_grid,
             ) { onOpen(SettingsRoute(SettingsPage.WIDGETS)) }
+            // Only in builds that carry the Adhkar Audio pack key.
+            rememberAdhkarAudio()?.let { audio ->
+                val audioState by audio.store.state.collectAsState()
+                RowDivider()
+                NavRow(
+                    stringResource(R.string.adhkar_audio_title),
+                    if (audioState.complete) {
+                        stringResource(R.string.adhkar_audio_ready)
+                    } else {
+                        stringResource(R.string.adhkar_audio_not_downloaded_summary, format.megabytes(audioState.totalBytes))
+                    },
+                    icon = R.drawable.ic_headphones,
+                ) { onOpen(SettingsRoute(SettingsPage.ADHKAR_AUDIO)) }
+            }
             RowDivider()
             NavRow(stringResource(R.string.backup_title), stringResource(R.string.backup_summary), icon = R.drawable.ic_file) {
                 onOpen(SettingsRoute(SettingsPage.BACKUP))
@@ -450,6 +469,7 @@ fun SettingsPageScreen(
             SettingsPage.ABOUT -> AboutPage(actions) { onNavigate(SettingsRoute(SettingsPage.CREDITS)) }
             SettingsPage.CREDITS -> CreditsPage()
             SettingsPage.BACKUP -> BackupPage(lastBackupExport, actions)
+            SettingsPage.ADHKAR_AUDIO -> rememberAdhkarAudio()?.let { AdhkarAudioPage(it) }
         }
     }
 }
