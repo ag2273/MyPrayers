@@ -35,6 +35,10 @@
     <string name="about_privacy_section">الخصوصية</string>
     <string name="about_privacy_policy">سياسة الخصوصية</string>
     <string name="about_contact_section">الموقع والتواصل</string>
+    <string name="about_follow_section">تابعنا</string>
+    <string name="about_facebook">فيسبوك</string>
+    <string name="about_facebook_summary">صفحة مواقيت على فيسبوك</string>
+    <string name="about_contact_only_section">التواصل</string>
     <string name="about_website">موقع التطبيق</string>
     <string name="about_contact">راسلنا</string>
     <string name="about_sources_section">المصادر</string>

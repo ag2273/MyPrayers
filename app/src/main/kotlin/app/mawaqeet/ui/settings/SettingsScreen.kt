@@ -835,6 +835,15 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
     val english = LocalConfiguration.current.locales[0].language == "en"
     val sitePath = { if (english) "/en/" else "/" }
     val privacyPath = { if (english) "/en/privacy" else "/privacy" }
+    // PROTOTYPE (about-links): variant A puts a «تابعنا» card above everything; B puts two link buttons in the header.
+    if (aboutLinksVariant == 'A') {
+        SectionTitle(stringResource(R.string.about_follow_section))
+        Card {
+            NavRow(stringResource(R.string.about_facebook), stringResource(R.string.about_facebook_summary), icon = R.drawable.ic_facebook, onClick = { open(FACEBOOK) })
+            RowDivider()
+            NavRow(stringResource(R.string.about_website), WEBSITE_HOST, icon = R.drawable.ic_globe, onClick = { open(WEBSITE + sitePath()) })
+        }
+    }
     Column(
         Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -853,6 +862,12 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (aboutLinksVariant == 'B') {
+            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LinkButton(R.drawable.ic_facebook, stringResource(R.string.about_facebook), Modifier.weight(1f)) { open(FACEBOOK) }
+                LinkButton(R.drawable.ic_globe, stringResource(R.string.about_website), Modifier.weight(1f)) { open(WEBSITE + sitePath()) }
+            }
+        }
     }
     SectionTitle(stringResource(R.string.about_privacy_section))
     Card {
@@ -863,10 +878,8 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
         RowDivider()
         NavRow(stringResource(R.string.about_privacy_policy), WEBSITE_HOST + privacyPath(), onClick = { open(WEBSITE + privacyPath()) })
     }
-    SectionTitle(stringResource(R.string.about_contact_section))
+    SectionTitle(stringResource(R.string.about_contact_only_section))
     Card {
-        NavRow(stringResource(R.string.about_website), WEBSITE_HOST + sitePath(), onClick = { open(WEBSITE + sitePath()) })
-        RowDivider()
         NavRow(stringResource(R.string.about_contact), CONTACT_EMAIL, onClick = { open("mailto:$CONTACT_EMAIL") })
     }
     SectionTitle(stringResource(R.string.about_sources_section))
@@ -889,6 +902,30 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
             R.string.delete_adhkar_record, R.string.delete_adhkar_record_summary, R.string.delete_adhkar_record_done,
             R.string.delete_adhkar_record_title, R.string.delete_adhkar_record_body, actions::deleteAdhkarRecord,
         )
+    }
+}
+
+/** PROTOTYPE (about-links): which About layout to draw. */
+internal var aboutLinksVariant = 'A'
+
+/** A link as a soft pill: its icon and label side by side; the whole pill opens the link. */
+@Composable
+private fun LinkButton(@DrawableRes icon: Int, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val skin = app.mawaqeet.ui.theme.LocalSkin.current
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier
+            .clip(shape)
+            .background(skin.surface)
+            .border(1.dp, skin.line, shape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .heightIn(min = 52.dp)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+    ) {
+        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -1068,3 +1105,4 @@ internal val AsrConvention.description: Int
 private const val WEBSITE_HOST = "mawaqeet.nileorbit.com"
 private const val WEBSITE = "https://$WEBSITE_HOST"
 private const val CONTACT_EMAIL = "contact@nileorbit.com"
+private const val FACEBOOK = "https://www.facebook.com/share/1DsJRbt5Jg/"
