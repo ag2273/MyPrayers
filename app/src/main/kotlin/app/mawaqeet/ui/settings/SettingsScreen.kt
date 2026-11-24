@@ -823,7 +823,7 @@ private fun DisplayPage(
 }
 
 /**
- * About & your data (#33), as on the redesign's board: the app's icon, name and version, the privacy promise, the
+ * About & your data (#33), as on the redesign's board: the app's icon, name and version, its Facebook and website links, the privacy promise, the
  * sources (each kind of credit with its names, opening the full list with licences), and Delete Prayer Log behind a
  * confirmation.
  */
@@ -853,6 +853,11 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        // The app's Facebook page and website, first thing under its name (before privacy, contact and sources).
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            LinkButton(R.drawable.ic_facebook, stringResource(R.string.about_facebook), Modifier.weight(1f)) { open(FACEBOOK) }
+            LinkButton(R.drawable.ic_globe, stringResource(R.string.about_website), Modifier.weight(1f)) { open(WEBSITE + sitePath()) }
+        }
     }
     SectionTitle(stringResource(R.string.about_privacy_section))
     Card {
@@ -865,8 +870,6 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
     }
     SectionTitle(stringResource(R.string.about_contact_section))
     Card {
-        NavRow(stringResource(R.string.about_website), WEBSITE_HOST + sitePath(), onClick = { open(WEBSITE + sitePath()) })
-        RowDivider()
         NavRow(stringResource(R.string.about_contact), CONTACT_EMAIL, onClick = { open("mailto:$CONTACT_EMAIL") })
     }
     SectionTitle(stringResource(R.string.about_sources_section))
@@ -889,6 +892,27 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
             R.string.delete_adhkar_record, R.string.delete_adhkar_record_summary, R.string.delete_adhkar_record_done,
             R.string.delete_adhkar_record_title, R.string.delete_adhkar_record_body, actions::deleteAdhkarRecord,
         )
+    }
+}
+
+/** A link as a soft pill: its icon and label side by side; the whole pill opens the link. */
+@Composable
+private fun LinkButton(@DrawableRes icon: Int, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val skin = app.mawaqeet.ui.theme.LocalSkin.current
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier
+            .clip(shape)
+            .background(skin.surface)
+            .border(1.dp, skin.line, shape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .heightIn(min = 52.dp)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+    ) {
+        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -1068,3 +1092,5 @@ internal val AsrConvention.description: Int
 private const val WEBSITE_HOST = "mawaqeet.nileorbit.com"
 private const val WEBSITE = "https://$WEBSITE_HOST"
 private const val CONTACT_EMAIL = "contact@nileorbit.com"
+/** The app's Facebook page. */
+private const val FACEBOOK = "https://www.facebook.com/share/1DsJRbt5Jg/"

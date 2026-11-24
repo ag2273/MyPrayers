@@ -638,6 +638,26 @@ class SettingsScreenTest {
 
     @Test
     @Config(qualifiers = "ar")
+    fun `About opens the Facebook page and the website from the buttons under the app name`() {
+        openSettings("الإعدادات")
+        openPage("حول مواقيت وبياناتك")
+
+        // Both buttons come before the privacy section.
+        val facebook = compose.onNodeWithText("فيسبوك").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val privacy = compose.onNodeWithText("الخصوصية").fetchSemanticsNode().boundsInRoot
+        assert(facebook.bottom < privacy.top)
+
+        compose.onNodeWithText("فيسبوك").performClick()
+        val page = shadowOf(compose.activity).nextStartedActivity
+        assertEquals(android.content.Intent.ACTION_VIEW, page?.action)
+        assertEquals("https://www.facebook.com/share/1DsJRbt5Jg/", page?.dataString)
+
+        compose.onNodeWithText("موقع التطبيق").assertIsDisplayed().performClick()
+        assertEquals("https://mawaqeet.nileorbit.com/", shadowOf(compose.activity).nextStartedActivity?.dataString)
+    }
+
+    @Test
+    @Config(qualifiers = "ar")
     fun `About shows the version and credits each library, dataset and font with its licence`() {
         openSettings("الإعدادات")
         openPage("حول مواقيت وبياناتك")
