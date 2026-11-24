@@ -163,8 +163,8 @@ android {
         applicationId = "app.nileorbit.mawaqeet"
         minSdk = 26
         targetSdk = 36
-        versionCode = 19
-        versionName = "1.4.9"
+        versionCode = 20
+        versionName = "1.4.10"
         buildConfigField("boolean", "ADHAN_CHANNEL_SOUND_FALLBACK", adhanChannelSoundFallback.toString())
     }
 

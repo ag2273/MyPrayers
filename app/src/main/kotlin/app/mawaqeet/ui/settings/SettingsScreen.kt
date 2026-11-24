@@ -823,7 +823,7 @@ private fun DisplayPage(
 }
 
 /**
- * About & your data (#33), as on the redesign's board: the app's icon, name and version, the privacy promise, the
+ * About & your data (#33), as on the redesign's board: the app's icon, name and version, its Facebook and website links, the privacy promise, the
  * sources (each kind of credit with its names, opening the full list with licences), and Delete Prayer Log behind a
  * confirmation.
  */
@@ -835,15 +835,6 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
     val english = LocalConfiguration.current.locales[0].language == "en"
     val sitePath = { if (english) "/en/" else "/" }
     val privacyPath = { if (english) "/en/privacy" else "/privacy" }
-    // PROTOTYPE (about-links): variant A puts a «تابعنا» card above everything; B puts two link buttons in the header.
-    if (aboutLinksVariant == 'A') {
-        SectionTitle(stringResource(R.string.about_follow_section))
-        Card {
-            NavRow(stringResource(R.string.about_facebook), stringResource(R.string.about_facebook_summary), icon = R.drawable.ic_facebook, onClick = { open(FACEBOOK) })
-            RowDivider()
-            NavRow(stringResource(R.string.about_website), WEBSITE_HOST, icon = R.drawable.ic_globe, onClick = { open(WEBSITE + sitePath()) })
-        }
-    }
     Column(
         Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -862,11 +853,10 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        if (aboutLinksVariant == 'B') {
-            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LinkButton(R.drawable.ic_facebook, stringResource(R.string.about_facebook), Modifier.weight(1f)) { open(FACEBOOK) }
-                LinkButton(R.drawable.ic_globe, stringResource(R.string.about_website), Modifier.weight(1f)) { open(WEBSITE + sitePath()) }
-            }
+        // The app's Facebook page and website, first thing under its name (before privacy, contact and sources).
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            LinkButton(R.drawable.ic_facebook, stringResource(R.string.about_facebook), Modifier.weight(1f)) { open(FACEBOOK) }
+            LinkButton(R.drawable.ic_globe, stringResource(R.string.about_website), Modifier.weight(1f)) { open(WEBSITE + sitePath()) }
         }
     }
     SectionTitle(stringResource(R.string.about_privacy_section))
@@ -878,7 +868,7 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
         RowDivider()
         NavRow(stringResource(R.string.about_privacy_policy), WEBSITE_HOST + privacyPath(), onClick = { open(WEBSITE + privacyPath()) })
     }
-    SectionTitle(stringResource(R.string.about_contact_only_section))
+    SectionTitle(stringResource(R.string.about_contact_section))
     Card {
         NavRow(stringResource(R.string.about_contact), CONTACT_EMAIL, onClick = { open("mailto:$CONTACT_EMAIL") })
     }
@@ -904,9 +894,6 @@ private fun ColumnScope.AboutPage(actions: SettingsActions, onOpenCredits: () ->
         )
     }
 }
-
-/** PROTOTYPE (about-links): which About layout to draw. */
-internal var aboutLinksVariant = 'A'
 
 /** A link as a soft pill: its icon and label side by side; the whole pill opens the link. */
 @Composable
@@ -1105,4 +1092,5 @@ internal val AsrConvention.description: Int
 private const val WEBSITE_HOST = "mawaqeet.nileorbit.com"
 private const val WEBSITE = "https://$WEBSITE_HOST"
 private const val CONTACT_EMAIL = "contact@nileorbit.com"
+/** The app's Facebook page. */
 private const val FACEBOOK = "https://www.facebook.com/share/1DsJRbt5Jg/"
