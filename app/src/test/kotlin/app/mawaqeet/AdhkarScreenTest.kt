@@ -298,52 +298,62 @@ class AdhkarScreenTest {
         assertFalse(adhkar.isComplete(AdhkarSlot.afterPrayer(Prayer.DHUHR)))
     }
 
+    /** Opens the Misbaha from the end of the list; its string is the node that reads today's total. */
+    private fun openMisbaha(total: Int, title: String = "السبحة", label: String = "مجموع اليوم") {
+        waitForText(title)
+        compose.onNodeWithText(title).performScrollTo().performClick()
+        waitForTotal("$label: $total")
+    }
+
+    private fun misbaha(state: String) = compose.onNode(hasStateDescription(state))
+
     @Test
     @Config(qualifiers = "ar")
-    fun `the Tasbeeh at the end of the list counts each tap with a vibration and resets to zero`() {
+    fun `the Misbaha at the end of the list counts each tap with a vibration, takes one back and resets`() {
         show()
-        waitForText("التسبيح")
-        waitForTotal("مجموع اليوم: 0")
+        waitForText("مجموع اليوم: 0", substring = true)
+        openMisbaha(0)
 
-        // The first tap waits for the screen: each tap re-reads the total off the main thread.
+        // Each tap moves a bead at once; the write follows off the main thread.
         for (n in 1..3) {
-            compose.onNodeWithText("اضغط للتسبيح").performScrollTo().performClick()
+            misbaha("مجموع اليوم: ${n - 1}").performClick()
             waitForTotal("مجموع اليوم: $n")
         }
-        compose.onNodeWithText("3", useUnmergedTree = true).assertIsDisplayed()
+        compose.waitUntil(5_000) { adhkar.tasbeeh() == 3 }
         assertEquals(3, haptics.count)
-        assertEquals(3, adhkar.tasbeeh())
         assertFalse(adhkar.isComplete(AdhkarSetId.MORNING))
 
-        compose.onNodeWithText("تصفير").performScrollTo().performClick()
+        compose.onNodeWithText("تراجع حبة").performClick()
+        waitForTotal("مجموع اليوم: 2")
+        compose.waitUntil(5_000) { adhkar.tasbeeh() == 2 }
+
+        compose.onNodeWithText("تصفير").performClick()
         waitForTotal("مجموع اليوم: 0")
-        assertEquals(0, adhkar.tasbeeh())
+        compose.waitUntil(5_000) { adhkar.tasbeeh() == 0 }
     }
 
     @Test
     @Config(qualifiers = "ar")
-    fun `the Tasbeeh shows the total already counted today`() {
+    fun `the Misbaha opens on the total already counted today, in its second round`() {
         repeat(33) { adhkar.countTasbeeh() }
         show()
-        waitForTotal("مجموع اليوم: 33")
-        compose.onNodeWithText("تصفير").performScrollTo()
-        compose.onNodeWithText("33", useUnmergedTree = true).assertIsDisplayed()
+        openMisbaha(33)
+        compose.onNodeWithText("الحمد لله").assertIsDisplayed()
     }
 
-    /** The count button's centre across the screen, and the screen's middle (the total sits on the other half). */
-    private fun tasbeehPositions(): Pair<Float, Float> {
-        compose.onNodeWithText("تصفير").performScrollTo()
-        val button = compose.onNodeWithText("اضغط للتسبيح").fetchSemanticsNode().boundsInRoot.center.x
-        return button to compose.onRoot().fetchSemanticsNode().boundsInRoot.center.x
+    /** The string's centre across the screen, and the screen's middle (the total sits on the other half). */
+    private fun stringPositions(state: String): Pair<Float, Float> {
+        val string = misbaha(state).fetchSemanticsNode().boundsInRoot.center.x
+        return string to compose.onRoot().fetchSemanticsNode().boundsInRoot.center.x
     }
 
     @Test
     @Config(qualifiers = "ar")
-    fun `for the right hand the count button is on the right and the total on the left, even in Arabic`() {
+    fun `for the right hand the string hangs on the right and the total on the left, even in Arabic`() {
         show(hand = app.mawaqeet.ui.adhkar.TasbeehHand.RIGHT)
-        waitForTotal("مجموع اليوم: 0")
-        val (button, total) = tasbeehPositions()
-        assertTrue("button at $button on the right of the middle $total", button > total)
+        openMisbaha(0)
+        val (string, middle) = stringPositions("مجموع اليوم: 0")
+        assertTrue("string at $string on the right of the middle $middle", string > middle)
         compose.onNodeWithText("للتسبيح باليد اليمنى").assertIsDisplayed()
     }
 
@@ -352,9 +362,9 @@ class AdhkarScreenTest {
     fun `for the left hand the sides swap, and Change opens the setting`() {
         var changed = false
         show(hand = app.mawaqeet.ui.adhkar.TasbeehHand.LEFT, onChangeHand = { changed = true })
-        waitForTotal("مجموع اليوم: 0")
-        val (button, total) = tasbeehPositions()
-        assertTrue("button at $button on the left of the middle $total", button < total)
+        openMisbaha(0)
+        val (string, middle) = stringPositions("مجموع اليوم: 0")
+        assertTrue("string at $string on the left of the middle $middle", string < middle)
         compose.onNodeWithText("للتسبيح باليد اليسرى").assertIsDisplayed()
         compose.onNodeWithText("تغيير").performClick()
         assertTrue(changed)
@@ -366,23 +376,19 @@ class AdhkarScreenTest {
 
     @Test
     @Config(qualifiers = "en")
-    fun `TalkBack reads the Tasbeeh as one item with today's total and the count action`() {
+    fun `TalkBack reads the Misbaha as one item with today's total, the count action and undo`() {
         adhkar.countTasbeeh()
         show()
-        compose.waitUntil(5_000) {
-            compose.onAllNodes(hasStateDescription("Today's total: 1")).fetchSemanticsNodes().isNotEmpty()
-        }
+        openMisbaha(1, title = "Tasbeeh", label = "Today's total")
 
-        val counter = compose.onNode(hasStateDescription("Today's total: 1")).fetchSemanticsNode()
-        val texts = counter.config[SemanticsProperties.Text].map { it.text }
-        assertTrue("reads $texts", "Tap to count" in texts)
-        assertEquals("Count one", counter.config[androidx.compose.ui.semantics.SemanticsActions.OnClick].label)
+        val node = misbaha("Today's total: 1").fetchSemanticsNode()
+        assertEquals(listOf("Tap to count"), node.config[SemanticsProperties.ContentDescription])
+        assertEquals("Count one", node.config[androidx.compose.ui.semantics.SemanticsActions.OnClick].label)
+        assertEquals(listOf("Undo one"), node.config[androidx.compose.ui.semantics.SemanticsActions.CustomActions].map { it.label })
 
-        compose.onNode(hasStateDescription("Today's total: 1")).performScrollTo().performClick()
-        compose.waitUntil(5_000) {
-            compose.onAllNodes(hasStateDescription("Today's total: 2")).fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithText("Reset").performScrollTo().assertIsDisplayed()
+        misbaha("Today's total: 1").performClick()
+        waitForTotal("Today's total: 2")
+        compose.onNodeWithText("Reset").assertIsDisplayed()
     }
 }
 

@@ -492,6 +492,15 @@
     <!-- What TalkBack reads for the Tasbeeh counter. -->
     <string name="tasbeeh_total">مجموع اليوم: %1$s</string>
     <string name="tasbeeh_reset">تصفير</string>
+    <!-- The Misbaha (1.5): the free Tasbeeh as a string of wooden beads; a divider after every 33. -->
+    <string name="misbaha_round_subhan">سبحان الله</string>
+    <string name="misbaha_round_hamd">الحمد لله</string>
+    <string name="misbaha_round_akbar">الله أكبر</string>
+    <!-- Beads counted in this round of 33. -->
+    <string name="misbaha_of">%1$s من %2$s</string>
+    <string name="misbaha_undo">تراجع حبة</string>
+    <!-- The switch for the wooden click as each bead lands. -->
+    <string name="misbaha_sound">صوت الحبات</string>
     <string name="adhkar_record_morning">الصباح</string>
     <string name="adhkar_record_evening">المساء</string>
     <string name="adhkar_record_after_prayers">بعد الصلوات</string>
@@ -768,7 +777,7 @@
     <string name="tasbeeh_hand">التسبيح باليد</string>
     <string name="tasbeeh_hand_right">اليمنى</string>
     <string name="tasbeeh_hand_left">اليسرى</string>
-    <string name="tasbeeh_hand_hint">زر التسبيح يكون تحت إصبعك، والعدد في الناحية الأخرى ليبقى ظاهرًا.</string>
+    <string name="tasbeeh_hand_hint">خيط السبحة يكون تحت إصبعك، والعدد في الناحية الأخرى ليبقى ظاهرًا.</string>
     <string name="tasbeeh_set_right">للتسبيح باليد اليمنى</string>
     <string name="tasbeeh_set_left">للتسبيح باليد اليسرى</string>
     <string name="tasbeeh_hand_change">تغيير</string>

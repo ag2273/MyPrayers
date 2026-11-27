@@ -455,6 +455,12 @@
     <string name="tasbeeh_tap_hint">Tap to count</string>
     <string name="tasbeeh_total">Today\'s total: %1$s</string>
     <string name="tasbeeh_reset">Reset</string>
+    <string name="misbaha_round_subhan">SubhanAllah</string>
+    <string name="misbaha_round_hamd">Alhamdulillah</string>
+    <string name="misbaha_round_akbar">Allahu Akbar</string>
+    <string name="misbaha_of">%1$s of %2$s</string>
+    <string name="misbaha_undo">Undo one</string>
+    <string name="misbaha_sound">Bead sound</string>
     <string name="adhkar_record_morning">Morning</string>
     <string name="adhkar_record_evening">Evening</string>
     <string name="adhkar_record_after_prayers">After prayers</string>
@@ -707,7 +713,7 @@
     <string name="tasbeeh_hand">Count with</string>
     <string name="tasbeeh_hand_right">Right hand</string>
     <string name="tasbeeh_hand_left">Left hand</string>
-    <string name="tasbeeh_hand_hint">The button sits under your thumb and the count on the other side, so it stays visible.</string>
+    <string name="tasbeeh_hand_hint">The string of beads hangs under your thumb and the count sits on the other side, so it stays visible.</string>
     <string name="tasbeeh_set_right">Set for the right hand</string>
     <string name="tasbeeh_set_left">Set for the left hand</string>
     <string name="tasbeeh_hand_change">Change</string>
