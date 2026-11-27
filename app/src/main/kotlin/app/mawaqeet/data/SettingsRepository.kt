@@ -114,6 +114,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[TASBEEH_HAND] = hand.name }
     }
 
+    /** The Misbaha (1.5): whether the beads click as they land. On by default; the phone's silent mode mutes it anyway. */
+    val tasbeehSound: Flow<Boolean> = store.data.map { it[TASBEEH_SOUND] ?: true }.distinctUntilChanged()
+
+    suspend fun setTasbeehSound(on: Boolean) {
+        store.edit { it[TASBEEH_SOUND] = on }
+    }
+
     suspend fun setLocation(saved: SavedLocation) {
         store.edit {
             it[LATITUDE] = saved.location.latitude
@@ -622,6 +629,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val DIGITS = stringPreferencesKey("digit_style")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val TASBEEH_HAND = stringPreferencesKey("tasbeeh_hand")
+        private val TASBEEH_SOUND = booleanPreferencesKey("tasbeeh_sound")
         private val APP_LANGUAGE = stringPreferencesKey("app_language")
         private val WIDGET_TRANSPARENCY = intPreferencesKey("widget_transparency")
         private val WIDGET_COLORS = stringPreferencesKey("widget_colors")

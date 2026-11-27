@@ -76,6 +76,10 @@ fun SubPage(
     title: String,
     onBack: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
+    /** Buttons at the end of the title row. */
+    actions: @Composable RowScope.() -> Unit = {},
+    /** False for a page that fills the screen itself (the Misbaha): the content then gets the height to share out. */
+    scrolls: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -102,11 +106,12 @@ fun SubPage(
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                     modifier = Modifier.weight(1f).padding(start = 8.dp).semantics { heading() },
                 )
+                actions()
             }
             Column(
                 Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .then(if (scrolls) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 content = content,

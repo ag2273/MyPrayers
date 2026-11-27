@@ -150,6 +150,7 @@ class MainActivity : AppCompatActivity() {
                 val fixAlertsDone by settingsStore.fixAlertsDone.collectAsState(initial = true)
                 val lastBackupExport by settingsStore.lastBackupExport.collectAsState(initial = null)
                 val tasbeehHand by settingsStore.tasbeehHand.collectAsState(initial = TasbeehHand.RIGHT)
+                val tasbeehSound by settingsStore.tasbeehSound.collectAsState(initial = true)
                 val current = settings ?: return@MawaqeetTheme
                 val onboardingDone = onboarded ?: return@MawaqeetTheme
                 val digits = storedDigits ?: return@MawaqeetTheme
@@ -631,6 +632,8 @@ class MainActivity : AppCompatActivity() {
                         adhkar, app.adhkar.changes, openSlot = adhkarToOpen, onOpened = { adhkarToOpen = null },
                         tasbeehHand = tasbeehHand,
                         onChangeHand = { settingsRoute = SettingsRoute(SettingsPage.DISPLAY) },
+                        tasbeehSound = tasbeehSound,
+                        onTasbeehSound = { on -> scope.launch { settingsStore.setTasbeehSound(on) } },
                     )
                     Tab.TODAY -> HomeScreen(
                         core, clock, prayerLog.changes, locationName(savedLocation),

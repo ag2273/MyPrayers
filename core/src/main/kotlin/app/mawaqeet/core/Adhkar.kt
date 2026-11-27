@@ -298,6 +298,14 @@ class Adhkar(
         total
     }
 
+    /** Takes one Tasbeeh back (the Misbaha's «تراجع حبة») and returns the new total, never below zero. */
+    fun uncountTasbeeh(): Int = synchronized(repo) {
+        val day = today()
+        val total = (tasbeeh() - 1).coerceAtLeast(0)
+        if (total == 0) repo.clearCounts(day, TASBEEH_SLOT) else repo.setCount(day, TASBEEH_SLOT, TASBEEH_SLOT, total)
+        total
+    }
+
     /** Puts the Tasbeeh total back to zero and returns it. */
     fun resetTasbeeh(): Int = synchronized(repo) {
         repo.clearCounts(today(), TASBEEH_SLOT)

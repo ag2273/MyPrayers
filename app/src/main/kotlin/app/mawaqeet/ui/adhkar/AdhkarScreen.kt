@@ -79,7 +79,7 @@ private fun slotName(slot: AdhkarSlot): String =
 
 /**
  * The «الأذكار» tab (#62, #70, #71, #74): the morning and evening sets and the five after-prayer slots with today's
- * state; one opens in the reader. The Adhkar Record's week grid opens from the end of the list, and the free Tasbeeh closes it. [adhkar] is null while the bundled catalog loads. [changes] signals every write to the
+ * state; one opens in the reader. The Adhkar Record's week grid opens from the end of the list, and the free Tasbeeh's Misbaha closes it. [adhkar] is null while the bundled catalog loads. [changes] signals every write to the
  * Adhkar repository. [openSlot] (an adhkar reminder's tap, #75) opens that set in the reader, then [onOpened] is called.
  */
 @Composable
@@ -91,12 +91,17 @@ fun AdhkarScreen(
     /** Which hand counts the Tasbeeh (Settings → Language and display), and how to change it. */
     tasbeehHand: TasbeehHand = TasbeehHand.RIGHT,
     onChangeHand: () -> Unit = {},
+    /** Whether the Misbaha's beads click as they land, and how to switch it. */
+    tasbeehSound: Boolean = true,
+    onTasbeehSound: (Boolean) -> Unit = {},
 ) {
     var open by rememberSaveable { mutableStateOf<String?>(null) }
     var record by rememberSaveable { mutableStateOf(false) }
+    var misbaha by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(openSlot) {
         if (openSlot == null) return@LaunchedEffect
         record = false
+        misbaha = false
         open = openSlot.key
         onOpened()
     }
@@ -105,7 +110,9 @@ fun AdhkarScreen(
         adhkar != null && reading != null ->
             SetReader(adhkar, reading, changes, onSwitch = { open = it.key }, onBack = { open = null })
         adhkar != null && record -> AdhkarRecordPage(adhkar, changes, onBack = { record = false })
-        else -> SetList(adhkar, changes, tasbeehHand, onChangeHand, onOpen = { open = it.key }, onOpenRecord = { record = true })
+        adhkar != null && misbaha ->
+            MisbahaPage(adhkar, changes, tasbeehHand, onChangeHand, tasbeehSound, onTasbeehSound, onBack = { misbaha = false })
+        else -> SetList(adhkar, changes, onOpen = { open = it.key }, onOpenRecord = { record = true }, onOpenMisbaha = { misbaha = true })
     }
 }
 
@@ -116,10 +123,9 @@ private data class AdhkarToday(val slots: List<SetProgress>, val defaultPrayer: 
 private fun SetList(
     adhkar: Adhkar?,
     changes: StateFlow<Int>,
-    hand: TasbeehHand,
-    onChangeHand: () -> Unit,
     onOpen: (AdhkarSlot) -> Unit,
     onOpenRecord: () -> Unit,
+    onOpenMisbaha: () -> Unit,
 ) {
     val version by changes.collectAsState()
     val today by produceState<AdhkarToday?>(null, adhkar, version) {
@@ -127,8 +133,6 @@ private fun SetList(
             withContext(Dispatchers.IO) { AdhkarToday(a.slots.map(a::progress), a.defaultAfterPrayer(), a.tasbeeh()) }
         }
     }
-    val scope = rememberCoroutineScope()
-    val haptics = LocalHapticFeedback.current
     TabPage(stringResource(R.string.tab_adhkar)) {
         val shown = today ?: return@TabPage
         val (daily, afterPrayer) = shown.slots.partition { it.set != AdhkarSetId.AFTER_PRAYER }
@@ -160,20 +164,16 @@ private fun SetList(
         Card {
             NavRow(stringResource(R.string.adhkar_record), stringResource(R.string.adhkar_record_summary), icon = R.drawable.ic_log, onClick = onOpenRecord)
         }
-        // The Tasbeeh closes the list, as on the design: the round button under the counting hand.
+        // The Tasbeeh closes the list: its Misbaha opens on a page of its own.
         if (adhkar != null) {
-            SectionTitle(stringResource(R.string.tasbeeh))
-            // Each write changes the repository, which re-reads [today]: the total shown is always the stored one.
-            TasbeehPad(
-                total = shown.tasbeeh,
-                hand = hand,
-                onChangeHand = onChangeHand,
-                onCount = {
-                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                    scope.launch(Dispatchers.IO) { adhkar.countTasbeeh() }
-                },
-                onReset = { scope.launch(Dispatchers.IO) { adhkar.resetTasbeeh() } },
-            )
+            Card {
+                NavRow(
+                    stringResource(R.string.tasbeeh_section),
+                    stringResource(R.string.tasbeeh_total, LocalDisplayFormatter.current.number(shown.tasbeeh)),
+                    icon = R.drawable.ic_tasbeeh,
+                    onClick = onOpenMisbaha,
+                )
+            }
         }
     }
 }

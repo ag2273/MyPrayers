@@ -74,6 +74,26 @@ class TasbeehTest {
     }
 
     @Test
+    fun `undo takes one bead back`() {
+        val adhkar = adhkarAt("2026-11-09T07:00", repo)
+        repeat(34) { adhkar.countTasbeeh() }
+
+        assertEquals(33, adhkar.uncountTasbeeh())
+        assertEquals(33, adhkar.tasbeeh())
+    }
+
+    @Test
+    fun `undo never goes below zero`() {
+        val adhkar = adhkarAt("2026-11-09T07:00", repo)
+
+        assertEquals(0, adhkar.uncountTasbeeh())
+        adhkar.countTasbeeh()
+        assertEquals(0, adhkar.uncountTasbeeh())
+        assertEquals(0, adhkar.uncountTasbeeh())
+        assertEquals(1, adhkar.countTasbeeh())
+    }
+
+    @Test
     fun `the Tasbeeh never appears in the Adhkar Record`() {
         val adhkar = adhkarAt("2026-11-09T07:00", repo)
         repeat(100) { adhkar.countTasbeeh() }
