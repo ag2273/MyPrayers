@@ -270,7 +270,7 @@ function woodTexture(px, seed, a = 1, b = 1, caps = false) {
   const c3 = Math.min(a, b), M = rotM(seed + 11);
   const tone = ih(seed, 5, 5, 9);
   const light = [124 + tone * 26, 64 + tone * 14, 34 + tone * 8], mid = [96, 46, 24], dark = [52, 22, 10];
-  const freq = 5.2 + ih(seed, 2, 2, 2) * 2.4, off = ih(seed, 3, 3, 3) * 3;
+  const freq = 3.4 + ih(seed, 2, 2, 2) * 1.6, off = ih(seed, 3, 3, 3) * 3;
   const bead = document.createElement('canvas'); bead.width = bead.height = px;
   const ctx = bead.getContext('2d'), img = ctx.createImageData(px, px), D = img.data;
   const L = [-.45, -.62, .64], Ln = Math.hypot(...L); L[0] /= Ln; L[1] /= Ln; L[2] /= Ln;
