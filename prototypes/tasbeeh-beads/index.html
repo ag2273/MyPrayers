@@ -1,0 +1,438 @@
+<!doctype html>
+<!--
+  PROTOTYPE, throwaway. Question: what should a real-misbaha Tasbeeh look like?
+  Three variants of a dedicated Tasbeeh screen, switchable via ?v=a|b|c (also ?theme=light|dark, ?hand=right|left,
+  ?count=N, ?shot=1 hides the switcher). Each tap moves one bead; every 33 a divider bead passes
+  (33 سبحان الله · 33 الحمد لله · 33 الله أكبر).
+    A · خشب كوك  — a vertical string beside the count, on the counting hand's side.
+    B · كهرمان   — the whole 33 loop with its imam; the gap between counted and uncounted beads walks round.
+    C · كريستال  — a loop seen in perspective; the bead in front is the one under the thumb.
+-->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Misbaha Tasbeeh</title>
+<style>
+@font-face { font-family: "Kufi"; src: url("fonts/noto_kufi_arabic.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Naskh"; src: url("fonts/noto_sans_arabic.ttf"); font-weight: 100 900; }
+:root {
+  --teal:#1F6F66; --deep:#134A44; --amber:#E0A246;
+  --bg:#F2F6F4; --surface:rgba(255,255,255,.72); --surface-strong:rgba(255,255,255,.94);
+  --line:rgba(20,36,33,.12); --text:#142421; --muted:rgba(20,36,33,.62);
+  --accent:#1F6F66; --accent-soft:rgba(31,111,102,.12); --thread:rgba(20,36,33,.45);
+  --sky-1:#F6E7CE; --sky-2:#F2F6F4; --sky-3:#CFE6E1;
+  --glow-a:rgba(224,162,70,.35); --glow-b:rgba(31,111,102,.18);
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+:root[data-theme="dark"] {
+  --bg:#0E1917; --surface:rgba(24,44,41,.6); --surface-strong:rgba(20,38,36,.92);
+  --line:rgba(255,255,255,.12); --text:#EAF3EF; --muted:rgba(234,243,239,.62);
+  --accent:#8FD3C8; --accent-soft:rgba(143,211,200,.14); --thread:rgba(234,243,239,.38);
+  --sky-1:#123B36; --sky-2:#0E1917; --sky-3:#1B4B45;
+  --glow-a:rgba(31,111,102,.45); --glow-b:rgba(224,162,70,.12);
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; height:100%; }
+body {
+  background:var(--bg); color:var(--text); font-family:"Naskh","Kufi",system-ui,sans-serif;
+  overflow:hidden; user-select:none;
+}
+.screen {
+  position:relative; height:100dvh; height:100vh; display:flex; flex-direction:column;
+  background:
+    radial-gradient(120% 60% at 85% -10%, var(--glow-a), transparent 60%),
+    radial-gradient(90% 50% at 0% 30%, var(--glow-b), transparent 70%),
+    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 48%, var(--sky-3) 100%);
+}
+header { display:flex; align-items:center; gap:12px; padding:calc(14px + env(safe-area-inset-top)) 16px 4px; }
+.icon-btn { width:44px; height:44px; border-radius:14px; border:1px solid var(--line); background:var(--surface);
+  display:grid; place-items:center; color:var(--text); flex:none; }
+.icon-btn svg { width:22px; height:22px; }
+.titles { flex:1; min-width:0; }
+h1 { font-family:"Kufi"; font-weight:700; font-size:26px; line-height:1.25; margin:0; }
+.sub { font-size:14px; color:var(--muted); margin-top:2px; }
+.dhikr-row { display:flex; gap:8px; padding:10px 16px 0; }
+.chip { flex:1; text-align:center; font-size:14px; padding:8px 4px; border-radius:999px; border:1px solid var(--line);
+  background:var(--surface); color:var(--muted); white-space:nowrap; transition:all .35s var(--ease); }
+.chip b { font-family:"Kufi"; font-weight:600; }
+.chip.on { background:var(--accent-soft); color:var(--text); border-color:color-mix(in srgb, var(--accent) 45%, transparent); }
+.chip.done { color:var(--accent); }
+.stage { flex:1; position:relative; min-height:0; touch-action:manipulation; cursor:pointer; }
+footer { padding:6px 16px calc(14px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:8px; }
+.hand-row { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+.hand-row a { color:var(--accent); font-weight:600; text-decoration:none; font-size:14px; padding:6px 4px; }
+.btns { display:flex; gap:10px; }
+.btn { min-height:48px; padding:0 22px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
+  color:var(--text); font:inherit; font-size:15px; display:flex; align-items:center; gap:6px; }
+.btn svg { width:18px; height:18px; }
+
+/* shared count typography */
+.num { font-family:"Kufi"; font-weight:500; line-height:1; font-variant-numeric:tabular-nums; }
+.muted { color:var(--muted); }
+.dots { display:flex; gap:6px; justify-content:center; }
+.dots i { width:22px; height:6px; border-radius:3px; background:var(--line); display:block; transition:background .3s; }
+.dots i.full { background:var(--accent); }
+.dots i.part { background:linear-gradient(to left, var(--accent) var(--p), var(--line) var(--p)); }
+:root[dir="rtl"] .dots i.part { background:linear-gradient(to left, var(--accent) var(--p), var(--line) var(--p)); }
+
+svg.beads { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.bead { transition:transform .32s var(--ease), opacity .32s var(--ease); }
+.no-anim .bead { transition:none; }
+.pulse { animation:pulse .45s var(--ease); }
+@keyframes pulse { 0%{opacity:.0} 30%{opacity:.9} 100%{opacity:0} }
+
+/* A */
+.a-wrap { position:absolute; inset:0; display:flex; direction:ltr; }
+.a-string { position:relative; width:40%; }
+.a-count { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; direction:rtl; text-align:center; padding:0 8px; }
+.a-count .num { font-size:clamp(64px, 21vw, 92px); }
+.a-count .label { font-size:15px; }
+.a-count .round { font-family:"Kufi"; font-size:20px; font-weight:600; color:var(--accent); }
+.a-count .of { font-size:15px; }
+.thumb-tag { position:absolute; font-size:12px; color:var(--muted); white-space:nowrap; transform:translateY(-50%); }
+
+/* B */
+.b-center { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:4px; pointer-events:none; }
+.b-center .num { font-size:clamp(56px, 18vw, 80px); }
+.b-center .dh { font-family:"Kufi"; font-weight:600; font-size:18px; color:var(--accent); }
+.b-total { position:absolute; top:6px; font-size:13px; padding:6px 12px; border-radius:999px; background:var(--surface); border:1px solid var(--line); }
+.b-total b { font-family:"Kufi"; font-weight:600; }
+
+/* C */
+.c-top { position:absolute; inset:0 0 auto 0; display:flex; flex-direction:column; align-items:center; gap:6px; padding-top:4px; text-align:center; pointer-events:none; }
+.c-top .num { font-size:clamp(72px, 24vw, 108px); }
+.c-top .dh { font-family:"Kufi"; font-weight:600; font-size:20px; }
+.c-bar { width:min(78%, 320px); display:flex; gap:5px; direction:rtl; }
+.c-bar span { flex:1; height:8px; border-radius:4px; background:var(--line); overflow:hidden; position:relative; }
+.c-bar span em { position:absolute; inset:0 0 0 auto; background:var(--accent); transition:width .3s var(--ease); }
+.c-hint { position:absolute; bottom:6px; inset-inline:0; text-align:center; font-size:13px; }
+
+/* switcher */
+.switcher { position:fixed; left:50%; bottom:calc(150px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:10;
+  display:flex; gap:4px; padding:5px; border-radius:16px; background:rgba(20,36,33,.88); color:#fff; direction:rtl;
+  box-shadow:0 10px 30px rgba(0,0,0,.3); font-size:13px; }
+.switcher button { border:0; background:transparent; color:#fff; font:inherit; padding:8px 10px; border-radius:11px; white-space:nowrap; }
+.switcher button.on { background:rgba(255,255,255,.18); font-weight:700; }
+.switcher .sep { width:1px; background:rgba(255,255,255,.2); margin:4px 2px; }
+.shot .switcher { display:none; }
+</style>
+</head>
+<body>
+<div class="screen" id="screen">
+  <header>
+    <button class="icon-btn" aria-label="رجوع"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <div class="titles"><h1>السبحة</h1><div class="sub" id="sub"></div></div>
+  </header>
+  <div class="dhikr-row" id="chips"></div>
+  <div class="stage" id="stage" role="button" aria-label="سبّح"></div>
+  <footer>
+    <div class="hand-row"><span id="handText"></span><a href="#" id="handLink">تغيير</a></div>
+    <div class="btns">
+      <button class="btn" id="undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 010 10h-2"/></svg>تراجع حبة</button>
+      <button class="btn" id="reset">تصفير</button>
+    </div>
+  </footer>
+</div>
+<div class="switcher" id="switcher"></div>
+
+<script>
+const Q = new URLSearchParams(location.search);
+const S = {
+  v: Q.get('v') || 'a',
+  theme: Q.get('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+  hand: Q.get('hand') || 'right',
+  count: +(Q.get('count') || 0),
+};
+if (Q.get('shot')) document.body.classList.add('shot');
+const DHIKR = ['سبحان الله', 'الحمد لله', 'الله أكبر'];
+const MAT = { a: 'wood', b: 'amber', c: 'crystal' };
+const NAME = { a: 'خشب كوك', b: 'كهرمان', c: 'كريستال' };
+const ar = n => n.toLocaleString('ar-EG');
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) { const v = attrs[k]; if (typeof v === 'string' && v.startsWith('var(')) e.style.setProperty(k, v); else e.setAttribute(k, v); } parent && parent.appendChild(e); return e; };
+
+/* ---------- bead art: one <defs> per material, beads drawn at unit radius 1 ---------- */
+function defs(svg, mat) {
+  const d = el('defs', {}, svg);
+  const rg = (id, stops, cx = '35%', cy = '30%', r = '75%') => {
+    const g = el('radialGradient', { id, cx, cy, r }, d);
+    stops.forEach(([o, c, a = 1]) => el('stop', { offset: o, 'stop-color': c, 'stop-opacity': a }, g));
+  };
+  const lg = (id, stops, x2 = '0', y2 = '1') => {
+    const g = el('linearGradient', { id, x1: '0', y1: '0', x2, y2 }, d);
+    stops.forEach(([o, c, a = 1]) => el('stop', { offset: o, 'stop-color': c, 'stop-opacity': a }, g));
+  };
+  if (mat === 'wood') {
+    rg('wb', [['0', '#A9764A'], ['.45', '#6E4126'], ['1', '#2E1A0E']]);
+    lg('wd', [['0', '#3A2213'], ['.5', '#7A4A2B'], ['1', '#2A170B']], '1', '0');
+    lg('silver', [['0', '#8E9696'], ['.5', '#F2F4F3'], ['1', '#7C8483']], '1', '0');
+  } else if (mat === 'amber') {
+    rg('ab', [['0', '#FFE6A3'], ['.35', '#F2B24A'], ['.75', '#C2661A'], ['1', '#7A3608']], '38%', '32%', '80%');
+    rg('ain', [['0', '#FFF4C8', .9], ['1', '#FFF4C8', 0]], '62%', '72%', '45%');
+    lg('ad', [['0', '#8A3F0C'], ['.5', '#F4B650'], ['1', '#8A3F0C']], '1', '0');
+    lg('gold', [['0', '#8C6A2A'], ['.5', '#F6E2A0'], ['1', '#80601F']], '1', '0');
+  } else {
+    rg('cb', [['0', '#FFFFFF', .95], ['.4', '#DDF3EF', .55], ['.85', '#7FC6BB', .45], ['1', '#3E8F84', .7]], '36%', '30%', '78%');
+    lg('cf', [['0', '#FFFFFF', .7], ['1', '#9ED8CF', .1]], '1', '1');
+    lg('cd', [['0', '#BFE9E2', .8], ['.5', '#FFFFFF', .95], ['1', '#5FAEA2', .8]], '0', '1');
+    lg('silver', [['0', '#8E9696'], ['.5', '#F2F4F3'], ['1', '#7C8483']], '1', '0');
+  }
+  const f = el('filter', { id: 'sh', x: '-50%', y: '-50%', width: '200%', height: '200%' }, d);
+  el('feDropShadow', { dx: '0', dy: '.12', stdDeviation: '.12', 'flood-color': '#000', 'flood-opacity': S.theme === 'dark' ? '.55' : '.3' }, f);
+}
+/* a round bead of radius r centred at 0,0 (caller translates); horizontal=true lays a divider along an x string */
+function bead(g, mat, r) {
+  if (mat === 'wood') {
+    el('circle', { r, fill: 'url(#wb)', filter: 'url(#sh)' }, g);
+    for (let i = 0; i < 3; i++) el('ellipse', { cx: 0, cy: 0, rx: r * (0.92 - i * .22), ry: r * (0.42 - i * .1), fill: 'none', stroke: '#2A160A', 'stroke-opacity': .28, 'stroke-width': r * .05, transform: `rotate(${-18 + i * 9})` }, g);
+    el('ellipse', { cx: -r * .32, cy: -r * .4, rx: r * .32, ry: r * .18, fill: '#fff', 'fill-opacity': .28, transform: 'rotate(-30)' }, g);
+  } else if (mat === 'amber') {
+    el('circle', { r, fill: 'url(#ab)', filter: 'url(#sh)' }, g);
+    el('circle', { r: r * .92, fill: 'url(#ain)' }, g);
+    el('circle', { cx: r * .2, cy: r * .25, r: r * .07, fill: '#7A3608', 'fill-opacity': .35 }, g);
+    el('ellipse', { cx: -r * .34, cy: -r * .42, rx: r * .3, ry: r * .16, fill: '#fff', 'fill-opacity': .7, transform: 'rotate(-30)' }, g);
+  } else {
+    el('circle', { r, fill: 'url(#cb)', stroke: '#fff', 'stroke-opacity': .7, 'stroke-width': r * .05, filter: 'url(#sh)' }, g);
+    // facets: an inner octagon and spokes
+    const pts = [...Array(8)].map((_, i) => { const a = Math.PI / 8 + i * Math.PI / 4; return [Math.cos(a) * r * .55, Math.sin(a) * r * .55]; });
+    el('polygon', { points: pts.map(p => p.join(',')).join(' '), fill: 'url(#cf)', stroke: '#fff', 'stroke-opacity': .55, 'stroke-width': r * .035 }, g);
+    pts.forEach(([x, y]) => el('line', { x1: x, y1: y, x2: x * 1.78, y2: y * 1.78, stroke: '#fff', 'stroke-opacity': .35, 'stroke-width': r * .03 }, g));
+    el('path', { d: `M${-r * .5},${-r * .62} l${r * .14},${-r * .1} l${r * .1},${r * .14} l${-r * .14},${r * .1}z`, fill: '#fff', 'fill-opacity': .95 }, g);
+  }
+}
+/* the divider bead: longer, along the string. len/half-width in px; axis 'y' (vertical string) or 'x' */
+function divider(g, mat, r, axis) {
+  const L = r * 1.45, W = r * .78; // half length / half width
+  const rot = axis === 'x' ? 'rotate(90)' : '';
+  const t = el('g', { transform: rot }, g);
+  if (mat === 'wood') {
+    el('rect', { x: -W, y: -L, width: W * 2, height: L * 2, rx: W * .9, fill: 'url(#wd)', filter: 'url(#sh)' }, t);
+    [-.55, .55].forEach(k => el('rect', { x: -W * 1.04, y: L * k - r * .09, width: W * 2.08, height: r * .18, rx: r * .05, fill: 'url(#silver)' }, t));
+    el('rect', { x: -W * .55, y: -L * .8, width: W * .3, height: L * 1.6, rx: W * .15, fill: '#fff', 'fill-opacity': .18 }, t);
+  } else if (mat === 'amber') {
+    el('rect', { x: -W, y: -L, width: W * 2, height: L * 2, rx: W, fill: 'url(#ad)', filter: 'url(#sh)' }, t);
+    [-1, 1].forEach(k => el('rect', { x: -W * .7, y: k * L - (k > 0 ? r * .22 : 0) - (k < 0 ? 0 : 0), width: W * 1.4, height: r * .22, rx: r * .08, fill: 'url(#gold)', transform: `translate(0,${k < 0 ? -r * .02 : 0})` }, t));
+    el('rect', { x: -W * .5, y: -L * .75, width: W * .28, height: L * 1.5, rx: W * .14, fill: '#fff', 'fill-opacity': .4 }, t);
+  } else {
+    const p = [[0, -L], [W, -L * .45], [W, L * .45], [0, L], [-W, L * .45], [-W, -L * .45]];
+    el('polygon', { points: p.map(q => q.join(',')).join(' '), fill: 'url(#cd)', stroke: '#fff', 'stroke-opacity': .8, 'stroke-width': r * .05, filter: 'url(#sh)' }, t);
+    el('polyline', { points: `${-W},${-L * .45} 0,${-L * .1} ${W},${-L * .45}`, fill: 'none', stroke: '#fff', 'stroke-opacity': .6, 'stroke-width': r * .04 }, t);
+    el('polyline', { points: `${-W},${L * .45} 0,${L * .1} ${W},${L * .45}`, fill: 'none', stroke: '#fff', 'stroke-opacity': .6, 'stroke-width': r * .04 }, t);
+    el('line', { x1: 0, y1: -L * .1, x2: 0, y2: L * .1, stroke: '#fff', 'stroke-opacity': .6, 'stroke-width': r * .04 }, t);
+  }
+}
+
+/* positions on the endless string: round k has beads k*34..k*34+32 and its divider at k*34+33 */
+const cursorOf = c => Math.floor(c / 33) * 34 + (c % 33);
+const isDiv = p => p % 34 === 33;
+
+/* ---------- common chrome ---------- */
+function chrome() {
+  document.documentElement.dataset.theme = S.theme;
+  const round = Math.floor(S.count / 33), inRound = S.count % 33;
+  $('sub').textContent = `سبحة ${NAME[S.v]} · مجموع اليوم ${ar(S.count)}`;
+  $('chips').innerHTML = DHIKR.map((t, i) => {
+    const r = round % 3, cls = i === r ? 'on' : (i < r ? 'done' : '');
+    return `<div class="chip ${cls}"><b>${t}</b> ${ar(33)}</div>`;
+  }).join('');
+  $('handText').textContent = S.hand === 'right' ? 'للتسبيح باليد اليمنى' : 'للتسبيح باليد اليسرى';
+  $('switcher').innerHTML = ['a', 'b', 'c'].map(v => `<button data-v="${v}" class="${S.v === v ? 'on' : ''}">${NAME[v]}</button>`).join('') +
+    `<span class="sep"></span><button data-t>${S.theme === 'dark' ? 'فاتح' : 'داكن'}</button>`;
+}
+
+/* ---------- A · wood: vertical string on the hand's side ---------- */
+function renderA(first) {
+  const st = $('stage');
+  if (first) {
+    st.innerHTML = `<div class="a-wrap"><div class="a-string"><svg class="beads"></svg></div>
+      <div class="a-count"><div class="num" id="aNum"></div><div class="label muted">مجموع اليوم</div>
+      <div class="round" id="aDh"></div><div class="of muted" id="aOf"></div><div class="dots" id="aDots"></div></div></div>`;
+    const wrap = st.querySelector('.a-wrap');
+    // the string sits under the counting thumb: the right hand's string is on the physical right
+    wrap.style.flexDirection = S.hand === 'right' ? 'row-reverse' : 'row';
+  }
+  const box = st.querySelector('.a-string'), W = box.clientWidth, H = box.clientHeight;
+  const svg = box.querySelector('svg');
+  const r = Math.min(W * .27, 34), pitch = r * 2.04, gap = r * 2.6, cx = W / 2, cy = H * .5;
+  if (first) {
+    svg.innerHTML = '';
+    defs(svg, 'wood');
+    const fade = el('linearGradient', { id: 'fade', x1: 0, y1: 0, x2: 0, y2: 1 }, svg.querySelector('defs'));
+    [['0', 0], ['.12', 1], ['.88', 1], ['1', 0]].forEach(([o, a]) => el('stop', { offset: o, 'stop-color': '#fff', 'stop-opacity': a }, fade));
+    const m = el('mask', { id: 'fm' }, svg.querySelector('defs'));
+    el('rect', { x: -50, y: 0, width: W + 100, height: H, fill: 'url(#fade)' }, m);
+    const g = el('g', { mask: 'url(#fm)', id: 'aG' }, svg);
+    el('line', { x1: cx, y1: 0, x2: cx, y2: H, stroke: 'var(--thread)', 'stroke-width': 2 }, g);
+    // the thumb: a soft amber halo where the next bead waits
+    el('circle', { cx, cy: cy - gap / 2 - r * .1, r: r * 1.5, fill: '#E0A246', 'fill-opacity': S.theme === 'dark' ? .16 : .2, id: 'halo' }, svg);
+    el('g', { id: 'aBeads' }, g);
+    svg._items = new Map();
+  }
+  const cur = cursorOf(S.count), layer = svg.querySelector('#aBeads');
+  const span = Math.ceil(H / pitch / 2) + 3;
+  const want = new Set();
+  // y for each position walking out from the cursor; uncounted above the gap, counted below
+  const ys = new Map();
+  let y = cy - gap / 2;
+  for (let p = cur; p < cur + span; p++) { const h = isDiv(p) ? r * 1.45 : r; y -= h; ys.set(p, y); y -= h + pitch - 2 * r; }
+  y = cy + gap / 2;
+  for (let p = cur - 1; p >= Math.max(0, cur - span); p--) { const h = isDiv(p) ? r * 1.45 : r; y += h; ys.set(p, y); y += h + pitch - 2 * r; }
+  for (const [p, yy] of ys) {
+    want.add(p);
+    let g = svg._items.get(p);
+    if (!g) {
+      g = el('g', { class: 'bead' }, layer);
+      const inner = el('g', {}, g);
+      isDiv(p) ? divider(inner, 'wood', r, 'y') : bead(inner, 'wood', r);
+      g.style.transform = `translate(${cx}px, ${p >= cur ? yy - pitch : yy + pitch}px)`;
+      svg._items.set(p, g);
+      g.getBoundingClientRect();
+    }
+    g.style.transform = `translate(${cx}px, ${yy}px)`;
+  }
+  for (const [p, g] of svg._items) if (!want.has(p)) { g.remove(); svg._items.delete(p); }
+  const inRound = S.count % 33, round = Math.floor(S.count / 33);
+  $('aNum').textContent = ar(S.count);
+  $('aDh').textContent = DHIKR[round % 3];
+  $('aOf').textContent = `${ar(inRound)} من ${ar(33)}`;
+  $('aDots').innerHTML = [0, 1, 2].map(i => { const k = round % 3; return i < k ? '<i class="full"></i>' : i === k ? `<i class="part" style="--p:${inRound / 33 * 100}%"></i>` : '<i></i>'; }).join('');
+}
+
+/* ---------- B · amber: the full 33 loop, imam at the bottom, the gap walks round ---------- */
+function renderB(first) {
+  const st = $('stage');
+  const W = st.clientWidth, H = st.clientHeight;
+  const size = Math.min(W - 24, H - 90), R = size / 2 - size * .06, cx = W / 2, cy = Math.max(34 + size / 2, (H - size * .16) / 2);
+  const imamA = 26 * Math.PI / 180;           // the imam and its knot take this much of the loop at the bottom
+  const total = 2 * Math.PI - imamA, n = 33, gapK = 1.9;
+  const step = total / (n + gapK), r = Math.min(R * Math.sin(step / 2) * .97, 26);
+  if (first) {
+    st.innerHTML = `<svg class="beads"></svg><div class="b-total" id="bTot"></div>
+      <div class="b-center" id="bC"><div class="dh" id="bDh"></div><div class="num" id="bNum"></div><div class="muted" id="bOf"></div><div class="dots" id="bDots" style="margin-top:6px"></div></div>`;
+    const svg = st.querySelector('svg');
+    defs(svg, 'amber');
+    el('circle', { cx, cy, r: R, fill: 'none', stroke: 'var(--thread)', 'stroke-width': 1.6 }, svg);
+    // imam + tassel at the bottom
+    const ig = el('g', { transform: `translate(${cx},${cy + R})` }, svg);
+    for (let i = -5; i <= 5; i++) el('path', { d: `M0,${r * 1.6} q${i * 1.2},${r * 2} ${i * r * .32},${r * 3.6}`, stroke: '#C2661A', 'stroke-width': 1.6, fill: 'none', 'stroke-linecap': 'round', opacity: .9 }, ig);
+    el('circle', { cy: r * 1.6, r: r * .45, fill: 'url(#gold)' }, ig);
+    const imam = el('g', { transform: `translate(0,${r * .2})` }, ig);
+    divider(imam, 'amber', r * 1.05, 'y');
+    el('circle', { id: 'halo', r: r * 1.7, fill: '#E0A246', 'fill-opacity': .22 }, svg);
+    el('g', { id: 'bBeads' }, svg);
+    svg._items = [];
+    for (let i = 0; i < n; i++) { const g = el('g', { class: 'bead' }, svg.querySelector('#bBeads')); const inner = el('g', {}, g); bead(inner, 'amber', r); svg._items.push(g); }
+    const c = $('bC'); c.style.left = (cx - R * .7) + 'px'; c.style.width = (R * 1.4) + 'px'; c.style.top = (cy - R * .7) + 'px'; c.style.height = (R * 1.4) + 'px';
+    const t = $('bTot'); S.hand === 'right' ? (t.style.left = '16px') : (t.style.right = '16px');
+  }
+  const svg = st.querySelector('svg');
+  const b = S.count % 33, round = Math.floor(S.count / 33);
+  // counted beads gather from the imam's side the thumb pulls towards; the right hand pulls clockwise from the left of the imam
+  const dir = S.hand === 'right' ? 1 : -1;
+  const start = Math.PI / 2 + dir * (imamA / 2 + step / 2); // angle (screen, y down) just beside the imam
+  const ang = i => start + dir * (i * step + (i >= b ? gapK * step : 0));
+  svg._items.forEach((g, i) => {
+    const a = ang(i);
+    g.style.transform = `translate(${cx + R * Math.cos(a)}px, ${cy + R * Math.sin(a)}px)`;
+  });
+  const ga = start + dir * (b * step + (gapK - 1) * step / 2 + step / 2 - step / 2);
+  const halo = svg.querySelector('#halo');
+  const hA = start + dir * (b * step + gapK * step / 2 - step / 2);
+  halo.setAttribute('cx', cx + R * Math.cos(hA)); halo.setAttribute('cy', cy + R * Math.sin(hA));
+  $('bNum').textContent = ar(b);
+  $('bOf').textContent = `من ${ar(33)}`;
+  $('bDh').textContent = DHIKR[round % 3];
+  $('bTot').innerHTML = `اليوم <b>${ar(S.count)}</b>`;
+  $('bDots').innerHTML = [0, 1, 2].map(i => { const k = round % 3; return i < k ? '<i class="full"></i>' : i === k ? `<i class="part" style="--p:${b / 33 * 100}%"></i>` : '<i></i>'; }).join('');
+}
+
+/* ---------- C · crystal: a loop in perspective, the front bead is under the thumb ---------- */
+function renderC(first) {
+  const st = $('stage');
+  const W = st.clientWidth, H = st.clientHeight;
+  if (first) {
+    st.innerHTML = `<div class="c-top"><div class="dh" id="cDh"></div><div class="num" id="cNum"></div><div class="muted" id="cOf"></div><div class="c-bar" id="cBar"></div></div>
+      <svg class="beads"></svg><div class="c-hint muted">اضغط في أي مكان، أو اسحب الحبة ${S.hand === 'right' ? 'لليسار' : 'لليمين'}</div>`;
+    const svg = st.querySelector('svg');
+    defs(svg, 'crystal');
+    svg._items = new Map();
+  }
+  const b = S.count % 33, round = Math.floor(S.count / 33);
+  $('cNum').textContent = ar(S.count);
+  $('cDh').textContent = DHIKR[round % 3];
+  $('cOf').textContent = `${ar(b)} من ${ar(33)} · الدور ${ar(round + 1)}`;
+  $('cBar').innerHTML = [0, 1, 2].map(i => { const k = round % 3; const w = i < k ? 100 : i === k ? b / 33 * 100 : 0; return `<span><em style="width:${w}%"></em></span>`; }).join('');
+  const svg = st.querySelector('svg');
+  const topH = st.querySelector('.c-top').offsetHeight;
+  const band = H - topH - 44, Ry = Math.min(110, band * .3), cx = W / 2, cy = topH + 10 + band * .5 - Ry * .25, Rx = W * .5 - 6;
+  const rFront = Math.min(W * .135, 58), stepA = 0.46; // radians between beads on the orbit
+  const dir = S.hand === 'right' ? -1 : 1;             // counted beads leave toward the side away from the hand
+  if (first) {
+    // back half of the thread, then the spotlight, then beads, then the front thread is under the beads anyway
+    el('ellipse', { cx, cy, rx: Rx, ry: Ry, fill: 'none', stroke: 'var(--thread)', 'stroke-width': 1.4 }, svg);
+    const sp = el('radialGradient', { id: 'spot' }, svg.querySelector('defs'));
+    el('stop', { offset: '0', 'stop-color': S.theme === 'dark' ? '#8FD3C8' : '#FFFFFF', 'stop-opacity': S.theme === 'dark' ? .28 : .9 }, sp);
+    el('stop', { offset: '1', 'stop-color': '#fff', 'stop-opacity': 0 }, sp);
+    el('ellipse', { cx, cy: cy + Ry, rx: rFront * 2.4, ry: rFront * 1.9, fill: 'url(#spot)' }, svg);
+    el('g', { id: 'cBeads' }, svg);
+  }
+  const layer = svg.querySelector('#cBeads');
+  const cur = cursorOf(S.count);
+  const want = new Set(), placed = [];
+  // angle of each position: walk out from the cursor, dividers take more room
+  const angs = new Map();
+  let a = 0;
+  for (let p = cur; p < cur + 12; p++) { const w = isDiv(p) ? 1.55 : 1; if (p > cur) a += stepA * (w + (isDiv(p - 1) ? 1.55 : 1)) / 2; angs.set(p, a); }
+  a = 0;
+  for (let p = cur - 1; p >= Math.max(0, cur - 12); p--) { const w = isDiv(p) ? 1.55 : 1; a -= stepA * (w + (isDiv(p + 1) ? 1.55 : 1)) / 2 + (p === cur - 1 ? stepA * .55 : 0); angs.set(p, a); }
+  for (const [p, th] of angs) {
+    if (Math.abs(th) > Math.PI * .7) continue;
+    want.add(p);
+    const x = cx + dir * -1 * Rx * Math.sin(th) * -1, depth = Math.cos(th);
+    const X = cx - dir * Rx * Math.sin(th);
+    const Y = cy + Ry * depth;
+    const s = .42 + .58 * (depth + 1) / 2;
+    let g = svg._items.get(p);
+    if (!g) {
+      g = el('g', { class: 'bead' }, layer);
+      const inner = el('g', {}, g);
+      isDiv(p) ? divider(inner, 'crystal', rFront, 'x') : bead(inner, 'crystal', rFront);
+      svg._items.set(p, g);
+      const th0 = th + (p >= cur ? stepA : -stepA);
+      g.style.transform = `translate(${cx - dir * Rx * Math.sin(th0)}px, ${cy + Ry * Math.cos(th0)}px) scale(${.42 + .58 * (Math.cos(th0) + 1) / 2})`;
+      g.style.opacity = 0;
+      g.getBoundingClientRect();
+    }
+    g.style.transform = `translate(${X}px, ${Y}px) scale(${s})`;
+    g.style.opacity = Math.max(0, Math.min(1, (depth + .6) * 1.4));
+    placed.push([depth, g]);
+  }
+  for (const [p, g] of svg._items) if (!want.has(p)) { g.remove(); svg._items.delete(p); }
+  placed.sort((m, n) => m[0] - n[0]).forEach(([, g]) => layer.appendChild(g));
+}
+
+const R = { a: renderA, b: renderB, c: renderC };
+function full() { chrome(); document.body.classList.add('no-anim'); R[S.v](true); requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('no-anim'))); }
+function tick(d) {
+  S.count = Math.max(0, S.count + d);
+  if (d > 0 && navigator.vibrate) navigator.vibrate(S.count % 33 === 0 ? [30, 40, 30] : 12);
+  chrome(); R[S.v](false);
+}
+$('stage').addEventListener('click', () => tick(1));
+$('undo').onclick = () => tick(-1);
+$('reset').onclick = () => { S.count = 0; full(); };
+$('handLink').onclick = e => { e.preventDefault(); S.hand = S.hand === 'right' ? 'left' : 'right'; full(); };
+$('switcher').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.v) S.v = b.dataset.v; else S.theme = S.theme === 'dark' ? 'light' : 'dark';
+  full();
+});
+addEventListener('resize', full);
+document.fonts.ready.then(full);
+document.fonts.addEventListener('loadingdone', full);
+full();
+</script>
+</body>
+</html>
